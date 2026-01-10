@@ -320,6 +320,144 @@ export type Database = {
           },
         ]
       }
+      grading_periods: {
+        Row: {
+          created_at: string
+          display_order: number
+          education_level_id: string
+          grade_level_id: string | null
+          id: string
+          is_active: boolean
+          max_score: number
+          name: string
+          name_ar: string
+          subject_id: string | null
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          education_level_id: string
+          grade_level_id?: string | null
+          id?: string
+          is_active?: boolean
+          max_score?: number
+          name: string
+          name_ar: string
+          subject_id?: string | null
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          education_level_id?: string
+          grade_level_id?: string | null
+          id?: string
+          is_active?: boolean
+          max_score?: number
+          name?: string
+          name_ar?: string
+          subject_id?: string | null
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grading_periods_education_level_id_fkey"
+            columns: ["education_level_id"]
+            isOneToOne: false
+            referencedRelation: "education_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grading_periods_grade_level_id_fkey"
+            columns: ["grade_level_id"]
+            isOneToOne: false
+            referencedRelation: "grade_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grading_periods_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grading_template_periods: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          max_score: number
+          name: string
+          name_ar: string
+          template_id: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          max_score?: number
+          name: string
+          name_ar: string
+          template_id: string
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          max_score?: number
+          name?: string
+          name_ar?: string
+          template_id?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grading_template_periods_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "grading_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grading_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          name_ar: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          name_ar: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          name_ar?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
