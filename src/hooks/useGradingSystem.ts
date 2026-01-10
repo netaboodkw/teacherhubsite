@@ -230,6 +230,68 @@ export function useCreateGradingTemplate() {
   });
 }
 
+export function useUpdateGradingTemplate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (template: { 
+      id: string;
+      name: string; 
+      name_ar: string; 
+      description?: string;
+      periods: { name: string; name_ar: string; max_score: number; weight: number }[];
+    }) => {
+      // Update template
+      const { error: templateError } = await supabase
+        .from('grading_templates')
+        .update({
+          name: template.name,
+          name_ar: template.name_ar,
+          description: template.description || null,
+        })
+        .eq('id', template.id);
+
+      if (templateError) throw templateError;
+
+      // Delete existing periods
+      const { error: deleteError } = await supabase
+        .from('grading_template_periods')
+        .delete()
+        .eq('template_id', template.id);
+
+      if (deleteError) throw deleteError;
+
+      // Create new periods
+      if (template.periods.length > 0) {
+        const periodsToInsert = template.periods.map((period, index) => ({
+          template_id: template.id,
+          name: period.name,
+          name_ar: period.name_ar,
+          display_order: index,
+          max_score: period.max_score,
+          weight: period.weight,
+        }));
+
+        const { error: periodsError } = await supabase
+          .from('grading_template_periods')
+          .insert(periodsToInsert);
+
+        if (periodsError) throw periodsError;
+      }
+
+      return template;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['grading_templates'] });
+      queryClient.invalidateQueries({ queryKey: ['grading_template_periods'] });
+      toast.success('تم تحديث القالب بنجاح');
+    },
+    onError: (error) => {
+      toast.error('فشل في تحديث القالب: ' + error.message);
+    },
+  });
+}
+
 export function useDeleteGradingTemplate() {
   const queryClient = useQueryClient();
 
