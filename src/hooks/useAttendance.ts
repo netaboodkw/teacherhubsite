@@ -11,6 +11,7 @@ export interface AttendanceRecord {
   classroom_id: string;
   date: string;
   status: AttendanceStatus;
+  period: number;
   created_at: string;
   updated_at: string;
 }

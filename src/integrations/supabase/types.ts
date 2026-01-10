@@ -118,6 +118,7 @@ export type Database = {
       }
       classrooms: {
         Row: {
+          class_schedule: Json | null
           color: string
           created_at: string
           id: string
@@ -128,6 +129,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          class_schedule?: Json | null
           color?: string
           created_at?: string
           id?: string
@@ -138,6 +140,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          class_schedule?: Json | null
           color?: string
           created_at?: string
           id?: string
