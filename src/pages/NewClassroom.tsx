@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useCreateClassroom } from '@/hooks/useClassrooms';
+import { useEducationLevels } from '@/hooks/useEducationLevels';
+import { useSubjects } from '@/hooks/useSubjects';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ClassScheduleEditor, ClassSchedule } from '@/components/classrooms/ClassScheduleEditor';
 import { ArrowRight, GraduationCap, Loader2 } from 'lucide-react';
 
@@ -16,22 +19,59 @@ const colorOptions = [
   { value: 'bg-destructive', label: 'أحمر' },
 ];
 
+const gradeLevels = [
+  { value: 1, label: 'الأول' },
+  { value: 2, label: 'الثاني' },
+  { value: 3, label: 'الثالث' },
+  { value: 4, label: 'الرابع' },
+  { value: 5, label: 'الخامس' },
+  { value: 6, label: 'السادس' },
+];
+
 export default function NewClassroom() {
   const createClassroom = useCreateClassroom();
   const navigate = useNavigate();
+  const { data: levels, isLoading: levelsLoading } = useEducationLevels();
+  const [selectedLevelId, setSelectedLevelId] = useState('');
+  const { data: subjects, isLoading: subjectsLoading } = useSubjects(selectedLevelId || undefined);
+  
   const [formData, setFormData] = useState({
     name: '',
     subject: '',
     schedule: '',
     color: 'bg-primary',
+    education_level_id: '',
+    subject_id: '',
+    grade_level: 1,
   });
   const [classSchedule, setClassSchedule] = useState<ClassSchedule>({});
+
+  // Reset subject when level changes
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, subject_id: '', subject: '' }));
+  }, [selectedLevelId]);
+
+  // Update subject name when subject is selected
+  useEffect(() => {
+    if (formData.subject_id && subjects) {
+      const selectedSubject = subjects.find(s => s.id === formData.subject_id);
+      if (selectedSubject) {
+        setFormData(prev => ({ ...prev, subject: selectedSubject.name_ar }));
+      }
+    }
+  }, [formData.subject_id, subjects]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await createClassroom.mutateAsync({
-      ...formData,
+      name: formData.name,
+      subject: formData.subject,
+      schedule: formData.schedule,
+      color: formData.color,
       class_schedule: classSchedule,
+      education_level_id: formData.education_level_id || null,
+      subject_id: formData.subject_id || null,
+      grade_level: formData.grade_level,
     });
     navigate('/classrooms');
   };
@@ -62,24 +102,82 @@ export default function NewClassroom() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Education Level */}
             <div className="space-y-2">
-              <Label htmlFor="name">اسم الصف</Label>
+              <Label>المرحلة التعليمية</Label>
+              <Select 
+                value={selectedLevelId} 
+                onValueChange={(value) => {
+                  setSelectedLevelId(value);
+                  setFormData(prev => ({ ...prev, education_level_id: value }));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={levelsLoading ? "جاري التحميل..." : "اختر المرحلة"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {levels?.map((level) => (
+                    <SelectItem key={level.id} value={level.id}>
+                      {level.name_ar}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Grade Level */}
+            <div className="space-y-2">
+              <Label>الصف الدراسي</Label>
+              <Select 
+                value={formData.grade_level.toString()} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, grade_level: parseInt(value) }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر الصف" />
+                </SelectTrigger>
+                <SelectContent>
+                  {gradeLevels.map((grade) => (
+                    <SelectItem key={grade.value} value={grade.value.toString()}>
+                      {grade.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Subject */}
+            <div className="space-y-2">
+              <Label>المادة الدراسية</Label>
+              <Select 
+                value={formData.subject_id} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, subject_id: value }))}
+                disabled={!selectedLevelId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={
+                    !selectedLevelId ? "اختر المرحلة أولاً" : 
+                    subjectsLoading ? "جاري التحميل..." : 
+                    subjects?.length === 0 ? "لا توجد مواد" :
+                    "اختر المادة"
+                  } />
+                </SelectTrigger>
+                <SelectContent>
+                  {subjects?.map((subject) => (
+                    <SelectItem key={subject.id} value={subject.id}>
+                      {subject.name_ar}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="name">اسم الفصل</Label>
               <Input
                 id="name"
                 placeholder="مثال: الصف الأول - أ"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="subject">المادة الدراسية</Label>
-              <Input
-                id="subject"
-                placeholder="مثال: الرياضيات"
-                value={formData.subject}
-                onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                 required
               />
             </div>
@@ -91,7 +189,7 @@ export default function NewClassroom() {
             />
 
             <div className="space-y-2">
-              <Label>لون الصف</Label>
+              <Label>لون الفصل</Label>
               <div className="flex gap-3 flex-wrap">
                 {colorOptions.map((color) => (
                   <button
@@ -118,7 +216,7 @@ export default function NewClassroom() {
                 {createClassroom.isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  'إنشاء الصف'
+                  'إنشاء الفصل'
                 )}
               </Button>
               <Button type="button" variant="outline" onClick={() => navigate(-1)}>
