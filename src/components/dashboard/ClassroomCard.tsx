@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Users, Clock, ChevronLeft } from 'lucide-react';
-import { Classroom } from '@/types';
+import { Classroom } from '@/hooks/useClassrooms';
+import { useStudents } from '@/hooks/useStudents';
 import { cn } from '@/lib/utils';
 
 interface ClassroomCardProps {
@@ -8,6 +9,8 @@ interface ClassroomCardProps {
 }
 
 export function ClassroomCard({ classroom }: ClassroomCardProps) {
+  const { data: students = [] } = useStudents(classroom.id);
+  
   return (
     <Link to={`/classrooms/${classroom.id}`}>
       <div className="group relative overflow-hidden rounded-2xl bg-card p-6 shadow-sm border border-border hover:shadow-lg hover:border-primary/20 transition-all duration-300">
@@ -31,12 +34,14 @@ export function ClassroomCard({ classroom }: ClassroomCardProps) {
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4" />
-              <span>{classroom.studentsCount} طالب</span>
+              <span>{students.length} طالب</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              <span>{classroom.schedule}</span>
-            </div>
+            {classroom.schedule && (
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                <span>{classroom.schedule}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

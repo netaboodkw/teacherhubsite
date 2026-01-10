@@ -1,4 +1,4 @@
-import { Student } from '@/types';
+import { Student } from '@/hooks/useStudents';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,7 @@ export function StudentCard({ student, onClick }: StudentCardProps) {
           {student.name}
         </h4>
         <p className="text-sm text-muted-foreground truncate">
-          {student.studentId}
+          {student.student_id}
         </p>
       </div>
       

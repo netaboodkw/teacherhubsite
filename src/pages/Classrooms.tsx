@@ -1,20 +1,30 @@
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ClassroomCard } from '@/components/dashboard/ClassroomCard';
 import { EmptyState } from '@/components/common/EmptyState';
-import { useApp } from '@/contexts/AppContext';
-import { GraduationCap, Plus, Search } from 'lucide-react';
+import { useClassrooms } from '@/hooks/useClassrooms';
+import { GraduationCap, Plus, Search, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 
 export default function Classrooms() {
-  const { classrooms } = useApp();
+  const { data: classrooms = [], isLoading } = useClassrooms();
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredClassrooms = classrooms.filter(c => 
     c.name.includes(searchTerm) || c.subject.includes(searchTerm)
   );
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>

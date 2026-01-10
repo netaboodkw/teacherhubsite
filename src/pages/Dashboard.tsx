@@ -1,13 +1,17 @@
 import { MainLayout } from '@/components/layout/MainLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { ClassroomCard } from '@/components/dashboard/ClassroomCard';
-import { useApp } from '@/contexts/AppContext';
-import { GraduationCap, Users, ClipboardCheck, TrendingUp, Plus, Calendar } from 'lucide-react';
+import { useClassrooms } from '@/hooks/useClassrooms';
+import { useStudents } from '@/hooks/useStudents';
+import { useAttendance } from '@/hooks/useAttendance';
+import { GraduationCap, Users, ClipboardCheck, TrendingUp, Plus, Calendar, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
-  const { classrooms, students, attendance } = useApp();
+  const { data: classrooms = [], isLoading: loadingClassrooms } = useClassrooms();
+  const { data: students = [], isLoading: loadingStudents } = useStudents();
+  const { data: attendance = [] } = useAttendance();
   
   const today = new Date().toLocaleDateString('ar-SA', { 
     weekday: 'long', 
@@ -16,11 +20,24 @@ export default function Dashboard() {
     day: 'numeric' 
   });
 
-  const todayAttendance = attendance.filter(a => a.date === new Date().toISOString().split('T')[0]);
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayAttendance = attendance.filter(a => a.date === todayStr);
   const presentCount = todayAttendance.filter(a => a.status === 'present').length;
   const attendanceRate = students.length > 0 
     ? Math.round((presentCount / students.length) * 100) 
     : 0;
+
+  const isLoading = loadingClassrooms || loadingStudents;
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -29,7 +46,7 @@ export default function Dashboard() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
-              مرحباً، أ. محمد 👋
+              مرحباً 👋
             </h1>
             <p className="text-muted-foreground mt-1 flex items-center gap-2">
               <Calendar className="w-4 h-4" />
@@ -88,11 +105,25 @@ export default function Dashboard() {
                 عرض الكل
               </Link>
             </div>
-            <div className="grid gap-4">
-              {classrooms.slice(0, 3).map((classroom) => (
-                <ClassroomCard key={classroom.id} classroom={classroom} />
-              ))}
-            </div>
+            {classrooms.length > 0 ? (
+              <div className="grid gap-4">
+                {classrooms.slice(0, 3).map((classroom) => (
+                  <ClassroomCard key={classroom.id} classroom={classroom} />
+                ))}
+              </div>
+            ) : (
+              <div className="bg-card rounded-xl border border-border p-8 text-center">
+                <GraduationCap className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="font-medium text-foreground mb-2">لا توجد صفوف بعد</h3>
+                <p className="text-sm text-muted-foreground mb-4">ابدأ بإنشاء صفك الأول</p>
+                <Link to="/classrooms/new">
+                  <Button className="gradient-hero">
+                    <Plus className="w-4 h-4 ml-2" />
+                    إنشاء صف
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Quick Actions */}
@@ -146,29 +177,6 @@ export default function Dashboard() {
                   </div>
                 </div>
               </Link>
-            </div>
-
-            {/* Today's Schedule */}
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold text-foreground mb-3">جدول اليوم</h3>
-              <div className="space-y-2">
-                {[
-                  { time: '08:00', class: 'الصف الأول - أ', subject: 'الرياضيات' },
-                  { time: '09:00', class: 'الصف الثاني - ب', subject: 'العلوم' },
-                  { time: '10:30', class: 'الصف الثالث - أ', subject: 'اللغة العربية' },
-                ].map((item, index) => (
-                  <div 
-                    key={index}
-                    className="flex items-center gap-3 p-3 rounded-lg bg-muted/50"
-                  >
-                    <span className="text-sm font-mono text-primary font-medium">{item.time}</span>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-foreground">{item.class}</p>
-                      <p className="text-xs text-muted-foreground">{item.subject}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         </div>
