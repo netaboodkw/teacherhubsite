@@ -10,6 +10,7 @@ export interface Student {
   student_id: string;
   avatar_url: string | null;
   notes: string | null;
+  special_needs: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -56,7 +57,14 @@ export function useCreateStudent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (student: { name: string; student_id: string; classroom_id: string; notes?: string }) => {
+    mutationFn: async (student: { 
+      name: string; 
+      student_id: string; 
+      classroom_id: string; 
+      notes?: string;
+      special_needs?: boolean;
+      avatar_url?: string;
+    }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('يجب تسجيل الدخول أولاً');
 
@@ -68,6 +76,8 @@ export function useCreateStudent() {
           student_id: student.student_id,
           classroom_id: student.classroom_id,
           notes: student.notes || null,
+          special_needs: student.special_needs || false,
+          avatar_url: student.avatar_url || null,
         })
         .select()
         .single();
