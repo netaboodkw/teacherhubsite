@@ -34,14 +34,19 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
     return <Navigate to={authPath} replace />;
   }
 
-  // Redirect to complete profile if not complete (except if already on that page)
-  if (user && profile && !isProfileComplete && location.pathname !== '/complete-profile') {
+  // Redirect to complete profile if not complete (only for teachers, not admins)
+  if (user && profile && !isProfileComplete && !isAdmin && location.pathname !== '/complete-profile') {
     return <Navigate to="/complete-profile" replace />;
   }
 
   // Check admin access for admin routes
   if (isAdminRoute && !isAdmin) {
     return <Navigate to="/teacher" replace />;
+  }
+
+  // Redirect admin to admin dashboard if trying to access teacher routes
+  if (!isAdminRoute && isAdmin && location.pathname.startsWith('/teacher')) {
+    return <Navigate to="/admin" replace />;
   }
 
   return <>{children}</>;
