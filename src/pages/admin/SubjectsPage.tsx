@@ -141,12 +141,12 @@ export default function SubjectsPage() {
               {selectedLevelId && gradeLevels && gradeLevels.length > 0 && (
                 <div className="flex items-center gap-2">
                   <Label className="whitespace-nowrap">الصف:</Label>
-                  <Select value={selectedGradeLevelId} onValueChange={setSelectedGradeLevelId}>
+                  <Select value={selectedGradeLevelId || "all"} onValueChange={(v) => setSelectedGradeLevelId(v === "all" ? "" : v)}>
                     <SelectTrigger className="w-48">
                       <SelectValue placeholder="كل الصفوف" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">كل الصفوف</SelectItem>
+                      <SelectItem value="all">كل الصفوف</SelectItem>
                       {gradeLevels?.map((grade) => (
                         <SelectItem key={grade.id} value={grade.id}>{grade.name_ar}</SelectItem>
                       ))}
@@ -216,12 +216,12 @@ export default function SubjectsPage() {
           <div className="space-y-4">
             <div>
               <Label>الصف الدراسي (اختياري)</Label>
-              <Select value={form.grade_level_id || ''} onValueChange={(v) => setForm(prev => ({ ...prev, grade_level_id: v }))}>
+              <Select value={form.grade_level_id || "all"} onValueChange={(v) => setForm(prev => ({ ...prev, grade_level_id: v === "all" ? "" : v }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="جميع الصفوف" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">جميع الصفوف</SelectItem>
+                  <SelectItem value="all">جميع الصفوف</SelectItem>
                   {gradeLevels?.map((grade) => (
                     <SelectItem key={grade.id} value={grade.id}>{grade.name_ar}</SelectItem>
                   ))}
