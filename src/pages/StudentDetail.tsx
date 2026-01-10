@@ -9,14 +9,15 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { StudentAvatarUpload } from '@/components/students/StudentAvatarUpload';
 import { toast } from 'sonner';
 import { 
   ArrowRight, Save, Loader2, User, Plus, Minus, MessageSquare, 
-  Trash2, Edit2, Calendar, Clock
+  Trash2, Edit2, Calendar, Clock, HeartPulse
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -37,6 +38,8 @@ export default function StudentDetail() {
   const [name, setName] = useState('');
   const [studentIdValue, setStudentIdValue] = useState('');
   const [notes, setNotes] = useState('');
+  const [specialNeeds, setSpecialNeeds] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const [editingNote, setEditingNote] = useState<typeof behaviorNotes[0] | null>(null);
   const [editNoteDescription, setEditNoteDescription] = useState('');
@@ -52,6 +55,8 @@ export default function StudentDetail() {
       setName(student.name);
       setStudentIdValue(student.student_id);
       setNotes(student.notes || '');
+      setSpecialNeeds(student.special_needs || false);
+      setAvatarUrl(student.avatar_url);
       setEditMode(true);
     }
   };
@@ -65,6 +70,8 @@ export default function StudentDetail() {
         name,
         student_id: studentIdValue,
         notes: notes || null,
+        special_needs: specialNeeds,
+        avatar_url: avatarUrl,
       });
       setEditMode(false);
     } catch (error) {
@@ -191,11 +198,20 @@ export default function StudentDetail() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-4">
-              <Avatar className="w-16 h-16 border-2 border-primary/20">
-                <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xl">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative">
+                <StudentAvatarUpload
+                  studentId={studentId || ''}
+                  currentAvatarUrl={editMode ? avatarUrl : student.avatar_url}
+                  initials={initials}
+                  onUpload={(url) => setAvatarUrl(url)}
+                  size="lg"
+                />
+                {student.special_needs && !editMode && (
+                  <div className="absolute -top-1 -right-1 bg-amber-500 rounded-full p-1.5">
+                    <HeartPulse className="w-4 h-4 text-white" />
+                  </div>
+                )}
+              </div>
               <div>
                 <h2 className="text-xl font-bold">{student.name}</h2>
                 <p className="text-sm text-muted-foreground font-normal">{student.student_id}</p>
@@ -241,6 +257,23 @@ export default function StudentDetail() {
                     rows={3}
                   />
                 </div>
+                
+                {/* Special Needs Toggle */}
+                <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
+                  <div className="flex items-center gap-3">
+                    <HeartPulse className="w-5 h-5 text-amber-500" />
+                    <div>
+                      <Label htmlFor="special_needs" className="font-medium">احتياجات خاصة / يحتاج متابعة</Label>
+                      <p className="text-sm text-muted-foreground">تفعيل هذا الخيار سيظهر أيقونة خاصة بجانب اسم الطالب</p>
+                    </div>
+                  </div>
+                  <Switch
+                    id="special_needs"
+                    checked={specialNeeds}
+                    onCheckedChange={setSpecialNeeds}
+                  />
+                </div>
+
                 <div className="flex gap-2">
                   <Button onClick={handleSave} disabled={updateStudent.isPending}>
                     {updateStudent.isPending && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}

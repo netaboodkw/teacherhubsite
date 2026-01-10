@@ -8,7 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowRight, Users, Loader2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { StudentAvatarUpload } from '@/components/students/StudentAvatarUpload';
+import { ArrowRight, Users, Loader2, HeartPulse } from 'lucide-react';
 
 export default function NewStudent() {
   const createStudent = useCreateStudent();
@@ -19,6 +21,8 @@ export default function NewStudent() {
     student_id: '',
     classroom_id: '',
     notes: '',
+    special_needs: false,
+    avatar_url: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -26,6 +30,12 @@ export default function NewStudent() {
     await createStudent.mutateAsync(formData);
     navigate('/students');
   };
+
+  const initials = formData.name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .slice(0, 2) || '؟';
 
   return (
     <MainLayout>
@@ -53,6 +63,18 @@ export default function NewStudent() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Avatar Upload */}
+            <div className="flex flex-col items-center gap-2">
+              <Label>صورة الطالب (اختياري)</Label>
+              <StudentAvatarUpload
+                studentId={`new-${Date.now()}`}
+                currentAvatarUrl={formData.avatar_url || null}
+                initials={initials}
+                onUpload={(url) => setFormData({ ...formData, avatar_url: url })}
+                size="lg"
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="name">اسم الطالب</Label>
               <Input
@@ -93,6 +115,22 @@ export default function NewStudent() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Special Needs Toggle */}
+            <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
+              <div className="flex items-center gap-3">
+                <HeartPulse className="w-5 h-5 text-amber-500" />
+                <div>
+                  <Label htmlFor="special_needs" className="font-medium">احتياجات خاصة / يحتاج متابعة</Label>
+                  <p className="text-sm text-muted-foreground">تفعيل هذا الخيار سيظهر أيقونة خاصة بجانب اسم الطالب</p>
+                </div>
+              </div>
+              <Switch
+                id="special_needs"
+                checked={formData.special_needs}
+                onCheckedChange={(checked) => setFormData({ ...formData, special_needs: checked })}
+              />
             </div>
 
             <div className="space-y-2">
