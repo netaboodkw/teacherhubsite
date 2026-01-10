@@ -8,10 +8,11 @@ import { Users, Plus, Search, Filter, Loader2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 
 export default function Students() {
+  const navigate = useNavigate();
   const { data: students = [], isLoading: loadingStudents } = useStudents();
   const { data: classrooms = [], isLoading: loadingClassrooms } = useClassrooms();
   const [searchTerm, setSearchTerm] = useState('');
@@ -98,7 +99,10 @@ export default function Students() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredStudents.map((student) => (
               <div key={student.id} className="relative">
-                <StudentCard student={student} />
+                <StudentCard 
+                  student={student} 
+                  onClick={() => navigate(`/students/${student.id}`)}
+                />
                 <span className="absolute top-2 left-2 text-xs bg-muted px-2 py-1 rounded-full text-muted-foreground">
                   {getClassroomName(student.classroom_id)}
                 </span>

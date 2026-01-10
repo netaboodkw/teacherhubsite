@@ -12,6 +12,7 @@ import Classrooms from "./pages/Classrooms";
 import NewClassroom from "./pages/NewClassroom";
 import ClassroomView from "./pages/ClassroomView";
 import Students from "./pages/Students";
+import StudentDetail from "./pages/StudentDetail";
 import NewStudent from "./pages/NewStudent";
 import Attendance from "./pages/Attendance";
 import Grades from "./pages/Grades";
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/classrooms/new" element={<ProtectedRoute><NewClassroom /></ProtectedRoute>} />
           <Route path="/classrooms/:classroomId" element={<ProtectedRoute><ClassroomView /></ProtectedRoute>} />
           <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
+          <Route path="/students/:studentId" element={<ProtectedRoute><StudentDetail /></ProtectedRoute>} />
           <Route path="/students/new" element={<ProtectedRoute><NewStudent /></ProtectedRoute>} />
           <Route path="/attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
           <Route path="/grades" element={<ProtectedRoute><Grades /></ProtectedRoute>} />
