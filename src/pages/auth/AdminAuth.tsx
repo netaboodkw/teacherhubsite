@@ -81,7 +81,7 @@ export default function AdminAuth() {
         return;
       }
 
-      // Add admin role for the new user
+      // Add admin role and mark profile as complete for the new user
       if (data?.user) {
         const { error: roleError } = await supabase
           .from('user_roles')
@@ -89,6 +89,16 @@ export default function AdminAuth() {
         
         if (roleError) {
           console.error('Error adding admin role:', roleError);
+        }
+
+        // Mark admin profile as complete
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ is_profile_complete: true })
+          .eq('user_id', data.user.id);
+        
+        if (profileError) {
+          console.error('Error updating admin profile:', profileError);
         }
       }
       
