@@ -7,6 +7,7 @@ export type GradeType = 'exam' | 'assignment' | 'participation' | 'project';
 export interface Subject {
   id: string;
   education_level_id: string;
+  grade_level_id: string | null;
   name: string;
   name_ar: string;
   weeks_count: number;
@@ -17,9 +18,9 @@ export interface Subject {
   updated_at: string;
 }
 
-export function useSubjects(educationLevelId?: string) {
+export function useSubjects(educationLevelId?: string, gradeLevelId?: string) {
   return useQuery({
-    queryKey: ['subjects', educationLevelId],
+    queryKey: ['subjects', educationLevelId, gradeLevelId],
     queryFn: async () => {
       let query = supabase
         .from('subjects')
@@ -28,6 +29,10 @@ export function useSubjects(educationLevelId?: string) {
       
       if (educationLevelId) {
         query = query.eq('education_level_id', educationLevelId);
+      }
+      
+      if (gradeLevelId) {
+        query = query.eq('grade_level_id', gradeLevelId);
       }
 
       const { data, error } = await query;
@@ -44,6 +49,7 @@ export function useCreateSubject() {
   return useMutation({
     mutationFn: async (subject: { 
       education_level_id: string;
+      grade_level_id?: string | null;
       name: string; 
       name_ar: string; 
       weeks_count?: number;

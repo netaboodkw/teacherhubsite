@@ -56,8 +56,9 @@ export function useMarkAttendance() {
           classroom_id: record.classroom_id,
           date: record.date,
           status: record.status,
+          period: 1,
         }, {
-          onConflict: 'student_id,date',
+          onConflict: 'student_id,date,period',
         })
         .select()
         .single();
@@ -85,12 +86,13 @@ export function useBulkMarkAttendance() {
       const recordsWithUserId = records.map(r => ({
         ...r,
         user_id: user.id,
+        period: 1,
       }));
 
       const { data, error } = await supabase
         .from('attendance_records')
         .upsert(recordsWithUserId, {
-          onConflict: 'student_id,date',
+          onConflict: 'student_id,date,period',
         })
         .select();
 
