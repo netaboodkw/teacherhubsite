@@ -152,6 +152,36 @@ export type Database = {
         }
         Relationships: []
       }
+      education_levels: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          name: string
+          name_ar: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          name_ar: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          name_ar?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       grades: {
         Row: {
           classroom_id: string
@@ -216,40 +246,61 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          education_level_id: string | null
           full_name: string
           id: string
           is_profile_complete: boolean | null
           phone: string | null
           school_name: string | null
           subject: string | null
+          subject_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          education_level_id?: string | null
           full_name: string
           id?: string
           is_profile_complete?: boolean | null
           phone?: string | null
           school_name?: string | null
           subject?: string | null
+          subject_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          education_level_id?: string | null
           full_name?: string
           id?: string
           is_profile_complete?: boolean | null
           phone?: string | null
           school_name?: string | null
           subject?: string | null
+          subject_id?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_education_level_id_fkey"
+            columns: ["education_level_id"]
+            isOneToOne: false
+            referencedRelation: "education_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       student_positions: {
         Row: {
@@ -346,15 +397,89 @@ export type Database = {
           },
         ]
       }
+      subjects: {
+        Row: {
+          created_at: string
+          education_level_id: string
+          grade_types: Json
+          id: string
+          is_active: boolean
+          max_score: number
+          name: string
+          name_ar: string
+          updated_at: string
+          weeks_count: number
+        }
+        Insert: {
+          created_at?: string
+          education_level_id: string
+          grade_types?: Json
+          id?: string
+          is_active?: boolean
+          max_score?: number
+          name: string
+          name_ar: string
+          updated_at?: string
+          weeks_count?: number
+        }
+        Update: {
+          created_at?: string
+          education_level_id?: string
+          grade_types?: Json
+          id?: string
+          is_active?: boolean
+          max_score?: number
+          name?: string
+          name_ar?: string
+          updated_at?: string
+          weeks_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subjects_education_level_id_fkey"
+            columns: ["education_level_id"]
+            isOneToOne: false
+            referencedRelation: "education_levels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -481,6 +606,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const

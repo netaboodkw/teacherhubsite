@@ -1,27 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { User, School, BookOpen, Loader2 } from 'lucide-react';
+import { useEducationLevels } from '@/hooks/useEducationLevels';
+import { useSubjects } from '@/hooks/useSubjects';
+import { User, School, GraduationCap, BookOpen, Loader2 } from 'lucide-react';
 
 export default function CompleteProfile() {
   const [fullName, setFullName] = useState('');
   const [schoolName, setSchoolName] = useState('');
-  const [subject, setSubject] = useState('');
+  const [selectedLevelId, setSelectedLevelId] = useState('');
+  const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
+  
+  const { data: levels, isLoading: levelsLoading } = useEducationLevels();
+  const { data: subjects, isLoading: subjectsLoading } = useSubjects(selectedLevelId || undefined);
+
+  // Reset subject when level changes
+  useEffect(() => {
+    setSelectedSubjectId('');
+  }, [selectedLevelId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!fullName.trim() || !schoolName.trim() || !subject.trim()) {
+    if (!fullName.trim() || !schoolName.trim() || !selectedLevelId || !selectedSubjectId) {
       toast({
         title: 'خطأ',
         description: 'يرجى ملء جميع الحقول',
@@ -43,12 +55,16 @@ export default function CompleteProfile() {
     setLoading(true);
 
     try {
+      const selectedSubject = subjects?.find(s => s.id === selectedSubjectId);
+      
       const { error } = await supabase
         .from('profiles')
         .update({
           full_name: fullName.trim(),
           school_name: schoolName.trim(),
-          subject: subject.trim(),
+          subject: selectedSubject?.name_ar || '',
+          education_level_id: selectedLevelId,
+          subject_id: selectedSubjectId,
           is_profile_complete: true,
         })
         .eq('user_id', user.id);
@@ -114,18 +130,57 @@ export default function CompleteProfile() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="subject">المادة التي تدرسها</Label>
-              <div className="relative">
-                <BookOpen className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="subject"
-                  type="text"
-                  placeholder="الرياضيات"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  className="pr-10"
-                />
-              </div>
+              <Label>المرحلة التعليمية</Label>
+              <Select value={selectedLevelId} onValueChange={setSelectedLevelId}>
+                <SelectTrigger className="w-full">
+                  <GraduationCap className="h-4 w-4 ml-2 text-muted-foreground" />
+                  <SelectValue placeholder="اختر المرحلة التعليمية" />
+                </SelectTrigger>
+                <SelectContent>
+                  {levelsLoading ? (
+                    <div className="flex justify-center p-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    </div>
+                  ) : (
+                    levels?.map((level) => (
+                      <SelectItem key={level.id} value={level.id}>
+                        {level.name_ar}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>المادة التي تدرسها</Label>
+              <Select 
+                value={selectedSubjectId} 
+                onValueChange={setSelectedSubjectId}
+                disabled={!selectedLevelId}
+              >
+                <SelectTrigger className="w-full">
+                  <BookOpen className="h-4 w-4 ml-2 text-muted-foreground" />
+                  <SelectValue placeholder={selectedLevelId ? "اختر المادة" : "اختر المرحلة أولاً"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {subjectsLoading ? (
+                    <div className="flex justify-center p-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    </div>
+                  ) : subjects?.length === 0 ? (
+                    <div className="p-2 text-center text-muted-foreground text-sm">
+                      لا توجد مواد في هذه المرحلة
+                    </div>
+                  ) : (
+                    subjects?.map((subject) => (
+                      <SelectItem key={subject.id} value={subject.id}>
+                        {subject.name_ar}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
