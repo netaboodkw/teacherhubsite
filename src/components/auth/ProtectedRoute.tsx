@@ -1,5 +1,6 @@
 import { useAuth } from '@/hooks/useAuth';
-import { Navigate } from 'react-router-dom';
+import { useProfile } from '@/hooks/useProfile';
+import { Navigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
@@ -7,9 +8,11 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { profile, isLoading: profileLoading, isProfileComplete } = useProfile();
+  const location = useLocation();
 
-  if (loading) {
+  if (authLoading || (user && profileLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background" dir="rtl">
         <div className="text-center">
@@ -22,6 +25,11 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Redirect to complete profile if not complete (except if already on that page)
+  if (profile && !isProfileComplete && location.pathname !== '/complete-profile') {
+    return <Navigate to="/complete-profile" replace />;
   }
 
   return <>{children}</>;

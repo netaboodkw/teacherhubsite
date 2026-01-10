@@ -209,6 +209,10 @@ export type Database = {
           created_at: string
           full_name: string
           id: string
+          is_profile_complete: boolean | null
+          phone: string | null
+          school_name: string | null
+          subject: string | null
           updated_at: string
           user_id: string
         }
@@ -217,6 +221,10 @@ export type Database = {
           created_at?: string
           full_name: string
           id?: string
+          is_profile_complete?: boolean | null
+          phone?: string | null
+          school_name?: string | null
+          subject?: string | null
           updated_at?: string
           user_id: string
         }
@@ -225,10 +233,62 @@ export type Database = {
           created_at?: string
           full_name?: string
           id?: string
+          is_profile_complete?: boolean | null
+          phone?: string | null
+          school_name?: string | null
+          subject?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      student_positions: {
+        Row: {
+          classroom_id: string
+          created_at: string
+          id: string
+          position_x: number
+          position_y: number
+          student_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          classroom_id: string
+          created_at?: string
+          id?: string
+          position_x?: number
+          position_y?: number
+          student_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          classroom_id?: string
+          created_at?: string
+          id?: string
+          position_x?: number
+          position_y?: number
+          student_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_positions_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_positions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       students: {
         Row: {

@@ -5,9 +5,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Auth from "./pages/Auth";
+import CompleteProfile from "./pages/CompleteProfile";
 import Dashboard from "./pages/Dashboard";
 import Classrooms from "./pages/Classrooms";
 import NewClassroom from "./pages/NewClassroom";
+import ClassroomView from "./pages/ClassroomView";
 import Students from "./pages/Students";
 import NewStudent from "./pages/NewStudent";
 import Attendance from "./pages/Attendance";
@@ -25,9 +27,11 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />
+          <Route path="/complete-profile" element={<CompleteProfile />} />
           <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/classrooms" element={<ProtectedRoute><Classrooms /></ProtectedRoute>} />
           <Route path="/classrooms/new" element={<ProtectedRoute><NewClassroom /></ProtectedRoute>} />
+          <Route path="/classrooms/:classroomId" element={<ProtectedRoute><ClassroomView /></ProtectedRoute>} />
           <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
           <Route path="/students/new" element={<ProtectedRoute><NewStudent /></ProtectedRoute>} />
           <Route path="/attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
