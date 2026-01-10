@@ -59,7 +59,7 @@ export default function ClassroomView() {
   const [noteDescription, setNoteDescription] = useState('');
   const [saving, setSaving] = useState(false);
   const [loadingPositions, setLoadingPositions] = useState(true);
-  const [activeTab, setActiveTab] = useState<'arrange' | 'attendance'>('arrange');
+  const [activeTab, setActiveTab] = useState<'main' | 'arrange'>('main');
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<number>(1);
   const [dragState, setDragState] = useState<DragState>({
@@ -214,7 +214,7 @@ export default function ClassroomView() {
   const handleStudentTap = (student: SelectedStudent) => {
     if (dragState.isDragging) return;
     
-    if (activeTab === 'attendance') {
+    if (activeTab === 'main') {
       cycleAttendance(student.id);
     } else {
       setSelectedStudent(student);
@@ -395,6 +395,11 @@ export default function ClassroomView() {
     );
   }
 
+  const getShortName = (fullName: string) => {
+    const parts = fullName.split(' ');
+    return parts.slice(0, 2).join(' ');
+  };
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       {/* Header */}
@@ -410,61 +415,146 @@ export default function ClassroomView() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button 
-              onClick={activeTab === 'arrange' ? savePositions : saveAttendance} 
-              disabled={saving}
-            >
-              {saving ? (
-                <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="ml-2 h-4 w-4" />
-              )}
-              حفظ
-            </Button>
+            {activeTab === 'arrange' ? (
+              <>
+                <Button variant="outline" onClick={() => setActiveTab('main')}>
+                  رجوع
+                </Button>
+                <Button onClick={savePositions} disabled={saving}>
+                  {saving ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Save className="ml-2 h-4 w-4" />}
+                  حفظ الترتيب
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" size="sm" onClick={() => setActiveTab('arrange')}>
+                  <Move className="h-4 w-4 ml-1" />
+                  ترتيب الطلاب
+                </Button>
+                <Button onClick={saveAttendance} disabled={saving}>
+                  {saving ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Save className="ml-2 h-4 w-4" />}
+                  حفظ
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Main Content */}
       <div className="container mx-auto p-4">
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'arrange' | 'attendance')}>
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="arrange" className="gap-2">
+        {activeTab === 'arrange' ? (
+          <>
+            {/* Arrange Mode */}
+            <Card className="mb-4 bg-muted/50">
+              <CardContent className="p-4 text-center">
+                <div className="bg-background border-2 border-dashed rounded-lg py-4">
+                  <p className="text-muted-foreground font-medium">السبورة</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex items-center justify-center gap-2 mb-4 text-sm text-muted-foreground">
               <Move className="h-4 w-4" />
-              ترتيب الطلاب
-            </TabsTrigger>
-            <TabsTrigger value="attendance" className="gap-2">
+              <span>اسحب الطالب لتحريكه • اضغط عليه لإضافة ملاحظة</span>
+            </div>
+
+            <Card className="overflow-hidden">
+              <CardContent className="p-0">
+                {loadingPositions || loadingStudents ? (
+                  <div className="flex items-center justify-center h-[500px]">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : students.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-[400px] text-muted-foreground">
+                    <User className="h-12 w-12 mb-4" />
+                    <p>لا يوجد طلاب في هذا الفصل</p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={() => navigate(`/students/new?classroomId=${classroomId}`)}
+                    >
+                      إضافة طالب
+                    </Button>
+                  </div>
+                ) : (
+                  <div
+                    ref={containerRef}
+                    className="relative min-h-[500px] touch-none select-none bg-muted/20"
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerLeave={handlePointerUp}
+                  >
+                    {students.map((student) => {
+                      const pos = getStudentPosition(student.id);
+                      const isDragging = dragState.studentId === student.id;
+                      
+                      return (
+                        <div
+                          key={student.id}
+                          className={`absolute transition-transform touch-none ${
+                            isDragging 
+                              ? 'scale-110 z-50 cursor-grabbing' 
+                              : 'cursor-grab hover:scale-105'
+                          }`}
+                          style={{
+                            left: pos.position_x,
+                            top: pos.position_y,
+                            width: STUDENT_SIZE,
+                            transition: isDragging ? 'none' : 'transform 0.15s ease-out',
+                          }}
+                          onPointerDown={(e) => handlePointerDown(e, student.id)}
+                          onClick={() => handleStudentTap({
+                            id: student.id,
+                            name: student.name,
+                            avatar_url: student.avatar_url,
+                          })}
+                        >
+                          <div className={`flex flex-col items-center p-1.5 bg-card rounded-xl border-2 shadow-md ${
+                            isDragging ? 'border-primary shadow-lg' : 'border-transparent'
+                          }`}>
+                            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-0.5">
+                              {student.avatar_url ? (
+                                <img
+                                  src={student.avatar_url}
+                                  alt={student.name}
+                                  className="w-full h-full object-cover"
+                                  draggable={false}
+                                />
+                              ) : (
+                                <User className="h-4 w-4 text-primary" />
+                              )}
+                            </div>
+                            <p className="text-[10px] text-center font-medium truncate w-full leading-tight">
+                              {getShortName(student.name)}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </>
+        ) : (
+          <>
+            {/* Attendance Mode */}
+            <Card className="mb-4 bg-muted/50">
+              <CardContent className="p-4 text-center">
+                <div className="bg-background border-2 border-dashed rounded-lg py-4">
+                  <p className="text-muted-foreground font-medium">السبورة</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Instructions */}
+            <div className="flex items-center justify-center gap-2 mb-4 text-sm text-muted-foreground">
               <ClipboardCheck className="h-4 w-4" />
-              تسجيل الحضور
-            </TabsTrigger>
-          </TabsList>
+              <span>اضغط على الطالب لتغيير حالة الحضور</span>
+            </div>
 
-          {/* Whiteboard */}
-          <Card className="mb-4 bg-muted/50">
-            <CardContent className="p-4 text-center">
-              <div className="bg-background border-2 border-dashed rounded-lg py-4">
-                <p className="text-muted-foreground font-medium">السبورة</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Instructions */}
-          <div className="flex items-center justify-center gap-2 mb-4 text-sm text-muted-foreground">
-            {activeTab === 'arrange' ? (
-              <>
-                <Move className="h-4 w-4" />
-                <span>اسحب الطالب لتحريكه • اضغط عليه لإضافة ملاحظة</span>
-              </>
-            ) : (
-              <>
-                <ClipboardCheck className="h-4 w-4" />
-                <span>اضغط على الطالب لتغيير حالة الحضور</span>
-              </>
-            )}
-          </div>
-
-          {/* Period Selection & Bulk Actions */}
-          {activeTab === 'attendance' && (
+            {/* Period Selection & Bulk Actions */}
             <div className="space-y-4 mb-4">
               {/* Period Selection */}
               <div className="flex items-center justify-center gap-4">
@@ -537,89 +627,7 @@ export default function ClassroomView() {
                 </div>
               </div>
             </div>
-          )}
 
-          <TabsContent value="arrange" className="mt-0">
-            <Card className="overflow-hidden">
-              <CardContent className="p-0">
-                {loadingPositions || loadingStudents ? (
-                  <div className="flex items-center justify-center h-[500px]">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                  </div>
-                ) : students.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-[400px] text-muted-foreground">
-                    <User className="h-12 w-12 mb-4" />
-                    <p>لا يوجد طلاب في هذا الفصل</p>
-                    <Button 
-                      variant="outline" 
-                      className="mt-4"
-                      onClick={() => navigate(`/students/new?classroomId=${classroomId}`)}
-                    >
-                      إضافة طالب
-                    </Button>
-                  </div>
-                ) : (
-                  <div
-                    ref={containerRef}
-                    className="relative min-h-[500px] touch-none select-none bg-muted/20"
-                    onPointerMove={handlePointerMove}
-                    onPointerUp={handlePointerUp}
-                    onPointerLeave={handlePointerUp}
-                  >
-                    {students.map((student) => {
-                      const pos = getStudentPosition(student.id);
-                      const isDragging = dragState.studentId === student.id;
-                      
-                      return (
-                        <div
-                          key={student.id}
-                          className={`absolute transition-transform touch-none ${
-                            isDragging 
-                              ? 'scale-110 z-50 cursor-grabbing' 
-                              : 'cursor-grab hover:scale-105'
-                          }`}
-                          style={{
-                            left: pos.position_x,
-                            top: pos.position_y,
-                            width: STUDENT_SIZE,
-                            transition: isDragging ? 'none' : 'transform 0.15s ease-out',
-                          }}
-                          onPointerDown={(e) => handlePointerDown(e, student.id)}
-                          onClick={() => handleStudentTap({
-                            id: student.id,
-                            name: student.name,
-                            avatar_url: student.avatar_url,
-                          })}
-                        >
-                          <div className={`flex flex-col items-center p-2 bg-card rounded-xl border-2 shadow-md ${
-                            isDragging ? 'border-primary shadow-lg' : 'border-transparent'
-                          }`}>
-                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-1">
-                              {student.avatar_url ? (
-                                <img
-                                  src={student.avatar_url}
-                                  alt={student.name}
-                                  className="w-full h-full object-cover"
-                                  draggable={false}
-                                />
-                              ) : (
-                                <User className="h-5 w-5 text-primary" />
-                              )}
-                            </div>
-                            <p className="text-xs text-center font-medium truncate w-full px-1">
-                              {student.name.split(' ')[0]}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="attendance" className="mt-0">
             <Card className="overflow-hidden">
               <CardContent className="p-0">
                 {loadingStudents ? (
@@ -655,8 +663,8 @@ export default function ClassroomView() {
                             avatar_url: student.avatar_url,
                           })}
                         >
-                          <div className={`flex flex-col items-center p-2 bg-card rounded-xl border-2 shadow-md ${getAttendanceBorder(status)}`}>
-                            <div className="relative w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-1">
+                          <div className={`flex flex-col items-center p-1.5 bg-card rounded-xl border-2 shadow-md ${getAttendanceBorder(status)}`}>
+                            <div className="relative w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-0.5">
                               {student.avatar_url ? (
                                 <img
                                   src={student.avatar_url}
@@ -664,7 +672,7 @@ export default function ClassroomView() {
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
-                                <User className="h-5 w-5 text-primary" />
+                                <User className="h-4 w-4 text-primary" />
                               )}
                               {status && (
                                 <div className="absolute -bottom-1 -right-1 bg-card rounded-full p-0.5 shadow">
@@ -672,8 +680,8 @@ export default function ClassroomView() {
                                 </div>
                               )}
                             </div>
-                            <p className="text-xs text-center font-medium truncate w-full px-1">
-                              {student.name.split(' ')[0]}
+                            <p className="text-[10px] text-center font-medium truncate w-full leading-tight">
+                              {getShortName(student.name)}
                             </p>
                           </div>
                         </div>
@@ -683,8 +691,8 @@ export default function ClassroomView() {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+          </>
+        )}
       </div>
 
       {/* Student Note Dialog */}
