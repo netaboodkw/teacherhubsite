@@ -130,7 +130,7 @@ export default function Auth() {
       }
       
       toast.success('مرحباً بك!');
-      navigate('/dashboard');
+      navigate('/admin');
     } catch (error: any) {
       toast.error(error.message || 'حدث خطأ أثناء تسجيل الدخول');
     } finally {
