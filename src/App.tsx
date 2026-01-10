@@ -3,7 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AppProvider } from "@/contexts/AppContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Classrooms from "./pages/Classrooms";
 import NewClassroom from "./pages/NewClassroom";
@@ -18,26 +19,24 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AppProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/classrooms" element={<Classrooms />} />
-            <Route path="/classrooms/new" element={<NewClassroom />} />
-            <Route path="/students" element={<Students />} />
-            <Route path="/students/new" element={<NewStudent />} />
-            <Route path="/attendance" element={<Attendance />} />
-            <Route path="/grades" element={<Grades />} />
-            <Route path="/reports" element={<Reports />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AppProvider>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/classrooms" element={<ProtectedRoute><Classrooms /></ProtectedRoute>} />
+          <Route path="/classrooms/new" element={<ProtectedRoute><NewClassroom /></ProtectedRoute>} />
+          <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
+          <Route path="/students/new" element={<ProtectedRoute><NewStudent /></ProtectedRoute>} />
+          <Route path="/attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
+          <Route path="/grades" element={<ProtectedRoute><Grades /></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
   </QueryClientProvider>
 );
 

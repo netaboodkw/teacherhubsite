@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { useApp } from '@/contexts/AppContext';
+import { useCreateClassroom } from '@/hooks/useClassrooms';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowRight, GraduationCap } from 'lucide-react';
+import { ArrowRight, GraduationCap, Loader2 } from 'lucide-react';
 
 const colorOptions = [
   { value: 'bg-primary', label: 'أزرق' },
@@ -16,7 +16,7 @@ const colorOptions = [
 ];
 
 export default function NewClassroom() {
-  const { addClassroom } = useApp();
+  const createClassroom = useCreateClassroom();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
@@ -25,12 +25,9 @@ export default function NewClassroom() {
     color: 'bg-primary',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    addClassroom({
-      ...formData,
-      studentsCount: 0,
-    });
+    await createClassroom.mutateAsync(formData);
     navigate('/classrooms');
   };
 
@@ -112,8 +109,16 @@ export default function NewClassroom() {
             </div>
 
             <div className="flex gap-3 pt-4">
-              <Button type="submit" className="flex-1 gradient-hero">
-                إنشاء الصف
+              <Button 
+                type="submit" 
+                className="flex-1 gradient-hero"
+                disabled={createClassroom.isPending}
+              >
+                {createClassroom.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  'إنشاء الصف'
+                )}
               </Button>
               <Button type="button" variant="outline" onClick={() => navigate(-1)}>
                 إلغاء

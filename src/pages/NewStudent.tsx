@@ -1,27 +1,29 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { useApp } from '@/contexts/AppContext';
+import { useCreateStudent } from '@/hooks/useStudents';
+import { useClassrooms } from '@/hooks/useClassrooms';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowRight, Users } from 'lucide-react';
+import { ArrowRight, Users, Loader2 } from 'lucide-react';
 
 export default function NewStudent() {
-  const { addStudent, classrooms } = useApp();
+  const createStudent = useCreateStudent();
+  const { data: classrooms = [] } = useClassrooms();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
-    studentId: '',
-    classroomId: '',
+    student_id: '',
+    classroom_id: '',
     notes: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    addStudent(formData);
+    await createStudent.mutateAsync(formData);
     navigate('/students');
   };
 
@@ -63,12 +65,12 @@ export default function NewStudent() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="studentId">الرقم التعريفي</Label>
+              <Label htmlFor="student_id">الرقم التعريفي</Label>
               <Input
-                id="studentId"
+                id="student_id"
                 placeholder="مثال: STU001"
-                value={formData.studentId}
-                onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
+                value={formData.student_id}
+                onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
                 required
               />
             </div>
@@ -76,8 +78,8 @@ export default function NewStudent() {
             <div className="space-y-2">
               <Label>الصف الدراسي</Label>
               <Select 
-                value={formData.classroomId} 
-                onValueChange={(value) => setFormData({ ...formData, classroomId: value })}
+                value={formData.classroom_id} 
+                onValueChange={(value) => setFormData({ ...formData, classroom_id: value })}
                 required
               >
                 <SelectTrigger>
@@ -105,8 +107,16 @@ export default function NewStudent() {
             </div>
 
             <div className="flex gap-3 pt-4">
-              <Button type="submit" className="flex-1 gradient-hero">
-                إضافة الطالب
+              <Button 
+                type="submit" 
+                className="flex-1 gradient-hero"
+                disabled={createStudent.isPending}
+              >
+                {createStudent.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  'إضافة الطالب'
+                )}
               </Button>
               <Button type="button" variant="outline" onClick={() => navigate(-1)}>
                 إلغاء

@@ -1,8 +1,9 @@
 import { MainLayout } from '@/components/layout/MainLayout';
 import { StudentCard } from '@/components/students/StudentCard';
 import { EmptyState } from '@/components/common/EmptyState';
-import { useApp } from '@/contexts/AppContext';
-import { Users, Plus, Search, Filter } from 'lucide-react';
+import { useStudents } from '@/hooks/useStudents';
+import { useClassrooms } from '@/hooks/useClassrooms';
+import { Users, Plus, Search, Filter, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,19 +11,32 @@ import { Link } from 'react-router-dom';
 import { useState } from 'react';
 
 export default function Students() {
-  const { students, classrooms } = useApp();
+  const { data: students = [], isLoading: loadingStudents } = useStudents();
+  const { data: classrooms = [], isLoading: loadingClassrooms } = useClassrooms();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClassroom, setSelectedClassroom] = useState('all');
 
   const filteredStudents = students.filter(s => {
-    const matchesSearch = s.name.includes(searchTerm) || s.studentId.includes(searchTerm);
-    const matchesClass = selectedClassroom === 'all' || s.classroomId === selectedClassroom;
+    const matchesSearch = s.name.includes(searchTerm) || s.student_id.includes(searchTerm);
+    const matchesClass = selectedClassroom === 'all' || s.classroom_id === selectedClassroom;
     return matchesSearch && matchesClass;
   });
 
   const getClassroomName = (classroomId: string) => {
     return classrooms.find(c => c.id === classroomId)?.name || '';
   };
+
+  const isLoading = loadingStudents || loadingClassrooms;
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -75,7 +89,7 @@ export default function Students() {
               <div key={student.id} className="relative">
                 <StudentCard student={student} />
                 <span className="absolute top-2 left-2 text-xs bg-muted px-2 py-1 rounded-full text-muted-foreground">
-                  {getClassroomName(student.classroomId)}
+                  {getClassroomName(student.classroom_id)}
                 </span>
               </div>
             ))}
