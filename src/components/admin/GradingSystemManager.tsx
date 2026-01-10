@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,10 +20,12 @@ import {
   useGradingTemplates,
   useGradingTemplatePeriods,
   useCreateGradingTemplate,
+  useUpdateGradingTemplate,
   useDeleteGradingTemplate,
   useApplyGradingTemplate,
   useCopyGradingPeriods,
   GradingPeriod,
+  GradingTemplate,
 } from '@/hooks/useGradingSystem';
 import { TemplateUploader } from './TemplateUploader';
 
@@ -53,6 +56,7 @@ export function GradingSystemManager() {
   const updatePeriod = useUpdateGradingPeriod();
   const deletePeriod = useDeleteGradingPeriod();
   const createTemplate = useCreateGradingTemplate();
+  const updateTemplate = useUpdateGradingTemplate();
   const deleteTemplate = useDeleteGradingTemplate();
   const applyTemplate = useApplyGradingTemplate();
   const copyPeriods = useCopyGradingPeriods();
@@ -68,6 +72,7 @@ export function GradingSystemManager() {
   });
 
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<GradingTemplate | null>(null);
   const [templateForm, setTemplateForm] = useState({
     name: '',
     name_ar: '',
@@ -120,6 +125,39 @@ export function GradingSystemManager() {
   };
 
   // Template handlers
+  const openTemplateDialog = async (template?: GradingTemplate) => {
+    if (template) {
+      setEditingTemplate(template);
+      // Fetch template periods
+      const { data: templatePeriods } = await supabase
+        .from('grading_template_periods')
+        .select('*')
+        .eq('template_id', template.id)
+        .order('display_order', { ascending: true });
+      
+      setTemplateForm({
+        name: template.name,
+        name_ar: template.name_ar,
+        description: template.description || '',
+        periods: templatePeriods?.map(p => ({
+          name: p.name,
+          name_ar: p.name_ar,
+          max_score: p.max_score,
+          weight: p.weight,
+        })) || [{ name: '', name_ar: '', max_score: 100, weight: 1 }],
+      });
+    } else {
+      setEditingTemplate(null);
+      setTemplateForm({
+        name: '',
+        name_ar: '',
+        description: '',
+        periods: [{ name: '', name_ar: '', max_score: 100, weight: 1 }],
+      });
+    }
+    setTemplateDialogOpen(true);
+  };
+
   const addTemplatePeriod = () => {
     setTemplateForm(prev => ({
       ...prev,
@@ -143,8 +181,15 @@ export function GradingSystemManager() {
 
   const handleSaveTemplate = async () => {
     if (!templateForm.name_ar) return;
-    await createTemplate.mutateAsync(templateForm);
+    
+    if (editingTemplate) {
+      await updateTemplate.mutateAsync({ id: editingTemplate.id, ...templateForm });
+    } else {
+      await createTemplate.mutateAsync(templateForm);
+    }
+    
     setTemplateDialogOpen(false);
+    setEditingTemplate(null);
     setTemplateForm({
       name: '',
       name_ar: '',
@@ -323,7 +368,7 @@ export function GradingSystemManager() {
               <FileText className="h-5 w-5" />
               قوالب نظام الدرجات
             </CardTitle>
-            <Button size="sm" onClick={() => setTemplateDialogOpen(true)}>
+            <Button size="sm" onClick={() => openTemplateDialog()}>
               <Plus className="h-4 w-4 ml-1" />
               قالب جديد
             </Button>
@@ -341,9 +386,14 @@ export function GradingSystemManager() {
                         <p className="text-xs text-muted-foreground mt-1">{template.description}</p>
                       )}
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => deleteTemplate.mutate(template.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => openTemplateDialog(template)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => deleteTemplate.mutate(template.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -403,10 +453,21 @@ export function GradingSystemManager() {
       </Dialog>
 
       {/* Template Dialog */}
-      <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
+      <Dialog open={templateDialogOpen} onOpenChange={(open) => {
+        setTemplateDialogOpen(open);
+        if (!open) {
+          setEditingTemplate(null);
+          setTemplateForm({
+            name: '',
+            name_ar: '',
+            description: '',
+            periods: [{ name: '', name_ar: '', max_score: 100, weight: 1 }],
+          });
+        }
+      }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>إنشاء قالب جديد</DialogTitle>
+            <DialogTitle>{editingTemplate ? 'تعديل القالب' : 'إنشاء قالب جديد'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -481,7 +542,7 @@ export function GradingSystemManager() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setTemplateDialogOpen(false)}>إلغاء</Button>
-            <Button onClick={handleSaveTemplate}>إنشاء القالب</Button>
+            <Button onClick={handleSaveTemplate}>{editingTemplate ? 'حفظ التغييرات' : 'إنشاء القالب'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
