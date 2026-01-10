@@ -21,7 +21,7 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { href: '/', icon: LayoutDashboard, label: 'لوحة التحكم' },
+  { href: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم' },
   { href: '/classrooms', icon: GraduationCap, label: 'الصفوف' },
   { href: '/students', icon: Users, label: 'الطلاب' },
   { href: '/attendance', icon: ClipboardCheck, label: 'الحضور' },

@@ -71,7 +71,7 @@ export default function Auth() {
         toast.success('مرحباً بعودتك!');
       }
 
-      navigate('/');
+      navigate('/dashboard');
     } catch (error: any) {
       toast.error(error.message || 'حدث خطأ أثناء التحقق');
     } finally {

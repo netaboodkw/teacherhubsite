@@ -60,7 +60,7 @@ export default function CompleteProfile() {
         description: 'تم حفظ بياناتك بنجاح',
       });
 
-      navigate('/');
+      navigate('/dashboard');
     } catch (error: any) {
       toast({
         title: 'خطأ',
