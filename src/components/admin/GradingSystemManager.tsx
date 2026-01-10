@@ -223,12 +223,12 @@ export function GradingSystemManager() {
             
             <div className="space-y-2">
               <Label>الصف الدراسي (اختياري)</Label>
-              <Select value={selectedGradeLevelId} onValueChange={setSelectedGradeLevelId} disabled={!selectedLevelId}>
+              <Select value={selectedGradeLevelId || "all"} onValueChange={(v) => setSelectedGradeLevelId(v === "all" ? "" : v)} disabled={!selectedLevelId}>
                 <SelectTrigger>
                   <SelectValue placeholder="كل الصفوف" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">كل الصفوف</SelectItem>
+                  <SelectItem value="all">كل الصفوف</SelectItem>
                   {gradeLevels?.map((grade) => (
                     <SelectItem key={grade.id} value={grade.id}>{grade.name_ar}</SelectItem>
                   ))}
@@ -238,12 +238,12 @@ export function GradingSystemManager() {
             
             <div className="space-y-2">
               <Label>المادة (اختياري)</Label>
-              <Select value={selectedSubjectId} onValueChange={setSelectedSubjectId} disabled={!selectedLevelId}>
+              <Select value={selectedSubjectId || "all"} onValueChange={(v) => setSelectedSubjectId(v === "all" ? "" : v)} disabled={!selectedLevelId}>
                 <SelectTrigger>
                   <SelectValue placeholder="كل المواد" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">كل المواد</SelectItem>
+                  <SelectItem value="all">كل المواد</SelectItem>
                   {subjects?.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id}>{subject.name_ar}</SelectItem>
                   ))}
@@ -542,12 +542,12 @@ export function GradingSystemManager() {
             </div>
             <div>
               <Label>الصف الهدف (اختياري)</Label>
-              <Select value={copyTarget.grade_level_id} onValueChange={(v) => setCopyTarget(prev => ({ ...prev, grade_level_id: v }))} disabled={!copyTarget.education_level_id}>
+              <Select value={copyTarget.grade_level_id || "all"} onValueChange={(v) => setCopyTarget(prev => ({ ...prev, grade_level_id: v === "all" ? "" : v }))} disabled={!copyTarget.education_level_id}>
                 <SelectTrigger>
                   <SelectValue placeholder="كل الصفوف" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">كل الصفوف</SelectItem>
+                  <SelectItem value="all">كل الصفوف</SelectItem>
                   {gradeLevels?.filter(g => g.education_level_id === copyTarget.education_level_id).map((grade) => (
                     <SelectItem key={grade.id} value={grade.id}>{grade.name_ar}</SelectItem>
                   ))}
@@ -556,12 +556,12 @@ export function GradingSystemManager() {
             </div>
             <div>
               <Label>المادة الهدف (اختياري)</Label>
-              <Select value={copyTarget.subject_id} onValueChange={(v) => setCopyTarget(prev => ({ ...prev, subject_id: v }))} disabled={!copyTarget.education_level_id}>
+              <Select value={copyTarget.subject_id || "all"} onValueChange={(v) => setCopyTarget(prev => ({ ...prev, subject_id: v === "all" ? "" : v }))} disabled={!copyTarget.education_level_id}>
                 <SelectTrigger>
                   <SelectValue placeholder="كل المواد" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">كل المواد</SelectItem>
+                  <SelectItem value="all">كل المواد</SelectItem>
                   {subjects?.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id}>{subject.name_ar}</SelectItem>
                   ))}
