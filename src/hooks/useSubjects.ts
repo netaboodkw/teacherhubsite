@@ -66,7 +66,7 @@ export function useCreateSubject() {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as Subject;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subjects'] });
