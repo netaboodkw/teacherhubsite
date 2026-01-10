@@ -270,11 +270,13 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          department_head_name: string | null
           education_level_id: string | null
           full_name: string
           id: string
           is_profile_complete: boolean | null
           phone: string | null
+          principal_name: string | null
           school_name: string | null
           subject: string | null
           subject_id: string | null
@@ -284,11 +286,13 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          department_head_name?: string | null
           education_level_id?: string | null
           full_name: string
           id?: string
           is_profile_complete?: boolean | null
           phone?: string | null
+          principal_name?: string | null
           school_name?: string | null
           subject?: string | null
           subject_id?: string | null
@@ -298,11 +302,13 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          department_head_name?: string | null
           education_level_id?: string | null
           full_name?: string
           id?: string
           is_profile_complete?: boolean | null
           phone?: string | null
+          principal_name?: string | null
           school_name?: string | null
           subject?: string | null
           subject_id?: string | null
