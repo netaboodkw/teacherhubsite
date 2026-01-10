@@ -15,7 +15,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, BookOpen, GraduationCap, Loader2, Shield, Users, ExternalLink, Layers } from 'lucide-react';
+import { Plus, Edit, Trash2, BookOpen, GraduationCap, Loader2, Shield, Users, ExternalLink, Layers, Calculator } from 'lucide-react';
+import { GradingSystemManager } from '@/components/admin/GradingSystemManager';
 
 const GRADE_TYPE_LABELS: Record<GradeType, string> = {
   exam: 'اختبار',
@@ -191,8 +192,9 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="curriculum" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsList className="grid w-full grid-cols-3 max-w-lg">
             <TabsTrigger value="curriculum">المناهج والمواد</TabsTrigger>
+            <TabsTrigger value="grading">نظام الدرجات</TabsTrigger>
             <TabsTrigger value="teachers">المعلمون</TabsTrigger>
           </TabsList>
           
@@ -398,6 +400,10 @@ export default function Admin() {
             </CardContent>
           </Card>
         </div>
+      </TabsContent>
+
+      <TabsContent value="grading" className="mt-6">
+        <GradingSystemManager />
       </TabsContent>
       
       <TabsContent value="teachers" className="mt-6">
