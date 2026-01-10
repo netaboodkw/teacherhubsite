@@ -619,6 +619,77 @@ export type Database = {
           },
         ]
       }
+      subject_grading_structures: {
+        Row: {
+          created_at: string
+          education_level_id: string | null
+          grade_level_id: string | null
+          id: string
+          is_default: boolean
+          name: string
+          name_ar: string
+          structure: Json
+          subject_id: string | null
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          education_level_id?: string | null
+          grade_level_id?: string | null
+          id?: string
+          is_default?: boolean
+          name: string
+          name_ar: string
+          structure?: Json
+          subject_id?: string | null
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          education_level_id?: string | null
+          grade_level_id?: string | null
+          id?: string
+          is_default?: boolean
+          name?: string
+          name_ar?: string
+          structure?: Json
+          subject_id?: string | null
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subject_grading_structures_education_level_id_fkey"
+            columns: ["education_level_id"]
+            isOneToOne: false
+            referencedRelation: "education_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subject_grading_structures_grade_level_id_fkey"
+            columns: ["grade_level_id"]
+            isOneToOne: false
+            referencedRelation: "grade_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subject_grading_structures_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subject_grading_structures_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "grading_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subjects: {
         Row: {
           created_at: string
