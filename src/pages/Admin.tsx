@@ -15,6 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Edit, Trash2, BookOpen, GraduationCap, Loader2, Shield, Users, ExternalLink, Layers, Calculator } from 'lucide-react';
 import { GradingSystemManager } from '@/components/admin/GradingSystemManager';
 
@@ -30,8 +31,9 @@ export default function Admin() {
   const { data: levels, isLoading: levelsLoading } = useEducationLevels();
   const { data: teachers, isLoading: teachersLoading } = useTeachers();
   const [selectedLevelId, setSelectedLevelId] = useState<string | null>(null);
+  const [selectedGradeLevelIdForSubjects, setSelectedGradeLevelIdForSubjects] = useState<string | null>(null);
   const { data: gradeLevels, isLoading: gradeLevelsLoading } = useGradeLevels(selectedLevelId || undefined);
-  const { data: subjects, isLoading: subjectsLoading } = useSubjects(selectedLevelId || undefined);
+  const { data: subjects, isLoading: subjectsLoading } = useSubjects(selectedLevelId || undefined, selectedGradeLevelIdForSubjects || undefined);
   
   // Level dialog
   const [levelDialogOpen, setLevelDialogOpen] = useState(false);
@@ -52,6 +54,7 @@ export default function Admin() {
     weeks_count: 18,
     max_score: 100,
     grade_types: ['exam', 'assignment', 'participation', 'project'] as GradeType[],
+    grade_level_id: '' as string,
   });
 
   const createLevel = useCreateEducationLevel();
@@ -141,6 +144,7 @@ export default function Admin() {
         weeks_count: subject.weeks_count,
         max_score: subject.max_score,
         grade_types: subject.grade_types || [],
+        grade_level_id: subject.grade_level_id || '',
       });
     } else {
       setEditingSubject(null);
@@ -150,6 +154,7 @@ export default function Admin() {
         weeks_count: 18,
         max_score: 100,
         grade_types: ['exam', 'assignment', 'participation', 'project'],
+        grade_level_id: selectedGradeLevelIdForSubjects || '',
       });
     }
     setSubjectDialogOpen(true);
@@ -159,11 +164,16 @@ export default function Admin() {
     if (!subjectForm.name_ar || !selectedLevelId) return;
     
     if (editingSubject) {
-      await updateSubject.mutateAsync({ id: editingSubject.id, ...subjectForm });
+      await updateSubject.mutateAsync({ 
+        id: editingSubject.id, 
+        ...subjectForm,
+        grade_level_id: subjectForm.grade_level_id || null,
+      });
     } else {
       await createSubject.mutateAsync({
         education_level_id: selectedLevelId,
         ...subjectForm,
+        grade_level_id: subjectForm.grade_level_id || null,
       });
     }
     setSubjectDialogOpen(false);
@@ -329,22 +339,45 @@ export default function Admin() {
 
           {/* Subjects */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5" />
-                المواد الدراسية
-                {selectedLevel && (
-                  <Badge variant="secondary">{selectedLevel.name_ar}</Badge>
-                )}
-              </CardTitle>
-              <Button 
-                size="sm" 
-                onClick={() => openSubjectDialog()}
-                disabled={!selectedLevelId}
-              >
-                <Plus className="h-4 w-4 ml-1" />
-                إضافة
-              </Button>
+            <CardHeader className="flex flex-col gap-3">
+              <div className="flex flex-row items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5" />
+                  المواد الدراسية
+                  {selectedLevel && (
+                    <Badge variant="secondary">{selectedLevel.name_ar}</Badge>
+                  )}
+                </CardTitle>
+                <Button 
+                  size="sm" 
+                  onClick={() => openSubjectDialog()}
+                  disabled={!selectedLevelId}
+                >
+                  <Plus className="h-4 w-4 ml-1" />
+                  إضافة
+                </Button>
+              </div>
+              {selectedLevelId && gradeLevels && gradeLevels.length > 0 && (
+                <div className="flex gap-2 flex-wrap">
+                  <Button
+                    size="sm"
+                    variant={!selectedGradeLevelIdForSubjects ? "default" : "outline"}
+                    onClick={() => setSelectedGradeLevelIdForSubjects(null)}
+                  >
+                    الكل
+                  </Button>
+                  {gradeLevels.map((grade) => (
+                    <Button
+                      key={grade.id}
+                      size="sm"
+                      variant={selectedGradeLevelIdForSubjects === grade.id ? "default" : "outline"}
+                      onClick={() => setSelectedGradeLevelIdForSubjects(grade.id)}
+                    >
+                      {grade.name_ar}
+                    </Button>
+                  ))}
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               {!selectedLevelId ? (
@@ -361,40 +394,48 @@ export default function Admin() {
                 </p>
               ) : (
                 <div className="space-y-2">
-                  {subjects?.map((subject) => (
-                    <div
-                      key={subject.id}
-                      className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted"
-                    >
-                      <div>
-                        <span className="font-medium">{subject.name_ar}</span>
-                        <div className="flex gap-1 mt-1">
-                          <Badge variant="outline" className="text-xs">
-                            {subject.weeks_count} أسبوع
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            {subject.max_score} درجة
-                          </Badge>
+                  {subjects?.map((subject) => {
+                    const subjectGradeLevel = gradeLevels?.find(g => g.id === subject.grade_level_id);
+                    return (
+                      <div
+                        key={subject.id}
+                        className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted"
+                      >
+                        <div>
+                          <span className="font-medium">{subject.name_ar}</span>
+                          <div className="flex gap-1 mt-1 flex-wrap">
+                            {subjectGradeLevel && (
+                              <Badge className="text-xs">
+                                {subjectGradeLevel.name_ar}
+                              </Badge>
+                            )}
+                            <Badge variant="outline" className="text-xs">
+                              {subject.weeks_count} أسبوع
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {subject.max_score} درجة
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openSubjectDialog(subject)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => deleteSubject.mutate(subject.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openSubjectDialog(subject)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteSubject.mutate(subject.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
@@ -574,6 +615,23 @@ export default function Admin() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <div>
+              <Label>الصف الدراسي (اختياري - اتركه فارغاً لجميع الصفوف)</Label>
+              <Select 
+                value={subjectForm.grade_level_id || ''} 
+                onValueChange={(v) => setSubjectForm(prev => ({ ...prev, grade_level_id: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="جميع الصفوف" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">جميع الصفوف</SelectItem>
+                  {gradeLevels?.map((grade) => (
+                    <SelectItem key={grade.id} value={grade.id}>{grade.name_ar}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div>
               <Label>الاسم بالعربية</Label>
               <Input

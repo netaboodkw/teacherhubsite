@@ -623,6 +623,7 @@ export type Database = {
         Row: {
           created_at: string
           education_level_id: string
+          grade_level_id: string | null
           grade_types: Json
           id: string
           is_active: boolean
@@ -635,6 +636,7 @@ export type Database = {
         Insert: {
           created_at?: string
           education_level_id: string
+          grade_level_id?: string | null
           grade_types?: Json
           id?: string
           is_active?: boolean
@@ -647,6 +649,7 @@ export type Database = {
         Update: {
           created_at?: string
           education_level_id?: string
+          grade_level_id?: string | null
           grade_types?: Json
           id?: string
           is_active?: boolean
@@ -662,6 +665,13 @@ export type Database = {
             columns: ["education_level_id"]
             isOneToOne: false
             referencedRelation: "education_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subjects_grade_level_id_fkey"
+            columns: ["grade_level_id"]
+            isOneToOne: false
+            referencedRelation: "grade_levels"
             referencedColumns: ["id"]
           },
         ]

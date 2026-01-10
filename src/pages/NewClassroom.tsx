@@ -26,7 +26,8 @@ export default function NewClassroom() {
   const { data: levels, isLoading: levelsLoading } = useEducationLevels();
   const [selectedLevelId, setSelectedLevelId] = useState('');
   const { data: gradeLevels, isLoading: gradeLevelsLoading } = useGradeLevels(selectedLevelId || undefined);
-  const { data: subjects, isLoading: subjectsLoading } = useSubjects(selectedLevelId || undefined);
+  const [selectedGradeLevelId, setSelectedGradeLevelId] = useState('');
+  const { data: subjects, isLoading: subjectsLoading } = useSubjects(selectedLevelId || undefined, selectedGradeLevelId || undefined);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -123,7 +124,10 @@ export default function NewClassroom() {
               <Label>الصف الدراسي</Label>
               <Select 
                 value={formData.grade_level_id} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, grade_level_id: value }))}
+                onValueChange={(value) => {
+                  setFormData(prev => ({ ...prev, grade_level_id: value, subject_id: '', subject: '' }));
+                  setSelectedGradeLevelId(value);
+                }}
                 disabled={!selectedLevelId}
               >
                 <SelectTrigger>
@@ -150,11 +154,11 @@ export default function NewClassroom() {
               <Select 
                 value={formData.subject_id} 
                 onValueChange={(value) => setFormData(prev => ({ ...prev, subject_id: value }))}
-                disabled={!selectedLevelId}
+                disabled={!formData.grade_level_id}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={
-                    !selectedLevelId ? "اختر المرحلة أولاً" : 
+                    !formData.grade_level_id ? "اختر الصف أولاً" : 
                     subjectsLoading ? "جاري التحميل..." : 
                     subjects?.length === 0 ? "لا توجد مواد" :
                     "اختر المادة"
