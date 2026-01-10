@@ -11,16 +11,18 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useIsAdmin } from '@/hooks/useUserRole';
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const navItems = [
+const baseNavItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم' },
   { href: '/classrooms', icon: GraduationCap, label: 'الصفوف' },
   { href: '/students', icon: Users, label: 'الطلاب' },
@@ -29,9 +31,14 @@ const navItems = [
   { href: '/reports', icon: BarChart3, label: 'التقارير' },
 ];
 
+const adminNavItem = { href: '/admin', icon: Shield, label: 'لوحة الإدارة' };
+
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+  const { isAdmin } = useIsAdmin();
+
+  const navItems = isAdmin ? [...baseNavItems, adminNavItem] : baseNavItems;
 
   return (
     <>
