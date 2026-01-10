@@ -4,6 +4,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { useIsAdmin } from '@/hooks/useUserRole';
 import { useEducationLevels, useCreateEducationLevel, useUpdateEducationLevel, useDeleteEducationLevel } from '@/hooks/useEducationLevels';
 import { useSubjects, useCreateSubject, useUpdateSubject, useDeleteSubject, GradeType } from '@/hooks/useSubjects';
+import { useTeachers } from '@/hooks/useTeachers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +12,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, BookOpen, GraduationCap, Loader2, Shield } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Edit, Trash2, BookOpen, GraduationCap, Loader2, Shield, Users, ExternalLink } from 'lucide-react';
 
 const GRADE_TYPE_LABELS: Record<GradeType, string> = {
   exam: 'اختبار',
@@ -23,6 +26,7 @@ const GRADE_TYPE_LABELS: Record<GradeType, string> = {
 export default function Admin() {
   const { isAdmin, isLoading: roleLoading } = useIsAdmin();
   const { data: levels, isLoading: levelsLoading } = useEducationLevels();
+  const { data: teachers, isLoading: teachersLoading } = useTeachers();
   const [selectedLevelId, setSelectedLevelId] = useState<string | null>(null);
   const { data: subjects, isLoading: subjectsLoading } = useSubjects(selectedLevelId || undefined);
   
@@ -141,11 +145,18 @@ export default function Admin() {
           <Shield className="h-8 w-8 text-primary" />
           <div>
             <h1 className="text-2xl font-bold">لوحة الإدارة</h1>
-            <p className="text-muted-foreground">إدارة المراحل التعليمية والمواد</p>
+            <p className="text-muted-foreground">إدارة المراحل التعليمية والمواد والمعلمين</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Tabs defaultValue="curriculum" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsTrigger value="curriculum">المناهج والمواد</TabsTrigger>
+            <TabsTrigger value="teachers">المعلمون</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="curriculum" className="mt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Education Levels */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -278,6 +289,82 @@ export default function Admin() {
             </CardContent>
           </Card>
         </div>
+      </TabsContent>
+      
+      <TabsContent value="teachers" className="mt-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              المعلمون المسجلون
+              <Badge variant="secondary">{teachers?.length || 0}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {teachersLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : teachers?.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                لا يوجد معلمون مسجلون بعد
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {teachers?.map((teacher) => (
+                  <div
+                    key={teacher.id}
+                    className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={teacher.avatar_url || ''} />
+                        <AvatarFallback>
+                          {teacher.full_name?.charAt(0) || 'م'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h3 className="font-medium">{teacher.full_name}</h3>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {teacher.school_name && (
+                            <Badge variant="outline" className="text-xs">
+                              {teacher.school_name}
+                            </Badge>
+                          )}
+                          {teacher.education_level_name && (
+                            <Badge variant="secondary" className="text-xs">
+                              {teacher.education_level_name}
+                            </Badge>
+                          )}
+                          {teacher.subject_name && (
+                            <Badge className="text-xs">
+                              {teacher.subject_name}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          تاريخ التسجيل: {new Date(teacher.created_at).toLocaleDateString('ar-SA')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {!teacher.is_profile_complete && (
+                        <Badge variant="destructive" className="text-xs">
+                          غير مكتمل
+                        </Badge>
+                      )}
+                      <Button variant="ghost" size="icon" title="عرض لوحة التحكم">
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Level Dialog */}
