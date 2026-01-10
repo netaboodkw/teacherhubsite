@@ -11,10 +11,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { 
   ArrowRight, User, Plus, Minus, MessageSquare, Save, Loader2, 
-  Grid3X3, Move, Check, X, Clock, FileText, ClipboardCheck 
+  Move, Check, X, Clock, FileText, ClipboardCheck, Users
 } from 'lucide-react';
 
 interface StudentPosition {
@@ -58,9 +59,9 @@ export default function ClassroomView() {
   const [noteDescription, setNoteDescription] = useState('');
   const [saving, setSaving] = useState(false);
   const [loadingPositions, setLoadingPositions] = useState(true);
-  const [showGrid, setShowGrid] = useState(true);
   const [activeTab, setActiveTab] = useState<'arrange' | 'attendance'>('arrange');
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [selectedPeriod, setSelectedPeriod] = useState<number>(1);
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
     studentId: null,
@@ -113,7 +114,7 @@ export default function ClassroomView() {
     }
   }, [classroomId, students, user, loadingStudents]);
 
-  // Load today's attendance
+  // Load attendance for selected period
   useEffect(() => {
     const loadAttendance = async () => {
       if (!classroomId || !user) return;
@@ -123,7 +124,8 @@ export default function ClassroomView() {
           .from('attendance_records')
           .select('student_id, status')
           .eq('classroom_id', classroomId)
-          .eq('date', today);
+          .eq('date', today)
+          .eq('period', selectedPeriod);
 
         if (error) throw error;
 
@@ -132,6 +134,8 @@ export default function ClassroomView() {
             student_id: r.student_id,
             status: r.status as AttendanceRecord['status'],
           })));
+        } else {
+          setAttendanceRecords([]);
         }
       } catch (error) {
         console.error('Error loading attendance:', error);
@@ -139,7 +143,7 @@ export default function ClassroomView() {
     };
 
     loadAttendance();
-  }, [classroomId, user, today]);
+  }, [classroomId, user, today, selectedPeriod]);
 
   const snapToGrid = (value: number) => {
     return Math.round(value / GRID_SIZE) * GRID_SIZE;
@@ -243,6 +247,14 @@ export default function ClassroomView() {
     }
   };
 
+  const setAllAttendance = (status: AttendanceRecord['status']) => {
+    const allRecords = students.map(s => ({
+      student_id: s.id,
+      status,
+    }));
+    setAttendanceRecords(allRecords);
+  };
+
   const getAttendanceIcon = (status: AttendanceRecord['status'] | null) => {
     switch (status) {
       case 'present': return <Check className="h-4 w-4 text-green-600" />;
@@ -300,12 +312,13 @@ export default function ClassroomView() {
 
     setSaving(true);
     try {
-      // Delete today's records for this classroom
+      // Delete records for this classroom, date, and period
       await supabase
         .from('attendance_records')
         .delete()
         .eq('classroom_id', classroomId)
-        .eq('date', today);
+        .eq('date', today)
+        .eq('period', selectedPeriod);
 
       if (attendanceRecords.length > 0) {
         const recordsToInsert = attendanceRecords.map(r => ({
@@ -314,6 +327,7 @@ export default function ClassroomView() {
           user_id: user.id,
           date: today,
           status: r.status,
+          period: selectedPeriod,
         }));
 
         const { error } = await supabase
@@ -323,7 +337,7 @@ export default function ClassroomView() {
         if (error) throw error;
       }
 
-      toast.success('تم حفظ الحضور بنجاح');
+      toast.success(`تم حفظ حضور الحصة ${selectedPeriod} بنجاح`);
     } catch (error: any) {
       toast.error(error.message || 'حدث خطأ أثناء الحفظ');
     } finally {
@@ -396,17 +410,6 @@ export default function ClassroomView() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {activeTab === 'arrange' && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowGrid(!showGrid)}
-                className={showGrid ? 'bg-primary/10' : ''}
-              >
-                <Grid3X3 className="h-4 w-4 ml-1" />
-                شبكة
-              </Button>
-            )}
             <Button 
               onClick={activeTab === 'arrange' ? savePositions : saveAttendance} 
               disabled={saving}
@@ -460,24 +463,78 @@ export default function ClassroomView() {
             )}
           </div>
 
-          {/* Attendance Legend */}
+          {/* Period Selection & Bulk Actions */}
           {activeTab === 'attendance' && (
-            <div className="flex items-center justify-center gap-4 mb-4 text-xs">
-              <div className="flex items-center gap-1">
-                <div className="w-4 h-4 rounded border-2 border-green-500 bg-green-50" />
-                <span>حاضر</span>
+            <div className="space-y-4 mb-4">
+              {/* Period Selection */}
+              <div className="flex items-center justify-center gap-4">
+                <Label className="text-sm font-medium">الحصة:</Label>
+                <Select value={String(selectedPeriod)} onValueChange={(v) => setSelectedPeriod(Number(v))}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">الحصة 1</SelectItem>
+                    <SelectItem value="2">الحصة 2</SelectItem>
+                    <SelectItem value="3">الحصة 3</SelectItem>
+                    <SelectItem value="4">الحصة 4</SelectItem>
+                    <SelectItem value="5">الحصة 5</SelectItem>
+                    <SelectItem value="6">الحصة 6</SelectItem>
+                    <SelectItem value="7">الحصة 7</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="flex items-center gap-1">
-                <div className="w-4 h-4 rounded border-2 border-red-500 bg-red-50" />
-                <span>غائب</span>
+
+              {/* Bulk Attendance Actions */}
+              <div className="flex items-center justify-center gap-2 flex-wrap">
+                <span className="text-sm text-muted-foreground ml-2">تسجيل جماعي:</span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-1 border-green-500 text-green-600 hover:bg-green-50"
+                  onClick={() => setAllAttendance('present')}
+                >
+                  <Check className="h-3 w-3" />
+                  الكل حاضر
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-1 border-red-500 text-red-600 hover:bg-red-50"
+                  onClick={() => setAllAttendance('absent')}
+                >
+                  <X className="h-3 w-3" />
+                  الكل غائب
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-1 border-yellow-500 text-yellow-600 hover:bg-yellow-50"
+                  onClick={() => setAllAttendance('late')}
+                >
+                  <Clock className="h-3 w-3" />
+                  الكل متأخر
+                </Button>
               </div>
-              <div className="flex items-center gap-1">
-                <div className="w-4 h-4 rounded border-2 border-yellow-500 bg-yellow-50" />
-                <span>متأخر</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-4 h-4 rounded border-2 border-blue-500 bg-blue-50" />
-                <span>عذر</span>
+
+              {/* Legend */}
+              <div className="flex items-center justify-center gap-4 text-xs">
+                <div className="flex items-center gap-1">
+                  <div className="w-4 h-4 rounded border-2 border-green-500 bg-green-50" />
+                  <span>حاضر</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-4 h-4 rounded border-2 border-red-500 bg-red-50" />
+                  <span>غائب</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-4 h-4 rounded border-2 border-yellow-500 bg-yellow-50" />
+                  <span>متأخر</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-4 h-4 rounded border-2 border-blue-500 bg-blue-50" />
+                  <span>عذر</span>
+                </div>
               </div>
             </div>
           )}
@@ -504,14 +561,7 @@ export default function ClassroomView() {
                 ) : (
                   <div
                     ref={containerRef}
-                    className="relative min-h-[500px] touch-none select-none"
-                    style={{
-                      backgroundImage: showGrid 
-                        ? `linear-gradient(to right, hsl(var(--muted)) 1px, transparent 1px),
-                           linear-gradient(to bottom, hsl(var(--muted)) 1px, transparent 1px)`
-                        : 'none',
-                      backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
-                    }}
+                    className="relative min-h-[500px] touch-none select-none bg-muted/20"
                     onPointerMove={handlePointerMove}
                     onPointerUp={handlePointerUp}
                     onPointerLeave={handlePointerUp}
@@ -584,14 +634,7 @@ export default function ClassroomView() {
                 ) : (
                   <div
                     ref={containerRef}
-                    className="relative min-h-[500px] select-none"
-                    style={{
-                      backgroundImage: showGrid 
-                        ? `linear-gradient(to right, hsl(var(--muted)) 1px, transparent 1px),
-                           linear-gradient(to bottom, hsl(var(--muted)) 1px, transparent 1px)`
-                        : 'none',
-                      backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
-                    }}
+                    className="relative min-h-[500px] select-none bg-muted/20"
                   >
                     {students.map((student) => {
                       const pos = getStudentPosition(student.id);
