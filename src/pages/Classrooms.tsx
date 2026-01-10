@@ -1,4 +1,4 @@
-import { MainLayout } from '@/components/layout/MainLayout';
+import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { ClassroomCard } from '@/components/dashboard/ClassroomCard';
 import { EmptyState } from '@/components/common/EmptyState';
 import { useClassrooms } from '@/hooks/useClassrooms';
@@ -18,16 +18,16 @@ export default function Classrooms() {
 
   if (isLoading) {
     return (
-      <MainLayout>
+      <TeacherLayout>
         <div className="flex items-center justify-center min-h-[50vh]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
-      </MainLayout>
+      </TeacherLayout>
     );
   }
 
   return (
-    <MainLayout>
+    <TeacherLayout>
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -35,7 +35,7 @@ export default function Classrooms() {
             <h1 className="text-2xl lg:text-3xl font-bold text-foreground">الصفوف الدراسية</h1>
             <p className="text-muted-foreground mt-1">إدارة جميع صفوفك الدراسية</p>
           </div>
-          <Link to="/classrooms/new">
+          <Link to="/teacher/classrooms/new">
             <Button className="gradient-hero shadow-md hover:shadow-lg transition-shadow">
               <Plus className="w-4 h-4 ml-2" />
               صف جديد
@@ -58,7 +58,7 @@ export default function Classrooms() {
         {filteredClassrooms.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredClassrooms.map((classroom) => (
-              <ClassroomCard key={classroom.id} classroom={classroom} />
+              <ClassroomCard key={classroom.id} classroom={classroom} basePath="/teacher" />
             ))}
           </div>
         ) : (
@@ -71,6 +71,6 @@ export default function Classrooms() {
           />
         )}
       </div>
-    </MainLayout>
+    </TeacherLayout>
   );
 }

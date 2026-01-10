@@ -1,4 +1,4 @@
-import { MainLayout } from '@/components/layout/MainLayout';
+import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { StudentCard } from '@/components/students/StudentCard';
 import { ImportStudentsDialog } from '@/components/students/ImportStudentsDialog';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -33,16 +33,16 @@ export default function Students() {
 
   if (isLoading) {
     return (
-      <MainLayout>
+      <TeacherLayout>
         <div className="flex items-center justify-center min-h-[50vh]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
-      </MainLayout>
+      </TeacherLayout>
     );
   }
 
   return (
-    <MainLayout>
+    <TeacherLayout>
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -58,7 +58,7 @@ export default function Students() {
               <Upload className="w-4 h-4 ml-2" />
               استيراد
             </Button>
-            <Link to="/students/new">
+            <Link to="/teacher/students/new">
               <Button className="gradient-hero shadow-md hover:shadow-lg transition-shadow">
                 <Plus className="w-4 h-4 ml-2" />
                 طالب جديد
@@ -101,7 +101,7 @@ export default function Students() {
               <div key={student.id} className="relative">
                 <StudentCard 
                   student={student} 
-                  onClick={() => navigate(`/students/${student.id}`)}
+                  onClick={() => navigate(`/teacher/students/${student.id}`)}
                 />
                 <span className="absolute top-2 left-2 text-xs bg-muted px-2 py-1 rounded-full text-muted-foreground">
                   {getClassroomName(student.classroom_id)}
@@ -125,6 +125,6 @@ export default function Students() {
         onOpenChange={setImportDialogOpen}
         defaultClassroomId={selectedClassroom !== 'all' ? selectedClassroom : undefined}
       />
-    </MainLayout>
+    </TeacherLayout>
   );
 }

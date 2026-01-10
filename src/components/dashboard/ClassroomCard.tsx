@@ -6,13 +6,15 @@ import { cn } from '@/lib/utils';
 
 interface ClassroomCardProps {
   classroom: Classroom;
+  basePath?: string;
 }
 
-export function ClassroomCard({ classroom }: ClassroomCardProps) {
+export function ClassroomCard({ classroom, basePath = '' }: ClassroomCardProps) {
   const { data: students = [] } = useStudents(classroom.id);
+  const linkPath = basePath ? `${basePath}/classrooms/${classroom.id}` : `/classrooms/${classroom.id}`;
   
   return (
-    <Link to={`/classrooms/${classroom.id}`}>
+    <Link to={linkPath}>
       <div className="group relative overflow-hidden rounded-2xl bg-card p-6 shadow-sm border border-border hover:shadow-lg hover:border-primary/20 transition-all duration-300">
         {/* Color indicator */}
         <div className={cn(
