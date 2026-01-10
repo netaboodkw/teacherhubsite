@@ -175,8 +175,13 @@ export default function ClassroomView() {
     let newX = dragState.offsetX + deltaX;
     let newY = dragState.offsetY + deltaY;
 
-    newX = Math.max(0, Math.min(newX, containerRect.width - STUDENT_SIZE));
-    newY = Math.max(0, Math.min(newY, containerRect.height - STUDENT_SIZE));
+    // Always snap to grid while dragging (Snapchat-like behavior)
+    newX = snapToGrid(newX);
+    newY = snapToGrid(newY);
+
+    // Constrain to container
+    newX = Math.max(0, Math.min(newX, snapToGrid(containerRect.width - STUDENT_SIZE)));
+    newY = Math.max(0, Math.min(newY, snapToGrid(containerRect.height - STUDENT_SIZE)));
 
     setPositions(prev =>
       prev.map(p =>
@@ -190,15 +195,7 @@ export default function ClassroomView() {
   const handlePointerUp = () => {
     if (!dragState.isDragging || !dragState.studentId) return;
 
-    if (showGrid) {
-      setPositions(prev =>
-        prev.map(p =>
-          p.student_id === dragState.studentId
-            ? { ...p, position_x: snapToGrid(p.position_x), position_y: snapToGrid(p.position_y) }
-            : p
-        )
-      );
-    }
+    // Already snapped during drag, no need to snap again
 
     setDragState({
       isDragging: false,
