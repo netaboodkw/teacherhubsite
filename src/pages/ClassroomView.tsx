@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStudents } from '@/hooks/useStudents';
 import { useClassroom } from '@/hooks/useClassrooms';
@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
-import { ArrowRight, User, Plus, Minus, MessageSquare, Save, Loader2 } from 'lucide-react';
+import { ArrowRight, User, Plus, Minus, MessageSquare, Save, Loader2, Grid3X3, Move } from 'lucide-react';
 
 interface StudentPosition {
   student_id: string;
@@ -25,12 +25,22 @@ interface SelectedStudent {
   avatar_url: string | null;
 }
 
+interface DragState {
+  isDragging: boolean;
+  studentId: string | null;
+  startX: number;
+  startY: number;
+  offsetX: number;
+  offsetY: number;
+}
+
 export default function ClassroomView() {
   const { classroomId } = useParams<{ classroomId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: classroom, isLoading: loadingClassroom } = useClassroom(classroomId || '');
   const { data: students = [], isLoading: loadingStudents } = useStudents(classroomId);
+  const containerRef = useRef<HTMLDivElement>(null);
   
   const [positions, setPositions] = useState<StudentPosition[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<SelectedStudent | null>(null);
@@ -38,6 +48,18 @@ export default function ClassroomView() {
   const [noteDescription, setNoteDescription] = useState('');
   const [saving, setSaving] = useState(false);
   const [loadingPositions, setLoadingPositions] = useState(true);
+  const [showGrid, setShowGrid] = useState(true);
+  const [dragState, setDragState] = useState<DragState>({
+    isDragging: false,
+    studentId: null,
+    startX: 0,
+    startY: 0,
+    offsetX: 0,
+    offsetY: 0,
+  });
+
+  const GRID_SIZE = 80;
+  const STUDENT_SIZE = 70;
 
   // Load existing positions
   useEffect(() => {
@@ -56,10 +78,11 @@ export default function ClassroomView() {
           setPositions(data);
         } else if (students.length > 0) {
           // Initialize default positions in a grid
+          const cols = 5;
           const defaultPositions = students.map((student, index) => ({
             student_id: student.id,
-            position_x: (index % 5) * 120 + 50,
-            position_y: Math.floor(index / 5) * 120 + 50,
+            position_x: (index % cols) * GRID_SIZE + 20,
+            position_y: Math.floor(index / cols) * GRID_SIZE + 20,
           }));
           setPositions(defaultPositions);
         }
@@ -77,32 +100,82 @@ export default function ClassroomView() {
     }
   }, [classroomId, students, user, loadingStudents]);
 
-  const handleDragStart = (e: React.DragEvent, studentId: string) => {
-    e.dataTransfer.setData('studentId', studentId);
+  const snapToGrid = (value: number) => {
+    return Math.round(value / GRID_SIZE) * GRID_SIZE;
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handlePointerDown = (e: React.PointerEvent, studentId: string) => {
     e.preventDefault();
-    const studentId = e.dataTransfer.getData('studentId');
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left - 40;
-    const y = e.clientY - rect.top - 40;
+    const target = e.currentTarget as HTMLElement;
+    target.setPointerCapture(e.pointerId);
+    
+    const pos = positions.find(p => p.student_id === studentId);
+    if (!pos) return;
 
-    setPositions(prev => {
-      const existing = prev.find(p => p.student_id === studentId);
-      if (existing) {
-        return prev.map(p =>
-          p.student_id === studentId
-            ? { ...p, position_x: Math.max(0, x), position_y: Math.max(0, y) }
-            : p
-        );
-      }
-      return [...prev, { student_id: studentId, position_x: x, position_y: y }];
+    setDragState({
+      isDragging: true,
+      studentId,
+      startX: e.clientX,
+      startY: e.clientY,
+      offsetX: pos.position_x,
+      offsetY: pos.position_y,
     });
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!dragState.isDragging || !dragState.studentId || !containerRef.current) return;
+
+    const deltaX = e.clientX - dragState.startX;
+    const deltaY = e.clientY - dragState.startY;
+    
+    const containerRect = containerRef.current.getBoundingClientRect();
+    let newX = dragState.offsetX + deltaX;
+    let newY = dragState.offsetY + deltaY;
+
+    // Constrain to container
+    newX = Math.max(0, Math.min(newX, containerRect.width - STUDENT_SIZE));
+    newY = Math.max(0, Math.min(newY, containerRect.height - STUDENT_SIZE));
+
+    setPositions(prev =>
+      prev.map(p =>
+        p.student_id === dragState.studentId
+          ? { ...p, position_x: newX, position_y: newY }
+          : p
+      )
+    );
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (!dragState.isDragging || !dragState.studentId) return;
+
+    // Snap to grid on release
+    if (showGrid) {
+      setPositions(prev =>
+        prev.map(p =>
+          p.student_id === dragState.studentId
+            ? { ...p, position_x: snapToGrid(p.position_x), position_y: snapToGrid(p.position_y) }
+            : p
+        )
+      );
+    }
+
+    setDragState({
+      isDragging: false,
+      studentId: null,
+      startX: 0,
+      startY: 0,
+      offsetX: 0,
+      offsetY: 0,
+    });
+  };
+
+  const handleStudentTap = (student: SelectedStudent) => {
+    // Only open dialog if not dragging
+    if (!dragState.isDragging) {
+      setSelectedStudent(student);
+      setNoteType('positive');
+      setNoteDescription('');
+    }
   };
 
   const savePositions = async () => {
@@ -110,13 +183,11 @@ export default function ClassroomView() {
 
     setSaving(true);
     try {
-      // Delete existing positions
       await supabase
         .from('student_positions')
         .delete()
         .eq('classroom_id', classroomId);
 
-      // Insert new positions
       const positionsToInsert = positions.map(p => ({
         student_id: p.student_id,
         classroom_id: classroomId,
@@ -137,12 +208,6 @@ export default function ClassroomView() {
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleStudentClick = (student: SelectedStudent) => {
-    setSelectedStudent(student);
-    setNoteType('positive');
-    setNoteDescription('');
   };
 
   const saveNote = async () => {
@@ -166,7 +231,6 @@ export default function ClassroomView() {
       if (error) throw error;
 
       toast.success('تم حفظ الملاحظة بنجاح');
-
       setSelectedStudent(null);
       setNoteDescription('');
     } catch (error: any) {
@@ -199,7 +263,7 @@ export default function ClassroomView() {
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       {/* Header */}
-      <div className="bg-card border-b p-4">
+      <div className="bg-card border-b p-4 sticky top-0 z-10">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => navigate('/classrooms')}>
@@ -210,39 +274,50 @@ export default function ClassroomView() {
               <p className="text-sm text-muted-foreground">{classroom.subject}</p>
             </div>
           </div>
-          <Button onClick={savePositions} disabled={saving}>
-            {saving ? (
-              <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="ml-2 h-4 w-4" />
-            )}
-            حفظ الترتيب
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowGrid(!showGrid)}
+              className={showGrid ? 'bg-primary/10' : ''}
+            >
+              <Grid3X3 className="h-4 w-4 ml-1" />
+              شبكة
+            </Button>
+            <Button onClick={savePositions} disabled={saving}>
+              {saving ? (
+                <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="ml-2 h-4 w-4" />
+              )}
+              حفظ
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Classroom Area */}
       <div className="container mx-auto p-4">
         {/* Whiteboard */}
-        <Card className="mb-6 bg-muted">
-          <CardContent className="p-8 text-center">
-            <div className="bg-background border-2 border-dashed rounded-lg p-6">
-              <p className="text-lg font-medium text-muted-foreground">السبورة</p>
+        <Card className="mb-4 bg-muted/50">
+          <CardContent className="p-4 text-center">
+            <div className="bg-background border-2 border-dashed rounded-lg py-4">
+              <p className="text-muted-foreground font-medium">السبورة</p>
             </div>
           </CardContent>
         </Card>
 
+        {/* Instructions */}
+        <div className="flex items-center justify-center gap-2 mb-4 text-sm text-muted-foreground">
+          <Move className="h-4 w-4" />
+          <span>اسحب الطالب لتحريكه • اضغط عليه لإضافة ملاحظة</span>
+        </div>
+
         {/* Students Area */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">الطلاب</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              اسحب الطلاب لترتيبهم • اضغط على طالب لإضافة ملاحظة
-            </p>
-          </CardHeader>
-          <CardContent>
+        <Card className="overflow-hidden">
+          <CardContent className="p-0">
             {loadingPositions || loadingStudents ? (
-              <div className="flex items-center justify-center h-[400px]">
+              <div className="flex items-center justify-center h-[500px]">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
             ) : students.length === 0 ? (
@@ -259,41 +334,60 @@ export default function ClassroomView() {
               </div>
             ) : (
               <div
-                className="relative bg-muted/30 rounded-lg min-h-[500px] overflow-hidden"
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
+                ref={containerRef}
+                className="relative min-h-[500px] touch-none select-none"
+                style={{
+                  backgroundImage: showGrid 
+                    ? `linear-gradient(to right, hsl(var(--muted)) 1px, transparent 1px),
+                       linear-gradient(to bottom, hsl(var(--muted)) 1px, transparent 1px)`
+                    : 'none',
+                  backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
+                }}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerLeave={handlePointerUp}
               >
                 {students.map((student) => {
                   const pos = getStudentPosition(student.id);
+                  const isDragging = dragState.studentId === student.id;
+                  
                   return (
                     <div
                       key={student.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, student.id)}
-                      onClick={() => handleStudentClick({
+                      className={`absolute transition-transform touch-none ${
+                        isDragging 
+                          ? 'scale-110 z-50 cursor-grabbing' 
+                          : 'cursor-grab hover:scale-105'
+                      }`}
+                      style={{
+                        left: pos.position_x,
+                        top: pos.position_y,
+                        width: STUDENT_SIZE,
+                        transition: isDragging ? 'none' : 'transform 0.15s ease-out',
+                      }}
+                      onPointerDown={(e) => handlePointerDown(e, student.id)}
+                      onClick={() => !isDragging && handleStudentTap({
                         id: student.id,
                         name: student.name,
                         avatar_url: student.avatar_url,
                       })}
-                      className="absolute cursor-pointer transition-shadow hover:shadow-lg"
-                      style={{
-                        left: pos.position_x,
-                        top: pos.position_y,
-                      }}
                     >
-                      <div className="flex flex-col items-center p-2 bg-card rounded-lg border shadow-sm w-20">
-                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-2">
+                      <div className={`flex flex-col items-center p-2 bg-card rounded-xl border-2 shadow-md ${
+                        isDragging ? 'border-primary shadow-lg' : 'border-transparent'
+                      }`}>
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-1">
                           {student.avatar_url ? (
                             <img
                               src={student.avatar_url}
                               alt={student.name}
                               className="w-full h-full object-cover"
+                              draggable={false}
                             />
                           ) : (
-                            <User className="h-6 w-6 text-primary" />
+                            <User className="h-5 w-5 text-primary" />
                           )}
                         </div>
-                        <p className="text-xs text-center font-medium truncate w-full">
+                        <p className="text-xs text-center font-medium truncate w-full px-1">
                           {student.name.split(' ')[0]}
                         </p>
                       </div>
