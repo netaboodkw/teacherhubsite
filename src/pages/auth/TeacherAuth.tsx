@@ -9,22 +9,34 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { Phone, ArrowLeft, Loader2, GraduationCap } from 'lucide-react';
 import heroBg from '@/assets/hero-bg.jpg';
+import { supabase } from '@/integrations/supabase/client';
 
 const DEFAULT_OTP = '12345';
+const KUWAIT_PHONE_REGEX = /^[569]\d{7}$/;
 
 export default function TeacherAuth() {
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
   const navigate = useNavigate();
   const { signIn, signUp } = useAuth();
+
+  const validateKuwaitiPhone = (phoneNumber: string): boolean => {
+    return KUWAIT_PHONE_REGEX.test(phoneNumber);
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 8);
+    setPhone(value);
+  };
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!phone || phone.length < 9) {
-      toast.error('يرجى إدخال رقم هاتف صحيح');
+    if (!validateKuwaitiPhone(phone)) {
+      toast.error('يرجى إدخال رقم هاتف كويتي صحيح (8 أرقام يبدأ بـ 5 أو 6 أو 9)');
       return;
     }
 
@@ -34,19 +46,35 @@ export default function TeacherAuth() {
       const emailFromPhone = `${phone}@phone.teacherhub.app`;
       const passwordFromPhone = `phone_${phone}_secure_2024`;
       
+      // Try to sign in first to check if user exists
       const { error: signInError } = await signIn(emailFromPhone, passwordFromPhone);
       
       if (!signInError) {
-        toast.success('مرحباً بعودتك!');
-        navigate('/teacher');
+        // Existing user - check if profile is complete
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_profile_complete')
+          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+          .single();
+        
+        if (profile?.is_profile_complete) {
+          toast.success('مرحباً بعودتك!');
+          navigate('/teacher');
+        } else {
+          navigate('/complete-profile');
+        }
         return;
       }
       
+      // User doesn't exist - mark as new user and proceed to OTP
+      setIsNewUser(true);
       await new Promise(resolve => setTimeout(resolve, 500));
       
       toast.success(`تم إرسال رمز التحقق إلى ${phone}`);
       setStep('otp');
     } catch (error) {
+      // If sign in failed, proceed to OTP (new user flow)
+      setIsNewUser(true);
       toast.success(`تم إرسال رمز التحقق إلى ${phone}`);
       setStep('otp');
     } finally {
@@ -113,13 +141,17 @@ export default function TeacherAuth() {
                     <Input
                       id="phone"
                       type="tel"
-                      placeholder="05xxxxxxxx"
+                      placeholder="9xxxxxxx"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={handlePhoneChange}
                       className="pr-10"
                       dir="ltr"
+                      maxLength={8}
                     />
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    رقم هاتف كويتي من 8 أرقام (يبدأ بـ 5 أو 6 أو 9)
+                  </p>
                 </div>
                 <Button type="submit" className="w-full gradient-hero h-12" disabled={loading}>
                   {loading ? (
