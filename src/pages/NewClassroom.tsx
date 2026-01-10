@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ClassScheduleEditor, ClassSchedule } from '@/components/classrooms/ClassScheduleEditor';
 import { ArrowRight, GraduationCap, Loader2 } from 'lucide-react';
 
 const colorOptions = [
@@ -24,10 +25,14 @@ export default function NewClassroom() {
     schedule: '',
     color: 'bg-primary',
   });
+  const [classSchedule, setClassSchedule] = useState<ClassSchedule>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createClassroom.mutateAsync(formData);
+    await createClassroom.mutateAsync({
+      ...formData,
+      class_schedule: classSchedule,
+    });
     navigate('/classrooms');
   };
 
@@ -79,15 +84,11 @@ export default function NewClassroom() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="schedule">الجدول الزمني</Label>
-              <Input
-                id="schedule"
-                placeholder="مثال: الأحد، الثلاثاء، الخميس"
-                value={formData.schedule}
-                onChange={(e) => setFormData({ ...formData, schedule: e.target.value })}
-              />
-            </div>
+            {/* Schedule Editor */}
+            <ClassScheduleEditor
+              value={classSchedule}
+              onChange={setClassSchedule}
+            />
 
             <div className="space-y-2">
               <Label>لون الصف</Label>

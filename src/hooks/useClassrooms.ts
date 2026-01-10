@@ -2,6 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export interface ClassSchedule {
+  [day: string]: number[];
+}
+
 export interface Classroom {
   id: string;
   user_id: string;
@@ -9,6 +13,7 @@ export interface Classroom {
   subject: string;
   schedule: string | null;
   color: string;
+  class_schedule: ClassSchedule | null;
   created_at: string;
   updated_at: string;
 }
@@ -49,7 +54,13 @@ export function useCreateClassroom() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (classroom: { name: string; subject: string; schedule?: string; color: string }) => {
+    mutationFn: async (classroom: { 
+      name: string; 
+      subject: string; 
+      schedule?: string; 
+      color: string;
+      class_schedule?: ClassSchedule;
+    }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('يجب تسجيل الدخول أولاً');
 
@@ -61,6 +72,7 @@ export function useCreateClassroom() {
           subject: classroom.subject,
           schedule: classroom.schedule || null,
           color: classroom.color,
+          class_schedule: classroom.class_schedule || {},
         })
         .select()
         .single();
