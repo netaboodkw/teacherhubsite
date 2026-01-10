@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useIsAdmin } from '@/hooks/useUserRole';
 import { useEducationLevels, useCreateEducationLevel, useUpdateEducationLevel, useDeleteEducationLevel } from '@/hooks/useEducationLevels';
@@ -27,6 +27,7 @@ const GRADE_TYPE_LABELS: Record<GradeType, string> = {
 };
 
 export default function Admin() {
+  const navigate = useNavigate();
   const { isAdmin, isLoading: roleLoading } = useIsAdmin();
   const { data: levels, isLoading: levelsLoading } = useEducationLevels();
   const { data: teachers, isLoading: teachersLoading } = useTeachers();
@@ -169,14 +170,19 @@ export default function Admin() {
         ...subjectForm,
         grade_level_id: subjectForm.grade_level_id || null,
       });
+      setSubjectDialogOpen(false);
     } else {
-      await createSubject.mutateAsync({
+      const result = await createSubject.mutateAsync({
         education_level_id: selectedLevelId,
         ...subjectForm,
         grade_level_id: subjectForm.grade_level_id || null,
       });
+      setSubjectDialogOpen(false);
+      // Navigate to grading setup page for the new subject
+      if (result?.id) {
+        navigate(`/admin/subject-grading?subject_id=${result.id}&education_level_id=${selectedLevelId}${subjectForm.grade_level_id ? `&grade_level_id=${subjectForm.grade_level_id}` : ''}`);
+      }
     }
-    setSubjectDialogOpen(false);
   };
 
   const toggleGradeType = (type: GradeType) => {
