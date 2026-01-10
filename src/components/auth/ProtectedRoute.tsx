@@ -29,7 +29,9 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    // Redirect to appropriate auth page based on route
+    const authPath = isAdminRoute ? '/auth/admin' : '/auth/teacher';
+    return <Navigate to={authPath} replace />;
   }
 
   // Redirect to complete profile if not complete (except if already on that page)

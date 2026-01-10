@@ -7,7 +7,8 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 // Landing & Auth
 import Landing from "./pages/Landing";
-import Auth from "./pages/Auth";
+import TeacherAuth from "./pages/auth/TeacherAuth";
+import AdminAuth from "./pages/auth/AdminAuth";
 import CompleteProfile from "./pages/CompleteProfile";
 import NotFound from "./pages/NotFound";
 
@@ -45,10 +46,12 @@ const App = () => (
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Landing />} />
-          <Route path="/auth" element={<Auth />} />
+          <Route path="/auth/teacher" element={<TeacherAuth />} />
+          <Route path="/auth/admin" element={<AdminAuth />} />
           <Route path="/complete-profile" element={<CompleteProfile />} />
 
           {/* Legacy redirects */}
+          <Route path="/auth" element={<Navigate to="/auth/teacher" replace />} />
           <Route path="/dashboard" element={<Navigate to="/teacher" replace />} />
           <Route path="/classrooms" element={<Navigate to="/teacher/classrooms" replace />} />
           <Route path="/students" element={<Navigate to="/teacher/students" replace />} />
