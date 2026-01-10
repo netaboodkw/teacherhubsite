@@ -1,9 +1,18 @@
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
+import { toEnglishNumbers } from "@/lib/numbers";
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
-  ({ className, type, ...props }, ref) => {
+  ({ className, type, onChange, ...props }, ref) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      // Convert Arabic/Persian numbers to English for numeric inputs
+      if (type === 'tel' || type === 'number' || props.inputMode === 'numeric') {
+        e.target.value = toEnglishNumbers(e.target.value);
+      }
+      onChange?.(e);
+    };
+
     return (
       <input
         type={type}
@@ -12,6 +21,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
           className,
         )}
         ref={ref}
+        onChange={handleChange}
         {...props}
       />
     );
