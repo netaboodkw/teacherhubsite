@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import {
@@ -8,9 +9,11 @@ import {
   BookOpen,
   BarChart3,
   Settings,
-  X,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -28,6 +31,7 @@ const navItems = [
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <>
@@ -41,63 +45,117 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       
       {/* Sidebar */}
       <aside className={cn(
-        "fixed top-0 right-0 z-50 h-screen w-72 bg-card border-l border-border transform transition-transform duration-300 lg:translate-x-0 lg:static lg:z-0",
-        isOpen ? "translate-x-0" : "translate-x-full"
+        "fixed top-0 right-0 z-50 h-screen bg-card border-l border-border transform transition-all duration-300 lg:static lg:z-0",
+        collapsed ? "w-16" : "w-72",
+        isOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
       )}>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-border">
-            <div className="flex items-center gap-3">
+          <div className={cn(
+            "flex items-center justify-between p-4 border-b border-border",
+            collapsed && "justify-center"
+          )}>
+            {!collapsed && (
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl gradient-hero flex items-center justify-center">
+                  <GraduationCap className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <div>
+                  <h1 className="font-bold text-lg text-foreground">TeacherHub</h1>
+                  <p className="text-xs text-muted-foreground">إدارة الصفوف</p>
+                </div>
+              </div>
+            )}
+            {collapsed && (
               <div className="w-10 h-10 rounded-xl gradient-hero flex items-center justify-center">
                 <GraduationCap className="w-6 h-6 text-primary-foreground" />
               </div>
-              <div>
-                <h1 className="font-bold text-lg text-foreground">TeacherHub</h1>
-                <p className="text-xs text-muted-foreground">إدارة الصفوف</p>
-              </div>
-            </div>
+            )}
+          </div>
+
+          {/* Collapse Button */}
+          <div className="hidden lg:flex justify-center py-2 border-b border-border">
             <Button
               variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={onClose}
+              size="sm"
+              onClick={() => setCollapsed(!collapsed)}
+              className="w-full mx-2"
             >
-              <X className="w-5 h-5" />
+              {collapsed ? (
+                <ChevronLeft className="h-4 w-4" />
+              ) : (
+                <>
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                  <span>تصغير</span>
+                </>
+              )}
             </Button>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1">
+          <nav className="flex-1 p-2 space-y-1">
             {navItems.map((item) => {
               const isActive = location.pathname === item.href;
-              return (
+              const linkContent = (
                 <Link
                   key={item.href}
                   to={item.href}
                   onClick={onClose}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200",
+                    "flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200",
+                    collapsed && "justify-center px-2",
                     isActive 
                       ? "gradient-hero text-primary-foreground shadow-md" 
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   )}
                 >
-                  <item.icon className="w-5 h-5" />
-                  <span>{item.label}</span>
+                  <item.icon className="w-5 h-5 flex-shrink-0" />
+                  {!collapsed && <span>{item.label}</span>}
                 </Link>
               );
+
+              if (collapsed) {
+                return (
+                  <Tooltip key={item.href} delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      {linkContent}
+                    </TooltipTrigger>
+                    <TooltipContent side="left">
+                      <p>{item.label}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              }
+
+              return linkContent;
             })}
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t border-border">
-            <Link
-              to="/settings"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
-            >
-              <Settings className="w-5 h-5" />
-              <span>الإعدادات</span>
-            </Link>
+          <div className="p-2 border-t border-border">
+            {collapsed ? (
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <Link
+                    to="/settings"
+                    className="flex items-center justify-center px-2 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+                  >
+                    <Settings className="w-5 h-5" />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  <p>الإعدادات</p>
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <Link
+                to="/settings"
+                className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+              >
+                <Settings className="w-5 h-5" />
+                <span>الإعدادات</span>
+              </Link>
+            )}
           </div>
         </div>
       </aside>

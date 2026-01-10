@@ -1,9 +1,10 @@
 import { MainLayout } from '@/components/layout/MainLayout';
 import { StudentCard } from '@/components/students/StudentCard';
+import { ImportStudentsDialog } from '@/components/students/ImportStudentsDialog';
 import { EmptyState } from '@/components/common/EmptyState';
 import { useStudents } from '@/hooks/useStudents';
 import { useClassrooms } from '@/hooks/useClassrooms';
-import { Users, Plus, Search, Filter, Loader2 } from 'lucide-react';
+import { Users, Plus, Search, Filter, Loader2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -15,6 +16,7 @@ export default function Students() {
   const { data: classrooms = [], isLoading: loadingClassrooms } = useClassrooms();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClassroom, setSelectedClassroom] = useState('all');
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const filteredStudents = students.filter(s => {
     const matchesSearch = s.name.includes(searchTerm) || s.student_id.includes(searchTerm);
@@ -47,12 +49,21 @@ export default function Students() {
             <h1 className="text-2xl lg:text-3xl font-bold text-foreground">الطلاب</h1>
             <p className="text-muted-foreground mt-1">{students.length} طالب مسجل</p>
           </div>
-          <Link to="/students/new">
-            <Button className="gradient-hero shadow-md hover:shadow-lg transition-shadow">
-              <Plus className="w-4 h-4 ml-2" />
-              طالب جديد
+          <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              onClick={() => setImportDialogOpen(true)}
+            >
+              <Upload className="w-4 h-4 ml-2" />
+              استيراد
             </Button>
-          </Link>
+            <Link to="/students/new">
+              <Button className="gradient-hero shadow-md hover:shadow-lg transition-shadow">
+                <Plus className="w-4 h-4 ml-2" />
+                طالب جديد
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Filters */}
@@ -104,6 +115,12 @@ export default function Students() {
           />
         )}
       </div>
+
+      <ImportStudentsDialog 
+        open={importDialogOpen} 
+        onOpenChange={setImportDialogOpen}
+        defaultClassroomId={selectedClassroom !== 'all' ? selectedClassroom : undefined}
+      />
     </MainLayout>
   );
 }
