@@ -11,11 +11,9 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useIsAdmin } from '@/hooks/useUserRole';
 
 interface TeacherSidebarProps {
   isOpen: boolean;
@@ -34,7 +32,6 @@ const navItems = [
 export function TeacherSidebar({ isOpen, onClose }: TeacherSidebarProps) {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
-  const { isAdmin } = useIsAdmin();
 
   return (
     <>
@@ -137,18 +134,6 @@ export function TeacherSidebar({ isOpen, onClose }: TeacherSidebarProps) {
 
           {/* Footer */}
           <div className="p-2 border-t border-border space-y-1">
-            {isAdmin && (
-              <Link
-                to="/admin"
-                className={cn(
-                  "flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 transition-all",
-                  collapsed && "justify-center px-2"
-                )}
-              >
-                <Shield className="w-5 h-5" />
-                {!collapsed && <span>لوحة الإدارة</span>}
-              </Link>
-            )}
             {collapsed ? (
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
