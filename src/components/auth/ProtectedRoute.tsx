@@ -28,7 +28,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   // Redirect to complete profile if not complete (except if already on that page)
-  if (profile && !isProfileComplete && location.pathname !== '/complete-profile') {
+  if (user && profile && !isProfileComplete && location.pathname !== '/complete-profile') {
     return <Navigate to="/complete-profile" replace />;
   }
 

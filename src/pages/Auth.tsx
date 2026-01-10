@@ -17,6 +17,7 @@ export default function Auth() {
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
   const navigate = useNavigate();
   const { signIn, signUp } = useAuth();
 
@@ -30,13 +31,38 @@ export default function Auth() {
 
     setLoading(true);
     
-    // Simulate OTP sending
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    toast.success(`تم إرسال رمز التحقق إلى ${phone}`);
-    
-    setStep('otp');
-    setLoading(false);
+    try {
+      // Check if user exists by trying to sign in
+      const email = `${phone}@phone.teacherhub.app`;
+      const password = `phone_${phone}_secure_2024`;
+      
+      const { error: signInError } = await signIn(email, password);
+      
+      // If sign in succeeds, user exists
+      if (!signInError) {
+        setIsNewUser(false);
+        toast.success('مرحباً بعودتك!');
+        navigate('/dashboard');
+        return;
+      }
+      
+      // If error is "Invalid login credentials", user doesn't exist
+      // For any other error, we'll treat as new user to be safe
+      setIsNewUser(true);
+      
+      // Simulate OTP sending
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      toast.success(`تم إرسال رمز التحقق إلى ${phone}`);
+      setStep('otp');
+    } catch (error) {
+      // Treat as new user
+      setIsNewUser(true);
+      toast.success(`تم إرسال رمز التحقق إلى ${phone}`);
+      setStep('otp');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleVerifyOTP = async (e: React.FormEvent) => {
@@ -50,28 +76,27 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      // Create email from phone number for Supabase auth
       const email = `${phone}@phone.teacherhub.app`;
       const password = `phone_${phone}_secure_2024`;
 
-      // Try to sign in first
-      const { error: signInError } = await signIn(email, password);
+      // New user - sign up
+      const { error: signUpError } = await signUp(email, password, phone);
       
-      if (signInError) {
-        // If sign in fails, try to sign up
-        const { error: signUpError } = await signUp(email, password, phone);
-        
-        if (signUpError) {
-          throw signUpError;
+      if (signUpError) {
+        // If user already exists (race condition), try to sign in
+        if (signUpError.message.includes('already registered')) {
+          const { error: signInError } = await signIn(email, password);
+          if (signInError) throw signInError;
+          toast.success('مرحباً بعودتك!');
+          navigate('/dashboard');
+          return;
         }
-        
-        // New user - will need to complete profile
-        toast.success('تم إنشاء حسابك بنجاح');
-      } else {
-        toast.success('مرحباً بعودتك!');
+        throw signUpError;
       }
-
-      navigate('/dashboard');
+      
+      // New user created - go to complete profile
+      toast.success('تم إنشاء حسابك بنجاح');
+      navigate('/complete-profile');
     } catch (error: any) {
       toast.error(error.message || 'حدث خطأ أثناء التحقق');
     } finally {
@@ -117,10 +142,10 @@ export default function Auth() {
                   {loading ? (
                     <>
                       <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                      جاري الإرسال...
+                      جاري التحقق...
                     </>
                   ) : (
-                    'إرسال رمز التحقق'
+                    'متابعة'
                   )}
                 </Button>
               </form>
