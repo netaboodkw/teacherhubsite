@@ -121,10 +121,13 @@ export type Database = {
           class_schedule: Json | null
           color: string
           created_at: string
+          education_level_id: string | null
+          grade_level: number | null
           id: string
           name: string
           schedule: string | null
           subject: string
+          subject_id: string | null
           updated_at: string
           user_id: string
         }
@@ -132,10 +135,13 @@ export type Database = {
           class_schedule?: Json | null
           color?: string
           created_at?: string
+          education_level_id?: string | null
+          grade_level?: number | null
           id?: string
           name: string
           schedule?: string | null
           subject: string
+          subject_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -143,14 +149,32 @@ export type Database = {
           class_schedule?: Json | null
           color?: string
           created_at?: string
+          education_level_id?: string | null
+          grade_level?: number | null
           id?: string
           name?: string
           schedule?: string | null
           subject?: string
+          subject_id?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "classrooms_education_level_id_fkey"
+            columns: ["education_level_id"]
+            isOneToOne: false
+            referencedRelation: "education_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classrooms_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       education_levels: {
         Row: {
@@ -467,7 +491,22 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      teachers_view: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          education_level_name: string | null
+          full_name: string | null
+          id: string | null
+          is_profile_complete: boolean | null
+          phone: string | null
+          school_name: string | null
+          subject: string | null
+          subject_name: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
