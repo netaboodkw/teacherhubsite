@@ -59,7 +59,7 @@ export default function ClassroomView() {
   const [noteDescription, setNoteDescription] = useState('');
   const [saving, setSaving] = useState(false);
   const [loadingPositions, setLoadingPositions] = useState(true);
-  const [activeTab, setActiveTab] = useState<'main' | 'arrange'>('main');
+  const [activeTab, setActiveTab] = useState<'notes' | 'arrange' | 'attendance'>('notes');
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<number>(1);
   const [dragState, setDragState] = useState<DragState>({
@@ -214,9 +214,9 @@ export default function ClassroomView() {
   const handleStudentTap = (student: SelectedStudent) => {
     if (dragState.isDragging) return;
     
-    if (activeTab === 'main') {
+    if (activeTab === 'attendance') {
       cycleAttendance(student.id);
-    } else {
+    } else if (activeTab === 'notes') {
       setSelectedStudent(student);
       setDialogMode('note');
       setNoteType('positive');
@@ -415,9 +415,21 @@ export default function ClassroomView() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {activeTab === 'arrange' ? (
+            {activeTab === 'notes' && (
               <>
-                <Button variant="outline" onClick={() => setActiveTab('main')}>
+                <Button variant="outline" size="sm" onClick={() => setActiveTab('arrange')}>
+                  <Move className="h-4 w-4 ml-1" />
+                  ترتيب الطلاب
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setActiveTab('attendance')}>
+                  <ClipboardCheck className="h-4 w-4 ml-1" />
+                  تسجيل الحضور
+                </Button>
+              </>
+            )}
+            {activeTab === 'arrange' && (
+              <>
+                <Button variant="outline" onClick={() => setActiveTab('notes')}>
                   رجوع
                 </Button>
                 <Button onClick={savePositions} disabled={saving}>
@@ -425,15 +437,15 @@ export default function ClassroomView() {
                   حفظ الترتيب
                 </Button>
               </>
-            ) : (
+            )}
+            {activeTab === 'attendance' && (
               <>
-                <Button variant="outline" size="sm" onClick={() => setActiveTab('arrange')}>
-                  <Move className="h-4 w-4 ml-1" />
-                  ترتيب الطلاب
+                <Button variant="outline" onClick={() => setActiveTab('notes')}>
+                  رجوع
                 </Button>
                 <Button onClick={saveAttendance} disabled={saving}>
                   {saving ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Save className="ml-2 h-4 w-4" />}
-                  حفظ
+                  حفظ الحضور
                 </Button>
               </>
             )}
@@ -537,7 +549,7 @@ export default function ClassroomView() {
               </CardContent>
             </Card>
           </>
-        ) : (
+        ) : activeTab === 'attendance' ? (
           <>
             {/* Attendance Mode */}
             <Card className="mb-4 bg-muted/50">
@@ -678,6 +690,88 @@ export default function ClassroomView() {
                                 <div className="absolute -bottom-1 -right-1 bg-card rounded-full p-0.5 shadow">
                                   {getAttendanceIcon(status)}
                                 </div>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-center font-medium truncate w-full leading-tight">
+                              {getShortName(student.name)}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </>
+        ) : (
+          <>
+            {/* Notes Mode (Default) */}
+            <Card className="mb-4 bg-muted/50">
+              <CardContent className="p-4 text-center">
+                <div className="bg-background border-2 border-dashed rounded-lg py-4">
+                  <p className="text-muted-foreground font-medium">السبورة</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Instructions */}
+            <div className="flex items-center justify-center gap-2 mb-4 text-sm text-muted-foreground">
+              <MessageSquare className="h-4 w-4" />
+              <span>اضغط على الطالب لإضافة ملاحظة أو نقاط</span>
+            </div>
+
+            <Card className="overflow-hidden">
+              <CardContent className="p-0">
+                {loadingStudents ? (
+                  <div className="flex items-center justify-center h-[500px]">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : students.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-[400px] text-muted-foreground">
+                    <User className="h-12 w-12 mb-4" />
+                    <p>لا يوجد طلاب في هذا الفصل</p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={() => navigate(`/students/new?classroomId=${classroomId}`)}
+                    >
+                      إضافة طالب
+                    </Button>
+                  </div>
+                ) : (
+                  <div
+                    ref={containerRef}
+                    className="relative min-h-[500px] select-none bg-muted/20"
+                  >
+                    {students.map((student) => {
+                      const pos = getStudentPosition(student.id);
+                      
+                      return (
+                        <div
+                          key={student.id}
+                          className="absolute cursor-pointer hover:scale-105 transition-transform"
+                          style={{
+                            left: pos.position_x,
+                            top: pos.position_y,
+                            width: STUDENT_SIZE,
+                          }}
+                          onClick={() => handleStudentTap({
+                            id: student.id,
+                            name: student.name,
+                            avatar_url: student.avatar_url,
+                          })}
+                        >
+                          <div className="flex flex-col items-center p-1.5 bg-card rounded-xl border-2 border-transparent shadow-md hover:border-primary/50">
+                            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-0.5">
+                              {student.avatar_url ? (
+                                <img
+                                  src={student.avatar_url}
+                                  alt={student.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <User className="h-4 w-4 text-primary" />
                               )}
                             </div>
                             <p className="text-[10px] text-center font-medium truncate w-full leading-tight">
