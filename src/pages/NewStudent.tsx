@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MainLayout } from '@/components/layout/MainLayout';
+import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useCreateStudent } from '@/hooks/useStudents';
 import { useClassrooms } from '@/hooks/useClassrooms';
 import { useNavigate } from 'react-router-dom';
@@ -28,7 +28,7 @@ export default function NewStudent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await createStudent.mutateAsync(formData);
-    navigate('/students');
+    navigate('/teacher/students');
   };
 
   const initials = formData.name
@@ -38,7 +38,7 @@ export default function NewStudent() {
     .slice(0, 2) || '؟';
 
   return (
-    <MainLayout>
+    <TeacherLayout>
       <div className="max-w-2xl mx-auto animate-fade-in">
         {/* Back button */}
         <Button 
@@ -163,6 +163,6 @@ export default function NewStudent() {
           </form>
         </div>
       </div>
-    </MainLayout>
+    </TeacherLayout>
   );
 }

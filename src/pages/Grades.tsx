@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { MainLayout } from '@/components/layout/MainLayout';
+import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useClassrooms } from '@/hooks/useClassrooms';
 import { useStudents } from '@/hooks/useStudents';
 import { useGrades, useCreateGrade, useUpdateGrade, GradeType } from '@/hooks/useGrades';
@@ -120,7 +120,7 @@ export default function Grades() {
   };
 
   return (
-    <MainLayout>
+    <TeacherLayout>
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -301,6 +301,6 @@ export default function Grades() {
           </DialogContent>
         </Dialog>
       </div>
-    </MainLayout>
+    </TeacherLayout>
   );
 }

@@ -406,7 +406,7 @@ export default function ClassroomView() {
       <div className="bg-card border-b p-4 sticky top-0 z-10">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/classrooms')}>
+            <Button variant="ghost" size="icon" onClick={() => navigate('/teacher/classrooms')}>
               <ArrowRight className="h-5 w-5" />
             </Button>
             <div>
@@ -484,7 +484,7 @@ export default function ClassroomView() {
                     <Button 
                       variant="outline" 
                       className="mt-4"
-                      onClick={() => navigate(`/students/new?classroomId=${classroomId}`)}
+                      onClick={() => navigate(`/teacher/students/new?classroomId=${classroomId}`)}
                     >
                       إضافة طالب
                     </Button>

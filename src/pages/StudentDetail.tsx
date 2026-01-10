@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MainLayout } from '@/components/layout/MainLayout';
+import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useStudent, useUpdateStudent, useDeleteStudent } from '@/hooks/useStudents';
 import { useClassroom } from '@/hooks/useClassrooms';
 import { useBehaviorNotes, useUpdateBehaviorNote, useDeleteBehaviorNote } from '@/hooks/useBehaviorNotes';
@@ -84,7 +84,7 @@ export default function StudentDetail() {
 
     try {
       await deleteStudent.mutateAsync(studentId);
-      navigate('/students');
+      navigate('/teacher/students');
     } catch (error) {
       // Error handled by hook
     }
@@ -137,34 +137,34 @@ export default function StudentDetail() {
 
   if (loadingStudent) {
     return (
-      <MainLayout>
+      <TeacherLayout>
         <div className="flex items-center justify-center min-h-[50vh]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
-      </MainLayout>
+      </TeacherLayout>
     );
   }
 
   if (!student) {
     return (
-      <MainLayout>
+      <TeacherLayout>
         <div className="flex flex-col items-center justify-center min-h-[50vh] text-muted-foreground">
           <User className="h-12 w-12 mb-4" />
           <p>الطالب غير موجود</p>
-          <Button variant="outline" className="mt-4" onClick={() => navigate('/students')}>
+          <Button variant="outline" className="mt-4" onClick={() => navigate('/teacher/students')}>
             العودة للطلاب
           </Button>
         </div>
-      </MainLayout>
+      </TeacherLayout>
     );
   }
 
   return (
-    <MainLayout>
+    <TeacherLayout>
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/students')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/teacher/students')}>
             <ArrowRight className="h-5 w-5" />
           </Button>
           <div className="flex-1">
@@ -428,6 +428,6 @@ export default function StudentDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </MainLayout>
+    </TeacherLayout>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MainLayout } from '@/components/layout/MainLayout';
+import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -62,16 +62,16 @@ export default function Settings() {
 
   if (isLoading) {
     return (
-      <MainLayout>
+      <TeacherLayout>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </MainLayout>
+      </TeacherLayout>
     );
   }
 
   return (
-    <MainLayout>
+    <TeacherLayout>
       <div className="max-w-2xl mx-auto space-y-6">
         <div>
           <h1 className="text-2xl font-bold">الإعدادات</h1>
@@ -187,6 +187,6 @@ export default function Settings() {
           </div>
         </form>
       </div>
-    </MainLayout>
+    </TeacherLayout>
   );
 }

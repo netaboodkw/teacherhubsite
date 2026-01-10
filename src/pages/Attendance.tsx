@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MainLayout } from '@/components/layout/MainLayout';
+import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { AttendanceButton } from '@/components/attendance/AttendanceButton';
 import { useStudents } from '@/hooks/useStudents';
 import { useClassrooms } from '@/hooks/useClassrooms';
@@ -52,7 +52,7 @@ export default function Attendance() {
   const absentCount = students.filter(s => getStudentStatus(s.id) === 'absent').length;
 
   return (
-    <MainLayout>
+    <TeacherLayout>
       <div className="space-y-6 animate-fade-in">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
@@ -110,6 +110,6 @@ export default function Attendance() {
           )}
         </div>
       </div>
-    </MainLayout>
+    </TeacherLayout>
   );
 }
