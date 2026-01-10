@@ -278,12 +278,12 @@ export function TemplateUploader() {
             </div>
             <div>
               <Label>المرحلة التعليمية (اختياري)</Label>
-              <Select value={selectedEducationLevel} onValueChange={setSelectedEducationLevel}>
+              <Select value={selectedEducationLevel || "all"} onValueChange={(v) => setSelectedEducationLevel(v === "all" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="اختر المرحلة" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">جميع المراحل</SelectItem>
+                  <SelectItem value="all">جميع المراحل</SelectItem>
                   {educationLevels?.map((level) => (
                     <SelectItem key={level.id} value={level.id}>{level.name_ar}</SelectItem>
                   ))}
@@ -293,12 +293,12 @@ export function TemplateUploader() {
             {selectedEducationLevel && (
               <div>
                 <Label>الصف الدراسي (اختياري)</Label>
-                <Select value={selectedGradeLevel} onValueChange={setSelectedGradeLevel}>
+                <Select value={selectedGradeLevel || "all"} onValueChange={(v) => setSelectedGradeLevel(v === "all" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="اختر الصف" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">جميع الصفوف</SelectItem>
+                    <SelectItem value="all">جميع الصفوف</SelectItem>
                     {gradeLevels?.map((grade) => (
                       <SelectItem key={grade.id} value={grade.id}>{grade.name_ar}</SelectItem>
                     ))}
@@ -309,12 +309,12 @@ export function TemplateUploader() {
             {selectedEducationLevel && (
               <div>
                 <Label>المادة (اختياري)</Label>
-                <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                <Select value={selectedSubject || "all"} onValueChange={(v) => setSelectedSubject(v === "all" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="اختر المادة" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">جميع المواد</SelectItem>
+                    <SelectItem value="all">جميع المواد</SelectItem>
                     {subjects?.map((subject) => (
                       <SelectItem key={subject.id} value={subject.id}>{subject.name_ar}</SelectItem>
                     ))}

@@ -624,14 +624,14 @@ export default function Admin() {
             <div>
               <Label>الصف الدراسي (اختياري - اتركه فارغاً لجميع الصفوف)</Label>
               <Select 
-                value={subjectForm.grade_level_id || ''} 
-                onValueChange={(v) => setSubjectForm(prev => ({ ...prev, grade_level_id: v }))}
+                value={subjectForm.grade_level_id || "all"} 
+                onValueChange={(v) => setSubjectForm(prev => ({ ...prev, grade_level_id: v === "all" ? "" : v }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="جميع الصفوف" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">جميع الصفوف</SelectItem>
+                  <SelectItem value="all">جميع الصفوف</SelectItem>
                   {gradeLevels?.map((grade) => (
                     <SelectItem key={grade.id} value={grade.id}>{grade.name_ar}</SelectItem>
                   ))}
