@@ -1,10 +1,11 @@
 import { useState, useCallback } from 'react';
-import { Upload, Loader2, X, Save, Plus, Trash2 } from 'lucide-react';
+import { Upload, Loader2, X, Save, Plus, Trash2, Image, RefreshCw, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useCreateGradingStructure, GradingGroup, GradingColumn } from '@/hooks/useGradingStructures';
@@ -23,10 +24,17 @@ interface ParsedGroup {
   columns: ParsedColumn[];
 }
 
+interface DetectedInfo {
+  subject?: string;
+  grade?: string;
+  semester?: string;
+}
+
 interface ParsedStructure {
   templateName: string;
   groups: ParsedGroup[];
   totalMaxScore: number;
+  detectedInfo?: DetectedInfo;
 }
 
 export function TemplateUploader() {
@@ -37,12 +45,68 @@ export function TemplateUploader() {
   const [selectedEducationLevel, setSelectedEducationLevel] = useState<string>('');
   const [selectedGradeLevel, setSelectedGradeLevel] = useState<string>('');
   const [selectedSubject, setSelectedSubject] = useState<string>('');
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [currentFile, setCurrentFile] = useState<File | null>(null);
   
   const { data: educationLevels } = useEducationLevels();
   const { data: gradeLevels } = useGradeLevels(selectedEducationLevel || undefined);
   const { data: subjects } = useSubjects(selectedEducationLevel || undefined, selectedGradeLevel || undefined);
   const createStructure = useCreateGradingStructure();
 
+
+  const analyzeFile = useCallback(async (file: File) => {
+    setIsAnalyzing(true);
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = (reader.result as string).split(',')[1];
+        
+        // Store image preview for images
+        if (file.type.startsWith('image/')) {
+          setUploadedImage(reader.result as string);
+        }
+        
+        try {
+          const { data, error } = await supabase.functions.invoke('analyze-grading-template', {
+            body: {
+              fileBase64: base64,
+              fileType: file.type,
+              fileName: file.name
+            }
+          });
+
+          if (error) throw error;
+
+          if (data.structure) {
+            setParsedStructure(data.structure);
+            setTemplateName(data.structure.templateName || 'قالب جديد');
+            toast.success('تم تحليل القالب بنجاح بالذكاء الاصطناعي');
+          } else {
+            throw new Error('فشل في استخراج هيكل القالب');
+          }
+        } catch (err: any) {
+          console.error('Analysis error:', err);
+          if (err.message?.includes('429') || err.message?.includes('rate')) {
+            toast.error('تم تجاوز حد الطلبات، يرجى المحاولة لاحقاً');
+          } else if (err.message?.includes('402')) {
+            toast.error('يرجى إضافة رصيد لحساب AI');
+          } else {
+            toast.error('فشل في تحليل الملف');
+          }
+        } finally {
+          setIsAnalyzing(false);
+          setIsUploading(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('Upload error:', err);
+      toast.error('فشل في رفع الملف');
+      setIsUploading(false);
+      setIsAnalyzing(false);
+    }
+  }, []);
 
   const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -66,49 +130,15 @@ export function TemplateUploader() {
       return;
     }
 
+    setCurrentFile(file);
     setIsUploading(true);
-    setIsAnalyzing(true);
+    await analyzeFile(file);
+  }, [analyzeFile]);
 
-    try {
-      // Convert file to base64
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64 = (reader.result as string).split(',')[1];
-        
-        try {
-          const { data, error } = await supabase.functions.invoke('analyze-grading-template', {
-            body: {
-              fileBase64: base64,
-              fileType: file.type,
-              fileName: file.name
-            }
-          });
-
-          if (error) throw error;
-
-          if (data.structure) {
-            setParsedStructure(data.structure);
-            setTemplateName(data.structure.templateName || 'قالب جديد');
-            toast.success('تم تحليل القالب بنجاح');
-          } else {
-            throw new Error('فشل في استخراج هيكل القالب');
-          }
-        } catch (err) {
-          console.error('Analysis error:', err);
-          toast.error('فشل في تحليل الملف');
-        } finally {
-          setIsAnalyzing(false);
-          setIsUploading(false);
-        }
-      };
-      reader.readAsDataURL(file);
-    } catch (err) {
-      console.error('Upload error:', err);
-      toast.error('فشل في رفع الملف');
-      setIsUploading(false);
-      setIsAnalyzing(false);
-    }
-  }, []);
+  const handleReanalyze = useCallback(async () => {
+    if (!currentFile) return;
+    await analyzeFile(currentFile);
+  }, [currentFile, analyzeFile]);
 
   const updateGroupName = (groupIndex: number, name: string) => {
     if (!parsedStructure) return;
@@ -210,6 +240,8 @@ export function TemplateUploader() {
       setSelectedEducationLevel('');
       setSelectedGradeLevel('');
       setSelectedSubject('');
+      setUploadedImage(null);
+      setCurrentFile(null);
     } catch (err) {
       console.error('Save error:', err);
       toast.error('فشل في حفظ القالب');
@@ -219,6 +251,8 @@ export function TemplateUploader() {
   const handleReset = () => {
     setParsedStructure(null);
     setTemplateName('');
+    setUploadedImage(null);
+    setCurrentFile(null);
   };
 
   return (
@@ -237,18 +271,28 @@ export function TemplateUploader() {
               />
               {isAnalyzing ? (
                 <div className="text-center">
-                  <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-                  <p className="text-lg font-medium">جاري تحليل القالب...</p>
-                  <p className="text-sm text-muted-foreground">قد يستغرق هذا بضع ثوانٍ</p>
+                  <div className="relative inline-block mb-4">
+                    <Sparkles className="h-12 w-12 text-primary animate-pulse" />
+                    <Loader2 className="h-6 w-6 animate-spin text-primary absolute -bottom-1 -right-1" />
+                  </div>
+                  <p className="text-lg font-medium">جاري تحليل القالب بالذكاء الاصطناعي...</p>
+                  <p className="text-sm text-muted-foreground">يتم استخراج الهيكل والدرجات تلقائياً</p>
                 </div>
               ) : (
                 <>
-                  <Upload className="h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-lg font-medium mb-2">ارفع قالب الدرجات</p>
+                  <div className="relative inline-block mb-4">
+                    <Upload className="h-12 w-12 text-muted-foreground" />
+                    <Sparkles className="h-5 w-5 text-primary absolute -top-1 -right-1" />
+                  </div>
+                  <p className="text-lg font-medium mb-2">ارفع صورة قالب الدرجات</p>
                   <p className="text-sm text-muted-foreground text-center">
-                    يدعم صور (PNG, JPG) و PDF و Excel<br />
-                    الحد الأقصى: 10 ميجابايت
+                    الذكاء الاصطناعي سيتعرف على هيكل القالب تلقائياً<br />
+                    يدعم صور (PNG, JPG) و PDF و Excel • الحد: 10 ميجابايت
                   </p>
+                  <Badge variant="secondary" className="mt-3">
+                    <Sparkles className="h-3 w-3 ml-1" />
+                    مدعوم بالذكاء الاصطناعي
+                  </Badge>
                 </>
               )}
             </label>
@@ -260,11 +304,57 @@ export function TemplateUploader() {
       {parsedStructure && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">تحرير القالب</h3>
-            <Button variant="ghost" size="icon" onClick={handleReset}>
-              <X className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold">تحرير القالب</h3>
+              <Badge variant="outline" className="text-xs">تم التعرف بالذكاء الاصطناعي</Badge>
+            </div>
+            <div className="flex items-center gap-2">
+              {currentFile && (
+                <Button variant="outline" size="sm" onClick={handleReanalyze} disabled={isAnalyzing}>
+                  {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                  <span className="mr-1">إعادة التحليل</span>
+                </Button>
+              )}
+              <Button variant="ghost" size="icon" onClick={handleReset}>
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
+
+          {/* Image Preview */}
+          {uploadedImage && (
+            <Card className="overflow-hidden">
+              <CardContent className="p-2">
+                <div className="relative">
+                  <img 
+                    src={uploadedImage} 
+                    alt="صورة القالب" 
+                    className="w-full max-h-64 object-contain rounded-lg bg-muted"
+                  />
+                  <Badge className="absolute top-2 right-2" variant="secondary">
+                    <Image className="h-3 w-3 ml-1" />
+                    الصورة الأصلية
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Detected Info */}
+          {parsedStructure.detectedInfo && (
+            <div className="flex flex-wrap gap-2">
+              {parsedStructure.detectedInfo.subject && (
+                <Badge variant="outline">المادة: {parsedStructure.detectedInfo.subject}</Badge>
+              )}
+              {parsedStructure.detectedInfo.grade && (
+                <Badge variant="outline">الصف: {parsedStructure.detectedInfo.grade}</Badge>
+              )}
+              {parsedStructure.detectedInfo.semester && (
+                <Badge variant="outline">الفصل: {parsedStructure.detectedInfo.semester}</Badge>
+              )}
+            </div>
+          )}
 
           {/* Template Name */}
           <div className="grid gap-4 md:grid-cols-2">

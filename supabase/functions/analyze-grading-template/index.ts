@@ -26,20 +26,27 @@ serve(async (req) => {
     let content: any[] = [];
     
     if (fileType.startsWith("image/")) {
-      // For images, use multimodal capability
+      // For images, use multimodal capability with advanced model
       content = [
         {
           type: "text",
-          text: `أنت محلل قوالب درجات متخصص. قم بتحليل صورة جدول الدرجات المرفقة واستخراج الهيكل بدقة.
+          text: `أنت خبير متخصص في تحليل وثائق ونماذج الدرجات التعليمية. مهمتك هي تحليل صورة جدول/نموذج الدرجات المرفقة واستخراج هيكل البيانات بدقة عالية.
 
-استخرج المعلومات التالية بالضبط:
-1. أسماء الأعمدة (مثل: أعمال ١، أعمال ٢، اختبار، المجموع)
-2. أقصى درجة لكل عمود
-3. التجميعات (المجموعات التي تحتوي على أعمدة فرعية)
+## التعليمات:
+1. افحص الصورة بعناية وحدد جميع الأعمدة والصفوف
+2. حدد المجموعات الرئيسية (مثل: أعمال الفترة الأولى، أعمال الفترة الثانية، الاختبارات)
+3. لكل مجموعة، حدد الأعمدة الفرعية مع درجاتها القصوى
+4. ميّز بين أعمدة الدرجات العادية وأعمدة المجاميع
 
-قم بإرجاع النتيجة بالتنسيق التالي فقط (JSON):
+## قواعد التحليل:
+- إذا كان العمود يحتوي على كلمة "مجموع" أو "إجمالي" أو "total"، نوعه "total"
+- باقي الأعمدة نوعها "score"
+- إذا لم تستطع قراءة الدرجة، استخدم القيمة الأكثر شيوعاً في السياق
+- حافظ على الترتيب الأصلي للأعمدة من اليمين لليسار
+
+## تنسيق الإخراج المطلوب (JSON فقط):
 {
-  "templateName": "اسم القالب المقترح",
+  "templateName": "اسم وصفي للقالب بناءً على محتواه",
   "groups": [
     {
       "name": "اسم المجموعة",
@@ -49,13 +56,15 @@ serve(async (req) => {
       ]
     }
   ],
-  "totalMaxScore": 100
+  "totalMaxScore": 100,
+  "detectedInfo": {
+    "subject": "المادة إن وُجدت",
+    "grade": "الصف إن وُجد",
+    "semester": "الفصل إن وُجد"
+  }
 }
 
-ملاحظات:
-- type يكون "score" للدرجات العادية و "total" للمجاميع
-- إذا لم تتمكن من قراءة قيمة، استخدم 0
-- حافظ على الترتيب الأصلي للأعمدة`
+أعد فقط كود JSON بدون أي نص إضافي.`
         },
         {
           type: "image_url",
@@ -69,13 +78,11 @@ serve(async (req) => {
       content = [
         {
           type: "text",
-          text: `أنت محلل قوالب درجات متخصص. الملف المرفق هو: ${fileName} (نوع: ${fileType})
+          text: `أنت خبير في إنشاء قوالب الدرجات التعليمية. بناءً على اسم الملف "${fileName}" ونوعه (${fileType})، اقترح هيكل قالب درجات مناسب للمعايير التعليمية في الخليج العربي.
 
-بناءً على اسم الملف ونوعه، اقترح هيكل قالب درجات مناسب.
-
-قم بإرجاع النتيجة بالتنسيق التالي فقط (JSON):
+## تنسيق الإخراج المطلوب (JSON فقط):
 {
-  "templateName": "اسم القالب المقترح",
+  "templateName": "اسم وصفي للقالب",
   "groups": [
     {
       "name": "اسم المجموعة",
@@ -88,12 +95,12 @@ serve(async (req) => {
   "totalMaxScore": 100
 }
 
-ملاحظات:
-- type يكون "score" للدرجات العادية و "total" للمجاميع
-- اقترح هيكل قالب معقول بناءً على السياق`
+أعد فقط كود JSON بدون أي نص إضافي.`
         }
       ];
     }
+
+    console.log("Calling AI gateway for template analysis...");
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -102,7 +109,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-pro",
         messages: [
           {
             role: "user",
@@ -133,16 +140,55 @@ serve(async (req) => {
     const data = await response.json();
     const content_text = data.choices?.[0]?.message?.content || "";
     
+    console.log("AI Response received, parsing...");
+    
     // Extract JSON from the response
     let structure = null;
     try {
-      // Try to find JSON in the response
-      const jsonMatch = content_text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        structure = JSON.parse(jsonMatch[0]);
+      // Try to find JSON in the response (handle markdown code blocks)
+      let jsonStr = content_text;
+      
+      // Remove markdown code blocks if present
+      const codeBlockMatch = content_text.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (codeBlockMatch) {
+        jsonStr = codeBlockMatch[1].trim();
+      } else {
+        // Try to find raw JSON object
+        const jsonMatch = content_text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          jsonStr = jsonMatch[0];
+        }
       }
+      
+      structure = JSON.parse(jsonStr);
+      
+      // Validate and normalize structure
+      if (!structure.groups || !Array.isArray(structure.groups)) {
+        throw new Error("Invalid structure: missing groups array");
+      }
+      
+      // Ensure all required fields exist
+      structure.groups = structure.groups.map((group: any) => ({
+        name: group.name || "مجموعة",
+        columns: (group.columns || []).map((col: any) => ({
+          name: col.name || "عمود",
+          maxScore: typeof col.maxScore === 'number' ? col.maxScore : parseInt(col.maxScore) || 1,
+          type: col.type === 'total' ? 'total' : 'score'
+        }))
+      }));
+      
+      // Calculate total max score if not provided
+      if (!structure.totalMaxScore) {
+        structure.totalMaxScore = structure.groups.reduce((total: number, group: any) => {
+          return total + group.columns.reduce((groupTotal: number, col: any) => {
+            return groupTotal + (col.type === 'total' ? 0 : col.maxScore);
+          }, 0);
+        }, 0);
+      }
+      
     } catch (e) {
       console.error("Failed to parse AI response as JSON:", e);
+      console.log("Raw response:", content_text);
     }
 
     if (!structure) {
@@ -153,7 +199,8 @@ serve(async (req) => {
           {
             name: "المجموعة الأولى",
             columns: [
-              { name: "عمود 1", maxScore: 10, type: "score" },
+              { name: "أعمال 1", maxScore: 5, type: "score" },
+              { name: "أعمال 2", maxScore: 5, type: "score" },
               { name: "المجموع", maxScore: 10, type: "total" }
             ]
           }
@@ -161,6 +208,8 @@ serve(async (req) => {
         totalMaxScore: 10
       };
     }
+
+    console.log("Template analysis complete");
 
     return new Response(JSON.stringify({ structure, rawResponse: content_text }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
