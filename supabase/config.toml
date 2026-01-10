@@ -1,1 +1,7 @@
 project_id = "shaennolzacbbagyzhoe"
+
+[functions.extract-students]
+verify_jwt = false
+
+[functions.analyze-grading-template]
+verify_jwt = false

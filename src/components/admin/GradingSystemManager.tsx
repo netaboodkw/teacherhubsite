@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2, Copy, FileText, Loader2, Calendar } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Edit, Trash2, Copy, FileText, Loader2, Calendar, Upload } from 'lucide-react';
 import { useEducationLevels } from '@/hooks/useEducationLevels';
 import { useGradeLevels } from '@/hooks/useGradeLevels';
 import { useSubjects } from '@/hooks/useSubjects';
@@ -23,6 +24,7 @@ import {
   useCopyGradingPeriods,
   GradingPeriod,
 } from '@/hooks/useGradingSystem';
+import { TemplateUploader } from './TemplateUploader';
 
 interface PeriodFormData {
   name: string;
@@ -182,8 +184,16 @@ export function GradingSystemManager() {
   const selectedSubject = subjects?.find(s => s.id === selectedSubjectId);
 
   return (
-    <div className="space-y-6">
-      {/* Filters */}
+    <Tabs defaultValue="periods" className="space-y-6">
+      <TabsList className="grid w-full grid-cols-2 max-w-md">
+        <TabsTrigger value="periods">فترات التقييم والقوالب</TabsTrigger>
+        <TabsTrigger value="upload" className="flex items-center gap-1">
+          <Upload className="h-4 w-4" />
+          رفع قالب
+        </TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="periods" className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -565,6 +575,21 @@ export function GradingSystemManager() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </TabsContent>
+      
+      <TabsContent value="upload">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5" />
+              رفع قالب درجات
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TemplateUploader />
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
   );
 }
