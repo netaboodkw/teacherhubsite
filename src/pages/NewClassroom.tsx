@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MainLayout } from '@/components/layout/MainLayout';
+import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useCreateClassroom } from '@/hooks/useClassrooms';
 import { useEducationLevels } from '@/hooks/useEducationLevels';
 import { useGradeLevels } from '@/hooks/useGradeLevels';
@@ -67,11 +67,11 @@ export default function NewClassroom() {
       subject_id: formData.subject_id || null,
       grade_level_id: formData.grade_level_id || null,
     });
-    navigate('/classrooms');
+    navigate('/teacher/classrooms');
   };
 
   return (
-    <MainLayout>
+    <TeacherLayout>
       <div className="max-w-2xl mx-auto animate-fade-in">
         {/* Back button */}
         <Button 
@@ -229,6 +229,6 @@ export default function NewClassroom() {
           </form>
         </div>
       </div>
-    </MainLayout>
+    </TeacherLayout>
   );
 }
