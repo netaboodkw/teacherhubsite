@@ -56,15 +56,10 @@ export default function Landing() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/auth?mode=signup">
+            <Link to="/auth/teacher">
               <Button size="lg" className="w-full sm:w-auto bg-background text-foreground hover:bg-background/90 h-12 px-8 text-base">
-                سجّل الآن مجاناً
+                دخول المعلمين
                 <ArrowLeft className="mr-2 h-5 w-5" />
-              </Button>
-            </Link>
-            <Link to="/auth?mode=login">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 h-12 px-8 text-base">
-                تسجيل الدخول
               </Button>
             </Link>
           </div>
@@ -105,9 +100,9 @@ export default function Landing() {
           <p className="text-muted-foreground mb-8">
             انضم لآلاف المعلمين الذين يستخدمون TeacherHub لإدارة صفوفهم بكفاءة
           </p>
-          <Link to="/auth?mode=signup">
+          <Link to="/auth/teacher">
             <Button size="lg" className="gradient-hero h-12 px-8 text-base">
-              إنشاء حساب جديد
+              ابدأ كمعلم
               <ArrowLeft className="mr-2 h-5 w-5" />
             </Button>
           </Link>
