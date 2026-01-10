@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useIsAdmin } from '@/hooks/useUserRole';
 import { useEducationLevels, useCreateEducationLevel, useUpdateEducationLevel, useDeleteEducationLevel } from '@/hooks/useEducationLevels';
+import { useGradeLevels, useCreateGradeLevel, useUpdateGradeLevel, useDeleteGradeLevel } from '@/hooks/useGradeLevels';
 import { useSubjects, useCreateSubject, useUpdateSubject, useDeleteSubject, GradeType } from '@/hooks/useSubjects';
 import { useTeachers } from '@/hooks/useTeachers';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, BookOpen, GraduationCap, Loader2, Shield, Users, ExternalLink } from 'lucide-react';
+import { Plus, Edit, Trash2, BookOpen, GraduationCap, Loader2, Shield, Users, ExternalLink, Layers } from 'lucide-react';
 
 const GRADE_TYPE_LABELS: Record<GradeType, string> = {
   exam: 'اختبار',
@@ -28,12 +29,18 @@ export default function Admin() {
   const { data: levels, isLoading: levelsLoading } = useEducationLevels();
   const { data: teachers, isLoading: teachersLoading } = useTeachers();
   const [selectedLevelId, setSelectedLevelId] = useState<string | null>(null);
+  const { data: gradeLevels, isLoading: gradeLevelsLoading } = useGradeLevels(selectedLevelId || undefined);
   const { data: subjects, isLoading: subjectsLoading } = useSubjects(selectedLevelId || undefined);
   
   // Level dialog
   const [levelDialogOpen, setLevelDialogOpen] = useState(false);
   const [editingLevel, setEditingLevel] = useState<{ id: string; name: string; name_ar: string } | null>(null);
   const [levelForm, setLevelForm] = useState({ name: '', name_ar: '' });
+  
+  // Grade level dialog
+  const [gradeLevelDialogOpen, setGradeLevelDialogOpen] = useState(false);
+  const [editingGradeLevel, setEditingGradeLevel] = useState<any>(null);
+  const [gradeLevelForm, setGradeLevelForm] = useState({ name: '', name_ar: '', grade_number: 1 });
   
   // Subject dialog
   const [subjectDialogOpen, setSubjectDialogOpen] = useState(false);
@@ -49,6 +56,10 @@ export default function Admin() {
   const createLevel = useCreateEducationLevel();
   const updateLevel = useUpdateEducationLevel();
   const deleteLevel = useDeleteEducationLevel();
+  
+  const createGradeLevel = useCreateGradeLevel();
+  const updateGradeLevel = useUpdateGradeLevel();
+  const deleteGradeLevel = useDeleteGradeLevel();
   
   const createSubject = useCreateSubject();
   const updateSubject = useUpdateSubject();
@@ -88,6 +99,36 @@ export default function Admin() {
       await createLevel.mutateAsync(levelForm);
     }
     setLevelDialogOpen(false);
+  };
+
+  const openGradeLevelDialog = (gradeLevel?: any) => {
+    if (gradeLevel) {
+      setEditingGradeLevel(gradeLevel);
+      setGradeLevelForm({ 
+        name: gradeLevel.name, 
+        name_ar: gradeLevel.name_ar,
+        grade_number: gradeLevel.grade_number 
+      });
+    } else {
+      setEditingGradeLevel(null);
+      const nextNumber = (gradeLevels?.length || 0) + 1;
+      setGradeLevelForm({ name: '', name_ar: '', grade_number: nextNumber });
+    }
+    setGradeLevelDialogOpen(true);
+  };
+
+  const handleSaveGradeLevel = async () => {
+    if (!gradeLevelForm.name_ar || !selectedLevelId) return;
+    
+    if (editingGradeLevel) {
+      await updateGradeLevel.mutateAsync({ id: editingGradeLevel.id, ...gradeLevelForm });
+    } else {
+      await createGradeLevel.mutateAsync({
+        education_level_id: selectedLevelId,
+        ...gradeLevelForm,
+      });
+    }
+    setGradeLevelDialogOpen(false);
   };
 
   const openSubjectDialog = (subject?: any) => {
@@ -156,7 +197,7 @@ export default function Admin() {
           </TabsList>
           
           <TabsContent value="curriculum" className="mt-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Education Levels */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -205,6 +246,74 @@ export default function Admin() {
                             e.stopPropagation();
                             deleteLevel.mutate(level.id);
                           }}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Grade Levels */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Layers className="h-5 w-5" />
+                الصفوف الدراسية
+                {selectedLevel && (
+                  <Badge variant="secondary">{selectedLevel.name_ar}</Badge>
+                )}
+              </CardTitle>
+              <Button 
+                size="sm" 
+                onClick={() => openGradeLevelDialog()}
+                disabled={!selectedLevelId}
+              >
+                <Plus className="h-4 w-4 ml-1" />
+                إضافة
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {!selectedLevelId ? (
+                <p className="text-center text-muted-foreground py-8">
+                  اختر مرحلة تعليمية لعرض الصفوف
+                </p>
+              ) : gradeLevelsLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : gradeLevels?.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  لا توجد صفوف في هذه المرحلة
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {gradeLevels?.map((gradeLevel) => (
+                    <div
+                      key={gradeLevel.id}
+                      className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted"
+                    >
+                      <div>
+                        <span className="font-medium">{gradeLevel.name_ar}</span>
+                        <Badge variant="outline" className="text-xs mr-2">
+                          {gradeLevel.grade_number}
+                        </Badge>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openGradeLevelDialog(gradeLevel)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => deleteGradeLevel.mutate(gradeLevel.id)}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -399,6 +508,52 @@ export default function Admin() {
             </Button>
             <Button onClick={handleSaveLevel}>
               {editingLevel ? 'حفظ' : 'إضافة'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Grade Level Dialog */}
+      <Dialog open={gradeLevelDialogOpen} onOpenChange={setGradeLevelDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingGradeLevel ? 'تعديل الصف' : 'إضافة صف جديد'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>الاسم بالعربية</Label>
+              <Input
+                value={gradeLevelForm.name_ar}
+                onChange={(e) => setGradeLevelForm(prev => ({ ...prev, name_ar: e.target.value }))}
+                placeholder="مثال: الصف الأول"
+              />
+            </div>
+            <div>
+              <Label>الاسم بالإنجليزية (اختياري)</Label>
+              <Input
+                value={gradeLevelForm.name}
+                onChange={(e) => setGradeLevelForm(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="e.g. First Grade"
+              />
+            </div>
+            <div>
+              <Label>رقم الصف</Label>
+              <Input
+                type="number"
+                min="1"
+                value={gradeLevelForm.grade_number}
+                onChange={(e) => setGradeLevelForm(prev => ({ ...prev, grade_number: parseInt(e.target.value) || 1 }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGradeLevelDialogOpen(false)}>
+              إلغاء
+            </Button>
+            <Button onClick={handleSaveGradeLevel}>
+              {editingGradeLevel ? 'حفظ' : 'إضافة'}
             </Button>
           </DialogFooter>
         </DialogContent>

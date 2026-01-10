@@ -17,6 +17,7 @@ export interface Classroom {
   education_level_id: string | null;
   subject_id: string | null;
   grade_level: number | null;
+  grade_level_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -65,7 +66,7 @@ export function useCreateClassroom() {
       class_schedule?: ClassSchedule;
       education_level_id?: string | null;
       subject_id?: string | null;
-      grade_level?: number;
+      grade_level_id?: string | null;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('يجب تسجيل الدخول أولاً');
@@ -81,7 +82,7 @@ export function useCreateClassroom() {
           class_schedule: classroom.class_schedule || {},
           education_level_id: classroom.education_level_id || null,
           subject_id: classroom.subject_id || null,
-          grade_level: classroom.grade_level || 1,
+          grade_level_id: classroom.grade_level_id || null,
         })
         .select()
         .single();

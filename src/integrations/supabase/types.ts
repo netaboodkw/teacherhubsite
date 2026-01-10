@@ -123,6 +123,7 @@ export type Database = {
           created_at: string
           education_level_id: string | null
           grade_level: number | null
+          grade_level_id: string | null
           id: string
           name: string
           schedule: string | null
@@ -137,6 +138,7 @@ export type Database = {
           created_at?: string
           education_level_id?: string | null
           grade_level?: number | null
+          grade_level_id?: string | null
           id?: string
           name: string
           schedule?: string | null
@@ -151,6 +153,7 @@ export type Database = {
           created_at?: string
           education_level_id?: string | null
           grade_level?: number | null
+          grade_level_id?: string | null
           id?: string
           name?: string
           schedule?: string | null
@@ -165,6 +168,13 @@ export type Database = {
             columns: ["education_level_id"]
             isOneToOne: false
             referencedRelation: "education_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classrooms_grade_level_id_fkey"
+            columns: ["grade_level_id"]
+            isOneToOne: false
+            referencedRelation: "grade_levels"
             referencedColumns: ["id"]
           },
           {
@@ -205,6 +215,50 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      grade_levels: {
+        Row: {
+          created_at: string
+          display_order: number
+          education_level_id: string
+          grade_number: number
+          id: string
+          is_active: boolean
+          name: string
+          name_ar: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          education_level_id: string
+          grade_number?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          name_ar: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          education_level_id?: string
+          grade_number?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          name_ar?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grade_levels_education_level_id_fkey"
+            columns: ["education_level_id"]
+            isOneToOne: false
+            referencedRelation: "education_levels"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       grades: {
         Row: {
