@@ -218,21 +218,57 @@ export function TemplateUploader() {
     try {
       const gradingGroups = convertToGradingGroups(parsedStructure.groups);
       
-      await createStructure.mutateAsync({
-        name: templateName,
-        name_ar: templateName,
-        structure: {
-          groups: gradingGroups,
-          settings: {
-            showPercentage: true,
-            passingScore: 50
-          }
-        },
-        education_level_id: selectedEducationLevel || null,
-        grade_level_id: selectedGradeLevel || null,
-        subject_id: selectedSubject || null,
-        is_default: false
-      });
+      // First, create the grading template
+      const { data: template, error: templateError } = await supabase
+        .from('grading_templates')
+        .insert({
+          name: templateName,
+          name_ar: templateName,
+          description: `قالب تم إنشاؤه بالذكاء الاصطناعي - ${parsedStructure.detectedInfo?.subject || ''} ${parsedStructure.detectedInfo?.grade || ''}`.trim(),
+          is_active: true
+        })
+        .select()
+        .single();
+
+      if (templateError) throw templateError;
+
+      // Create template periods from groups
+      const templatePeriods = parsedStructure.groups.map((group, index) => ({
+        template_id: template.id,
+        name: group.name,
+        name_ar: group.name,
+        max_score: group.columns.reduce((sum, col) => sum + (col.type === 'total' ? 0 : col.maxScore), 0),
+        weight: 1,
+        display_order: index
+      }));
+
+      if (templatePeriods.length > 0) {
+        const { error: periodsError } = await supabase
+          .from('grading_template_periods')
+          .insert(templatePeriods);
+        
+        if (periodsError) throw periodsError;
+      }
+
+      // Also save to subject_grading_structures if specific filters are selected
+      if (selectedEducationLevel || selectedSubject) {
+        await createStructure.mutateAsync({
+          name: templateName,
+          name_ar: templateName,
+          structure: {
+            groups: gradingGroups,
+            settings: {
+              showPercentage: true,
+              passingScore: 50
+            }
+          },
+          template_id: template.id,
+          education_level_id: selectedEducationLevel || null,
+          grade_level_id: selectedGradeLevel || null,
+          subject_id: selectedSubject || null,
+          is_default: false
+        });
+      }
 
       toast.success('تم حفظ القالب بنجاح');
       setParsedStructure(null);
