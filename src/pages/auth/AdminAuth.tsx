@@ -81,8 +81,9 @@ export default function AdminAuth() {
         return;
       }
 
-      // Add admin role and mark profile as complete for the new user
+      // Add admin role and create admin profile for the new user
       if (data?.user) {
+        // Add admin role
         const { error: roleError } = await supabase
           .from('user_roles')
           .insert({ user_id: data.user.id, role: 'admin' });
@@ -91,14 +92,27 @@ export default function AdminAuth() {
           console.error('Error adding admin role:', roleError);
         }
 
-        // Mark admin profile as complete
+        // Create admin profile in admin_profiles table
+        const { error: adminProfileError } = await supabase
+          .from('admin_profiles')
+          .insert({ 
+            user_id: data.user.id, 
+            full_name: 'مشرف',
+            email: email 
+          });
+        
+        if (adminProfileError) {
+          console.error('Error creating admin profile:', adminProfileError);
+        }
+
+        // Mark regular profile as complete (to avoid redirect to complete-profile)
         const { error: profileError } = await supabase
           .from('profiles')
           .update({ is_profile_complete: true })
           .eq('user_id', data.user.id);
         
         if (profileError) {
-          console.error('Error updating admin profile:', profileError);
+          console.error('Error updating profile:', profileError);
         }
       }
       

@@ -1,17 +1,30 @@
 import { Menu, Bell, Search } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useProfile } from '@/hooks/useProfile';
+import { useAdminProfile } from '@/hooks/useAdminProfile';
+import { useIsAdmin } from '@/hooks/useUserRole';
 
 interface HeaderProps {
   onMenuClick: () => void;
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
-  const { profile } = useProfile();
+  const location = useLocation();
+  const { isAdmin } = useIsAdmin();
+  const { profile: teacherProfile } = useProfile();
+  const { profile: adminProfile } = useAdminProfile();
   
-  const displayName = profile?.full_name || 'مستخدم';
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  
+  // Use admin profile for admin routes, teacher profile otherwise
+  const displayName = isAdminRoute && isAdmin 
+    ? (adminProfile?.full_name || 'مشرف')
+    : (teacherProfile?.full_name || 'معلم');
+  
+  const roleLabel = isAdminRoute && isAdmin ? 'مشرف' : 'معلم';
   const initials = displayName.charAt(0);
 
   return (
@@ -50,7 +63,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           <div className="flex items-center gap-3 pr-3 border-r border-border">
             <div className="hidden sm:block text-left">
               <p className="text-sm font-medium">{displayName}</p>
-              <p className="text-xs text-muted-foreground">معلم</p>
+              <p className="text-xs text-muted-foreground">{roleLabel}</p>
             </div>
             <Avatar className="w-9 h-9 border-2 border-primary/20">
               <AvatarFallback className="bg-primary/10 text-primary font-medium">
