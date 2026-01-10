@@ -14,11 +14,13 @@ const DEFAULT_OTP = '12345';
 
 export default function Auth() {
   const [authMode, setAuthMode] = useState<'teacher' | 'admin'>('teacher');
+  const [adminAction, setAdminAction] = useState<'login' | 'signup'>('login');
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
   const navigate = useNavigate();
@@ -133,6 +135,49 @@ export default function Auth() {
       navigate('/admin');
     } catch (error: any) {
       toast.error(error.message || 'حدث خطأ أثناء تسجيل الدخول');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAdminSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email || !password || !confirmPassword) {
+      toast.error('يرجى ملء جميع الحقول');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast.error('كلمات المرور غير متطابقة');
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await signUp(email, password, 'مشرف');
+      
+      if (error) {
+        if (error.message.includes('already registered')) {
+          toast.error('هذا البريد الإلكتروني مسجل بالفعل');
+        } else {
+          toast.error(error.message);
+        }
+        return;
+      }
+      
+      toast.success('تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول');
+      setAdminAction('login');
+      setPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      toast.error(error.message || 'حدث خطأ أثناء إنشاء الحساب');
     } finally {
       setLoading(false);
     }
@@ -258,9 +303,9 @@ export default function Auth() {
                 </div>
               </>
             ) : (
-              // Admin Email Login
+              // Admin Email Login/Signup
               <>
-                <form onSubmit={handleAdminLogin} className="space-y-4">
+                <form onSubmit={adminAction === 'login' ? handleAdminLogin : handleAdminSignup} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">البريد الإلكتروني</Label>
                     <div className="relative">
@@ -292,29 +337,65 @@ export default function Auth() {
                       />
                     </div>
                   </div>
+
+                  {adminAction === 'signup' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">تأكيد كلمة المرور</Label>
+                      <div className="relative">
+                        <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="confirmPassword"
+                          type="password"
+                          placeholder="••••••••"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="pr-10"
+                          dir="ltr"
+                        />
+                      </div>
+                    </div>
+                  )}
                   
                   <Button type="submit" className="w-full gradient-hero h-12" disabled={loading}>
                     {loading ? (
                       <>
                         <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                        جاري تسجيل الدخول...
+                        {adminAction === 'login' ? 'جاري تسجيل الدخول...' : 'جاري إنشاء الحساب...'}
                       </>
                     ) : (
-                      'تسجيل الدخول'
+                      adminAction === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب'
                     )}
                   </Button>
                 </form>
 
+                {/* Toggle Login/Signup */}
+                <div className="mt-4 text-center">
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-primary"
+                    onClick={() => {
+                      setAdminAction(adminAction === 'login' ? 'signup' : 'login');
+                      setPassword('');
+                      setConfirmPassword('');
+                    }}
+                  >
+                    {adminAction === 'login' ? 'إنشاء حساب مشرف جديد' : 'لديك حساب؟ تسجيل الدخول'}
+                  </Button>
+                </div>
+
                 {/* Switch to Teacher */}
-                <div className="mt-6 pt-6 border-t">
+                <div className="mt-4 pt-4 border-t">
                   <Button
                     type="button"
                     variant="ghost"
                     className="w-full text-muted-foreground"
                     onClick={() => {
                       setAuthMode('teacher');
+                      setAdminAction('login');
                       setEmail('');
                       setPassword('');
+                      setConfirmPassword('');
                     }}
                   >
                     <Phone className="ml-2 h-4 w-4" />
