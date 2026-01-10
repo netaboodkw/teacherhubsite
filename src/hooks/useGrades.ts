@@ -14,6 +14,7 @@ export interface Grade {
   score: number;
   max_score: number;
   date: string;
+  week_number: number;
   created_at: string;
   updated_at: string;
 }
@@ -54,6 +55,7 @@ export function useCreateGrade() {
       score: number; 
       max_score: number;
       date?: string;
+      week_number?: number;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('يجب تسجيل الدخول أولاً');
@@ -69,6 +71,7 @@ export function useCreateGrade() {
           score: grade.score,
           max_score: grade.max_score,
           date: grade.date || new Date().toISOString().split('T')[0],
+          week_number: grade.week_number || 1,
         })
         .select()
         .single();

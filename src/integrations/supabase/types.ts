@@ -165,6 +165,7 @@ export type Database = {
           type: string
           updated_at: string
           user_id: string
+          week_number: number
         }
         Insert: {
           classroom_id: string
@@ -178,6 +179,7 @@ export type Database = {
           type: string
           updated_at?: string
           user_id: string
+          week_number?: number
         }
         Update: {
           classroom_id?: string
@@ -191,6 +193,7 @@ export type Database = {
           type?: string
           updated_at?: string
           user_id?: string
+          week_number?: number
         }
         Relationships: [
           {
