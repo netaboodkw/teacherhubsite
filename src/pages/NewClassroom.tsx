@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useCreateClassroom } from '@/hooks/useClassrooms';
 import { useEducationLevels } from '@/hooks/useEducationLevels';
+import { useGradeLevels } from '@/hooks/useGradeLevels';
 import { useSubjects } from '@/hooks/useSubjects';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -19,20 +20,12 @@ const colorOptions = [
   { value: 'bg-destructive', label: 'أحمر' },
 ];
 
-const gradeLevels = [
-  { value: 1, label: 'الأول' },
-  { value: 2, label: 'الثاني' },
-  { value: 3, label: 'الثالث' },
-  { value: 4, label: 'الرابع' },
-  { value: 5, label: 'الخامس' },
-  { value: 6, label: 'السادس' },
-];
-
 export default function NewClassroom() {
   const createClassroom = useCreateClassroom();
   const navigate = useNavigate();
   const { data: levels, isLoading: levelsLoading } = useEducationLevels();
   const [selectedLevelId, setSelectedLevelId] = useState('');
+  const { data: gradeLevels, isLoading: gradeLevelsLoading } = useGradeLevels(selectedLevelId || undefined);
   const { data: subjects, isLoading: subjectsLoading } = useSubjects(selectedLevelId || undefined);
   
   const [formData, setFormData] = useState({
@@ -42,13 +35,13 @@ export default function NewClassroom() {
     color: 'bg-primary',
     education_level_id: '',
     subject_id: '',
-    grade_level: 1,
+    grade_level_id: '',
   });
   const [classSchedule, setClassSchedule] = useState<ClassSchedule>({});
 
-  // Reset subject when level changes
+  // Reset grade level and subject when education level changes
   useEffect(() => {
-    setFormData(prev => ({ ...prev, subject_id: '', subject: '' }));
+    setFormData(prev => ({ ...prev, subject_id: '', subject: '', grade_level_id: '' }));
   }, [selectedLevelId]);
 
   // Update subject name when subject is selected
@@ -71,7 +64,7 @@ export default function NewClassroom() {
       class_schedule: classSchedule,
       education_level_id: formData.education_level_id || null,
       subject_id: formData.subject_id || null,
-      grade_level: formData.grade_level,
+      grade_level_id: formData.grade_level_id || null,
     });
     navigate('/classrooms');
   };
@@ -129,16 +122,22 @@ export default function NewClassroom() {
             <div className="space-y-2">
               <Label>الصف الدراسي</Label>
               <Select 
-                value={formData.grade_level.toString()} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, grade_level: parseInt(value) }))}
+                value={formData.grade_level_id} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, grade_level_id: value }))}
+                disabled={!selectedLevelId}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="اختر الصف" />
+                  <SelectValue placeholder={
+                    !selectedLevelId ? "اختر المرحلة أولاً" : 
+                    gradeLevelsLoading ? "جاري التحميل..." : 
+                    gradeLevels?.length === 0 ? "لا توجد صفوف" :
+                    "اختر الصف"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  {gradeLevels.map((grade) => (
-                    <SelectItem key={grade.value} value={grade.value.toString()}>
-                      {grade.label}
+                  {gradeLevels?.map((grade) => (
+                    <SelectItem key={grade.id} value={grade.id}>
+                      {grade.name_ar}
                     </SelectItem>
                   ))}
                 </SelectContent>
