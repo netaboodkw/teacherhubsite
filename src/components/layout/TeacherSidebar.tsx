@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -11,9 +11,12 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  LogOut,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 interface TeacherSidebarProps {
   isOpen: boolean;
@@ -31,7 +34,19 @@ const navItems = [
 
 export function TeacherSidebar({ isOpen, onClose }: TeacherSidebarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast.error('حدث خطأ أثناء تسجيل الخروج');
+    } else {
+      toast.success('تم تسجيل الخروج بنجاح');
+      navigate('/auth/teacher');
+    }
+  };
 
   return (
     <>
@@ -135,27 +150,51 @@ export function TeacherSidebar({ isOpen, onClose }: TeacherSidebarProps) {
           {/* Footer */}
           <div className="p-2 border-t border-border space-y-1">
             {collapsed ? (
-              <Tooltip delayDuration={0}>
-                <TooltipTrigger asChild>
-                  <Link
-                    to="/teacher/settings"
-                    className="flex items-center justify-center px-2 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
-                  >
-                    <Settings className="w-5 h-5" />
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent side="left">
-                  <p>الإعدادات</p>
-                </TooltipContent>
-              </Tooltip>
+              <>
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <Link
+                      to="/teacher/settings"
+                      className="flex items-center justify-center px-2 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+                    >
+                      <Settings className="w-5 h-5" />
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    <p>الإعدادات</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center justify-center w-full px-2 py-3 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 transition-all"
+                    >
+                      <LogOut className="w-5 h-5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    <p>تسجيل الخروج</p>
+                  </TooltipContent>
+                </Tooltip>
+              </>
             ) : (
-              <Link
-                to="/teacher/settings"
-                className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
-              >
-                <Settings className="w-5 h-5" />
-                <span>الإعدادات</span>
-              </Link>
+              <>
+                <Link
+                  to="/teacher/settings"
+                  className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+                >
+                  <Settings className="w-5 h-5" />
+                  <span>الإعدادات</span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-3 w-full px-3 py-3 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 transition-all"
+                >
+                  <LogOut className="w-5 h-5" />
+                  <span>تسجيل الخروج</span>
+                </button>
+              </>
             )}
           </div>
         </div>
