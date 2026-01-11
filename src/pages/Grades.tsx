@@ -348,6 +348,35 @@ function StructuredGradingView({
       .reduce((sum, c) => sum + c.max_score, 0);
   };
 
+  // Calculate actual max score for external_sum columns (dynamic calculation)
+  const calculateExternalSumMaxScore = (column: GradingColumn): number => {
+    if (column.type !== 'external_sum' || !column.externalSourceColumns) {
+      return column.max_score;
+    }
+    
+    let total = 0;
+    column.externalSourceColumns.forEach(key => {
+      const [grpId, colId] = key.split(':');
+      const grp = structure.groups.find(g => g.id === grpId);
+      if (grp) {
+        const col = grp.columns.find(c => c.id === colId);
+        if (col) {
+          total += col.max_score;
+        }
+      }
+    });
+    
+    return total;
+  };
+
+  // Get display max score for a column (handles external_sum specially)
+  const getColumnDisplayMaxScore = (column: GradingColumn): number => {
+    if (column.type === 'external_sum') {
+      return calculateExternalSumMaxScore(column);
+    }
+    return column.max_score;
+  };
+
   return (
     <div className="space-y-2">
       {/* Collapse/Expand Controls */}
@@ -448,7 +477,7 @@ function StructuredGradingView({
                           variant={column.type === 'score' ? 'secondary' : column.type === 'total' ? 'default' : (column.type === 'grand_total' || column.type === 'group_sum' || column.type === 'external_sum') ? 'destructive' : 'outline'}
                           className="text-xs"
                         >
-                          {column.max_score}
+                          {getColumnDisplayMaxScore(column)}
                         </Badge>
                       </div>
                     </th>

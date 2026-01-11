@@ -354,6 +354,7 @@ export default function ClassroomView() {
       if (error) throw error;
 
       toast.success('تم حفظ ترتيب الطلاب بنجاح');
+      setActiveTab('notes'); // Return to notes tab after saving
     } catch (error: any) {
       toast.error(error.message || 'حدث خطأ أثناء الحفظ');
     } finally {
@@ -392,6 +393,7 @@ export default function ClassroomView() {
       }
 
       toast.success(`تم حفظ حضور الحصة ${selectedPeriod} بنجاح`);
+      setActiveTab('notes'); // Return to notes tab after saving
     } catch (error: any) {
       toast.error(error.message || 'حدث خطأ أثناء الحفظ');
     } finally {
