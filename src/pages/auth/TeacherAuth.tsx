@@ -123,28 +123,24 @@ export default function TeacherAuth() {
       const emailFromPhone = `${phone}@phone.teacherhub.app`;
       const passwordFromPhone = `phone_${phone}_secure_2024`;
       
-      // Try to sign in first to check if user exists
-      const { error: signInError } = await signIn(emailFromPhone, passwordFromPhone);
+      // Check if user exists (without logging in)
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: emailFromPhone,
+        password: passwordFromPhone,
+      });
+      
+      // Sign out immediately - we just wanted to check if user exists
+      await supabase.auth.signOut();
       
       if (!signInError) {
-        // Existing user - check if profile is complete
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_profile_complete')
-          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-          .single();
-        
-        if (profile?.is_profile_complete) {
-          toast.success('مرحباً بعودتك!');
-          navigate('/teacher');
-        } else {
-          navigate('/complete-profile');
-        }
-        return;
+        // Existing user - will need to verify OTP then sign in
+        setIsNewUser(false);
+      } else {
+        // New user
+        setIsNewUser(true);
       }
       
-      // User doesn't exist - send OTP via Twilio
-      setIsNewUser(true);
+      // Always send OTP regardless of user existence
       const otpSent = await sendOTP(phone);
       
       if (otpSent) {
@@ -152,14 +148,8 @@ export default function TeacherAuth() {
         setStep('otp');
       }
     } catch (error) {
-      // If sign in failed, send OTP (new user flow)
-      setIsNewUser(true);
-      const otpSent = await sendOTP(phone);
-      
-      if (otpSent) {
-        toast.success(`تم إرسال رمز التحقق إلى ${phone}`);
-        setStep('otp');
-      }
+      console.error('Error in handleSendOTP:', error);
+      toast.error('حدث خطأ، يرجى المحاولة مرة أخرى');
     } finally {
       setLoading(false);
     }
@@ -199,21 +189,43 @@ export default function TeacherAuth() {
       const emailFromPhone = `${phone}@phone.teacherhub.app`;
       const passwordFromPhone = `phone_${phone}_secure_2024`;
 
-      const { error: signUpError } = await signUp(emailFromPhone, passwordFromPhone, phone);
-      
-      if (signUpError) {
-        if (signUpError.message.includes('already registered')) {
-          const { error: signInError } = await signIn(emailFromPhone, passwordFromPhone);
-          if (signInError) throw signInError;
+      if (isNewUser) {
+        // New user - sign up
+        const { error: signUpError } = await signUp(emailFromPhone, passwordFromPhone, phone);
+        
+        if (signUpError) {
+          if (signUpError.message.includes('already registered')) {
+            // User already exists, try to sign in
+            const { error: signInError } = await signIn(emailFromPhone, passwordFromPhone);
+            if (signInError) throw signInError;
+            toast.success('مرحباً بعودتك!');
+            navigate('/teacher');
+            return;
+          }
+          throw signUpError;
+        }
+        
+        toast.success('تم إنشاء حسابك بنجاح');
+        navigate('/complete-profile');
+      } else {
+        // Existing user - sign in
+        const { error: signInError } = await signIn(emailFromPhone, passwordFromPhone);
+        if (signInError) throw signInError;
+        
+        // Check if profile is complete
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_profile_complete')
+          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+          .single();
+        
+        if (profile?.is_profile_complete) {
           toast.success('مرحباً بعودتك!');
           navigate('/teacher');
-          return;
+        } else {
+          navigate('/complete-profile');
         }
-        throw signUpError;
       }
-      
-      toast.success('تم إنشاء حسابك بنجاح');
-      navigate('/complete-profile');
     } catch (error: any) {
       toast.error(error.message || 'حدث خطأ أثناء التحقق');
     } finally {
