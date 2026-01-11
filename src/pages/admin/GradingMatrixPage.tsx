@@ -209,7 +209,7 @@ export default function GradingMatrixPage() {
       setApplyDialogOpen(false);
       setSelectedCells(new Set());
       setSelectedTemplate('');
-      queryClient.invalidateQueries({ queryKey: ['grading-structures'] });
+      queryClient.invalidateQueries({ queryKey: ['grading_structures'] });
     } catch (error: any) {
       toast.error('فشل في تطبيق القالب: ' + error.message);
     } finally {
