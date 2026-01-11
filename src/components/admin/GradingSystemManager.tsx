@@ -87,9 +87,10 @@ interface GradingColumn {
   id: string;
   name_ar: string;
   max_score: number;
-  type: 'score' | 'total' | 'grand_total' | 'group_sum' | 'percentage' | 'label';
+  type: 'score' | 'total' | 'grand_total' | 'group_sum' | 'external_sum' | 'percentage' | 'label';
   sourceGroupIds?: string[]; // للمجموع الكلي - المجموعات المراد جمع مجاميعها
   sourceColumnIds?: string[]; // للمجموع - الأعمدة المراد جمعها
+  externalSourceColumns?: string[]; // للجمع الخارجي - أعمدة درجات من مجموعات أخرى (format: "groupId:columnId")
   useGroupColor?: boolean; // هل يستخدم لون المجموعة أم أبيض
 }
 
@@ -120,7 +121,7 @@ interface SortableColumnProps {
   structure: GradingStructure;
   updateColumn: (groupId: string, columnId: string, field: keyof GradingColumn, value: any) => void;
   removeColumn: (groupId: string, columnId: string) => void;
-  calculateGrandTotal: (sourceGroupIds?: string[], sourceColumnIds?: string[]) => number;
+  calculateGrandTotal: (sourceGroupIds?: string[], sourceColumnIds?: string[], externalSourceColumns?: string[]) => number;
   onEditColumn: (groupId: string, column: GradingColumn) => void;
 }
 
@@ -239,27 +240,53 @@ function SortableColumn({
             })}
           </div>
         )}
+        {/* Show source columns for external_sum */}
+        {column.type === 'external_sum' && column.externalSourceColumns && (
+          <div className="flex gap-1 mt-1 flex-wrap">
+            <span className="text-xs text-muted-foreground">يجمع:</span>
+            {column.externalSourceColumns.map(key => {
+              const [grpId, colId] = key.split(':');
+              const sourceGroup = structure.groups.find(g => g.id === grpId);
+              const sourceCol = sourceGroup?.columns.find(c => c.id === colId);
+              return sourceGroup && sourceCol ? (
+                <Badge 
+                  key={key} 
+                  variant="outline" 
+                  className="text-xs py-0"
+                  style={{ borderColor: sourceGroup.border, backgroundColor: sourceGroup.color }}
+                >
+                  {sourceGroup.name_ar} - {sourceCol.name_ar}
+                </Badge>
+              ) : null;
+            })}
+          </div>
+        )}
       </div>
       <div className="flex items-center gap-2">
         <Label className="text-xs whitespace-nowrap">الدرجة:</Label>
         <Input 
           type="number"
-          value={column.type === 'grand_total' || column.type === 'group_sum' ? calculateGrandTotal(column.sourceGroupIds, column.sourceColumnIds) : column.max_score}
+          value={column.type === 'grand_total' || column.type === 'group_sum' || column.type === 'external_sum' ? calculateGrandTotal(column.sourceGroupIds, column.sourceColumnIds, column.externalSourceColumns) : column.max_score}
           onChange={(e) => updateColumn(groupId, column.id, 'max_score', parseInt(e.target.value) || 0)}
           className="w-20"
           min={0}
-          disabled={column.type === 'total' || column.type === 'grand_total' || column.type === 'group_sum'}
+          disabled={column.type === 'total' || column.type === 'grand_total' || column.type === 'group_sum' || column.type === 'external_sum'}
         />
       </div>
       <div className="flex items-center gap-1">
         <Badge variant={
           column.type === 'score' ? 'secondary' : 
           column.type === 'total' ? 'default' : 
-          column.type === 'group_sum' ? 'outline' : 'destructive'
-        } className={column.type === 'group_sum' ? 'border-amber-500 text-amber-600' : ''}>
+          column.type === 'group_sum' ? 'outline' : 
+          column.type === 'external_sum' ? 'outline' : 'destructive'
+        } className={
+          column.type === 'group_sum' ? 'border-amber-500 text-amber-600' : 
+          column.type === 'external_sum' ? 'border-green-500 text-green-600' : ''
+        }>
           {column.type === 'score' ? 'درجة' : 
            column.type === 'total' ? 'مجموع' : 
-           column.type === 'group_sum' ? 'مجموع مجموعات' : 'مجموع كلي'}
+           column.type === 'group_sum' ? 'مجموع مجموعات' : 
+           column.type === 'external_sum' ? 'مجموع خارجي' : 'مجموع كلي'}
         </Badge>
         {column.useGroupColor === false && (
           <Badge variant="outline" className="text-xs py-0">
@@ -267,7 +294,7 @@ function SortableColumn({
           </Badge>
         )}
       </div>
-      {(column.type === 'total' || column.type === 'grand_total' || column.type === 'group_sum') && (
+      {(column.type === 'total' || column.type === 'grand_total' || column.type === 'group_sum' || column.type === 'external_sum') && (
         <Button 
           variant="ghost" 
           size="sm"
@@ -354,7 +381,7 @@ export function GradingSystemManager() {
 
   // Column configuration dialogs
   const [columnConfigDialogOpen, setColumnConfigDialogOpen] = useState(false);
-  const [columnConfigType, setColumnConfigType] = useState<'score' | 'total' | 'grand_total' | 'group_sum'>('score');
+  const [columnConfigType, setColumnConfigType] = useState<'score' | 'total' | 'grand_total' | 'group_sum' | 'external_sum'>('score');
   const [columnConfigGroupId, setColumnConfigGroupId] = useState<string>('');
   const [selectedSourceColumns, setSelectedSourceColumns] = useState<string[]>([]);
   const [selectedSourceGroups, setSelectedSourceGroups] = useState<string[]>([]);
@@ -362,6 +389,7 @@ export function GradingSystemManager() {
   const [newColumnName, setNewColumnName] = useState('');
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null); // For editing existing columns
   const [selectedSameGroupColumns, setSelectedSameGroupColumns] = useState<string[]>([]); // For grand total from same group
+  const [selectedExternalColumns, setSelectedExternalColumns] = useState<string[]>([]); // For external_sum - scores from other groups
 
   // Get filtered data based on selected education level
   const filteredGradeLevels = allGradeLevels?.filter(
@@ -546,6 +574,25 @@ export function GradingSystemManager() {
     setColumnConfigDialogOpen(true);
   };
 
+  // Open dialog for external_sum column - sum scores from other groups
+  const openExternalSumDialog = (groupId: string, existingColumn?: GradingColumn) => {
+    setColumnConfigGroupId(groupId);
+    setColumnConfigType('external_sum');
+    
+    if (existingColumn) {
+      setEditingColumnId(existingColumn.id);
+      setSelectedExternalColumns(existingColumn.externalSourceColumns || []);
+      setNewColumnName(existingColumn.name_ar);
+      setNewColumnUseGroupColor(existingColumn.useGroupColor !== false);
+    } else {
+      setEditingColumnId(null);
+      setSelectedExternalColumns([]);
+      setNewColumnName('مجموع درجات');
+      setNewColumnUseGroupColor(true);
+    }
+    setColumnConfigDialogOpen(true);
+  };
+
   // Open edit dialog for existing column
   const openEditColumnDialog = (groupId: string, column: GradingColumn) => {
     if (column.type === 'score') {
@@ -561,6 +608,8 @@ export function GradingSystemManager() {
       openGrandTotalDialog(groupId, column);
     } else if (column.type === 'group_sum') {
       openGroupSumDialog(groupId, column);
+    } else if (column.type === 'external_sum') {
+      openExternalSumDialog(groupId, column);
     }
   };
 
@@ -632,6 +681,25 @@ export function GradingSystemManager() {
                   max_score: grandTotal,
                   sourceGroupIds: selectedSourceGroups,
                   sourceColumnIds: columnConfigType === 'grand_total' ? selectedSameGroupColumns : undefined,
+                  useGroupColor: newColumnUseGroupColor
+                };
+              } else if (columnConfigType === 'external_sum') {
+                // external_sum - calculate from selected score columns from other groups
+                let externalTotal = 0;
+                selectedExternalColumns.forEach(key => {
+                  const [grpId, colId] = key.split(':');
+                  const grp = prev.groups.find(gr => gr.id === grpId);
+                  if (grp) {
+                    const col = grp.columns.find(c => c.id === colId);
+                    if (col) externalTotal += col.max_score;
+                  }
+                });
+                
+                return {
+                  ...c,
+                  name_ar: newColumnName || c.name_ar,
+                  max_score: externalTotal,
+                  externalSourceColumns: selectedExternalColumns,
                   useGroupColor: newColumnUseGroupColor
                 };
               }
@@ -769,11 +837,41 @@ export function GradingSystemManager() {
             };
           })
         }));
+      } else if (columnConfigType === 'external_sum') {
+        // Calculate from selected external score columns
+        let externalSumTotal = 0;
+        selectedExternalColumns.forEach(key => {
+          const [grpId, colId] = key.split(':');
+          const group = structure.groups.find(g => g.id === grpId);
+          if (group) {
+            const col = group.columns.find(c => c.id === colId);
+            if (col) externalSumTotal += col.max_score;
+          }
+        });
+        
+        setStructure(prev => ({
+          ...prev,
+          groups: prev.groups.map(g => {
+            if (g.id !== groupId) return g;
+            return {
+              ...g,
+              columns: [...g.columns, {
+                id: `externalsum${Date.now()}`,
+                name_ar: newColumnName || 'مجموع درجات',
+                max_score: externalSumTotal,
+                type: 'external_sum' as const,
+                externalSourceColumns: selectedExternalColumns,
+                useGroupColor: newColumnUseGroupColor
+              }]
+            };
+          })
+        }));
       }
     }
     
     setColumnConfigDialogOpen(false);
     setEditingColumnId(null);
+    setSelectedExternalColumns([]);
   };
 
   const addColumn = (groupId: string) => {
@@ -831,8 +929,8 @@ export function GradingSystemManager() {
       .reduce((sum, c) => sum + c.max_score, 0);
   };
 
-  // Calculate grand total from source groups (format: "groupId:columnId") and same-group columns
-  const calculateGrandTotal = (sourceGroupIds?: string[], sourceColumnIds?: string[]) => {
+  // Calculate grand total from source groups (format: "groupId:columnId"), same-group columns, and external columns
+  const calculateGrandTotal = (sourceGroupIds?: string[], sourceColumnIds?: string[], externalSourceColumns?: string[]) => {
     let total = 0;
     
     // Sum from other groups' total/grand_total columns (new format: "groupId:columnId")
@@ -866,6 +964,20 @@ export function GradingSystemManager() {
         const columnsInGroup = grp.columns.filter(c => sourceColumnIds.includes(c.id));
         total += columnsInGroup.reduce((sum, c) => sum + c.max_score, 0);
       }
+    }
+    
+    // Sum from external source columns (for external_sum - scores from other groups)
+    if (externalSourceColumns && externalSourceColumns.length > 0) {
+      externalSourceColumns.forEach(key => {
+        const [groupId, columnId] = key.split(':');
+        const group = structure.groups.find(g => g.id === groupId);
+        if (group) {
+          const column = group.columns.find(c => c.id === columnId);
+          if (column) {
+            total += column.max_score;
+          }
+        }
+      });
     }
     
     return total;
@@ -1638,6 +1750,15 @@ export function GradingSystemManager() {
                             <Button 
                               variant="outline" 
                               size="sm"
+                              onClick={() => openExternalSumDialog(group.id)}
+                              className="border-green-500 text-green-600 hover:bg-green-50"
+                            >
+                              <Calculator className="h-4 w-4 ml-1" />
+                              مجموع درجات خارجية
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
                               onClick={() => addGroupSumColumn(group.id)}
                               className="border-amber-500 text-amber-600 hover:bg-amber-50"
                             >
@@ -2053,7 +2174,8 @@ export function GradingSystemManager() {
             <DialogTitle>
               {columnConfigType === 'score' ? 'إضافة عمود جديد' : 
                columnConfigType === 'total' ? 'إضافة عمود مجموع' : 
-               columnConfigType === 'group_sum' ? 'إضافة مجموع من مجموعات سابقة' : 'إضافة مجموع كلي'}
+               columnConfigType === 'group_sum' ? 'إضافة مجموع من مجموعات سابقة' : 
+               columnConfigType === 'external_sum' ? 'إضافة مجموع درجات خارجية' : 'إضافة مجموع كلي'}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -2065,7 +2187,8 @@ export function GradingSystemManager() {
                 onChange={(e) => setNewColumnName(e.target.value)}
                 placeholder={columnConfigType === 'score' ? 'مثال: التفاعل' : 
                              columnConfigType === 'total' ? 'المجموع' : 
-                             columnConfigType === 'group_sum' ? 'مجموع المجموعات' : 'المجموع الكلي'}
+                             columnConfigType === 'group_sum' ? 'مجموع المجموعات' : 
+                             columnConfigType === 'external_sum' ? 'مجموع درجات' : 'المجموع الكلي'}
               />
             </div>
 
@@ -2385,6 +2508,110 @@ export function GradingSystemManager() {
               </div>
             )}
 
+            {/* External Source Columns Selection for external_sum */}
+            {columnConfigType === 'external_sum' && (
+              <div className="space-y-4">
+                <div>
+                  <Label className="mb-2 block">اختر أعمدة الدرجات من المجموعات الأخرى</Label>
+                  <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-3">
+                    {(() => {
+                      const currentGroupId = columnConfigGroupId;
+                      const otherGroups = structure.groups.filter(g => g.id !== currentGroupId);
+                      
+                      // Collect all score columns from other groups
+                      const scoreColumns: { groupId: string; groupName: string; column: GradingColumn; groupColor: string; groupBorder: string }[] = [];
+                      otherGroups.forEach(grp => {
+                        grp.columns
+                          .filter(c => c.type === 'score')
+                          .forEach(col => {
+                            scoreColumns.push({
+                              groupId: grp.id,
+                              groupName: grp.name_ar,
+                              column: col,
+                              groupColor: grp.color,
+                              groupBorder: grp.border
+                            });
+                          });
+                      });
+                      
+                      return scoreColumns.length > 0 ? (
+                        <>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm text-muted-foreground">اختر الدرجات للجمع</span>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => setSelectedExternalColumns(scoreColumns.map(sc => `${sc.groupId}:${sc.column.id}`))}
+                            >
+                              تحديد الكل
+                            </Button>
+                          </div>
+                          {otherGroups.map(grp => {
+                            const groupScores = grp.columns.filter(c => c.type === 'score');
+                            if (groupScores.length === 0) return null;
+                            return (
+                              <div key={grp.id} className="mb-3">
+                                <div 
+                                  className="text-sm font-medium mb-1 px-2 py-1 rounded"
+                                  style={{ backgroundColor: grp.color }}
+                                >
+                                  {grp.name_ar}
+                                </div>
+                                {groupScores.map(col => {
+                                  const key = `${grp.id}:${col.id}`;
+                                  return (
+                                    <div key={key} className="flex items-center gap-2 mr-4">
+                                      <Checkbox 
+                                        checked={selectedExternalColumns.includes(key)}
+                                        onCheckedChange={(checked) => {
+                                          if (checked) {
+                                            setSelectedExternalColumns(prev => [...prev, key]);
+                                          } else {
+                                            setSelectedExternalColumns(prev => prev.filter(id => id !== key));
+                                          }
+                                        }}
+                                      />
+                                      <span className="text-sm">{col.name_ar}</span>
+                                      <Badge variant="outline" className="text-xs">
+                                        {col.max_score}
+                                      </Badge>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })}
+                        </>
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          لا توجد أعمدة درجات في المجموعات الأخرى. أضف أعمدة درجات في مجموعات أخرى أولاً.
+                        </p>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Total calculation for external_sum */}
+                {selectedExternalColumns.length > 0 && (
+                  <div className="p-2 bg-green-50 border border-green-200 rounded-lg text-sm">
+                    <span className="font-medium text-green-700">المجموع: </span>
+                    {(() => {
+                      let total = 0;
+                      selectedExternalColumns.forEach(key => {
+                        const [grpId, colId] = key.split(':');
+                        const grp = structure.groups.find(g => g.id === grpId);
+                        if (grp) {
+                          const col = grp.columns.find(c => c.id === colId);
+                          if (col) total += col.max_score;
+                        }
+                      });
+                      return total;
+                    })()}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Color Option */}
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <div className="flex items-center gap-2">
@@ -2418,7 +2645,8 @@ export function GradingSystemManager() {
               disabled={
                 (columnConfigType === 'total' && selectedSourceColumns.length === 0) ||
                 (columnConfigType === 'grand_total' && selectedSourceGroups.length === 0 && selectedSameGroupColumns.length === 0) ||
-                (columnConfigType === 'group_sum' && selectedSourceGroups.length === 0)
+                (columnConfigType === 'group_sum' && selectedSourceGroups.length === 0) ||
+                (columnConfigType === 'external_sum' && selectedExternalColumns.length === 0)
               }
             >
               <Plus className="h-4 w-4 ml-1" />

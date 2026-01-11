@@ -6,9 +6,10 @@ export interface GradingColumn {
   id: string;
   name_ar: string;
   max_score: number;
-  type: 'score' | 'total' | 'grand_total' | 'group_sum' | 'percentage' | 'label';
+  type: 'score' | 'total' | 'grand_total' | 'group_sum' | 'external_sum' | 'percentage' | 'label';
   sourceGroupIds?: string[]; // For grand_total and group_sum - groups to sum from
   sourceColumnIds?: string[]; // For total - columns to sum, for grand_total - same group columns
+  externalSourceColumns?: string[]; // For external_sum - score columns from other groups (format: "groupId:columnId")
   useGroupColor?: boolean;
 }
 
