@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback, memo } from 'react';
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useClassrooms, Classroom } from '@/hooks/useClassrooms';
 import { useStudents } from '@/hooks/useStudents';
@@ -700,8 +700,8 @@ export default function Grades() {
     setIsDialogOpen(true);
   };
 
-  // حفظ الدرجة
-  const handleSaveGrade = async () => {
+  // حفظ الدرجة - محسّن للسرعة على الهاتف
+  const handleSaveGrade = useCallback(() => {
     if (!selectedCell || !gradeValue) return;
     
     const score = parseFloat(gradeValue);
@@ -718,18 +718,21 @@ export default function Grades() {
       return;
     }
     
+    // إغلاق الحوار فوراً لتجربة سريعة
+    setIsDialogOpen(false);
+    
+    // حفظ البيانات في الخلفية
     if (selectedCell.week !== undefined) {
-      // Simple grading mode
       const existingGrade = getGradeForWeek(selectedCell.studentId, selectedCell.week);
       
       if (existingGrade) {
-        await updateGrade.mutateAsync({
+        updateGrade.mutate({
           id: existingGrade.id,
           score: score,
           type: gradeType,
         });
       } else {
-        await createGrade.mutateAsync({
+        createGrade.mutate({
           student_id: selectedCell.studentId,
           classroom_id: selectedClassroom,
           type: gradeType,
@@ -740,20 +743,19 @@ export default function Grades() {
         });
       }
     } else if (selectedCell.columnId) {
-      // Structured grading mode
       const existingGrade = grades.find(g => 
         g.student_id === selectedCell.studentId && 
         g.title === selectedCell.columnId
       );
       
       if (existingGrade) {
-        await updateGrade.mutateAsync({
+        updateGrade.mutate({
           id: existingGrade.id,
           score: score,
           type: 'participation',
         });
       } else {
-        await createGrade.mutateAsync({
+        createGrade.mutate({
           student_id: selectedCell.studentId,
           classroom_id: selectedClassroom,
           type: 'participation',
@@ -765,10 +767,9 @@ export default function Grades() {
       }
     }
     
-    setIsDialogOpen(false);
     setSelectedCell(null);
     setGradeValue('');
-  };
+  }, [selectedCell, gradeValue, gradeType, selectedClassroom, grades, getGradeForWeek, createGrade, updateGrade]);
 
   // التنقل بين الأسابيع
   const goToPreviousWeeks = () => {
@@ -969,47 +970,39 @@ export default function Grades() {
                 <Label>الدرجة (من {selectedCell?.maxScore || 10})</Label>
                 <Input
                   type="text"
-                  inputMode="decimal"
+                  inputMode="numeric"
                   pattern="[0-9]*"
                   autoComplete="off"
-                  min="0"
-                  max={selectedCell?.maxScore || 10}
                   value={gradeValue}
                   onChange={(e) => {
-                    // Only allow numbers and decimal point
-                    const val = e.target.value.replace(/[^\d.]/g, '');
+                    const val = e.target.value.replace(/[^\d]/g, '');
                     setGradeValue(val);
                   }}
                   placeholder="0"
                   className="text-center text-3xl h-16 font-bold"
-                  autoFocus
                 />
               </div>
               
-              {/* Quick grade buttons for faster mobile input */}
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">اختيار سريع</Label>
-                <div className="grid grid-cols-6 gap-1">
-                  {(() => {
-                    const max = selectedCell?.maxScore || 10;
-                    // Generate common values based on max score
-                    const values = max <= 10 
-                      ? Array.from({ length: max + 1 }, (_, i) => i)
-                      : [0, Math.round(max * 0.25), Math.round(max * 0.5), Math.round(max * 0.75), max - 1, max];
-                    return values.slice(0, 12).map((val) => (
-                      <Button
-                        key={val}
-                        type="button"
-                        variant={gradeValue === String(val) ? "default" : "outline"}
-                        size="sm"
-                        className="h-10 text-lg font-bold"
-                        onClick={() => setGradeValue(String(val))}
-                      >
-                        {val}
-                      </Button>
-                    ));
-                  })()}
-                </div>
+              {/* Quick grade buttons - optimized for mobile */}
+              <div className="grid grid-cols-6 gap-1.5">
+                {useMemo(() => {
+                  const max = selectedCell?.maxScore || 10;
+                  const values = max <= 10 
+                    ? Array.from({ length: max + 1 }, (_, i) => i)
+                    : [0, Math.round(max * 0.25), Math.round(max * 0.5), Math.round(max * 0.75), max - 1, max];
+                  return values.slice(0, 12);
+                }, [selectedCell?.maxScore]).map((val) => (
+                  <Button
+                    key={val}
+                    type="button"
+                    variant={gradeValue === String(val) ? "default" : "outline"}
+                    size="sm"
+                    className="h-11 text-lg font-bold touch-manipulation"
+                    onClick={() => setGradeValue(String(val))}
+                  >
+                    {val}
+                  </Button>
+                ))}
               </div>
               
               <Button
