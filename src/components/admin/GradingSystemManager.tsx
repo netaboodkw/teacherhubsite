@@ -294,16 +294,14 @@ function SortableColumn({
           </Badge>
         )}
       </div>
-      {(column.type === 'total' || column.type === 'grand_total' || column.type === 'group_sum' || column.type === 'external_sum') && (
-        <Button 
-          variant="ghost" 
-          size="sm"
-          onClick={() => onEditColumn(groupId, column)}
-          title="تعديل"
-        >
-          <Edit className="h-4 w-4" />
-        </Button>
-      )}
+      <Button 
+        variant="ghost" 
+        size="sm"
+        onClick={() => onEditColumn(groupId, column)}
+        title="تعديل"
+      >
+        <Edit className="h-4 w-4" />
+      </Button>
       <Button 
         variant="ghost" 
         size="sm"
@@ -2207,7 +2205,8 @@ export function GradingSystemManager() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {columnConfigType === 'score' ? 'إضافة عمود جديد' : 
+              {editingColumnId ? 'تعديل العمود' : 
+               columnConfigType === 'score' ? 'إضافة عمود جديد' : 
                columnConfigType === 'total' ? 'إضافة عمود مجموع' : 
                columnConfigType === 'group_sum' ? 'إضافة مجموع من مجموعات سابقة' : 
                columnConfigType === 'external_sum' ? 'إضافة مجموع درجات خارجية' : 'إضافة مجموع كلي'}
@@ -2684,8 +2683,17 @@ export function GradingSystemManager() {
                 (columnConfigType === 'external_sum' && selectedExternalColumns.length === 0)
               }
             >
-              <Plus className="h-4 w-4 ml-1" />
-              إضافة
+              {editingColumnId ? (
+                <>
+                  <Save className="h-4 w-4 ml-1" />
+                  حفظ
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 ml-1" />
+                  إضافة
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
