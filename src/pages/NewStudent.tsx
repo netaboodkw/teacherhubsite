@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { StudentAvatarUpload } from '@/components/students/StudentAvatarUpload';
 import { ArrowRight, Users, Loader2, HeartPulse } from 'lucide-react';
-
+import { toast } from 'sonner';
 export default function NewStudent() {
   const createStudent = useCreateStudent();
   const { data: classrooms = [] } = useClassrooms();
@@ -27,8 +27,27 @@ export default function NewStudent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createStudent.mutateAsync(formData);
-    navigate('/teacher/students');
+    
+    // التحقق من الحقول المطلوبة
+    if (!formData.name.trim()) {
+      toast.error('يجب إدخال اسم الطالب');
+      return;
+    }
+    if (!formData.student_id.trim()) {
+      toast.error('يجب إدخال الرقم التعريفي');
+      return;
+    }
+    if (!formData.classroom_id) {
+      toast.error('يجب اختيار الصف الدراسي');
+      return;
+    }
+    
+    try {
+      await createStudent.mutateAsync(formData);
+      navigate('/teacher/students');
+    } catch (error) {
+      // Error handled by hook
+    }
   };
 
   const initials = formData.name

@@ -211,7 +211,18 @@
     padding: 0 !important;
     font-size: 9px !important;
     direction: rtl !important;
-    font-family: 'Cairo', sans-serif !important;
+  }
+  
+  /* Normal font option */
+  .print-normal-font,
+  .print-normal-font * {
+    font-family: Arial, 'Times New Roman', serif !important;
+  }
+  
+  /* Arabic font option (default) */
+  .print-arabic-font,
+  .print-arabic-font * {
+    font-family: 'Cairo', 'Traditional Arabic', sans-serif !important;
   }
   
   /* Hide everything except print container */
