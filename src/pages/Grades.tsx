@@ -505,22 +505,27 @@ function StructuredGradingView({
                   
                   return (
                     <tr key={student.id} className="border-b border-border hover:bg-muted/20 transition-colors">
-                      <td className="border p-3 sticky right-0 bg-card">
-                        <div 
-                          className="flex items-center gap-3 cursor-pointer hover:text-primary transition-colors"
+                      <td className="border p-2 sm:p-3 sticky right-0 bg-card">
+                        <button 
+                          type="button"
+                          className="flex items-center gap-2 sm:gap-3 w-full text-right hover:text-primary active:text-primary transition-colors touch-manipulation"
                           onClick={() => onStudentClick(student.id)}
+                          onTouchEnd={(e) => {
+                            e.preventDefault();
+                            onStudentClick(student.id);
+                          }}
                         >
-                          <span className="text-muted-foreground text-sm w-6">{index + 1}</span>
-                          <Avatar className="w-9 h-9">
+                          <span className="text-muted-foreground text-xs sm:text-sm w-5 sm:w-6">{index + 1}</span>
+                          <Avatar className="w-8 h-8 sm:w-9 sm:h-9 flex-shrink-0">
                             {student.avatar_url ? (
                               <AvatarImage src={student.avatar_url} alt={student.name} />
                             ) : null}
-                            <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                            <AvatarFallback className="bg-primary/10 text-primary text-xs sm:text-sm">
                               {initials}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="font-medium text-sm hover:underline">{student.name}</span>
-                        </div>
+                          <span className="font-medium text-xs sm:text-sm truncate max-w-[100px] sm:max-w-none">{student.name}</span>
+                        </button>
                       </td>
                       {structure.groups.map(group => {
                         const isCollapsed = collapsedGroups.has(group.id);
