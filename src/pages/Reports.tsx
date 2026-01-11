@@ -3,8 +3,10 @@ import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useClassrooms } from '@/hooks/useClassrooms';
 import { useStudents } from '@/hooks/useStudents';
 import { useAttendance } from '@/hooks/useAttendance';
+import { useGrades } from '@/hooks/useGrades';
+import { useAllBehaviorNotes } from '@/hooks/useBehaviorNotes';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { FileDown, FileText, BarChart3, Loader2, Calendar, Users, CheckCircle, XCircle, Clock, Filter } from 'lucide-react';
+import { FileDown, FileText, BarChart3, Loader2, Calendar, Users, CheckCircle, XCircle, Clock, Filter, Trophy, Star, ThumbsUp, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -14,17 +16,20 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function Reports() {
   const { data: classrooms = [], isLoading: lc } = useClassrooms();
   const { data: students = [], isLoading: ls } = useStudents();
   const { data: attendance = [], isLoading: la } = useAttendance();
+  const { data: grades = [], isLoading: lg } = useGrades();
+  const { data: behaviorNotes = [], isLoading: lb } = useAllBehaviorNotes();
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedClassroom, setSelectedClassroom] = useState<string>('all');
   const [selectedPeriod, setSelectedPeriod] = useState<string>('all');
 
-  const isLoading = lc || ls || la;
+  const isLoading = lc || ls || la || lg || lb;
 
   // Filter attendance based on selections
   const filteredAttendance = useMemo(() => {
@@ -95,6 +100,96 @@ export default function Reports() {
     return { name: c.name.slice(0, 15), حضور: ca.length > 0 ? Math.round((pc / ca.length) * 100) : 0, طلاب: cs.length };
   });
 
+  // Student performance statistics
+  const topStudentsByGrades = useMemo(() => {
+    const studentGrades: { [studentId: string]: { total: number; count: number; maxTotal: number } } = {};
+    
+    grades.forEach(g => {
+      if (!studentGrades[g.student_id]) {
+        studentGrades[g.student_id] = { total: 0, count: 0, maxTotal: 0 };
+      }
+      studentGrades[g.student_id].total += g.score;
+      studentGrades[g.student_id].maxTotal += g.max_score;
+      studentGrades[g.student_id].count += 1;
+    });
+    
+    return students
+      .map(s => {
+        const gradeData = studentGrades[s.id];
+        const avgPercentage = gradeData && gradeData.maxTotal > 0 
+          ? Math.round((gradeData.total / gradeData.maxTotal) * 100) 
+          : 0;
+        const classroom = classrooms.find(c => c.id === s.classroom_id);
+        return { 
+          ...s, 
+          avgPercentage,
+          gradeCount: gradeData?.count || 0,
+          classroomName: classroom?.name || 'غير محدد'
+        };
+      })
+      .filter(s => s.gradeCount > 0)
+      .sort((a, b) => b.avgPercentage - a.avgPercentage)
+      .slice(0, 10);
+  }, [students, grades, classrooms]);
+
+  // Student behavior statistics
+  const topStudentsByBehavior = useMemo(() => {
+    const studentBehavior: { [studentId: string]: { positive: number; negative: number; total: number } } = {};
+    
+    behaviorNotes.forEach(n => {
+      if (!studentBehavior[n.student_id]) {
+        studentBehavior[n.student_id] = { positive: 0, negative: 0, total: 0 };
+      }
+      if (n.type === 'positive') {
+        studentBehavior[n.student_id].positive += 1;
+        studentBehavior[n.student_id].total += n.points;
+      } else if (n.type === 'negative') {
+        studentBehavior[n.student_id].negative += 1;
+        studentBehavior[n.student_id].total += n.points;
+      }
+    });
+    
+    return students
+      .map(s => {
+        const behaviorData = studentBehavior[s.id];
+        const classroom = classrooms.find(c => c.id === s.classroom_id);
+        return { 
+          ...s, 
+          positiveNotes: behaviorData?.positive || 0,
+          negativeNotes: behaviorData?.negative || 0,
+          totalPoints: behaviorData?.total || 0,
+          classroomName: classroom?.name || 'غير محدد'
+        };
+      })
+      .filter(s => s.positiveNotes > 0 || s.negativeNotes > 0)
+      .sort((a, b) => b.totalPoints - a.totalPoints)
+      .slice(0, 10);
+  }, [students, behaviorNotes, classrooms]);
+
+  // Classroom behavior statistics
+  const classroomBehaviorStats = useMemo(() => {
+    return classrooms.map(c => {
+      const classStudents = students.filter(s => s.classroom_id === c.id);
+      const studentIds = classStudents.map(s => s.id);
+      const classBehavior = behaviorNotes.filter(n => studentIds.includes(n.student_id));
+      
+      const positive = classBehavior.filter(n => n.type === 'positive').length;
+      const negative = classBehavior.filter(n => n.type === 'negative').length;
+      const total = positive + negative;
+      const positiveRate = total > 0 ? Math.round((positive / total) * 100) : 0;
+      
+      return {
+        id: c.id,
+        name: c.name,
+        studentCount: classStudents.length,
+        positive,
+        negative,
+        positiveRate,
+      };
+    }).sort((a, b) => b.positiveRate - a.positiveRate);
+  }, [classrooms, students, behaviorNotes]);
+
+  // Attendance distribution data for pie chart
   const attendanceDistribution = [
     { name: 'حاضر', value: stats.present, color: 'hsl(142, 71%, 45%)' },
     { name: 'غائب', value: stats.absent, color: 'hsl(0, 84%, 60%)' },
@@ -506,6 +601,202 @@ export default function Reports() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Performance & Behavior Statistics */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {/* Top Students by Grades */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-amber-600">
+                <Trophy className="w-5 h-5" />
+                أفضل الطلاب بالدرجات
+              </CardTitle>
+              <CardDescription>
+                الطلاب ذوو أعلى معدلات الدرجات
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {topStudentsByGrades.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Trophy className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p>لا توجد درجات مسجلة بعد</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                  {topStudentsByGrades.map((student, index) => (
+                    <div 
+                      key={student.id}
+                      className="flex items-center gap-3 p-3 rounded-lg border bg-gradient-to-l from-amber-50/50 to-transparent dark:from-amber-950/20"
+                    >
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 font-bold text-sm">
+                        {index + 1}
+                      </div>
+                      <Avatar className="w-9 h-9">
+                        <AvatarImage src={student.avatar_url || undefined} />
+                        <AvatarFallback className="bg-amber-100 text-amber-700 text-sm">
+                          {student.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '؟'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-foreground text-sm truncate">
+                          {student.name}
+                        </h4>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {student.classroomName}
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                        {student.avgPercentage}%
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Top Students by Behavior */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-600">
+                <Star className="w-5 h-5" />
+                أفضل الطلاب بالسلوك
+              </CardTitle>
+              <CardDescription>
+                الطلاب ذوو أعلى نقاط السلوك الإيجابي
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {topStudentsByBehavior.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Star className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p>لا توجد ملاحظات سلوكية بعد</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                  {topStudentsByBehavior.map((student, index) => (
+                    <div 
+                      key={student.id}
+                      className="flex items-center gap-3 p-3 rounded-lg border bg-gradient-to-l from-green-50/50 to-transparent dark:from-green-950/20"
+                    >
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-bold text-sm">
+                        {index + 1}
+                      </div>
+                      <Avatar className="w-9 h-9">
+                        <AvatarImage src={student.avatar_url || undefined} />
+                        <AvatarFallback className="bg-green-100 text-green-700 text-sm">
+                          {student.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '؟'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-foreground text-sm truncate">
+                          {student.name}
+                        </h4>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {student.classroomName}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-0.5">
+                        <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                          +{student.positiveNotes} إيجابي
+                        </Badge>
+                        {student.negativeNotes > 0 && (
+                          <Badge variant="secondary" className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs">
+                            {student.negativeNotes} سلبي
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Classrooms by Behavior */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-primary">
+                <ThumbsUp className="w-5 h-5" />
+                الصفوف الأفضل سلوكاً
+              </CardTitle>
+              <CardDescription>
+                الصفوف ذات أعلى نسبة سلوك إيجابي
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {classroomBehaviorStats.filter(c => c.positive + c.negative > 0).length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <ThumbsUp className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p>لا توجد ملاحظات سلوكية بعد</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                  {classroomBehaviorStats
+                    .filter(c => c.positive + c.negative > 0)
+                    .map((classroom, index) => (
+                    <div 
+                      key={classroom.id}
+                      className="flex items-center gap-3 p-3 rounded-lg border bg-gradient-to-l from-primary/5 to-transparent"
+                    >
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-foreground text-sm truncate">
+                          {classroom.name}
+                        </h4>
+                        <p className="text-xs text-muted-foreground">
+                          {classroom.studentCount} طالب
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-0.5">
+                        <Badge variant="secondary" className="bg-primary/10 text-primary">
+                          {classroom.positiveRate}% إيجابي
+                        </Badge>
+                        <div className="flex gap-1 text-xs text-muted-foreground">
+                          <span className="text-green-600">+{classroom.positive}</span>
+                          <span>/</span>
+                          <span className="text-red-600">-{classroom.negative}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Summary Statistics */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-primary" />
+              ملخص الإحصائيات
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center p-4 rounded-lg bg-muted/50">
+                <p className="text-3xl font-bold text-primary">{grades.length}</p>
+                <p className="text-sm text-muted-foreground">إجمالي الدرجات</p>
+              </div>
+              <div className="text-center p-4 rounded-lg bg-muted/50">
+                <p className="text-3xl font-bold text-green-600">{behaviorNotes.filter(n => n.type === 'positive').length}</p>
+                <p className="text-sm text-muted-foreground">ملاحظات إيجابية</p>
+              </div>
+              <div className="text-center p-4 rounded-lg bg-muted/50">
+                <p className="text-3xl font-bold text-red-600">{behaviorNotes.filter(n => n.type === 'negative').length}</p>
+                <p className="text-sm text-muted-foreground">ملاحظات سلبية</p>
+              </div>
+              <div className="text-center p-4 rounded-lg bg-muted/50">
+                <p className="text-3xl font-bold text-foreground">{attendance.length}</p>
+                <p className="text-sm text-muted-foreground">سجلات الحضور</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </TeacherLayout>
   );

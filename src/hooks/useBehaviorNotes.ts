@@ -36,6 +36,21 @@ export function useBehaviorNotes(studentId?: string) {
   });
 }
 
+export function useAllBehaviorNotes() {
+  return useQuery({
+    queryKey: ['behavior_notes', 'all'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('behavior_notes')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as BehaviorNote[];
+    },
+  });
+}
+
 export function useUpdateBehaviorNote() {
   const queryClient = useQueryClient();
 

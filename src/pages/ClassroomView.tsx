@@ -492,6 +492,10 @@ export default function ClassroomView() {
                       <UserPlus className="h-4 w-4 ml-2" />
                       إضافة طالب
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate(`/teacher/classrooms/${classroomId}/edit`)}>
+                      <Settings className="h-4 w-4 ml-2" />
+                      إعدادات الصف
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem 
                       onClick={() => setArchiveDialogOpen(true)}
