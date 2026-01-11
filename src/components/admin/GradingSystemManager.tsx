@@ -74,6 +74,8 @@ interface GradingColumn {
   max_score: number;
   type: 'score' | 'total' | 'grand_total';
   sourceGroupIds?: string[]; // للمجموع الكلي - المجموعات المراد جمع مجاميعها
+  sourceColumnIds?: string[]; // للمجموع - الأعمدة المراد جمعها
+  useGroupColor?: boolean; // هل يستخدم لون المجموعة أم أبيض
 }
 
 interface GradingGroup {
@@ -132,8 +134,11 @@ function SortableColumn({
   return (
     <div 
       ref={setNodeRef}
-      style={style}
-      className={`flex items-center gap-3 p-3 rounded-lg border bg-card ${column.type === 'grand_total' ? 'border-primary bg-primary/5' : ''} ${isDragging ? 'shadow-lg z-50' : ''}`}
+      style={{
+        ...style,
+        backgroundColor: column.useGroupColor === false ? 'var(--card)' : undefined
+      }}
+      className={`flex items-center gap-3 p-3 rounded-lg border ${column.useGroupColor === false ? 'bg-card' : ''} ${column.type === 'grand_total' ? 'border-primary bg-primary/5' : ''} ${isDragging ? 'shadow-lg z-50' : ''}`}
     >
       <button 
         {...attributes} 
@@ -149,6 +154,25 @@ function SortableColumn({
           className="w-full"
           placeholder="اسم العمود"
         />
+        {/* Show source columns for total */}
+        {column.type === 'total' && column.sourceColumnIds && (
+          <div className="flex gap-1 mt-1 flex-wrap">
+            <span className="text-xs text-muted-foreground">يجمع:</span>
+            {column.sourceColumnIds.map(scId => {
+              const sourceCol = group.columns.find(c => c.id === scId);
+              return sourceCol ? (
+                <Badge 
+                  key={scId} 
+                  variant="outline" 
+                  className="text-xs py-0"
+                >
+                  {sourceCol.name_ar}
+                </Badge>
+              ) : null;
+            })}
+          </div>
+        )}
+        {/* Show source groups for grand total */}
         {column.type === 'grand_total' && column.sourceGroupIds && (
           <div className="flex gap-1 mt-1 flex-wrap">
             <span className="text-xs text-muted-foreground">يجمع:</span>
@@ -179,9 +203,16 @@ function SortableColumn({
           disabled={column.type === 'total' || column.type === 'grand_total'}
         />
       </div>
-      <Badge variant={column.type === 'score' ? 'secondary' : column.type === 'total' ? 'default' : 'destructive'}>
-        {column.type === 'score' ? 'درجة' : column.type === 'total' ? 'مجموع' : 'مجموع كلي'}
-      </Badge>
+      <div className="flex items-center gap-1">
+        <Badge variant={column.type === 'score' ? 'secondary' : column.type === 'total' ? 'default' : 'destructive'}>
+          {column.type === 'score' ? 'درجة' : column.type === 'total' ? 'مجموع' : 'مجموع كلي'}
+        </Badge>
+        {column.useGroupColor === false && (
+          <Badge variant="outline" className="text-xs py-0">
+            <Palette className="h-3 w-3" />
+          </Badge>
+        )}
+      </div>
       <Button 
         variant="ghost" 
         size="sm"
@@ -244,6 +275,15 @@ export function GradingSystemManager() {
 
   // Default template
   const defaultTemplateId = localStorage.getItem('default_grading_template');
+
+  // Column configuration dialogs
+  const [columnConfigDialogOpen, setColumnConfigDialogOpen] = useState(false);
+  const [columnConfigType, setColumnConfigType] = useState<'score' | 'total' | 'grand_total'>('score');
+  const [columnConfigGroupId, setColumnConfigGroupId] = useState<string>('');
+  const [selectedSourceColumns, setSelectedSourceColumns] = useState<string[]>([]);
+  const [selectedSourceGroups, setSelectedSourceGroups] = useState<string[]>([]);
+  const [newColumnUseGroupColor, setNewColumnUseGroupColor] = useState(true);
+  const [newColumnName, setNewColumnName] = useState('');
 
   // Get filtered data based on selected education level
   const filteredGradeLevels = allGradeLevels?.filter(
@@ -329,23 +369,123 @@ export function GradingSystemManager() {
     }));
   };
 
-  // Column management
+  // Column management - open dialog for new score column
+  const openNewColumnDialog = (groupId: string) => {
+    setColumnConfigGroupId(groupId);
+    setColumnConfigType('score');
+    setNewColumnName('');
+    setNewColumnUseGroupColor(true);
+    setColumnConfigDialogOpen(true);
+  };
+
+  // Open dialog for total column
+  const openTotalColumnDialog = (groupId: string) => {
+    const group = structure.groups.find(g => g.id === groupId);
+    if (!group) return;
+    
+    const scoreColumns = group.columns.filter(c => c.type === 'score');
+    setColumnConfigGroupId(groupId);
+    setColumnConfigType('total');
+    setSelectedSourceColumns(scoreColumns.map(c => c.id)); // Select all by default
+    setNewColumnName('المجموع');
+    setNewColumnUseGroupColor(true);
+    setColumnConfigDialogOpen(true);
+  };
+
+  // Open dialog for grand total column
+  const openGrandTotalDialog = (groupId: string) => {
+    const currentGroupIndex = structure.groups.findIndex(g => g.id === groupId);
+    const previousGroups = structure.groups.slice(0, currentGroupIndex);
+    
+    setColumnConfigGroupId(groupId);
+    setColumnConfigType('grand_total');
+    setSelectedSourceGroups(previousGroups.map(g => g.id)); // Select all previous by default
+    setNewColumnName('المجموع الكلي');
+    setNewColumnUseGroupColor(true);
+    setColumnConfigDialogOpen(true);
+  };
+
+  // Create column after configuration
+  const handleCreateColumn = () => {
+    const groupId = columnConfigGroupId;
+    
+    if (columnConfigType === 'score') {
+      // Add regular score column
+      setStructure(prev => ({
+        ...prev,
+        groups: prev.groups.map(g => {
+          if (g.id !== groupId) return g;
+          return {
+            ...g,
+            columns: [...g.columns, {
+              id: `col${Date.now()}`,
+              name_ar: newColumnName || `عمود ${g.columns.length + 1}`,
+              max_score: 1,
+              type: 'score' as const,
+              useGroupColor: newColumnUseGroupColor
+            }]
+          };
+        })
+      }));
+    } else if (columnConfigType === 'total') {
+      // Calculate total from selected columns
+      const group = structure.groups.find(g => g.id === groupId);
+      if (!group) return;
+      
+      const totalScore = group.columns
+        .filter(c => selectedSourceColumns.includes(c.id))
+        .reduce((sum, c) => sum + c.max_score, 0);
+      
+      setStructure(prev => ({
+        ...prev,
+        groups: prev.groups.map(g => {
+          if (g.id !== groupId) return g;
+          return {
+            ...g,
+            columns: [...g.columns, {
+              id: `total${Date.now()}`,
+              name_ar: newColumnName || 'المجموع',
+              max_score: totalScore,
+              type: 'total' as const,
+              sourceColumnIds: selectedSourceColumns,
+              useGroupColor: newColumnUseGroupColor
+            }]
+          };
+        })
+      }));
+    } else if (columnConfigType === 'grand_total') {
+      // Calculate grand total from selected groups
+      const grandTotal = selectedSourceGroups.reduce((sum, gid) => {
+        const group = structure.groups.find(g => g.id === gid);
+        if (!group) return sum;
+        const totalCol = group.columns.find(c => c.type === 'total');
+        return sum + (totalCol?.max_score || calculateGroupTotal(gid));
+      }, 0);
+      
+      setStructure(prev => ({
+        ...prev,
+        groups: prev.groups.map(g => {
+          if (g.id !== groupId) return g;
+          return {
+            ...g,
+            columns: [...g.columns, {
+              id: `grandtotal${Date.now()}`,
+              name_ar: newColumnName || 'المجموع الكلي',
+              max_score: grandTotal,
+              type: 'grand_total' as const,
+              sourceGroupIds: selectedSourceGroups,
+              useGroupColor: newColumnUseGroupColor
+            }]
+          };
+        })
+      }));
+    }
+    
+    setColumnConfigDialogOpen(false);
+  };
+
   const addColumn = (groupId: string) => {
-    setStructure(prev => ({
-      ...prev,
-      groups: prev.groups.map(g => {
-        if (g.id !== groupId) return g;
-        return {
-          ...g,
-          columns: [...g.columns, {
-            id: `col${Date.now()}`,
-            name_ar: `عمود ${g.columns.length + 1}`,
-            max_score: 1,
-            type: 'score' as const
-          }]
-        };
-      })
-    }));
+    openNewColumnDialog(groupId);
   };
 
   const updateColumn = (groupId: string, columnId: string, field: keyof GradingColumn, value: any) => {
@@ -377,58 +517,12 @@ export function GradingSystemManager() {
   };
 
   const addTotalColumn = (groupId: string) => {
-    const group = structure.groups.find(g => g.id === groupId);
-    if (!group) return;
-    
-    const totalScore = group.columns
-      .filter(c => c.type === 'score')
-      .reduce((sum, c) => sum + c.max_score, 0);
-    
-    setStructure(prev => ({
-      ...prev,
-      groups: prev.groups.map(g => {
-        if (g.id !== groupId) return g;
-        return {
-          ...g,
-          columns: [...g.columns, {
-            id: `total${Date.now()}`,
-            name_ar: 'المجموع',
-            max_score: totalScore,
-            type: 'total' as const
-          }]
-        };
-      })
-    }));
+    openTotalColumnDialog(groupId);
   };
 
   // Add grand total column that sums totals from selected groups
   const addGrandTotalColumn = (groupId: string) => {
-    // Get all previous groups (before current group)
-    const currentGroupIndex = structure.groups.findIndex(g => g.id === groupId);
-    const previousGroups = structure.groups.slice(0, currentGroupIndex);
-    
-    // Calculate total from all previous groups' totals
-    const grandTotal = previousGroups.reduce((sum, group) => {
-      const groupTotal = group.columns.find(c => c.type === 'total');
-      return sum + (groupTotal?.max_score || 0);
-    }, 0);
-    
-    setStructure(prev => ({
-      ...prev,
-      groups: prev.groups.map(g => {
-        if (g.id !== groupId) return g;
-        return {
-          ...g,
-          columns: [...g.columns, {
-            id: `grandtotal${Date.now()}`,
-            name_ar: 'المجموع الكلي',
-            max_score: grandTotal,
-            type: 'grand_total' as const,
-            sourceGroupIds: previousGroups.map(pg => pg.id)
-          }]
-        };
-      })
-    }));
+    openGrandTotalDialog(groupId);
   };
 
   // Calculate group total
@@ -1325,6 +1419,188 @@ export function GradingSystemManager() {
             <Button onClick={handleAssignTemplate} disabled={isAssigning || !assignment.education_level_id}>
               {isAssigning ? <Loader2 className="h-4 w-4 animate-spin ml-1" /> : <Settings className="h-4 w-4 ml-1" />}
               تطبيق
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Column Configuration Dialog */}
+      <Dialog open={columnConfigDialogOpen} onOpenChange={setColumnConfigDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {columnConfigType === 'score' ? 'إضافة عمود جديد' : 
+               columnConfigType === 'total' ? 'إضافة عمود مجموع' : 'إضافة مجموع كلي'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Column Name */}
+            <div>
+              <Label>اسم العمود</Label>
+              <Input 
+                value={newColumnName}
+                onChange={(e) => setNewColumnName(e.target.value)}
+                placeholder={columnConfigType === 'score' ? 'مثال: التفاعل' : 
+                             columnConfigType === 'total' ? 'المجموع' : 'المجموع الكلي'}
+              />
+            </div>
+
+            {/* Source Columns Selection for Total */}
+            {columnConfigType === 'total' && (
+              <div>
+                <Label className="mb-2 block">ما هي الأعمدة التي تريد جمعها؟</Label>
+                <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3">
+                  {(() => {
+                    const group = structure.groups.find(g => g.id === columnConfigGroupId);
+                    const scoreColumns = group?.columns.filter(c => c.type === 'score') || [];
+                    return scoreColumns.length > 0 ? (
+                      <>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm text-muted-foreground">اختر الأعمدة</span>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => setSelectedSourceColumns(scoreColumns.map(c => c.id))}
+                          >
+                            تحديد الكل
+                          </Button>
+                        </div>
+                        {scoreColumns.map(col => (
+                          <div key={col.id} className="flex items-center gap-2">
+                            <Checkbox 
+                              checked={selectedSourceColumns.includes(col.id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedSourceColumns(prev => [...prev, col.id]);
+                                } else {
+                                  setSelectedSourceColumns(prev => prev.filter(id => id !== col.id));
+                                }
+                              }}
+                            />
+                            <span className="text-sm">{col.name_ar}</span>
+                            <Badge variant="outline" className="text-xs">{col.max_score}</Badge>
+                          </div>
+                        ))}
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        لا توجد أعمدة درجات في هذه المجموعة
+                      </p>
+                    );
+                  })()}
+                </div>
+                {selectedSourceColumns.length > 0 && (
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    المجموع: {structure.groups.find(g => g.id === columnConfigGroupId)?.columns
+                      .filter(c => selectedSourceColumns.includes(c.id))
+                      .reduce((sum, c) => sum + c.max_score, 0) || 0}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Source Groups Selection for Grand Total */}
+            {columnConfigType === 'grand_total' && (
+              <div>
+                <Label className="mb-2 block">ما هي المجموعات التي تريد جمع مجاميعها؟</Label>
+                <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3">
+                  {(() => {
+                    const currentGroupIndex = structure.groups.findIndex(g => g.id === columnConfigGroupId);
+                    const previousGroups = structure.groups.slice(0, currentGroupIndex);
+                    return previousGroups.length > 0 ? (
+                      <>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm text-muted-foreground">اختر المجموعات</span>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => setSelectedSourceGroups(previousGroups.map(g => g.id))}
+                          >
+                            تحديد الكل
+                          </Button>
+                        </div>
+                        {previousGroups.map(grp => {
+                          const groupTotal = grp.columns.find(c => c.type === 'total');
+                          const totalScore = groupTotal?.max_score || calculateGroupTotal(grp.id);
+                          return (
+                            <div key={grp.id} className="flex items-center gap-2">
+                              <Checkbox 
+                                checked={selectedSourceGroups.includes(grp.id)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setSelectedSourceGroups(prev => [...prev, grp.id]);
+                                  } else {
+                                    setSelectedSourceGroups(prev => prev.filter(id => id !== grp.id));
+                                  }
+                                }}
+                              />
+                              <div 
+                                className="w-4 h-4 rounded-full border-2"
+                                style={{ backgroundColor: grp.color, borderColor: grp.border }}
+                              />
+                              <span className="text-sm">{grp.name_ar}</span>
+                              <Badge variant="outline" className="text-xs">{totalScore}</Badge>
+                            </div>
+                          );
+                        })}
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        لا توجد مجموعات سابقة للجمع منها
+                      </p>
+                    );
+                  })()}
+                </div>
+                {selectedSourceGroups.length > 0 && (
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    المجموع الكلي: {selectedSourceGroups.reduce((sum, gid) => {
+                      const grp = structure.groups.find(g => g.id === gid);
+                      if (!grp) return sum;
+                      const totalCol = grp.columns.find(c => c.type === 'total');
+                      return sum + (totalCol?.max_score || calculateGroupTotal(gid));
+                    }, 0)}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Color Option */}
+            <div className="flex items-center justify-between p-3 border rounded-lg">
+              <div className="flex items-center gap-2">
+                <Palette className="h-4 w-4 text-muted-foreground" />
+                <Label>استخدام لون المجموعة</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={newColumnUseGroupColor ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setNewColumnUseGroupColor(true)}
+                >
+                  ملون
+                </Button>
+                <Button
+                  variant={!newColumnUseGroupColor ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setNewColumnUseGroupColor(false)}
+                >
+                  أبيض
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setColumnConfigDialogOpen(false)}>
+              إلغاء
+            </Button>
+            <Button 
+              onClick={handleCreateColumn} 
+              disabled={
+                (columnConfigType === 'total' && selectedSourceColumns.length === 0) ||
+                (columnConfigType === 'grand_total' && selectedSourceGroups.length === 0)
+              }
+            >
+              <Plus className="h-4 w-4 ml-1" />
+              إضافة
             </Button>
           </DialogFooter>
         </DialogContent>
