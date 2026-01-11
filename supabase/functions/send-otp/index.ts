@@ -15,7 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    const { phone, action } = await req.json();
+    const { phone, action, otp } = await req.json();
 
     if (!phone) {
       return new Response(
@@ -48,11 +48,11 @@ serve(async (req) => {
 
     if (action === "send") {
       // Generate 6-digit OTP
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
       const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes expiry
 
       // Store OTP
-      otpStore.set(formattedPhone, { code: otp, expiresAt });
+      otpStore.set(formattedPhone, { code: generatedOtp, expiresAt });
 
       // Send SMS via Twilio
       const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
@@ -60,7 +60,7 @@ serve(async (req) => {
       const formData = new URLSearchParams();
       formData.append("To", formattedPhone);
       formData.append("From", twilioPhone);
-      formData.append("Body", `رمز التحقق الخاص بك هو: ${otp}\nصالح لمدة 5 دقائق.`);
+      formData.append("Body", `رمز التحقق الخاص بك هو: ${generatedOtp}\nصالح لمدة 5 دقائق.`);
 
       const twilioResponse = await fetch(twilioUrl, {
         method: "POST",
@@ -88,7 +88,6 @@ serve(async (req) => {
       );
 
     } else if (action === "verify") {
-      const { otp } = await req.json();
       
       const stored = otpStore.get(formattedPhone);
       
