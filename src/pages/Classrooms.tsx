@@ -5,12 +5,13 @@ import { useClassrooms } from '@/hooks/useClassrooms';
 import { GraduationCap, Plus, Search, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 
 export default function Classrooms() {
   const { data: classrooms = [], isLoading } = useClassrooms();
   const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
 
   const filteredClassrooms = classrooms.filter(c => 
     c.name.includes(searchTerm) || c.subject.includes(searchTerm)
@@ -67,7 +68,7 @@ export default function Classrooms() {
             title="لا توجد صفوف"
             description="ابدأ بإنشاء صف دراسي جديد لإدارة طلابك"
             actionLabel="إنشاء صف"
-            onAction={() => {}}
+            onAction={() => navigate('/teacher/classrooms/new')}
           />
         )}
       </div>
