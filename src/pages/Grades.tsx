@@ -9,11 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronRight, ChevronLeft, Plus, Loader2, Table, Settings } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Plus, Loader2, Table, Settings, ChevronDown, ChevronUp } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const WEEKS_COUNT = 18; // عدد الأسابيع في الفصل الدراسي
 
@@ -171,10 +172,41 @@ function StructuredGradingView({
   grades: any[];
   onCellClick: (studentId: string, columnId: string, groupId: string, maxScore: number) => void;
 }) {
+  // Track collapsed groups
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  
+  const toggleGroupCollapse = (groupId: string) => {
+    setCollapsedGroups(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupId)) {
+        newSet.delete(groupId);
+      } else {
+        newSet.add(groupId);
+      }
+      return newSet;
+    });
+  };
+  
+  const collapseAll = () => {
+    setCollapsedGroups(new Set(structure.groups.map(g => g.id)));
+  };
+  
+  const expandAll = () => {
+    setCollapsedGroups(new Set());
+  };
+
+  // Calculate visible columns count (excluding collapsed groups)
+  const getVisibleColumnsCount = () => {
+    return structure.groups.reduce((sum, g) => {
+      if (collapsedGroups.has(g.id)) {
+        return sum + 1; // Just the summary column
+      }
+      return sum + g.columns.length;
+    }, 0);
+  };
+  
   // Calculate total columns count
   const totalColumns = structure.groups.reduce((sum, g) => sum + g.columns.length, 0);
-  
-  // Calculate group total for a student
   const calculateColumnValue = (studentId: string, column: GradingColumn, group: GradingGroup): number => {
     if (column.type === 'score') {
       const grade = grades.find(g => 
@@ -262,143 +294,238 @@ function StructuredGradingView({
     }, 0);
   };
 
+  // Calculate group total for a student (for collapsed view)
+  const calculateGroupTotal = (studentId: string, group: GradingGroup): number => {
+    const totalCol = group.columns.find(c => c.type === 'total');
+    if (totalCol) {
+      return calculateColumnValue(studentId, totalCol, group);
+    }
+    // Fallback: sum all score columns
+    return group.columns
+      .filter(c => c.type === 'score')
+      .reduce((sum, col) => {
+        const grade = grades.find(g => g.student_id === studentId && g.title === col.id);
+        return sum + (grade?.score || 0);
+      }, 0);
+  };
+  
+  // Calculate group max score
+  const calculateGroupMaxScore = (group: GradingGroup): number => {
+    const totalCol = group.columns.find(c => c.type === 'total');
+    if (totalCol) {
+      return totalCol.max_score;
+    }
+    return group.columns
+      .filter(c => c.type === 'score')
+      .reduce((sum, c) => sum + c.max_score, 0);
+  };
+
   return (
-    <div className="bg-card rounded-2xl border border-border overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            {/* Group headers row */}
-            <tr>
-              <th 
-                className="border p-3 bg-muted text-right min-w-[180px]" 
-                rowSpan={2}
-              >
-                اسم الطالب
-              </th>
-              {structure.groups.map(group => (
+    <div className="space-y-2">
+      {/* Collapse/Expand Controls */}
+      <div className="flex items-center gap-2 justify-end">
+        <Button variant="ghost" size="sm" onClick={expandAll} disabled={collapsedGroups.size === 0}>
+          <ChevronDown className="h-4 w-4 ml-1" />
+          توسيع الكل
+        </Button>
+        <Button variant="ghost" size="sm" onClick={collapseAll} disabled={collapsedGroups.size === structure.groups.length}>
+          <ChevronUp className="h-4 w-4 ml-1" />
+          طي الكل
+        </Button>
+      </div>
+      
+      <div className="bg-card rounded-2xl border border-border overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              {/* Group headers row */}
+              <tr>
                 <th 
-                  key={group.id}
-                  colSpan={group.columns.length}
-                  className="border p-2 text-center font-bold"
-                  style={{ backgroundColor: group.color }}
+                  className="border p-3 bg-muted text-right min-w-[180px]" 
+                  rowSpan={2}
                 >
-                  {group.name_ar}
+                  اسم الطالب
                 </th>
-              ))}
-              <th 
-                className="border p-3 bg-muted text-center min-w-[80px]" 
-                rowSpan={2}
-              >
-                المجموع الكلي<br/>
-                <span className="text-xs text-muted-foreground">({calculateTotalMaxScore()})</span>
-              </th>
-            </tr>
-            {/* Column headers row */}
-            <tr>
-              {structure.groups.map(group => 
-                group.columns.map(column => (
-                  <th 
-                    key={column.id}
-                    className="border p-2 text-center text-sm min-w-[70px]"
-                    style={{ 
-                      backgroundColor: column.useGroupColor !== false ? group.color : 'var(--card)'
-                    }}
-                  >
-                    <div className="flex flex-col items-center gap-1">
-                      <span>{column.name_ar}</span>
-                      <Badge 
-                        variant={column.type === 'score' ? 'secondary' : column.type === 'total' ? 'default' : 'destructive'}
-                        className="text-xs"
-                      >
-                        {column.max_score}
-                      </Badge>
-                    </div>
-                  </th>
-                ))
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr>
-                <td colSpan={totalColumns + 2} className="p-8 text-center">
-                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
-                </td>
-              </tr>
-            ) : students.length === 0 ? (
-              <tr>
-                <td colSpan={totalColumns + 2} className="p-8 text-center text-muted-foreground">
-                  لا يوجد طلاب في هذا الصف
-                </td>
-              </tr>
-            ) : (
-              students.map((student, index) => {
-                const initials = student.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2);
-                const studentTotal = calculateStudentTotal(student.id);
-                
-                return (
-                  <tr key={student.id} className="border-b border-border hover:bg-muted/20 transition-colors">
-                    <td className="border p-3 sticky right-0 bg-card">
-                      <div className="flex items-center gap-3">
-                        <span className="text-muted-foreground text-sm w-6">{index + 1}</span>
-                        <Avatar className="w-9 h-9">
-                          {student.avatar_url ? (
-                            <AvatarImage src={student.avatar_url} alt={student.name} />
-                          ) : null}
-                          <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                            {initials}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium text-sm">{student.name}</span>
+                {structure.groups.map(group => {
+                  const isCollapsed = collapsedGroups.has(group.id);
+                  return (
+                    <th 
+                      key={group.id}
+                      colSpan={isCollapsed ? 1 : group.columns.length}
+                      className="border p-2 text-center font-bold cursor-pointer hover:opacity-80 transition-opacity"
+                      style={{ backgroundColor: group.color }}
+                      onClick={() => toggleGroupCollapse(group.id)}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        {isCollapsed ? (
+                          <ChevronLeft className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                        {group.name_ar}
+                        {isCollapsed && (
+                          <Badge variant="secondary" className="text-xs">
+                            {group.columns.length}
+                          </Badge>
+                        )}
                       </div>
-                    </td>
-                    {structure.groups.map(group => 
-                      group.columns.map(column => {
-                        const value = calculateColumnValue(student.id, column, group);
-                        const isEditable = column.type === 'score';
+                    </th>
+                  );
+                })}
+                <th 
+                  className="border p-3 bg-muted text-center min-w-[80px]" 
+                  rowSpan={2}
+                >
+                  المجموع الكلي<br/>
+                  <span className="text-xs text-muted-foreground">({calculateTotalMaxScore()})</span>
+                </th>
+              </tr>
+              {/* Column headers row */}
+              <tr>
+                {structure.groups.map(group => {
+                  const isCollapsed = collapsedGroups.has(group.id);
+                  
+                  if (isCollapsed) {
+                    // Show summary header for collapsed group
+                    return (
+                      <th 
+                        key={`${group.id}-collapsed`}
+                        className="border p-2 text-center text-sm min-w-[80px]"
+                        style={{ backgroundColor: group.color }}
+                      >
+                        <div className="flex flex-col items-center gap-1">
+                          <span>المجموع</span>
+                          <Badge variant="default" className="text-xs">
+                            {calculateGroupMaxScore(group)}
+                          </Badge>
+                        </div>
+                      </th>
+                    );
+                  }
+                  
+                  // Show individual columns for expanded group
+                  return group.columns.map(column => (
+                    <th 
+                      key={column.id}
+                      className="border p-2 text-center text-sm min-w-[70px]"
+                      style={{ 
+                        backgroundColor: column.useGroupColor !== false ? group.color : 'var(--card)'
+                      }}
+                    >
+                      <div className="flex flex-col items-center gap-1">
+                        <span>{column.name_ar}</span>
+                        <Badge 
+                          variant={column.type === 'score' ? 'secondary' : column.type === 'total' ? 'default' : 'destructive'}
+                          className="text-xs"
+                        >
+                          {column.max_score}
+                        </Badge>
+                      </div>
+                    </th>
+                  ));
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={getVisibleColumnsCount() + 2} className="p-8 text-center">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+                  </td>
+                </tr>
+              ) : students.length === 0 ? (
+                <tr>
+                  <td colSpan={getVisibleColumnsCount() + 2} className="p-8 text-center text-muted-foreground">
+                    لا يوجد طلاب في هذا الصف
+                  </td>
+                </tr>
+              ) : (
+                students.map((student, index) => {
+                  const initials = student.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2);
+                  const studentTotal = calculateStudentTotal(student.id);
+                  
+                  return (
+                    <tr key={student.id} className="border-b border-border hover:bg-muted/20 transition-colors">
+                      <td className="border p-3 sticky right-0 bg-card">
+                        <div className="flex items-center gap-3">
+                          <span className="text-muted-foreground text-sm w-6">{index + 1}</span>
+                          <Avatar className="w-9 h-9">
+                            {student.avatar_url ? (
+                              <AvatarImage src={student.avatar_url} alt={student.name} />
+                            ) : null}
+                            <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                              {initials}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium text-sm">{student.name}</span>
+                        </div>
+                      </td>
+                      {structure.groups.map(group => {
+                        const isCollapsed = collapsedGroups.has(group.id);
                         
-                        return (
-                          <td 
-                            key={column.id}
-                            className={`border p-2 text-center ${
-                              column.type === 'grand_total' ? 'bg-primary/10 font-bold' : 
-                              column.type === 'total' ? 'bg-muted/50 font-semibold' : ''
-                            }`}
-                            style={{ 
-                              backgroundColor: column.useGroupColor !== false && column.type === 'score' 
-                                ? `${group.color}50` 
-                                : undefined 
-                            }}
-                          >
-                            {isEditable ? (
-                              <button
-                                onClick={() => onCellClick(student.id, column.id, group.id, column.max_score)}
-                                className={`w-10 h-10 rounded-lg flex items-center justify-center mx-auto transition-all hover:scale-105 ${
-                                  value > 0
-                                    ? 'bg-primary/20 text-primary font-bold'
-                                    : 'bg-muted/50 hover:bg-muted text-muted-foreground'
-                                }`}
-                              >
-                                {value > 0 ? value : <Plus className="w-4 h-4" />}
-                              </button>
-                            ) : (
-                              <span className={column.type === 'grand_total' ? 'text-primary' : ''}>
-                                {value}
-                              </span>
-                            )}
-                          </td>
-                        );
-                      })
-                    )}
-                    <td className="border p-3 text-center bg-primary/5">
-                      <span className="font-bold text-lg text-primary">{studentTotal}</span>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                        if (isCollapsed) {
+                          // Show group total only
+                          const groupTotal = calculateGroupTotal(student.id, group);
+                          const groupMax = calculateGroupMaxScore(group);
+                          return (
+                            <td 
+                              key={`${group.id}-collapsed`}
+                              className="border p-2 text-center font-semibold"
+                              style={{ backgroundColor: `${group.color}50` }}
+                            >
+                              {groupTotal}/{groupMax}
+                            </td>
+                          );
+                        }
+                        
+                        // Show individual columns
+                        return group.columns.map(column => {
+                          const value = calculateColumnValue(student.id, column, group);
+                          const isEditable = column.type === 'score';
+                          
+                          return (
+                            <td 
+                              key={column.id}
+                              className={`border p-2 text-center ${
+                                column.type === 'grand_total' ? 'bg-primary/10 font-bold' : 
+                                column.type === 'total' ? 'bg-muted/50 font-semibold' : ''
+                              }`}
+                              style={{ 
+                                backgroundColor: column.useGroupColor !== false && column.type === 'score' 
+                                  ? `${group.color}50` 
+                                  : undefined 
+                              }}
+                            >
+                              {isEditable ? (
+                                <button
+                                  onClick={() => onCellClick(student.id, column.id, group.id, column.max_score)}
+                                  className={`w-10 h-10 rounded-lg flex items-center justify-center mx-auto transition-all hover:scale-105 ${
+                                    value > 0
+                                      ? 'bg-primary/20 text-primary font-bold'
+                                      : 'bg-muted/50 hover:bg-muted text-muted-foreground'
+                                  }`}
+                                >
+                                  {value > 0 ? value : <Plus className="w-4 h-4" />}
+                                </button>
+                              ) : (
+                                <span className={column.type === 'grand_total' ? 'text-primary' : ''}>
+                                  {value}
+                                </span>
+                              )}
+                            </td>
+                          );
+                        });
+                      })}
+                      <td className="border p-3 text-center bg-primary/5">
+                        <span className="font-bold text-lg text-primary">{studentTotal}</span>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
@@ -480,6 +607,20 @@ export default function Grades() {
   const handleSaveGrade = async () => {
     if (!selectedCell || !gradeValue) return;
     
+    const score = parseFloat(gradeValue);
+    const maxScore = selectedCell.maxScore || 10;
+    
+    // التحقق من الحد الأقصى
+    if (score > maxScore) {
+      toast.error(`الدرجة لا يمكن أن تتجاوز ${maxScore}`);
+      return;
+    }
+    
+    if (score < 0) {
+      toast.error('الدرجة لا يمكن أن تكون سالبة');
+      return;
+    }
+    
     if (selectedCell.week !== undefined) {
       // Simple grading mode
       const existingGrade = getGradeForWeek(selectedCell.studentId, selectedCell.week);
@@ -487,7 +628,7 @@ export default function Grades() {
       if (existingGrade) {
         await updateGrade.mutateAsync({
           id: existingGrade.id,
-          score: parseFloat(gradeValue),
+          score: score,
           type: gradeType,
         });
       } else {
@@ -496,8 +637,8 @@ export default function Grades() {
           classroom_id: selectedClassroom,
           type: gradeType,
           title: `الأسبوع ${selectedCell.week}`,
-          score: parseFloat(gradeValue),
-          max_score: 10,
+          score: score,
+          max_score: maxScore,
           week_number: selectedCell.week,
         });
       }
@@ -511,7 +652,7 @@ export default function Grades() {
       if (existingGrade) {
         await updateGrade.mutateAsync({
           id: existingGrade.id,
-          score: parseFloat(gradeValue),
+          score: score,
           type: 'participation',
         });
       } else {
@@ -520,8 +661,8 @@ export default function Grades() {
           classroom_id: selectedClassroom,
           type: 'participation',
           title: selectedCell.columnId,
-          score: parseFloat(gradeValue),
-          max_score: selectedCell.maxScore || 10,
+          score: score,
+          max_score: maxScore,
           week_number: 1,
         });
       }
