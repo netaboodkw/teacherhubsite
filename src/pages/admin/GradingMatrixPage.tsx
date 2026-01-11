@@ -65,32 +65,16 @@ export default function GradingMatrixPage() {
     return map;
   }, [gradingStructures]);
 
-  // Get available templates (unique structures by name that can be used as templates)
+  // Get available templates - ONLY base templates (default or without grade/subject binding)
   const templates = useMemo(() => {
-    // Get structures that are defaults or not tied to specific grade/subject
-    const baseTemplates = gradingStructures?.filter(s => s.is_default || (!s.grade_level_id && !s.subject_id)) || [];
+    if (!gradingStructures) return [];
     
-    // Also include all structures but group by name to avoid duplicates
-    const allStructures = gradingStructures || [];
-    
-    // Create a map to get unique templates by name_ar
-    const uniqueByName = new Map<string, typeof allStructures[0]>();
-    
-    // First add base templates (higher priority)
-    baseTemplates.forEach(t => {
-      if (!uniqueByName.has(t.name_ar)) {
-        uniqueByName.set(t.name_ar, t);
-      }
-    });
-    
-    // Then add other structures (if not already present)
-    allStructures.forEach(t => {
-      if (!uniqueByName.has(t.name_ar)) {
-        uniqueByName.set(t.name_ar, t);
-      }
-    });
-    
-    return Array.from(uniqueByName.values());
+    // Only include structures that are true templates:
+    // 1. Marked as is_default = true
+    // 2. OR not tied to any specific grade_level or subject (general templates)
+    return gradingStructures.filter(s => 
+      s.is_default || (!s.grade_level_id && !s.subject_id)
+    );
   }, [gradingStructures]);
 
   // Filter subjects and grade levels by education level
@@ -229,23 +213,40 @@ export default function GradingMatrixPage() {
     setSelectedCells(newSelected);
   };
 
-  // Apply template to selected cells
+  // Filter selected cells to only include those without existing structures
+  const cellsWithStructure = useMemo(() => {
+    const result = new Set<string>();
+    selectedCells.forEach(key => {
+      const [gradeLevelId, subjectId] = key.split(':');
+      const { hasStructure } = getCellStatus(gradeLevelId, subjectId);
+      if (hasStructure) {
+        result.add(key);
+      }
+    });
+    return result;
+  }, [selectedCells, structureMap]);
+
+  const cellsWithoutStructure = useMemo(() => {
+    return new Set(Array.from(selectedCells).filter(key => !cellsWithStructure.has(key)));
+  }, [selectedCells, cellsWithStructure]);
+
+  // Apply template to selected cells (only those without existing structure)
   const handleApplyTemplate = async () => {
-    if (!selectedTemplate || selectedCells.size === 0) return;
+    if (!selectedTemplate || cellsWithoutStructure.size === 0) return;
     
     const template = gradingStructures?.find(s => s.id === selectedTemplate);
     if (!template) return;
     
     setApplying(true);
     try {
-      const inserts = Array.from(selectedCells).map(key => {
+      const inserts = Array.from(cellsWithoutStructure).map(key => {
         const [gradeLevelId, subjectId] = key.split(':');
         const gradeLevel = gradeLevels?.find(g => g.id === gradeLevelId);
         const subject = subjects?.find(s => s.id === subjectId);
         
         return {
-          name: `${template.name} - ${subject?.name || ''} - ${gradeLevel?.name || ''}`,
-          name_ar: `${template.name_ar} - ${subject?.name_ar || ''} - ${gradeLevel?.name_ar || ''}`,
+          name: template.name,
+          name_ar: template.name_ar,
           education_level_id: gradeLevel?.education_level_id || null,
           grade_level_id: gradeLevelId,
           subject_id: subjectId,
@@ -485,49 +486,79 @@ export default function GradingMatrixPage() {
 
         {/* Apply Template Dialog */}
         <Dialog open={applyDialogOpen} onOpenChange={setApplyDialogOpen}>
-          <DialogContent dir="rtl">
+          <DialogContent dir="rtl" className="max-w-lg">
             <DialogHeader>
               <DialogTitle>تطبيق قالب درجات</DialogTitle>
               <DialogDescription>
-                سيتم تطبيق القالب المختار على {selectedCells.size} خلية محددة
+                تم تحديد {selectedCells.size} خلية
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
+              {/* Show breakdown of selected cells */}
+              <div className="grid grid-cols-2 gap-4 p-3 rounded-lg bg-muted/50">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-success">{cellsWithoutStructure.size}</p>
+                  <p className="text-sm text-muted-foreground">فارغة (ستطبق)</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-warning">{cellsWithStructure.size}</p>
+                  <p className="text-sm text-muted-foreground">لديها هيكل (ستتجاهل)</p>
+                </div>
+              </div>
+
+              {cellsWithStructure.size > 0 && (
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>تنبيه</AlertTitle>
+                  <AlertDescription>
+                    {cellsWithStructure.size} خلية لديها نظام درجات مسبق وسيتم تجاهلها لتجنب التعارض.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <div className="space-y-2">
-                <label className="text-sm font-medium">اختر القالب</label>
+                <label className="text-sm font-medium">اختر القالب الأساسي</label>
                 <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
                   <SelectTrigger>
                     <SelectValue placeholder="اختر قالب الدرجات" />
                   </SelectTrigger>
                   <SelectContent>
-                    {gradingStructures?.map(template => (
-                      <SelectItem key={template.id} value={template.id}>
-                        <div className="flex items-center gap-2">
-                          {template.name_ar}
-                          {template.is_default && (
-                            <Badge variant="secondary" className="text-xs">افتراضي</Badge>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
+                    {templates.length === 0 ? (
+                      <div className="p-4 text-center text-muted-foreground">
+                        لا توجد قوالب أساسية. أنشئ قالب وحدده كـ "افتراضي" أولاً.
+                      </div>
+                    ) : (
+                      templates.map(template => (
+                        <SelectItem key={template.id} value={template.id}>
+                          <div className="flex items-center gap-2">
+                            {template.name_ar}
+                            {template.is_default && (
+                              <Badge variant="secondary" className="text-xs">افتراضي</Badge>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  تظهر فقط القوالب الأساسية (الافتراضية أو العامة غير المرتبطة بمادة/صف معين)
+                </p>
               </div>
-              
-              <Alert>
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>تنبيه</AlertTitle>
-                <AlertDescription>
-                  سيتم إنشاء نسخة من القالب لكل خلية محددة. الخلايا التي لديها نظام درجات مسبقاً قد تحصل على تعارض.
-                </AlertDescription>
-              </Alert>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setApplyDialogOpen(false)}>
                 إلغاء
               </Button>
-              <Button onClick={handleApplyTemplate} disabled={applying || !selectedTemplate}>
-                {applying ? <Loader2 className="h-4 w-4 animate-spin" /> : 'تطبيق'}
+              <Button 
+                onClick={handleApplyTemplate} 
+                disabled={applying || !selectedTemplate || cellsWithoutStructure.size === 0}
+              >
+                {applying ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  `تطبيق على ${cellsWithoutStructure.size} خلية`
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
