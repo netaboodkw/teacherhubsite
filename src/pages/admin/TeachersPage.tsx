@@ -7,10 +7,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Users, Edit, UserPlus, Phone, School, GraduationCap } from 'lucide-react';
+import { Loader2, Users, Edit, UserPlus, Phone, School, GraduationCap, Mail, User, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTeachers, Teacher } from '@/hooks/useTeachers';
 import { useEducationLevels } from '@/hooks/useEducationLevels';
+import { useSubjects } from '@/hooks/useSubjects';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -20,11 +21,23 @@ const KUWAIT_PHONE_REGEX = /^[569]\d{7}$/;
 export default function TeachersPage() {
   const { data: teachers, isLoading, refetch } = useTeachers();
   const { data: educationLevels } = useEducationLevels();
+  const { data: subjects } = useSubjects();
+  
+  // Search state
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Edit teacher dialog state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
-  const [editEducationLevelId, setEditEducationLevelId] = useState('');
+  const [editForm, setEditForm] = useState({
+    full_name: '',
+    phone: '',
+    school_name: '',
+    education_level_id: '',
+    subject_id: '',
+    department_head_name: '',
+    principal_name: '',
+  });
   const [saving, setSaving] = useState(false);
 
   // Add teacher dialog state
@@ -37,27 +50,66 @@ export default function TeachersPage() {
   });
   const [adding, setAdding] = useState(false);
 
-  const openEditDialog = (teacher: Teacher) => {
+  // Filter teachers
+  const filteredTeachers = teachers?.filter(teacher => 
+    teacher.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    teacher.school_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    teacher.phone?.includes(searchTerm)
+  );
+
+  const openEditDialog = async (teacher: Teacher) => {
     setEditingTeacher(teacher);
-    // Find education level id from name
+    
+    // Fetch full profile data
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', teacher.user_id)
+      .single();
+    
     const level = educationLevels?.find(l => l.name_ar === teacher.education_level_name);
-    setEditEducationLevelId(level?.id || '');
+    const subject = subjects?.find(s => s.name_ar === teacher.subject_name);
+    
+    setEditForm({
+      full_name: teacher.full_name || '',
+      phone: teacher.phone || '',
+      school_name: teacher.school_name || '',
+      education_level_id: level?.id || profile?.education_level_id || '',
+      subject_id: subject?.id || profile?.subject_id || '',
+      department_head_name: profile?.department_head_name || '',
+      principal_name: profile?.principal_name || '',
+    });
     setEditDialogOpen(true);
   };
 
-  const handleSaveEducationLevel = async () => {
-    if (!editingTeacher || !editEducationLevelId) return;
+  const handleSaveTeacher = async () => {
+    if (!editingTeacher) return;
+    
+    if (!editForm.full_name.trim()) {
+      toast.error('الاسم مطلوب');
+      return;
+    }
     
     setSaving(true);
     try {
+      const updateData: any = {
+        full_name: editForm.full_name.trim(),
+        phone: editForm.phone || null,
+        school_name: editForm.school_name || null,
+        education_level_id: editForm.education_level_id || null,
+        subject_id: editForm.subject_id || null,
+        department_head_name: editForm.department_head_name || null,
+        principal_name: editForm.principal_name || null,
+      };
+
       const { error } = await supabase
         .from('profiles')
-        .update({ education_level_id: editEducationLevelId })
+        .update(updateData)
         .eq('user_id', editingTeacher.user_id);
 
       if (error) throw error;
 
-      toast.success('تم تحديث المرحلة التعليمية بنجاح');
+      toast.success('تم تحديث بيانات المعلم بنجاح');
       setEditDialogOpen(false);
       refetch();
     } catch (error: any) {
@@ -87,7 +139,6 @@ export default function TeachersPage() {
       const emailFromPhone = `${newTeacher.phone}@phone.teacherhub.app`;
       const passwordFromPhone = `phone_${newTeacher.phone}_secure_2024`;
 
-      // Create user via Supabase Auth
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: emailFromPhone,
         password: passwordFromPhone,
@@ -105,10 +156,8 @@ export default function TeachersPage() {
       }
 
       if (signUpData.user) {
-        // Wait for profile to be created by trigger
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Update the profile with teacher data
         const { error: updateError } = await supabase
           .from('profiles')
           .update({
@@ -151,11 +200,22 @@ export default function TeachersPage() {
           </Button>
         </div>
 
+        {/* Search */}
+        <div className="relative max-w-md">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="بحث عن معلم..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pr-10"
+          />
+        </div>
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               المعلمون المسجلون
-              <Badge variant="secondary">{teachers?.length || 0}</Badge>
+              <Badge variant="secondary">{filteredTeachers?.length || 0}</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -163,13 +223,13 @@ export default function TeachersPage() {
               <div className="flex justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
-            ) : teachers?.length === 0 ? (
+            ) : filteredTeachers?.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">
-                لا يوجد معلمون مسجلون بعد
+                {searchTerm ? 'لا توجد نتائج للبحث' : 'لا يوجد معلمون مسجلون بعد'}
               </p>
             ) : (
               <div className="space-y-3">
-                {teachers?.map((teacher) => (
+                {filteredTeachers?.map((teacher) => (
                   <div
                     key={teacher.id}
                     className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
@@ -184,8 +244,15 @@ export default function TeachersPage() {
                       <div>
                         <h3 className="font-medium">{teacher.full_name}</h3>
                         <div className="flex flex-wrap gap-2 mt-1">
+                          {teacher.phone && (
+                            <Badge variant="outline" className="text-xs font-mono">
+                              <Phone className="h-3 w-3 ml-1" />
+                              {teacher.phone}
+                            </Badge>
+                          )}
                           {teacher.school_name && (
                             <Badge variant="outline" className="text-xs">
+                              <School className="h-3 w-3 ml-1" />
                               {teacher.school_name}
                             </Badge>
                           )}
@@ -212,12 +279,12 @@ export default function TeachersPage() {
                         </Badge>
                       )}
                       <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        title="تعديل المرحلة"
+                        variant="outline" 
+                        size="sm" 
                         onClick={() => openEditDialog(teacher)}
                       >
-                        <Edit className="h-4 w-4" />
+                        <Edit className="h-4 w-4 ml-1" />
+                        تعديل
                       </Button>
                     </div>
                   </div>
@@ -227,29 +294,83 @@ export default function TeachersPage() {
           </CardContent>
         </Card>
 
-        {/* Edit Teacher Dialog */}
+        {/* Edit Teacher Dialog - Full Form */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent dir="rtl">
+          <DialogContent dir="rtl" className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>تعديل المرحلة التعليمية</DialogTitle>
+              <DialogTitle className="flex items-center gap-2">
+                <Edit className="h-5 w-5" />
+                تعديل بيانات المعلم
+              </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-12 w-12">
+            <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
+              {/* Avatar and Basic Info */}
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <Avatar className="h-14 w-14">
                   <AvatarImage src={editingTeacher?.avatar_url || ''} />
-                  <AvatarFallback>
+                  <AvatarFallback className="text-lg">
                     {editingTeacher?.full_name?.charAt(0) || 'م'}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <h3 className="font-medium">{editingTeacher?.full_name}</h3>
-                  <p className="text-sm text-muted-foreground">{editingTeacher?.school_name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    تاريخ التسجيل: {editingTeacher?.created_at && new Date(editingTeacher.created_at).toLocaleDateString('ar-SA')}
+                  </p>
                 </div>
               </div>
-              
+
+              {/* Name */}
               <div className="space-y-2">
-                <Label>المرحلة التعليمية</Label>
-                <Select value={editEducationLevelId} onValueChange={setEditEducationLevelId}>
+                <Label className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  الاسم الكامل
+                </Label>
+                <Input
+                  value={editForm.full_name}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, full_name: e.target.value }))}
+                  placeholder="أدخل اسم المعلم"
+                />
+              </div>
+
+              {/* Phone */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  رقم الهاتف
+                </Label>
+                <Input
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value.replace(/\D/g, '').slice(0, 8) }))}
+                  placeholder="9xxxxxxx"
+                  dir="ltr"
+                  maxLength={8}
+                />
+              </div>
+
+              {/* School */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <School className="h-4 w-4" />
+                  اسم المدرسة
+                </Label>
+                <Input
+                  value={editForm.school_name}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, school_name: e.target.value }))}
+                  placeholder="أدخل اسم المدرسة"
+                />
+              </div>
+
+              {/* Education Level */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <GraduationCap className="h-4 w-4" />
+                  المرحلة التعليمية
+                </Label>
+                <Select 
+                  value={editForm.education_level_id} 
+                  onValueChange={(value) => setEditForm(prev => ({ ...prev, education_level_id: value }))}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="اختر المرحلة" />
                   </SelectTrigger>
@@ -262,13 +383,54 @@ export default function TeachersPage() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Subject */}
+              <div className="space-y-2">
+                <Label>المادة الدراسية</Label>
+                <Select 
+                  value={editForm.subject_id} 
+                  onValueChange={(value) => setEditForm(prev => ({ ...prev, subject_id: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر المادة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subjects?.filter(s => !editForm.education_level_id || s.education_level_id === editForm.education_level_id)
+                      .map((subject) => (
+                        <SelectItem key={subject.id} value={subject.id}>
+                          {subject.name_ar}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Department Head */}
+              <div className="space-y-2">
+                <Label>رئيس القسم</Label>
+                <Input
+                  value={editForm.department_head_name}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, department_head_name: e.target.value }))}
+                  placeholder="اسم رئيس القسم"
+                />
+              </div>
+
+              {/* Principal */}
+              <div className="space-y-2">
+                <Label>مدير المدرسة</Label>
+                <Input
+                  value={editForm.principal_name}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, principal_name: e.target.value }))}
+                  placeholder="اسم مدير المدرسة"
+                />
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
                 إلغاء
               </Button>
-              <Button onClick={handleSaveEducationLevel} disabled={saving}>
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'حفظ'}
+              <Button onClick={handleSaveTeacher} disabled={saving}>
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'حفظ التغييرات'}
               </Button>
             </DialogFooter>
           </DialogContent>
