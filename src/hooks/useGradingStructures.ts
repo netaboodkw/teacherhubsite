@@ -96,6 +96,75 @@ export function useDefaultGradingStructures() {
   });
 }
 
+// Get grading structure for a specific classroom based on education level, grade level, and subject
+export function useClassroomGradingStructure(classroom?: {
+  education_level_id?: string | null;
+  grade_level_id?: string | null;
+  subject_id?: string | null;
+}) {
+  return useQuery({
+    queryKey: ['classroom_grading_structure', classroom?.education_level_id, classroom?.grade_level_id, classroom?.subject_id],
+    queryFn: async () => {
+      if (!classroom?.education_level_id) return null;
+      
+      // Try to find the most specific match first:
+      // 1. Exact match (education_level + grade_level + subject)
+      // 2. Education level + subject (any grade)
+      // 3. Education level + grade level (any subject)
+      // 4. Education level only
+      
+      let query = supabase
+        .from('subject_grading_structures')
+        .select('*')
+        .eq('education_level_id', classroom.education_level_id);
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      
+      if (!data || data.length === 0) return null;
+      
+      // Find the best match
+      let bestMatch: typeof data[0] | null = null;
+      let bestScore = -1;
+      
+      for (const item of data) {
+        let score = 0;
+        
+        // Check grade level match
+        if (classroom.grade_level_id && item.grade_level_id === classroom.grade_level_id) {
+          score += 2;
+        } else if (item.grade_level_id === null) {
+          score += 1; // Partial match (applies to all grades)
+        } else if (classroom.grade_level_id && item.grade_level_id !== classroom.grade_level_id) {
+          continue; // Skip - grade level mismatch
+        }
+        
+        // Check subject match
+        if (classroom.subject_id && item.subject_id === classroom.subject_id) {
+          score += 2;
+        } else if (item.subject_id === null) {
+          score += 1; // Partial match (applies to all subjects)
+        } else if (classroom.subject_id && item.subject_id !== classroom.subject_id) {
+          continue; // Skip - subject mismatch
+        }
+        
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = item;
+        }
+      }
+      
+      if (!bestMatch) return null;
+      
+      return {
+        ...bestMatch,
+        structure: bestMatch.structure as unknown as GradingStructureData
+      } as GradingStructure;
+    },
+    enabled: !!classroom?.education_level_id,
+  });
+}
+
 export function useCreateGradingStructure() {
   const queryClient = useQueryClient();
 
