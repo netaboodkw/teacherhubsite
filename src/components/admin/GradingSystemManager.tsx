@@ -40,6 +40,23 @@ import {
   GradingTemplate,
 } from '@/hooks/useGradingSystem';
 import { useQueryClient } from '@tanstack/react-query';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 // ألوان المجموعات
 const GROUP_COLORS = [
@@ -76,6 +93,105 @@ interface GradingStructure {
 }
 
 type ActiveTab = 'templates' | 'upload' | 'builder' | 'preview';
+
+// Sortable Column Item Component
+interface SortableColumnProps {
+  column: GradingColumn;
+  groupId: string;
+  group: GradingGroup;
+  structure: GradingStructure;
+  updateColumn: (groupId: string, columnId: string, field: keyof GradingColumn, value: any) => void;
+  removeColumn: (groupId: string, columnId: string) => void;
+  calculateGrandTotal: (sourceGroupIds?: string[]) => number;
+}
+
+function SortableColumn({ 
+  column, 
+  groupId, 
+  group, 
+  structure, 
+  updateColumn, 
+  removeColumn,
+  calculateGrandTotal 
+}: SortableColumnProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: column.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div 
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-3 p-3 rounded-lg border bg-card ${column.type === 'grand_total' ? 'border-primary bg-primary/5' : ''} ${isDragging ? 'shadow-lg z-50' : ''}`}
+    >
+      <button 
+        {...attributes} 
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing touch-none"
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </button>
+      <div className="flex-1">
+        <Input 
+          value={column.name_ar}
+          onChange={(e) => updateColumn(groupId, column.id, 'name_ar', e.target.value)}
+          className="w-full"
+          placeholder="اسم العمود"
+        />
+        {column.type === 'grand_total' && column.sourceGroupIds && (
+          <div className="flex gap-1 mt-1 flex-wrap">
+            <span className="text-xs text-muted-foreground">يجمع:</span>
+            {column.sourceGroupIds.map(sgId => {
+              const sourceGroup = structure.groups.find(g => g.id === sgId);
+              return sourceGroup ? (
+                <Badge 
+                  key={sgId} 
+                  variant="outline" 
+                  className="text-xs py-0"
+                  style={{ borderColor: sourceGroup.border, backgroundColor: sourceGroup.color }}
+                >
+                  {sourceGroup.name_ar}
+                </Badge>
+              ) : null;
+            })}
+          </div>
+        )}
+      </div>
+      <div className="flex items-center gap-2">
+        <Label className="text-xs whitespace-nowrap">الدرجة:</Label>
+        <Input 
+          type="number"
+          value={column.type === 'grand_total' ? calculateGrandTotal(column.sourceGroupIds) : column.max_score}
+          onChange={(e) => updateColumn(groupId, column.id, 'max_score', parseInt(e.target.value) || 0)}
+          className="w-20"
+          min={0}
+          disabled={column.type === 'total' || column.type === 'grand_total'}
+        />
+      </div>
+      <Badge variant={column.type === 'score' ? 'secondary' : column.type === 'total' ? 'default' : 'destructive'}>
+        {column.type === 'score' ? 'درجة' : column.type === 'total' ? 'مجموع' : 'مجموع كلي'}
+      </Badge>
+      <Button 
+        variant="ghost" 
+        size="sm"
+        onClick={() => removeColumn(groupId, column.id)}
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
 
 export function GradingSystemManager() {
   const queryClient = useQueryClient();
@@ -136,6 +252,36 @@ export function GradingSystemManager() {
   const filteredSubjects = allSubjects?.filter(
     s => s.education_level_id === assignment.education_level_id
   ) || [];
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Handle column reorder within a group
+  const handleColumnDragEnd = (groupId: string) => (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      setStructure(prev => ({
+        ...prev,
+        groups: prev.groups.map(g => {
+          if (g.id !== groupId) return g;
+          
+          const oldIndex = g.columns.findIndex(c => c.id === active.id);
+          const newIndex = g.columns.findIndex(c => c.id === over.id);
+          
+          return {
+            ...g,
+            columns: arrayMove(g.columns, oldIndex, newIndex)
+          };
+        })
+      }));
+    }
+  };
 
   // Group management
   const addGroup = () => {
@@ -895,64 +1041,32 @@ export function GradingSystemManager() {
                   </CardHeader>
                   <CardContent className="p-4">
                     <div className="space-y-3">
-                      {/* Columns */}
-                      <div className="grid gap-2">
-                        {group.columns.map((column, colIndex) => (
-                          <div 
-                            key={column.id} 
-                            className={`flex items-center gap-3 p-3 rounded-lg border bg-card ${column.type === 'grand_total' ? 'border-primary bg-primary/5' : ''}`}
-                          >
-                            <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
-                            <div className="flex-1">
-                              <Input 
-                                value={column.name_ar}
-                                onChange={(e) => updateColumn(group.id, column.id, 'name_ar', e.target.value)}
-                                className="w-full"
-                                placeholder="اسم العمود"
+                      {/* Columns with DnD */}
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleColumnDragEnd(group.id)}
+                      >
+                        <SortableContext
+                          items={group.columns.map(c => c.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          <div className="grid gap-2">
+                            {group.columns.map((column) => (
+                              <SortableColumn
+                                key={column.id}
+                                column={column}
+                                groupId={group.id}
+                                group={group}
+                                structure={structure}
+                                updateColumn={updateColumn}
+                                removeColumn={removeColumn}
+                                calculateGrandTotal={calculateGrandTotal}
                               />
-                              {column.type === 'grand_total' && column.sourceGroupIds && (
-                                <div className="flex gap-1 mt-1 flex-wrap">
-                                  <span className="text-xs text-muted-foreground">يجمع:</span>
-                                  {column.sourceGroupIds.map(sgId => {
-                                    const sourceGroup = structure.groups.find(g => g.id === sgId);
-                                    return sourceGroup ? (
-                                      <Badge 
-                                        key={sgId} 
-                                        variant="outline" 
-                                        className="text-xs py-0"
-                                        style={{ borderColor: sourceGroup.border, backgroundColor: sourceGroup.color }}
-                                      >
-                                        {sourceGroup.name_ar}
-                                      </Badge>
-                                    ) : null;
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Label className="text-xs whitespace-nowrap">الدرجة:</Label>
-                              <Input 
-                                type="number"
-                                value={column.type === 'grand_total' ? calculateGrandTotal(column.sourceGroupIds) : column.max_score}
-                                onChange={(e) => updateColumn(group.id, column.id, 'max_score', parseInt(e.target.value) || 0)}
-                                className="w-20"
-                                min={0}
-                                disabled={column.type === 'total' || column.type === 'grand_total'}
-                              />
-                            </div>
-                            <Badge variant={column.type === 'score' ? 'secondary' : column.type === 'total' ? 'default' : 'destructive'}>
-                              {column.type === 'score' ? 'درجة' : column.type === 'total' ? 'مجموع' : 'مجموع كلي'}
-                            </Badge>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => removeColumn(group.id, column.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            ))}
                           </div>
-                        ))}
-                      </div>
+                        </SortableContext>
+                      </DndContext>
                       
                       {/* Add column buttons */}
                       <div className="flex gap-2 pt-2 flex-wrap">
