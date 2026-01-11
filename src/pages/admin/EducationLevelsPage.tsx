@@ -5,7 +5,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, Loader2, GraduationCap } from 'lucide-react';
+import { Plus, Edit, Trash2, Loader2, GraduationCap, Power, PowerOff } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useEducationLevels, useCreateEducationLevel, useUpdateEducationLevel, useDeleteEducationLevel } from '@/hooks/useEducationLevels';
 
 export default function EducationLevelsPage() {
@@ -17,6 +28,16 @@ export default function EducationLevelsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLevel, setEditingLevel] = useState<{ id: string; name: string; name_ar: string } | null>(null);
   const [form, setForm] = useState({ name: '', name_ar: '' });
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string; name: string } | null>(null);
+
+  const handleToggleActive = async (level: { id: string; is_active: boolean }) => {
+    await updateLevel.mutateAsync({ id: level.id, is_active: !level.is_active });
+  };
+
+  const handleDelete = (id: string) => {
+    deleteLevel.mutate(id);
+    setDeleteConfirm(null);
+  };
 
   const openDialog = (level?: { id: string; name: string; name_ar: string }) => {
     if (level) {
@@ -72,19 +93,39 @@ export default function EducationLevelsPage() {
                 {levels?.map((level) => (
                   <div
                     key={level.id}
-                    className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                    className={`flex items-center justify-between p-4 rounded-lg border transition-colors ${
+                      level.is_active ? 'hover:bg-muted/50' : 'bg-muted/30 opacity-70'
+                    }`}
                   >
-                    <div>
-                      <span className="font-medium text-lg">{level.name_ar}</span>
+                    <div className="flex items-center gap-3">
+                      <span className={`font-medium text-lg ${!level.is_active && 'text-muted-foreground'}`}>
+                        {level.name_ar}
+                      </span>
                       {level.name && (
-                        <span className="text-muted-foreground text-sm mr-2">({level.name})</span>
+                        <span className="text-muted-foreground text-sm">({level.name})</span>
+                      )}
+                      {!level.is_active && (
+                        <Badge variant="outline" className="text-muted-foreground">معطّل</Badge>
                       )}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => handleToggleActive(level)}
+                        title={level.is_active ? 'تعطيل المرحلة' : 'تفعيل المرحلة'}
+                        className={level.is_active ? 'text-green-600 hover:text-green-700' : 'text-muted-foreground'}
+                      >
+                        {level.is_active ? <Power className="h-4 w-4" /> : <PowerOff className="h-4 w-4" />}
+                      </Button>
                       <Button variant="ghost" size="icon" onClick={() => openDialog(level)}>
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => deleteLevel.mutate(level.id)}>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => setDeleteConfirm({ open: true, id: level.id, name: level.name_ar })}
+                      >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
@@ -125,6 +166,30 @@ export default function EducationLevelsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={deleteConfirm?.open} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+            <AlertDialogDescription>
+              هل أنت متأكد من حذف المرحلة "{deleteConfirm?.name}"؟
+              <br />
+              <span className="text-destructive font-medium">
+                ملاحظة: إذا كانت المرحلة مرتبطة ببيانات أخرى، يُفضل تعطيلها بدلاً من حذفها.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteConfirm && handleDelete(deleteConfirm.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              حذف
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }
