@@ -13,6 +13,8 @@ import {
   FileText,
   LayoutDashboard,
   LogOut,
+  Grid3X3,
+  TreePine,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -26,10 +28,9 @@ interface AdminSidebarProps {
 
 const navItems = [
   { href: '/admin', icon: LayoutDashboard, label: 'الرئيسية' },
-  { href: '/admin/education-levels', icon: GraduationCap, label: 'المراحل التعليمية' },
-  { href: '/admin/grade-levels', icon: Layers, label: 'الصفوف الدراسية' },
-  { href: '/admin/subjects', icon: BookOpen, label: 'المواد' },
-  { href: '/admin/grading-system', icon: FileText, label: 'سجل الدرجات' },
+  { href: '/admin/curriculum-tree', icon: TreePine, label: 'شجرة المناهج' },
+  { href: '/admin/grading-system', icon: FileText, label: 'قوالب الدرجات' },
+  { href: '/admin/grading-matrix', icon: Grid3X3, label: 'مصفوفة التطبيق' },
   { href: '/admin/teachers', icon: Users, label: 'المعلمون' },
 ];
 
