@@ -63,7 +63,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-// ألوان المجموعات - Extended
+// ألوان المجموعات - Extended (unique colors only)
 const GROUP_COLORS = [
   { id: 'yellow', color: '#fef3c7', name: 'أصفر', border: '#fbbf24' },
   { id: 'green', color: '#d1fae5', name: 'أخضر', border: '#34d399' },
@@ -74,13 +74,13 @@ const GROUP_COLORS = [
   { id: 'pink', color: '#fce7f3', name: 'وردي', border: '#f472b6' },
   { id: 'cyan', color: '#cffafe', name: 'سماوي', border: '#22d3d8' },
   { id: 'lime', color: '#ecfccb', name: 'ليموني', border: '#a3e635' },
-  { id: 'amber', color: '#fef3c7', name: 'كهرماني', border: '#fbbf24' },
   { id: 'teal', color: '#ccfbf1', name: 'أزرق مخضر', border: '#2dd4bf' },
   { id: 'indigo', color: '#e0e7ff', name: 'نيلي', border: '#818cf8' },
   { id: 'rose', color: '#ffe4e6', name: 'وردي داكن', border: '#fb7185' },
-  { id: 'emerald', color: '#d1fae5', name: 'زمردي', border: '#34d399' },
   { id: 'sky', color: '#e0f2fe', name: 'سماء', border: '#38bdf8' },
   { id: 'violet', color: '#ede9fe', name: 'بنفسجي فاتح', border: '#8b5cf6' },
+  { id: 'gray', color: '#f3f4f6', name: 'رمادي', border: '#9ca3af' },
+  { id: 'slate', color: '#e2e8f0', name: 'رمادي داكن', border: '#64748b' },
 ];
 
 interface GradingColumn {
@@ -337,6 +337,9 @@ export function GradingSystemManager() {
   // Edit template dialog
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<GradingTemplate | null>(null);
+  
+  // Track which template is being edited in the builder
+  const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
 
   // Default template
   const defaultTemplateId = localStorage.getItem('default_grading_template');
@@ -885,8 +888,8 @@ export function GradingSystemManager() {
     await analyzeFile(currentFile);
   }, [currentFile, analyzeFile]);
 
-  // Save structure as template (with full structure)
-  const handleSaveAsTemplate = async () => {
+  // Save structure as template (with full structure) - updates existing or creates new
+  const handleSaveTemplate = async (saveAsNew: boolean = false) => {
     if (!templateName.trim()) {
       toast.error('يرجى إدخال اسم القالب');
       return;
@@ -911,19 +914,32 @@ export function GradingSystemManager() {
         }))
       );
 
-      await createTemplate.mutateAsync({
-        name: templateName,
-        name_ar: templateName,
-        description: templateDescription,
-        periods,
-        full_structure: structure, // Save the complete structure
-      });
+      if (editingTemplateId && !saveAsNew) {
+        // Update existing template
+        await updateTemplate.mutateAsync({
+          id: editingTemplateId,
+          name: templateName,
+          name_ar: templateName,
+          description: JSON.stringify(structure), // Save structure as JSON
+        });
+        toast.success('تم تحديث القالب بنجاح');
+      } else {
+        // Create new template
+        await createTemplate.mutateAsync({
+          name: templateName,
+          name_ar: templateName,
+          description: templateDescription,
+          periods,
+          full_structure: structure, // Save the complete structure
+        });
+        toast.success('تم حفظ القالب بنجاح');
+      }
 
       setSaveDialogOpen(false);
       setTemplateName('');
       setTemplateDescription('');
+      setEditingTemplateId(null);
       setActiveTab('templates');
-      toast.success('تم حفظ القالب بنجاح');
     } catch (error) {
       console.error('Save error:', error);
       toast.error('فشل في حفظ القالب');
@@ -932,8 +948,28 @@ export function GradingSystemManager() {
     }
   };
 
+  // Clear editing state when starting fresh
+  const startNewTemplate = () => {
+    setEditingTemplateId(null);
+    setTemplateName('');
+    setTemplateDescription('');
+    setStructure({
+      groups: [],
+      settings: {
+        showPercentage: true,
+        passingScore: 50,
+      }
+    });
+    setActiveTab('builder');
+  };
+
   // Load template into builder
   const loadTemplateToBuilder = async (template: GradingTemplate) => {
+    // Track which template we're editing
+    setEditingTemplateId(template.id);
+    setTemplateName(template.name_ar);
+    setTemplateDescription(''); // Will be overwritten with structure
+    
     // Try to parse full structure from description first
     if (template.description) {
       try {
@@ -1184,7 +1220,7 @@ export function GradingSystemManager() {
                 اختر قالب وقم بتطبيقه أو تعديله
               </CardDescription>
             </div>
-            <Button onClick={() => setActiveTab('builder')}>
+            <Button onClick={startNewTemplate}>
               <Plus className="h-4 w-4 ml-1" />
               قالب جديد
             </Button>
@@ -1200,7 +1236,7 @@ export function GradingSystemManager() {
                 <p className="text-lg font-medium mb-2">لا توجد قوالب</p>
                 <p className="text-muted-foreground mb-4">ابدأ ببناء قالب جديد أو ارفع صورة نموذج</p>
                 <div className="flex gap-2 justify-center">
-                  <Button onClick={() => setActiveTab('builder')}>
+                  <Button onClick={startNewTemplate}>
                     <Plus className="h-4 w-4 ml-1" />
                     بناء قالب
                   </Button>
@@ -1363,10 +1399,24 @@ export function GradingSystemManager() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold">بناء هيكل سجل الدرجات</h3>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                بناء هيكل سجل الدرجات
+                {editingTemplateId && (
+                  <Badge variant="secondary" className="font-normal">
+                    <Edit className="h-3 w-3 ml-1" />
+                    تعديل: {templateName}
+                  </Badge>
+                )}
+              </h3>
               <p className="text-sm text-muted-foreground">أضف مجموعات وأعمدة لتصميم السجل</p>
             </div>
             <div className="flex gap-2">
+              {editingTemplateId && (
+                <Button variant="ghost" onClick={startNewTemplate}>
+                  <Plus className="h-4 w-4 ml-1" />
+                  قالب جديد
+                </Button>
+              )}
               <Button variant="outline" onClick={addGroup}>
                 <Plus className="h-4 w-4 ml-1" />
                 إضافة مجموعة
@@ -1374,7 +1424,7 @@ export function GradingSystemManager() {
               {structure.groups.length > 0 && (
                 <Button onClick={() => setSaveDialogOpen(true)}>
                   <Save className="h-4 w-4 ml-1" />
-                  حفظ كقالب
+                  {editingTemplateId ? 'حفظ التعديلات' : 'حفظ كقالب'}
                 </Button>
               )}
             </div>
@@ -1746,7 +1796,7 @@ export function GradingSystemManager() {
       <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>حفظ كقالب جديد</DialogTitle>
+            <DialogTitle>{editingTemplateId ? 'تحديث القالب' : 'حفظ كقالب جديد'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -1766,13 +1816,19 @@ export function GradingSystemManager() {
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
               إلغاء
             </Button>
-            <Button onClick={handleSaveAsTemplate} disabled={isSaving}>
+            {editingTemplateId && (
+              <Button variant="outline" onClick={() => handleSaveTemplate(true)} disabled={isSaving}>
+                <Save className="h-4 w-4 ml-1" />
+                حفظ كقالب جديد
+              </Button>
+            )}
+            <Button onClick={() => handleSaveTemplate(false)} disabled={isSaving}>
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin ml-1" /> : <Save className="h-4 w-4 ml-1" />}
-              حفظ
+              {editingTemplateId ? 'تحديث القالب' : 'حفظ'}
             </Button>
           </DialogFooter>
         </DialogContent>

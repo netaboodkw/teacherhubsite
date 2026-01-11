@@ -242,7 +242,7 @@ export function useUpdateGradingTemplate() {
       name: string; 
       name_ar: string; 
       description?: string;
-      periods: { name: string; name_ar: string; max_score: number; weight: number }[];
+      periods?: { name: string; name_ar: string; max_score: number; weight: number }[];
     }) => {
       // Update template
       const { error: templateError } = await supabase
@@ -264,8 +264,8 @@ export function useUpdateGradingTemplate() {
 
       if (deleteError) throw deleteError;
 
-      // Create new periods
-      if (template.periods.length > 0) {
+      // Create new periods (if provided)
+      if (template.periods && template.periods.length > 0) {
         const periodsToInsert = template.periods.map((period, index) => ({
           template_id: template.id,
           name: period.name,
