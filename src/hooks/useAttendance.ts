@@ -20,19 +20,46 @@ export function useAttendance(classroomId?: string, date?: string) {
   return useQuery({
     queryKey: ['attendance', classroomId, date],
     queryFn: async () => {
+      // If classroomId is provided, fetch attendance for that classroom directly
+      if (classroomId) {
+        let query = supabase
+          .from('attendance_records')
+          .select('*')
+          .eq('classroom_id', classroomId);
+        
+        if (date) {
+          query = query.eq('date', date);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return data as AttendanceRecord[];
+      }
+      
+      // Otherwise, fetch attendance but exclude those from archived classrooms
+      const { data: activeClassrooms, error: classroomsError } = await supabase
+        .from('classrooms')
+        .select('id')
+        .eq('is_archived', false);
+      
+      if (classroomsError) throw classroomsError;
+      
+      const activeClassroomIds = activeClassrooms?.map(c => c.id) || [];
+      
+      if (activeClassroomIds.length === 0) {
+        return [] as AttendanceRecord[];
+      }
+      
       let query = supabase
         .from('attendance_records')
-        .select('*');
+        .select('*')
+        .in('classroom_id', activeClassroomIds);
       
-      if (classroomId) {
-        query = query.eq('classroom_id', classroomId);
-      }
       if (date) {
         query = query.eq('date', date);
       }
 
       const { data, error } = await query;
-      
       if (error) throw error;
       return data as AttendanceRecord[];
     },
