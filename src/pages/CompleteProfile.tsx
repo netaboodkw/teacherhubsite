@@ -4,19 +4,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useEducationLevels } from '@/hooks/useEducationLevels';
 import { supabase } from '@/integrations/supabase/client';
-import { User, School, Phone, Loader2 } from 'lucide-react';
+import { User, School, Phone, Loader2, GraduationCap } from 'lucide-react';
 
 export default function CompleteProfile() {
   const [fullName, setFullName] = useState('');
   const [schoolName, setSchoolName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [educationLevelId, setEducationLevelId] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { data: educationLevels, isLoading: levelsLoading } = useEducationLevels();
 
   // Extract phone number from email (phone@phone.teacherhub.app format)
   useEffect(() => {
@@ -31,7 +35,7 @@ export default function CompleteProfile() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!fullName.trim() || !schoolName.trim()) {
+    if (!fullName.trim() || !schoolName.trim() || !educationLevelId) {
       toast({
         title: 'خطأ',
         description: 'يرجى ملء جميع الحقول',
@@ -59,6 +63,7 @@ export default function CompleteProfile() {
           full_name: fullName.trim(),
           school_name: schoolName.trim(),
           phone: phoneNumber,
+          education_level_id: educationLevelId,
           is_profile_complete: true,
         })
         .eq('user_id', user.id);
@@ -143,7 +148,28 @@ export default function CompleteProfile() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            {/* Education Level - Required */}
+            <div className="space-y-2">
+              <Label>المرحلة التعليمية *</Label>
+              <Select value={educationLevelId} onValueChange={setEducationLevelId}>
+                <SelectTrigger>
+                  <div className="flex items-center gap-2">
+                    <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                    <SelectValue placeholder={levelsLoading ? "جاري التحميل..." : "اختر المرحلة"} />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {educationLevels?.map((level) => (
+                    <SelectItem key={level.id} value={level.id}>
+                      {level.name_ar}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">لا يمكن تغيير المرحلة لاحقاً</p>
+            </div>
+
+            <Button type="submit" className="w-full" disabled={loading || !educationLevelId}>
               {loading ? (
                 <>
                   <Loader2 className="ml-2 h-4 w-4 animate-spin" />

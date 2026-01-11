@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useProfile } from '@/hooks/useProfile';
+import { useEducationLevels } from '@/hooks/useEducationLevels';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -8,11 +9,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { User, School, Mail, Users, Loader2, Save } from 'lucide-react';
+import { User, School, Mail, Users, Loader2, Save, GraduationCap } from 'lucide-react';
 
 export default function Settings() {
   const { profile, isLoading, refetch } = useProfile();
+  const { data: educationLevels } = useEducationLevels();
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -21,6 +24,9 @@ export default function Settings() {
     principal_name: '',
     department_head_name: '',
   });
+
+  // Get education level name
+  const educationLevelName = educationLevels?.find(l => l.id === profile?.education_level_id)?.name_ar;
 
   useEffect(() => {
     if (profile) {
@@ -114,6 +120,19 @@ export default function Settings() {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   لا يمكن تغيير البريد الإلكتروني
+                </p>
+              </div>
+
+              {/* Education Level - Read Only */}
+              <div className="space-y-2">
+                <Label>المرحلة التعليمية</Label>
+                <div className="flex items-center gap-2 p-3 bg-muted rounded-lg border">
+                  <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">{educationLevelName || 'غير محدد'}</span>
+                  <Badge variant="secondary" className="mr-auto">ثابت</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  المرحلة التعليمية محددة عند التسجيل ولا يمكن تغييرها. تواصل مع المشرف لتعديلها.
                 </p>
               </div>
             </CardContent>
