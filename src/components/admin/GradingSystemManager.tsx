@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -393,9 +393,23 @@ export function GradingSystemManager() {
   const filteredGradeLevels = allGradeLevels?.filter(
     g => g.education_level_id === assignment.education_level_id
   ) || [];
-  const filteredSubjects = allSubjects?.filter(
-    s => s.education_level_id === assignment.education_level_id
-  ) || [];
+  
+  // Get unique subjects by name_ar (to avoid duplicates across grade levels)
+  const filteredSubjects = useMemo(() => {
+    const subjectsForLevel = allSubjects?.filter(
+      s => s.education_level_id === assignment.education_level_id
+    ) || [];
+    
+    // Create a map to get unique subjects by name_ar, keeping the first occurrence
+    const uniqueSubjectsMap = new Map<string, typeof subjectsForLevel[0]>();
+    subjectsForLevel.forEach(subject => {
+      if (!uniqueSubjectsMap.has(subject.name_ar)) {
+        uniqueSubjectsMap.set(subject.name_ar, subject);
+      }
+    });
+    
+    return Array.from(uniqueSubjectsMap.values());
+  }, [allSubjects, assignment.education_level_id]);
 
   // DnD sensors
   const sensors = useSensors(
