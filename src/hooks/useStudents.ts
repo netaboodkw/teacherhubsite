@@ -19,16 +19,38 @@ export function useStudents(classroomId?: string) {
   return useQuery({
     queryKey: ['students', classroomId],
     queryFn: async () => {
-      let query = supabase
+      // If classroomId is provided, fetch students for that classroom directly
+      if (classroomId) {
+        const { data, error } = await supabase
+          .from('students')
+          .select('*')
+          .eq('classroom_id', classroomId)
+          .order('name', { ascending: true });
+        
+        if (error) throw error;
+        return data as Student[];
+      }
+      
+      // Otherwise, fetch all students but exclude those from archived classrooms
+      // First get non-archived classroom IDs
+      const { data: activeClassrooms, error: classroomsError } = await supabase
+        .from('classrooms')
+        .select('id')
+        .eq('is_archived', false);
+      
+      if (classroomsError) throw classroomsError;
+      
+      const activeClassroomIds = activeClassrooms?.map(c => c.id) || [];
+      
+      if (activeClassroomIds.length === 0) {
+        return [] as Student[];
+      }
+      
+      const { data, error } = await supabase
         .from('students')
         .select('*')
+        .in('classroom_id', activeClassroomIds)
         .order('name', { ascending: true });
-      
-      if (classroomId) {
-        query = query.eq('classroom_id', classroomId);
-      }
-
-      const { data, error } = await query;
       
       if (error) throw error;
       return data as Student[];
