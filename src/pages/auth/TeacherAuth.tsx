@@ -11,8 +11,8 @@ import { Phone, ArrowLeft, Loader2, GraduationCap } from 'lucide-react';
 import heroBg from '@/assets/hero-bg.jpg';
 import { supabase } from '@/integrations/supabase/client';
 
-const DEFAULT_OTP = '12345';
 const KUWAIT_PHONE_REGEX = /^[569]\d{7}$/;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 export default function TeacherAuth() {
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
@@ -20,6 +20,7 @@ export default function TeacherAuth() {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const navigate = useNavigate();
   const { signIn, signUp } = useAuth();
 
@@ -30,6 +31,56 @@ export default function TeacherAuth() {
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 8);
     setPhone(value);
+  };
+
+  const sendOTP = async (phoneNumber: string): Promise<boolean> => {
+    try {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/send-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phone: phoneNumber, action: 'send' }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.error || 'فشل في إرسال رمز التحقق');
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error sending OTP:', error);
+      toast.error('حدث خطأ أثناء إرسال رمز التحقق');
+      return false;
+    }
+  };
+
+  const verifyOTP = async (phoneNumber: string, otpCode: string): Promise<boolean> => {
+    try {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/send-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phone: phoneNumber, action: 'verify', otp: otpCode }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.error || 'فشل في التحقق');
+        return false;
+      }
+
+      return data.verified === true;
+    } catch (error) {
+      console.error('Error verifying OTP:', error);
+      toast.error('حدث خطأ أثناء التحقق');
+      return false;
+    }
   };
 
   const handleSendOTP = async (e: React.FormEvent) => {
@@ -66,33 +117,56 @@ export default function TeacherAuth() {
         return;
       }
       
-      // User doesn't exist - mark as new user and proceed to OTP
+      // User doesn't exist - send OTP via Twilio
       setIsNewUser(true);
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const otpSent = await sendOTP(phone);
       
-      toast.success(`تم إرسال رمز التحقق إلى ${phone}`);
-      setStep('otp');
+      if (otpSent) {
+        toast.success(`تم إرسال رمز التحقق إلى ${phone}`);
+        setStep('otp');
+      }
     } catch (error) {
-      // If sign in failed, proceed to OTP (new user flow)
+      // If sign in failed, send OTP (new user flow)
       setIsNewUser(true);
-      toast.success(`تم إرسال رمز التحقق إلى ${phone}`);
-      setStep('otp');
+      const otpSent = await sendOTP(phone);
+      
+      if (otpSent) {
+        toast.success(`تم إرسال رمز التحقق إلى ${phone}`);
+        setStep('otp');
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const handleResendOTP = async () => {
+    setResendLoading(true);
+    const otpSent = await sendOTP(phone);
+    if (otpSent) {
+      toast.success('تم إعادة إرسال رمز التحقق');
+    }
+    setResendLoading(false);
+  };
+
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (otp !== DEFAULT_OTP) {
-      toast.error('رمز التحقق غير صحيح');
+    if (otp.length !== 6) {
+      toast.error('يرجى إدخال رمز التحقق كاملاً');
       return;
     }
 
     setLoading(true);
 
     try {
+      // Verify OTP with Twilio
+      const isVerified = await verifyOTP(phone, otp);
+      
+      if (!isVerified) {
+        setLoading(false);
+        return;
+      }
+
       const emailFromPhone = `${phone}@phone.teacherhub.app`;
       const passwordFromPhone = `phone_${phone}_secure_2024`;
 
@@ -157,7 +231,7 @@ export default function TeacherAuth() {
                   {loading ? (
                     <>
                       <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                      جاري التحقق...
+                      جاري الإرسال...
                     </>
                   ) : (
                     'متابعة'
@@ -186,7 +260,7 @@ export default function TeacherAuth() {
                   </p>
                   <div className="flex justify-center" dir="ltr">
                     <InputOTP
-                      maxLength={5}
+                      maxLength={6}
                       value={otp}
                       onChange={(value) => setOtp(value)}
                     >
@@ -196,12 +270,13 @@ export default function TeacherAuth() {
                         <InputOTPSlot index={2} />
                         <InputOTPSlot index={3} />
                         <InputOTPSlot index={4} />
+                        <InputOTPSlot index={5} />
                       </InputOTPGroup>
                     </InputOTP>
                   </div>
                 </div>
                 
-                <Button type="submit" className="w-full gradient-hero h-12" disabled={loading || otp.length !== 5}>
+                <Button type="submit" className="w-full gradient-hero h-12" disabled={loading || otp.length !== 6}>
                   {loading ? (
                     <>
                       <Loader2 className="ml-2 h-4 w-4 animate-spin" />
@@ -212,9 +287,24 @@ export default function TeacherAuth() {
                   )}
                 </Button>
                 
-                <p className="text-center text-sm text-muted-foreground">
-                  رمز التحقق الافتراضي: <span className="font-mono font-bold">12345</span>
-                </p>
+                <div className="text-center">
+                  <Button
+                    type="button"
+                    variant="link"
+                    onClick={handleResendOTP}
+                    disabled={resendLoading}
+                    className="text-sm"
+                  >
+                    {resendLoading ? (
+                      <>
+                        <Loader2 className="ml-2 h-3 w-3 animate-spin" />
+                        جاري الإرسال...
+                      </>
+                    ) : (
+                      'إعادة إرسال رمز التحقق'
+                    )}
+                  </Button>
+                </div>
               </form>
             )}
           </CardContent>
