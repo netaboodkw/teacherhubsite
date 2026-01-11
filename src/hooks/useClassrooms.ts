@@ -31,6 +31,7 @@ export function useClassrooms() {
       const { data, error } = await supabase
         .from('classrooms')
         .select('*')
+        .eq('is_archived', false)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
