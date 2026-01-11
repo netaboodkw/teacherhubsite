@@ -264,50 +264,190 @@ export default function Reports() {
 
         {/* Attendance Records for Selected Date */}
         {selectedDate && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-primary" />
-                سجل الحضور - {format(selectedDate, 'EEEE dd MMMM yyyy', { locale: ar })}
-              </CardTitle>
-              <CardDescription>
-                {attendanceRecords.length} سجل للتاريخ المحدد
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {attendanceRecords.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>لا توجد سجلات حضور لهذا التاريخ</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {attendanceRecords.map(record => (
-                    <div 
-                      key={record.id}
-                      className="flex items-center gap-4 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
-                    >
-                      <Avatar className="w-10 h-10">
-                        <AvatarImage src={record.student?.avatar_url || undefined} />
-                        <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                          {record.student?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '؟'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-foreground truncate">
-                          {record.student?.name || 'طالب محذوف'}
-                        </h4>
-                        <p className="text-sm text-muted-foreground">
-                          {record.classroom?.name} • الحصة {record.period}
-                        </p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Present Students */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-green-600">
+                  <CheckCircle className="w-5 h-5" />
+                  الطلاب الحاضرين
+                </CardTitle>
+                <CardDescription>
+                  {attendanceRecords.filter(r => r.status === 'present').length} طالب حاضر في {format(selectedDate, 'dd MMMM yyyy', { locale: ar })}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {attendanceRecords.filter(r => r.status === 'present').length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <CheckCircle className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                    <p>لا يوجد طلاب حاضرين</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                    {attendanceRecords.filter(r => r.status === 'present').map(record => (
+                      <div 
+                        key={record.id}
+                        className="flex items-center gap-3 p-3 rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900"
+                      >
+                        <Avatar className="w-9 h-9">
+                          <AvatarImage src={record.student?.avatar_url || undefined} />
+                          <AvatarFallback className="bg-green-100 text-green-700 text-sm">
+                            {record.student?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '؟'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-foreground text-sm truncate">
+                            {record.student?.name || 'طالب محذوف'}
+                          </h4>
+                          <p className="text-xs text-muted-foreground">
+                            {record.classroom?.name} • الحصة {record.period}
+                          </p>
+                        </div>
                       </div>
-                      {getStatusBadge(record.status)}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Absent Students */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-red-600">
+                  <XCircle className="w-5 h-5" />
+                  الطلاب الغائبين
+                </CardTitle>
+                <CardDescription>
+                  {attendanceRecords.filter(r => r.status === 'absent').length} طالب غائب في {format(selectedDate, 'dd MMMM yyyy', { locale: ar })}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {attendanceRecords.filter(r => r.status === 'absent').length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <XCircle className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                    <p>لا يوجد طلاب غائبين</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                    {attendanceRecords.filter(r => r.status === 'absent').map(record => (
+                      <div 
+                        key={record.id}
+                        className="flex items-center gap-3 p-3 rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900"
+                      >
+                        <Avatar className="w-9 h-9">
+                          <AvatarImage src={record.student?.avatar_url || undefined} />
+                          <AvatarFallback className="bg-red-100 text-red-700 text-sm">
+                            {record.student?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '؟'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-foreground text-sm truncate">
+                            {record.student?.name || 'طالب محذوف'}
+                          </h4>
+                          <p className="text-xs text-muted-foreground">
+                            {record.classroom?.name} • الحصة {record.period}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Late Students */}
+            {attendanceRecords.filter(r => r.status === 'late').length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-amber-600">
+                    <Clock className="w-5 h-5" />
+                    الطلاب المتأخرين
+                  </CardTitle>
+                  <CardDescription>
+                    {attendanceRecords.filter(r => r.status === 'late').length} طالب متأخر
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                    {attendanceRecords.filter(r => r.status === 'late').map(record => (
+                      <div 
+                        key={record.id}
+                        className="flex items-center gap-3 p-3 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900"
+                      >
+                        <Avatar className="w-9 h-9">
+                          <AvatarImage src={record.student?.avatar_url || undefined} />
+                          <AvatarFallback className="bg-amber-100 text-amber-700 text-sm">
+                            {record.student?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '؟'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-foreground text-sm truncate">
+                            {record.student?.name || 'طالب محذوف'}
+                          </h4>
+                          <p className="text-xs text-muted-foreground">
+                            {record.classroom?.name} • الحصة {record.period}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Excused Students */}
+            {attendanceRecords.filter(r => r.status === 'excused').length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    طلاب بعذر
+                  </CardTitle>
+                  <CardDescription>
+                    {attendanceRecords.filter(r => r.status === 'excused').length} طالب بعذر
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                    {attendanceRecords.filter(r => r.status === 'excused').map(record => (
+                      <div 
+                        key={record.id}
+                        className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50"
+                      >
+                        <Avatar className="w-9 h-9">
+                          <AvatarImage src={record.student?.avatar_url || undefined} />
+                          <AvatarFallback className="bg-muted text-muted-foreground text-sm">
+                            {record.student?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '؟'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-foreground text-sm truncate">
+                            {record.student?.name || 'طالب محذوف'}
+                          </h4>
+                          <p className="text-xs text-muted-foreground">
+                            {record.classroom?.name} • الحصة {record.period}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* No Records Message */}
+            {attendanceRecords.length === 0 && (
+              <Card className="lg:col-span-2">
+                <CardContent className="py-12">
+                  <div className="text-center text-muted-foreground">
+                    <Calendar className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                    <h3 className="text-lg font-medium mb-2">لا توجد سجلات حضور</h3>
+                    <p>لم يتم تسجيل أي حضور لهذا التاريخ</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         )}
 
         {/* Charts */}
