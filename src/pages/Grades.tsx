@@ -561,13 +561,13 @@ function StructuredGradingView({
                               {isEditable ? (
                                 <button
                                   onClick={() => onCellClick(student.id, column.id, group.id, column.max_score)}
-                                  className={`w-10 h-10 rounded-lg flex items-center justify-center mx-auto transition-all hover:scale-105 ${
+                                  className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center mx-auto transition-all active:scale-95 ${
                                     value > 0
                                       ? 'bg-primary/20 text-primary font-bold'
-                                      : 'bg-muted/50 hover:bg-muted text-muted-foreground'
+                                      : 'bg-muted/50 active:bg-muted text-muted-foreground'
                                   }`}
                                 >
-                                  {value > 0 ? value : <Plus className="w-4 h-4" />}
+                                  {value > 0 ? value : <Plus className="w-3 h-3 sm:w-4 sm:h-4" />}
                                 </button>
                               ) : (
                                 <span className={column.type === 'grand_total' || column.type === 'group_sum' || column.type === 'external_sum' ? 'text-primary' : ''}>
@@ -932,8 +932,8 @@ export default function Grades() {
           )
         )}
 
-        {/* Grade Dialog */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        {/* Grade Dialog - Optimized for mobile */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen} modal>
           <DialogContent className="sm:max-w-sm" dir="rtl">
             <DialogHeader>
               <DialogTitle>
@@ -963,22 +963,57 @@ export default function Grades() {
               <div className="space-y-2">
                 <Label>الدرجة (من {selectedCell?.maxScore || 10})</Label>
                 <Input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
+                  pattern="[0-9]*"
+                  autoComplete="off"
                   min="0"
                   max={selectedCell?.maxScore || 10}
                   value={gradeValue}
-                  onChange={(e) => setGradeValue(e.target.value)}
-                  placeholder="أدخل الدرجة"
-                  className="text-center text-2xl h-14"
+                  onChange={(e) => {
+                    // Only allow numbers and decimal point
+                    const val = e.target.value.replace(/[^\d.]/g, '');
+                    setGradeValue(val);
+                  }}
+                  placeholder="0"
+                  className="text-center text-3xl h-16 font-bold"
+                  autoFocus
                 />
               </div>
+              
+              {/* Quick grade buttons for faster mobile input */}
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">اختيار سريع</Label>
+                <div className="grid grid-cols-6 gap-1">
+                  {(() => {
+                    const max = selectedCell?.maxScore || 10;
+                    // Generate common values based on max score
+                    const values = max <= 10 
+                      ? Array.from({ length: max + 1 }, (_, i) => i)
+                      : [0, Math.round(max * 0.25), Math.round(max * 0.5), Math.round(max * 0.75), max - 1, max];
+                    return values.slice(0, 12).map((val) => (
+                      <Button
+                        key={val}
+                        type="button"
+                        variant={gradeValue === String(val) ? "default" : "outline"}
+                        size="sm"
+                        className="h-10 text-lg font-bold"
+                        onClick={() => setGradeValue(String(val))}
+                      >
+                        {val}
+                      </Button>
+                    ));
+                  })()}
+                </div>
+              </div>
+              
               <Button
-                className="w-full gradient-hero"
+                className="w-full gradient-hero h-12 text-lg"
                 onClick={handleSaveGrade}
                 disabled={createGrade.isPending || updateGrade.isPending || !gradeValue}
               >
                 {(createGrade.isPending || updateGrade.isPending) ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   'حفظ'
                 )}
