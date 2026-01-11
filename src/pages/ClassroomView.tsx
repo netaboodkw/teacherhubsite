@@ -76,7 +76,7 @@ export default function ClassroomView() {
 
   const today = new Date().toISOString().split('T')[0];
 
-  // Load existing positions
+  // Load existing positions and handle new students
   useEffect(() => {
     const loadPositions = async () => {
       if (!classroomId || !user) return;
@@ -89,9 +89,33 @@ export default function ClassroomView() {
 
         if (error) throw error;
 
-        if (data && data.length > 0) {
-          setPositions(data);
+        const existingPositions = data || [];
+        const existingStudentIds = new Set(existingPositions.map(p => p.student_id));
+        
+        // Find students without positions (new students)
+        const studentsWithoutPositions = students.filter(s => !existingStudentIds.has(s.id));
+        
+        if (studentsWithoutPositions.length > 0) {
+          // Calculate starting position for new students
+          const cols = 5;
+          let maxY = 0;
+          existingPositions.forEach(p => {
+            if (p.position_y > maxY) maxY = p.position_y;
+          });
+          
+          const startRow = existingPositions.length > 0 ? Math.floor(maxY / GRID_SIZE) + 1 : 0;
+          
+          const newPositions = studentsWithoutPositions.map((student, index) => ({
+            student_id: student.id,
+            position_x: (index % cols) * GRID_SIZE + 20,
+            position_y: (startRow + Math.floor(index / cols)) * GRID_SIZE + 20,
+          }));
+          
+          setPositions([...existingPositions, ...newPositions]);
+        } else if (existingPositions.length > 0) {
+          setPositions(existingPositions);
         } else if (students.length > 0) {
+          // No positions at all, create default for all students
           const cols = 5;
           const defaultPositions = students.map((student, index) => ({
             student_id: student.id,
