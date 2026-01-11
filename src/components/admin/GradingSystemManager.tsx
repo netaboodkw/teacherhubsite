@@ -190,8 +190,8 @@ function SortableColumn({
             })}
           </div>
         )}
-        {/* Show source groups and columns for grand total */}
-        {column.type === 'grand_total' && (
+        {/* Show source groups and columns for grand total or group_sum */}
+        {(column.type === 'grand_total' || column.type === 'group_sum') && (
           <div className="flex gap-1 mt-1 flex-wrap">
             <span className="text-xs text-muted-foreground">يجمع:</span>
             {column.sourceGroupIds?.map(key => {
@@ -225,7 +225,7 @@ function SortableColumn({
                 ) : null;
               }
             })}
-            {column.sourceColumnIds?.map(scId => {
+            {column.type === 'grand_total' && column.sourceColumnIds?.map(scId => {
               const sourceCol = group.columns.find(c => c.id === scId);
               return sourceCol ? (
                 <Badge 
@@ -244,16 +244,22 @@ function SortableColumn({
         <Label className="text-xs whitespace-nowrap">الدرجة:</Label>
         <Input 
           type="number"
-          value={column.type === 'grand_total' ? calculateGrandTotal(column.sourceGroupIds, column.sourceColumnIds) : column.max_score}
+          value={column.type === 'grand_total' || column.type === 'group_sum' ? calculateGrandTotal(column.sourceGroupIds, column.sourceColumnIds) : column.max_score}
           onChange={(e) => updateColumn(groupId, column.id, 'max_score', parseInt(e.target.value) || 0)}
           className="w-20"
           min={0}
-          disabled={column.type === 'total' || column.type === 'grand_total'}
+          disabled={column.type === 'total' || column.type === 'grand_total' || column.type === 'group_sum'}
         />
       </div>
       <div className="flex items-center gap-1">
-        <Badge variant={column.type === 'score' ? 'secondary' : column.type === 'total' ? 'default' : 'destructive'}>
-          {column.type === 'score' ? 'درجة' : column.type === 'total' ? 'مجموع' : 'مجموع كلي'}
+        <Badge variant={
+          column.type === 'score' ? 'secondary' : 
+          column.type === 'total' ? 'default' : 
+          column.type === 'group_sum' ? 'outline' : 'destructive'
+        } className={column.type === 'group_sum' ? 'border-amber-500 text-amber-600' : ''}>
+          {column.type === 'score' ? 'درجة' : 
+           column.type === 'total' ? 'مجموع' : 
+           column.type === 'group_sum' ? 'مجموع مجموعات' : 'مجموع كلي'}
         </Badge>
         {column.useGroupColor === false && (
           <Badge variant="outline" className="text-xs py-0">
@@ -261,7 +267,7 @@ function SortableColumn({
           </Badge>
         )}
       </div>
-      {(column.type === 'total' || column.type === 'grand_total') && (
+      {(column.type === 'total' || column.type === 'grand_total' || column.type === 'group_sum') && (
         <Button 
           variant="ghost" 
           size="sm"
@@ -348,7 +354,7 @@ export function GradingSystemManager() {
 
   // Column configuration dialogs
   const [columnConfigDialogOpen, setColumnConfigDialogOpen] = useState(false);
-  const [columnConfigType, setColumnConfigType] = useState<'score' | 'total' | 'grand_total'>('score');
+  const [columnConfigType, setColumnConfigType] = useState<'score' | 'total' | 'grand_total' | 'group_sum'>('score');
   const [columnConfigGroupId, setColumnConfigGroupId] = useState<string>('');
   const [selectedSourceColumns, setSelectedSourceColumns] = useState<string[]>([]);
   const [selectedSourceGroups, setSelectedSourceGroups] = useState<string[]>([]);
@@ -509,6 +515,37 @@ export function GradingSystemManager() {
     setColumnConfigDialogOpen(true);
   };
 
+  // Open dialog for group_sum column - sum from previous groups only
+  const openGroupSumDialog = (groupId: string, existingColumn?: GradingColumn) => {
+    const currentGroupIndex = structure.groups.findIndex(g => g.id === groupId);
+    const previousGroups = structure.groups.slice(0, currentGroupIndex);
+    
+    setColumnConfigGroupId(groupId);
+    setColumnConfigType('group_sum');
+    
+    if (existingColumn) {
+      setEditingColumnId(existingColumn.id);
+      setSelectedSourceGroups(existingColumn.sourceGroupIds || []);
+      setNewColumnName(existingColumn.name_ar);
+      setNewColumnUseGroupColor(existingColumn.useGroupColor !== false);
+    } else {
+      setEditingColumnId(null);
+      // Default: select all total columns from previous groups
+      const defaultSelections: string[] = [];
+      previousGroups.forEach(grp => {
+        grp.columns
+          .filter(c => c.type === 'total' || c.type === 'grand_total' || c.type === 'group_sum')
+          .forEach(col => {
+            defaultSelections.push(`${grp.id}:${col.id}`);
+          });
+      });
+      setSelectedSourceGroups(defaultSelections);
+      setNewColumnName('مجموع المجموعات');
+      setNewColumnUseGroupColor(true);
+    }
+    setColumnConfigDialogOpen(true);
+  };
+
   // Open edit dialog for existing column
   const openEditColumnDialog = (groupId: string, column: GradingColumn) => {
     if (column.type === 'score') {
@@ -522,6 +559,8 @@ export function GradingSystemManager() {
       openTotalColumnDialog(groupId, column);
     } else if (column.type === 'grand_total') {
       openGrandTotalDialog(groupId, column);
+    } else if (column.type === 'group_sum') {
+      openGroupSumDialog(groupId, column);
     }
   };
 
@@ -557,8 +596,8 @@ export function GradingSystemManager() {
                   sourceColumnIds: selectedSourceColumns,
                   useGroupColor: newColumnUseGroupColor
                 };
-              } else {
-                // grand_total - calculate from selected group totals + same group columns
+              } else if (columnConfigType === 'grand_total' || columnConfigType === 'group_sum') {
+                // grand_total or group_sum - calculate from selected group totals + same group columns
                 let grandTotal = 0;
                 
                 // Calculate from selected source groups (format: "groupId:columnId")
@@ -580,17 +619,19 @@ export function GradingSystemManager() {
                   }
                 });
                 
-                // Add same-group columns
-                grandTotal += g.columns
-                  .filter(col => selectedSameGroupColumns.includes(col.id))
-                  .reduce((sum, col) => sum + col.max_score, 0);
+                // Add same-group columns (only for grand_total)
+                if (columnConfigType === 'grand_total') {
+                  grandTotal += g.columns
+                    .filter(col => selectedSameGroupColumns.includes(col.id))
+                    .reduce((sum, col) => sum + col.max_score, 0);
+                }
                 
                 return {
                   ...c,
                   name_ar: newColumnName || c.name_ar,
                   max_score: grandTotal,
                   sourceGroupIds: selectedSourceGroups,
-                  sourceColumnIds: selectedSameGroupColumns,
+                  sourceColumnIds: columnConfigType === 'grand_total' ? selectedSameGroupColumns : undefined,
                   useGroupColor: newColumnUseGroupColor
                 };
               }
@@ -690,6 +731,44 @@ export function GradingSystemManager() {
             };
           })
         }));
+      } else if (columnConfigType === 'group_sum') {
+        // Calculate from selected source groups only (no same-group columns)
+        let groupSumTotal = 0;
+        selectedSourceGroups.forEach(key => {
+          if (key.includes(':')) {
+            const [grpId, colId] = key.split(':');
+            const group = structure.groups.find(g => g.id === grpId);
+            if (group) {
+              const col = group.columns.find(c => c.id === colId);
+              if (col) groupSumTotal += col.max_score;
+            }
+          } else {
+            // Backward compatibility: old format
+            const group = structure.groups.find(g => g.id === key);
+            if (group) {
+              const totalCol = group.columns.find(c => c.type === 'total');
+              groupSumTotal += totalCol?.max_score || calculateGroupTotal(key);
+            }
+          }
+        });
+        
+        setStructure(prev => ({
+          ...prev,
+          groups: prev.groups.map(g => {
+            if (g.id !== groupId) return g;
+            return {
+              ...g,
+              columns: [...g.columns, {
+                id: `groupsum${Date.now()}`,
+                name_ar: newColumnName || 'مجموع المجموعات',
+                max_score: groupSumTotal,
+                type: 'group_sum' as const,
+                sourceGroupIds: selectedSourceGroups,
+                useGroupColor: newColumnUseGroupColor
+              }]
+            };
+          })
+        }));
       }
     }
     
@@ -736,6 +815,11 @@ export function GradingSystemManager() {
   // Add grand total column that sums totals from selected groups
   const addGrandTotalColumn = (groupId: string) => {
     openGrandTotalDialog(groupId);
+  };
+
+  // Add group sum column that sums from previous groups only
+  const addGroupSumColumn = (groupId: string) => {
+    openGroupSumDialog(groupId);
   };
 
   // Calculate group total
@@ -1550,15 +1634,26 @@ export function GradingSystemManager() {
                           مجموع المجموعة
                         </Button>
                         {groupIndex > 0 && (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => addGrandTotalColumn(group.id)}
-                            className="border-primary text-primary hover:bg-primary/10"
-                          >
-                            <Calculator className="h-4 w-4 ml-1" />
-                            مجموع المجموعات السابقة
-                          </Button>
+                          <>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => addGroupSumColumn(group.id)}
+                              className="border-amber-500 text-amber-600 hover:bg-amber-50"
+                            >
+                              <Calculator className="h-4 w-4 ml-1" />
+                              مجموع من مجموعات سابقة
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => addGrandTotalColumn(group.id)}
+                              className="border-primary text-primary hover:bg-primary/10"
+                            >
+                              <Calculator className="h-4 w-4 ml-1" />
+                              مجموع كلي
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -1957,7 +2052,8 @@ export function GradingSystemManager() {
           <DialogHeader>
             <DialogTitle>
               {columnConfigType === 'score' ? 'إضافة عمود جديد' : 
-               columnConfigType === 'total' ? 'إضافة عمود مجموع' : 'إضافة مجموع كلي'}
+               columnConfigType === 'total' ? 'إضافة عمود مجموع' : 
+               columnConfigType === 'group_sum' ? 'إضافة مجموع من مجموعات سابقة' : 'إضافة مجموع كلي'}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -1968,7 +2064,8 @@ export function GradingSystemManager() {
                 value={newColumnName}
                 onChange={(e) => setNewColumnName(e.target.value)}
                 placeholder={columnConfigType === 'score' ? 'مثال: التفاعل' : 
-                             columnConfigType === 'total' ? 'المجموع' : 'المجموع الكلي'}
+                             columnConfigType === 'total' ? 'المجموع' : 
+                             columnConfigType === 'group_sum' ? 'مجموع المجموعات' : 'المجموع الكلي'}
               />
             </div>
 
@@ -2021,6 +2118,105 @@ export function GradingSystemManager() {
                     المجموع: {structure.groups.find(g => g.id === columnConfigGroupId)?.columns
                       .filter(c => selectedSourceColumns.includes(c.id))
                       .reduce((sum, c) => sum + c.max_score, 0) || 0}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Source Groups Selection for Group Sum - only previous groups */}
+            {columnConfigType === 'group_sum' && (
+              <div className="space-y-4">
+                <div>
+                  <Label className="mb-2 block">اختر المجاميع من المجموعات السابقة</Label>
+                  <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3">
+                    {(() => {
+                      const currentGroupIndex = structure.groups.findIndex(g => g.id === columnConfigGroupId);
+                      const previousGroups = structure.groups.slice(0, currentGroupIndex);
+                      
+                      // Collect all total, grand_total and group_sum columns from previous groups
+                      const totalColumns: { groupId: string; groupName: string; column: GradingColumn; groupColor: string; groupBorder: string }[] = [];
+                      previousGroups.forEach(grp => {
+                        grp.columns
+                          .filter(c => c.type === 'total' || c.type === 'grand_total' || c.type === 'group_sum')
+                          .forEach(col => {
+                            totalColumns.push({
+                              groupId: grp.id,
+                              groupName: grp.name_ar,
+                              column: col,
+                              groupColor: grp.color,
+                              groupBorder: grp.border
+                            });
+                          });
+                      });
+                      
+                      return totalColumns.length > 0 ? (
+                        <>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm text-muted-foreground">اختر المجاميع للجمع</span>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => setSelectedSourceGroups(totalColumns.map(tc => `${tc.groupId}:${tc.column.id}`))}
+                            >
+                              تحديد الكل
+                            </Button>
+                          </div>
+                          {totalColumns.map(({ groupId, groupName, column, groupColor, groupBorder }) => {
+                            const key = `${groupId}:${column.id}`;
+                            return (
+                              <div key={key} className="flex items-center gap-2">
+                                <Checkbox 
+                                  checked={selectedSourceGroups.includes(key)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setSelectedSourceGroups(prev => [...prev, key]);
+                                    } else {
+                                      setSelectedSourceGroups(prev => prev.filter(id => id !== key));
+                                    }
+                                  }}
+                                />
+                                <div 
+                                  className="w-4 h-4 rounded-full border-2"
+                                  style={{ backgroundColor: groupColor, borderColor: groupBorder }}
+                                />
+                                <span className="text-sm">{groupName} - {column.name_ar}</span>
+                                <Badge 
+                                  variant={column.type === 'grand_total' ? 'destructive' : column.type === 'group_sum' ? 'outline' : 'default'} 
+                                  className={column.type === 'group_sum' ? 'text-xs border-amber-500 text-amber-600' : 'text-xs'}
+                                >
+                                  {column.max_score}
+                                </Badge>
+                              </div>
+                            );
+                          })}
+                        </>
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          لا توجد مجاميع في المجموعات السابقة. أضف عمود "مجموع المجموعة" في المجموعات السابقة أولاً.
+                        </p>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Total calculation for group_sum */}
+                {selectedSourceGroups.length > 0 && (
+                  <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg text-sm">
+                    <span className="font-medium text-amber-700">المجموع: </span>
+                    {(() => {
+                      let total = 0;
+                      selectedSourceGroups.forEach(key => {
+                        if (key.includes(':')) {
+                          const [grpId, colId] = key.split(':');
+                          const grp = structure.groups.find(g => g.id === grpId);
+                          if (grp) {
+                            const col = grp.columns.find(c => c.id === colId);
+                            if (col) total += col.max_score;
+                          }
+                        }
+                      });
+                      return total;
+                    })()}
                   </div>
                 )}
               </div>
@@ -2221,7 +2417,8 @@ export function GradingSystemManager() {
               onClick={handleCreateColumn} 
               disabled={
                 (columnConfigType === 'total' && selectedSourceColumns.length === 0) ||
-                (columnConfigType === 'grand_total' && selectedSourceGroups.length === 0 && selectedSameGroupColumns.length === 0)
+                (columnConfigType === 'grand_total' && selectedSourceGroups.length === 0 && selectedSameGroupColumns.length === 0) ||
+                (columnConfigType === 'group_sum' && selectedSourceGroups.length === 0)
               }
             >
               <Plus className="h-4 w-4 ml-1" />
