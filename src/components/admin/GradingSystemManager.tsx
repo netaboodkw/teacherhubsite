@@ -1175,19 +1175,54 @@ export function GradingSystemManager() {
       try {
         const savedStructure = JSON.parse(template.description);
         if (savedStructure.groups && Array.isArray(savedStructure.groups)) {
-          // Regenerate IDs to avoid conflicts
+          // Create ID mapping from old to new IDs
+          const groupIdMap = new Map<string, string>();
+          const columnIdMap = new Map<string, string>();
+          const timestamp = Date.now();
+          
+          // First pass: generate new IDs and create mappings
+          savedStructure.groups.forEach((g: GradingGroup, gi: number) => {
+            const newGroupId = `group-${timestamp}-${gi}`;
+            groupIdMap.set(g.id, newGroupId);
+            
+            g.columns.forEach((c: GradingColumn, ci: number) => {
+              const newColId = `col-${timestamp}-${gi}-${ci}`;
+              columnIdMap.set(c.id, newColId);
+            });
+          });
+          
+          // Helper to update reference key (format: "groupId:columnId")
+          const updateReferenceKey = (key: string): string => {
+            if (key.includes(':')) {
+              const [grpId, colId] = key.split(':');
+              const newGrpId = groupIdMap.get(grpId) || grpId;
+              const newColId = columnIdMap.get(colId) || colId;
+              return `${newGrpId}:${newColId}`;
+            }
+            // Just groupId
+            return groupIdMap.get(key) || key;
+          };
+          
+          // Second pass: build new structure with updated IDs and references
           const newStructure: GradingStructure = {
             groups: savedStructure.groups.map((g: GradingGroup, gi: number) => ({
               ...g,
-              id: `group-${Date.now()}-${gi}`,
+              id: groupIdMap.get(g.id)!,
               columns: g.columns.map((c: GradingColumn, ci: number) => ({
                 ...c,
-                id: `col-${Date.now()}-${gi}-${ci}`,
+                id: columnIdMap.get(c.id)!,
+                // Update sourceGroupIds references
+                sourceGroupIds: c.sourceGroupIds?.map(updateReferenceKey),
+                // Update sourceColumnIds references  
+                sourceColumnIds: c.sourceColumnIds?.map(id => columnIdMap.get(id) || id),
+                // Update externalSourceColumns references
+                externalSourceColumns: c.externalSourceColumns?.map(updateReferenceKey),
               }))
             })),
             settings: savedStructure.settings || {
               showPercentage: true,
               passingScore: 50,
+              showGrandTotal: true,
             }
           };
           setStructure(newStructure);
