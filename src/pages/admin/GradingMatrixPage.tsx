@@ -65,9 +65,32 @@ export default function GradingMatrixPage() {
     return map;
   }, [gradingStructures]);
 
-  // Get available templates (structures that are defaults or can be applied)
+  // Get available templates (unique structures by name that can be used as templates)
   const templates = useMemo(() => {
-    return gradingStructures?.filter(s => s.is_default || (!s.grade_level_id && !s.subject_id)) || [];
+    // Get structures that are defaults or not tied to specific grade/subject
+    const baseTemplates = gradingStructures?.filter(s => s.is_default || (!s.grade_level_id && !s.subject_id)) || [];
+    
+    // Also include all structures but group by name to avoid duplicates
+    const allStructures = gradingStructures || [];
+    
+    // Create a map to get unique templates by name_ar
+    const uniqueByName = new Map<string, typeof allStructures[0]>();
+    
+    // First add base templates (higher priority)
+    baseTemplates.forEach(t => {
+      if (!uniqueByName.has(t.name_ar)) {
+        uniqueByName.set(t.name_ar, t);
+      }
+    });
+    
+    // Then add other structures (if not already present)
+    allStructures.forEach(t => {
+      if (!uniqueByName.has(t.name_ar)) {
+        uniqueByName.set(t.name_ar, t);
+      }
+    });
+    
+    return Array.from(uniqueByName.values());
   }, [gradingStructures]);
 
   // Filter subjects and grade levels by education level
