@@ -166,7 +166,7 @@ export default function CurriculumTreePage() {
           if (error) throw error;
           toast.success('تم تحديث المرحلة التعليمية');
         }
-        queryClient.invalidateQueries({ queryKey: ['education-levels'] });
+        queryClient.invalidateQueries({ queryKey: ['education_levels'] });
       } else if (dialog.type === 'grade_level') {
         if (dialog.mode === 'add') {
           const { error } = await supabase
@@ -192,7 +192,7 @@ export default function CurriculumTreePage() {
           if (error) throw error;
           toast.success('تم تحديث الصف الدراسي');
         }
-        queryClient.invalidateQueries({ queryKey: ['grade-levels'] });
+        queryClient.invalidateQueries({ queryKey: ['grade_levels'] });
       } else if (dialog.type === 'subject') {
         const gradeLevel = gradeLevels?.find(g => g.id === dialog.parentId);
         if (dialog.mode === 'add') {
@@ -239,7 +239,7 @@ export default function CurriculumTreePage() {
       if (error) throw error;
       
       toast.success(item.is_active ? 'تم تعطيل العنصر' : 'تم تفعيل العنصر');
-      queryClient.invalidateQueries({ queryKey: [type === 'education_level' ? 'education-levels' : type === 'grade_level' ? 'grade-levels' : 'subjects'] });
+      queryClient.invalidateQueries({ queryKey: [type === 'education_level' ? 'education_levels' : type === 'grade_level' ? 'grade_levels' : 'subjects'] });
     } catch (error: any) {
       toast.error('فشل في تغيير الحالة: ' + error.message);
     }
@@ -330,7 +330,7 @@ export default function CurriculumTreePage() {
       if (error) throw error;
       
       toast.success('تم حذف العنصر بنجاح');
-      queryClient.invalidateQueries({ queryKey: [deleteDialog.type === 'education_level' ? 'education-levels' : deleteDialog.type === 'grade_level' ? 'grade-levels' : 'subjects'] });
+      queryClient.invalidateQueries({ queryKey: [deleteDialog.type === 'education_level' ? 'education_levels' : deleteDialog.type === 'grade_level' ? 'grade_levels' : 'subjects'] });
       setDeleteDialog({ open: false, type: 'education_level', item: null });
     } catch (error: any) {
       toast.error(error.message);
