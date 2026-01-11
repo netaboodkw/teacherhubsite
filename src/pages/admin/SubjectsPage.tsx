@@ -89,10 +89,14 @@ export default function SubjectsPage() {
       });
       setDialogOpen(false);
     } else {
+      // If no grade level selected and there are grade levels, add to all
       const result = await createSubject.mutateAsync({
         education_level_id: selectedLevelId,
         ...form,
         grade_level_id: form.grade_level_id || null,
+        all_grade_levels: !form.grade_level_id && gradeLevels && gradeLevels.length > 0 
+          ? gradeLevels 
+          : undefined,
       });
       setDialogOpen(false);
       if (result?.id) {
@@ -215,7 +219,7 @@ export default function SubjectsPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>الصف الدراسي (اختياري)</Label>
+              <Label>الصف الدراسي</Label>
               <Select value={form.grade_level_id || "all"} onValueChange={(v) => setForm(prev => ({ ...prev, grade_level_id: v === "all" ? "" : v }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="جميع الصفوف" />
@@ -227,6 +231,11 @@ export default function SubjectsPage() {
                   ))}
                 </SelectContent>
               </Select>
+              {!form.grade_level_id && gradeLevels && gradeLevels.length > 0 && !editingSubject && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  سيتم إضافة المادة لجميع الصفوف ({gradeLevels.length} صفوف)
+                </p>
+              )}
             </div>
             <div>
               <Label>الاسم بالعربية</Label>

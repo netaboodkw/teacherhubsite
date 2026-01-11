@@ -55,22 +55,48 @@ export function useCreateSubject() {
       weeks_count?: number;
       max_score?: number;
       grade_types?: GradeType[];
+      all_grade_levels?: { id: string }[]; // Pass all grade levels when no specific one selected
     }) => {
-      const { data, error } = await supabase
-        .from('subjects')
-        .insert({
-          ...subject,
+      const { all_grade_levels, ...subjectData } = subject;
+      
+      // If no grade_level_id and all_grade_levels are provided, create for all grades
+      if (!subject.grade_level_id && all_grade_levels && all_grade_levels.length > 0) {
+        const subjectsToInsert = all_grade_levels.map(grade => ({
+          ...subjectData,
+          grade_level_id: grade.id,
           grade_types: subject.grade_types || ['exam', 'assignment', 'participation', 'project'],
-        })
-        .select()
-        .single();
+        }));
 
-      if (error) throw error;
-      return data as Subject;
+        const { data, error } = await supabase
+          .from('subjects')
+          .insert(subjectsToInsert)
+          .select();
+
+        if (error) throw error;
+        return data[0] as Subject; // Return first one for navigation
+      } else {
+        // Create single subject (either with specific grade or no grade)
+        const { data, error } = await supabase
+          .from('subjects')
+          .insert({
+            ...subjectData,
+            grade_types: subject.grade_types || ['exam', 'assignment', 'participation', 'project'],
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data as Subject;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['subjects'] });
-      toast.success('تمت إضافة المادة بنجاح');
+      const count = variables.all_grade_levels?.length;
+      if (count && count > 1) {
+        toast.success(`تمت إضافة المادة لـ ${count} صفوف بنجاح`);
+      } else {
+        toast.success('تمت إضافة المادة بنجاح');
+      }
     },
     onError: (error) => {
       toast.error('فشل في إضافة المادة: ' + error.message);
