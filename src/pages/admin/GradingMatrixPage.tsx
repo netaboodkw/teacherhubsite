@@ -76,10 +76,40 @@ export default function GradingMatrixPage() {
     return gradeLevels?.filter(g => g.education_level_id === selectedEducationLevel) || [];
   }, [gradeLevels, selectedEducationLevel]);
 
-  const filteredSubjects = useMemo(() => {
-    if (selectedEducationLevel === 'all') return subjects || [];
-    return subjects?.filter(s => s.education_level_id === selectedEducationLevel) || [];
+  // Group subjects by name_ar to avoid duplicates in the matrix header
+  // Each unique subject name becomes a row, and we match by name for each grade level
+  const uniqueSubjectNames = useMemo(() => {
+    const filtered = selectedEducationLevel === 'all' 
+      ? subjects || [] 
+      : subjects?.filter(s => s.education_level_id === selectedEducationLevel) || [];
+    
+    // Get unique subject names
+    const namesMap = new Map<string, { name_ar: string; education_level_ids: Set<string> }>();
+    filtered.forEach(s => {
+      if (!namesMap.has(s.name_ar)) {
+        namesMap.set(s.name_ar, { 
+          name_ar: s.name_ar, 
+          education_level_ids: new Set([s.education_level_id]) 
+        });
+      } else {
+        namesMap.get(s.name_ar)!.education_level_ids.add(s.education_level_id);
+      }
+    });
+    
+    return Array.from(namesMap.values());
   }, [subjects, selectedEducationLevel]);
+
+  // Helper to find the actual subject for a grade level by name
+  const getSubjectForGradeLevel = (subjectNameAr: string, gradeLevelId: string) => {
+    const gradeLevel = gradeLevels?.find(g => g.id === gradeLevelId);
+    if (!gradeLevel) return null;
+    
+    return subjects?.find(s => 
+      s.name_ar === subjectNameAr && 
+      s.education_level_id === gradeLevel.education_level_id &&
+      (s.grade_level_id === gradeLevelId || s.grade_level_id === null)
+    ) || null;
+  };
 
   // Check if a cell has a grading structure
   const getCellStatus = (gradeLevelId: string, subjectId: string) => {
@@ -106,8 +136,9 @@ export default function GradingMatrixPage() {
     const conflictList: { gradeLevelId: string; subjectId: string; structures: GradingStructure[] }[] = [];
     
     filteredGradeLevels.forEach(gradeLevel => {
-      filteredSubjects.forEach(subject => {
-        if (subject.education_level_id !== gradeLevel.education_level_id) return;
+      uniqueSubjectNames.forEach(subjectName => {
+        const subject = getSubjectForGradeLevel(subjectName.name_ar, gradeLevel.id);
+        if (!subject) return;
         
         const matchingStructures = gradingStructures?.filter(s => 
           s.grade_level_id === gradeLevel.id && 
@@ -125,7 +156,7 @@ export default function GradingMatrixPage() {
     });
     
     return conflictList;
-  }, [filteredGradeLevels, filteredSubjects, gradingStructures]);
+  }, [filteredGradeLevels, uniqueSubjectNames, gradingStructures, getSubjectForGradeLevel]);
 
   // Stats
   const stats = useMemo(() => {
@@ -133,8 +164,9 @@ export default function GradingMatrixPage() {
     let uncovered = 0;
     
     filteredGradeLevels.forEach(gradeLevel => {
-      filteredSubjects.forEach(subject => {
-        if (subject.education_level_id !== gradeLevel.education_level_id) return;
+      uniqueSubjectNames.forEach(subjectName => {
+        const subject = getSubjectForGradeLevel(subjectName.name_ar, gradeLevel.id);
+        if (!subject) return;
         
         const { hasStructure } = getCellStatus(gradeLevel.id, subject.id);
         if (hasStructure) covered++;
@@ -143,7 +175,7 @@ export default function GradingMatrixPage() {
     });
     
     return { covered, uncovered, total: covered + uncovered };
-  }, [filteredGradeLevels, filteredSubjects, structureMap]);
+  }, [filteredGradeLevels, uniqueSubjectNames, structureMap, getSubjectForGradeLevel]);
 
   // Toggle cell selection
   const toggleCell = (gradeLevelId: string, subjectId: string) => {
@@ -161,8 +193,9 @@ export default function GradingMatrixPage() {
   const selectAllUncovered = () => {
     const newSelected = new Set<string>();
     filteredGradeLevels.forEach(gradeLevel => {
-      filteredSubjects.forEach(subject => {
-        if (subject.education_level_id !== gradeLevel.education_level_id) return;
+      uniqueSubjectNames.forEach(subjectName => {
+        const subject = getSubjectForGradeLevel(subjectName.name_ar, gradeLevel.id);
+        if (!subject) return;
         
         const { hasStructure } = getCellStatus(gradeLevel.id, subject.id);
         if (!hasStructure) {
@@ -349,30 +382,32 @@ export default function GradingMatrixPage() {
                 <table className="w-full border-collapse">
                   <thead>
                     <tr>
-                      <th className="border p-2 bg-muted text-right min-w-[150px]">الصف / المادة</th>
-                      {filteredSubjects.map(subject => (
-                        <th key={subject.id} className="border p-2 bg-muted text-center min-w-[100px] text-sm">
-                          {subject.name_ar}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredGradeLevels.map(gradeLevel => (
-                      <tr key={gradeLevel.id}>
-                        <td className="border p-2 bg-muted/50 font-medium">
+                      <th className="border p-2 bg-muted text-right min-w-[150px]">المادة / الصف</th>
+                      {filteredGradeLevels.map(gradeLevel => (
+                        <th key={gradeLevel.id} className="border p-2 bg-muted text-center min-w-[100px] text-sm">
                           <div>
                             {gradeLevel.name_ar}
                             <span className="text-xs text-muted-foreground block">
                               {educationLevels?.find(l => l.id === gradeLevel.education_level_id)?.name_ar}
                             </span>
                           </div>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {uniqueSubjectNames.map(subjectName => (
+                      <tr key={subjectName.name_ar}>
+                        <td className="border p-2 bg-muted/50 font-medium">
+                          {subjectName.name_ar}
                         </td>
-                        {filteredSubjects.map(subject => {
-                          // Skip if subject doesn't belong to same education level
-                          if (subject.education_level_id !== gradeLevel.education_level_id) {
+                        {filteredGradeLevels.map(gradeLevel => {
+                          const subject = getSubjectForGradeLevel(subjectName.name_ar, gradeLevel.id);
+                          
+                          // Skip if no subject exists for this grade level
+                          if (!subject) {
                             return (
-                              <td key={subject.id} className="border p-2 bg-muted/20 text-center">
+                              <td key={gradeLevel.id} className="border p-2 bg-muted/20 text-center">
                                 <span className="text-muted-foreground">-</span>
                               </td>
                             );
@@ -387,7 +422,7 @@ export default function GradingMatrixPage() {
                           
                           return (
                             <td 
-                              key={subject.id} 
+                              key={gradeLevel.id} 
                               className={`border p-2 text-center cursor-pointer transition-colors ${
                                 isSelected 
                                   ? 'bg-primary/20 ring-2 ring-primary' 
