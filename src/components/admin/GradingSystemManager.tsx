@@ -2546,19 +2546,19 @@ export function GradingSystemManager() {
             {columnConfigType === 'external_sum' && (
               <div className="space-y-4">
                 <div>
-                  <Label className="mb-2 block">اختر أعمدة الدرجات من المجموعات الأخرى</Label>
+                  <Label className="mb-2 block">اختر الأعمدة من المجموعات الأخرى</Label>
                   <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-3">
                     {(() => {
                       const currentGroupId = columnConfigGroupId;
                       const otherGroups = structure.groups.filter(g => g.id !== currentGroupId);
                       
-                      // Collect all score columns from other groups
-                      const scoreColumns: { groupId: string; groupName: string; column: GradingColumn; groupColor: string; groupBorder: string }[] = [];
+                      // Collect all score and total columns from other groups
+                      const allColumns: { groupId: string; groupName: string; column: GradingColumn; groupColor: string; groupBorder: string }[] = [];
                       otherGroups.forEach(grp => {
                         grp.columns
-                          .filter(c => c.type === 'score')
+                          .filter(c => c.type === 'score' || c.type === 'total' || c.type === 'grand_total' || c.type === 'group_sum')
                           .forEach(col => {
-                            scoreColumns.push({
+                            allColumns.push({
                               groupId: grp.id,
                               groupName: grp.name_ar,
                               column: col,
@@ -2568,21 +2568,21 @@ export function GradingSystemManager() {
                           });
                       });
                       
-                      return scoreColumns.length > 0 ? (
+                      return allColumns.length > 0 ? (
                         <>
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm text-muted-foreground">اختر الدرجات للجمع</span>
+                            <span className="text-sm text-muted-foreground">اختر الأعمدة للجمع</span>
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              onClick={() => setSelectedExternalColumns(scoreColumns.map(sc => `${sc.groupId}:${sc.column.id}`))}
+                              onClick={() => setSelectedExternalColumns(allColumns.map(sc => `${sc.groupId}:${sc.column.id}`))}
                             >
                               تحديد الكل
                             </Button>
                           </div>
                           {otherGroups.map(grp => {
-                            const groupScores = grp.columns.filter(c => c.type === 'score');
-                            if (groupScores.length === 0) return null;
+                            const groupColumns = grp.columns.filter(c => c.type === 'score' || c.type === 'total' || c.type === 'grand_total' || c.type === 'group_sum');
+                            if (groupColumns.length === 0) return null;
                             return (
                               <div key={grp.id} className="mb-3">
                                 <div 
@@ -2591,8 +2591,9 @@ export function GradingSystemManager() {
                                 >
                                   {grp.name_ar}
                                 </div>
-                                {groupScores.map(col => {
+                                {groupColumns.map(col => {
                                   const key = `${grp.id}:${col.id}`;
+                                  const isTotalType = col.type === 'total' || col.type === 'grand_total' || col.type === 'group_sum';
                                   return (
                                     <div key={key} className="flex items-center gap-2 mr-4">
                                       <Checkbox 
@@ -2606,8 +2607,11 @@ export function GradingSystemManager() {
                                         }}
                                       />
                                       <span className="text-sm">{col.name_ar}</span>
-                                      <Badge variant="outline" className="text-xs">
-                                        {col.max_score}
+                                      <Badge 
+                                        variant={isTotalType ? 'default' : 'outline'} 
+                                        className={`text-xs ${col.type === 'grand_total' ? 'bg-primary' : col.type === 'group_sum' ? 'border-amber-500 text-amber-600 bg-amber-50' : ''}`}
+                                      >
+                                        {isTotalType ? 'مجموع' : ''} {col.max_score}
                                       </Badge>
                                     </div>
                                   );
@@ -2618,7 +2622,7 @@ export function GradingSystemManager() {
                         </>
                       ) : (
                         <p className="text-sm text-muted-foreground text-center py-4">
-                          لا توجد أعمدة درجات في المجموعات الأخرى. أضف أعمدة درجات في مجموعات أخرى أولاً.
+                          لا توجد أعمدة في المجموعات الأخرى. أضف أعمدة في مجموعات أخرى أولاً.
                         </p>
                       );
                     })()}
