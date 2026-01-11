@@ -115,7 +115,7 @@ export default function Students() {
             title="لا يوجد طلاب"
             description="أضف طلابك لتبدأ بتتبع حضورهم ودرجاتهم"
             actionLabel="إضافة طالب"
-            onAction={() => {}}
+            onAction={() => navigate('/teacher/students/new')}
           />
         )}
       </div>
