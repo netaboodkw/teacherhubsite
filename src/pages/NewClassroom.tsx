@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useCreateClassroom } from '@/hooks/useClassrooms';
-import { useEducationLevels } from '@/hooks/useEducationLevels';
 import { useGradeLevels } from '@/hooks/useGradeLevels';
 import { useSubjects } from '@/hooks/useSubjects';
+import { useProfile } from '@/hooks/useProfile';
+import { useEducationLevels } from '@/hooks/useEducationLevels';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ClassScheduleEditor, ClassSchedule } from '@/components/classrooms/ClassScheduleEditor';
 import { ArrowRight, GraduationCap, Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 const colorOptions = [
   { value: 'bg-primary', label: 'أزرق' },
@@ -23,11 +25,16 @@ const colorOptions = [
 export default function NewClassroom() {
   const createClassroom = useCreateClassroom();
   const navigate = useNavigate();
-  const { data: levels, isLoading: levelsLoading } = useEducationLevels();
-  const [selectedLevelId, setSelectedLevelId] = useState('');
-  const { data: gradeLevels, isLoading: gradeLevelsLoading } = useGradeLevels(selectedLevelId || undefined);
+  const { profile, isLoading: profileLoading } = useProfile();
+  const { data: educationLevels } = useEducationLevels();
+  
+  // Teacher's education level is fixed from their profile
+  const teacherEducationLevelId = profile?.education_level_id || '';
+  const teacherEducationLevel = educationLevels?.find(l => l.id === teacherEducationLevelId);
+  
+  const { data: gradeLevels, isLoading: gradeLevelsLoading } = useGradeLevels(teacherEducationLevelId || undefined);
   const [selectedGradeLevelId, setSelectedGradeLevelId] = useState('');
-  const { data: subjects, isLoading: subjectsLoading } = useSubjects(selectedLevelId || undefined, selectedGradeLevelId || undefined);
+  const { data: subjects, isLoading: subjectsLoading } = useSubjects(teacherEducationLevelId || undefined, selectedGradeLevelId || undefined);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -40,10 +47,17 @@ export default function NewClassroom() {
   });
   const [classSchedule, setClassSchedule] = useState<ClassSchedule>({});
 
-  // Reset grade level and subject when education level changes
+  // Set education level from profile
   useEffect(() => {
-    setFormData(prev => ({ ...prev, subject_id: '', subject: '', grade_level_id: '' }));
-  }, [selectedLevelId]);
+    if (teacherEducationLevelId) {
+      setFormData(prev => ({ ...prev, education_level_id: teacherEducationLevelId }));
+    }
+  }, [teacherEducationLevelId]);
+
+  // Reset subject when grade level changes
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, subject_id: '', subject: '' }));
+  }, [selectedGradeLevelId]);
 
   // Update subject name when subject is selected
   useEffect(() => {
@@ -69,6 +83,16 @@ export default function NewClassroom() {
     });
     navigate('/teacher/classrooms');
   };
+
+  if (profileLoading) {
+    return (
+      <TeacherLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </TeacherLayout>
+    );
+  }
 
   return (
     <TeacherLayout>
@@ -96,27 +120,17 @@ export default function NewClassroom() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Education Level */}
+            {/* Education Level - Read Only (from teacher profile) */}
             <div className="space-y-2">
               <Label>المرحلة التعليمية</Label>
-              <Select 
-                value={selectedLevelId} 
-                onValueChange={(value) => {
-                  setSelectedLevelId(value);
-                  setFormData(prev => ({ ...prev, education_level_id: value }));
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={levelsLoading ? "جاري التحميل..." : "اختر المرحلة"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {levels?.map((level) => (
-                    <SelectItem key={level.id} value={level.id}>
-                      {level.name_ar}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg border">
+                <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{teacherEducationLevel?.name_ar || 'غير محدد'}</span>
+                <Badge variant="secondary" className="mr-auto">ثابت</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                المرحلة التعليمية محددة من ملفك الشخصي ولا يمكن تغييرها
+              </p>
             </div>
 
             {/* Grade Level */}
@@ -128,11 +142,11 @@ export default function NewClassroom() {
                   setFormData(prev => ({ ...prev, grade_level_id: value, subject_id: '', subject: '' }));
                   setSelectedGradeLevelId(value);
                 }}
-                disabled={!selectedLevelId}
+                disabled={!teacherEducationLevelId}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={
-                    !selectedLevelId ? "اختر المرحلة أولاً" : 
+                    !teacherEducationLevelId ? "يجب تحديد المرحلة أولاً" : 
                     gradeLevelsLoading ? "جاري التحميل..." : 
                     gradeLevels?.length === 0 ? "لا توجد صفوف" :
                     "اختر الصف"
@@ -214,7 +228,7 @@ export default function NewClassroom() {
               <Button 
                 type="submit" 
                 className="flex-1 gradient-hero"
-                disabled={createClassroom.isPending}
+                disabled={createClassroom.isPending || !teacherEducationLevelId}
               >
                 {createClassroom.isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

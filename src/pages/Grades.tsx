@@ -714,11 +714,18 @@ export default function Grades() {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold text-foreground">سجل الدرجات</h1>
-            <p className="text-muted-foreground mt-1">
-              {hasStructure 
-                ? `نظام الدرجات: ${gradingStructure.name_ar}` 
-                : 'تتبع درجات الطلاب الأسبوعية'}
-            </p>
+            {hasStructure && (
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant="secondary" className="text-sm">
+                  {gradingStructure.name_ar}
+                </Badge>
+              </div>
+            )}
+            {!hasStructure && (
+              <p className="text-muted-foreground mt-1">
+                تتبع درجات الطلاب الأسبوعية
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <Select value={selectedClassroom} onValueChange={setSelectedClassroom}>
