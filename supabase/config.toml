@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.analyze-grading-template]
 verify_jwt = false
+
+[functions.send-otp]
+verify_jwt = false
