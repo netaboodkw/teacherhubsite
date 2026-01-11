@@ -260,7 +260,8 @@ export function TemplateUploader() {
             groups: gradingGroups,
             settings: {
               showPercentage: true,
-              passingScore: 50
+              passingScore: 50,
+              showGrandTotal: true,
             }
           },
           template_id: template.id,

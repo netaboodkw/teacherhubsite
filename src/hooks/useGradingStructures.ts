@@ -25,6 +25,7 @@ export interface GradingStructureData {
   settings: {
     showPercentage: boolean;
     passingScore: number;
+    showGrandTotal: boolean; // إظهار/إخفاء المجموع الكلي
   };
 }
 

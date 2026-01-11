@@ -372,13 +372,15 @@ function StructuredGradingView({
                     </th>
                   );
                 })}
-                <th 
-                  className="border p-3 bg-muted text-center min-w-[80px]" 
-                  rowSpan={2}
-                >
-                  المجموع الكلي<br/>
-                  <span className="text-xs text-muted-foreground">({calculateTotalMaxScore()})</span>
-                </th>
+                {(structure.settings?.showGrandTotal !== false) && (
+                  <th 
+                    className="border p-3 bg-muted text-center min-w-[80px]" 
+                    rowSpan={2}
+                  >
+                    المجموع الكلي<br/>
+                    <span className="text-xs text-muted-foreground">({calculateTotalMaxScore()})</span>
+                  </th>
+                )}
               </tr>
               {/* Column headers row */}
               <tr>
@@ -429,13 +431,13 @@ function StructuredGradingView({
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={getVisibleColumnsCount() + 2} className="p-8 text-center">
+                  <td colSpan={getVisibleColumnsCount() + (structure.settings?.showGrandTotal !== false ? 2 : 1)} className="p-8 text-center">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
                   </td>
                 </tr>
               ) : students.length === 0 ? (
                 <tr>
-                  <td colSpan={getVisibleColumnsCount() + 2} className="p-8 text-center text-muted-foreground">
+                  <td colSpan={getVisibleColumnsCount() + (structure.settings?.showGrandTotal !== false ? 2 : 1)} className="p-8 text-center text-muted-foreground">
                     لا يوجد طلاب في هذا الصف
                   </td>
                 </tr>
@@ -516,9 +518,11 @@ function StructuredGradingView({
                           );
                         });
                       })}
-                      <td className="border p-3 text-center bg-primary/5">
-                        <span className="font-bold text-lg text-primary">{studentTotal}</span>
-                      </td>
+                      {(structure.settings?.showGrandTotal !== false) && (
+                        <td className="border p-3 text-center bg-primary/5">
+                          <span className="font-bold text-lg text-primary">{studentTotal}</span>
+                        </td>
+                      )}
                     </tr>
                   );
                 })
