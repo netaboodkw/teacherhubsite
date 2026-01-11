@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Plus, 
   Trash2, 
@@ -18,7 +19,12 @@ import {
   Settings2,
   CheckCircle2,
   FileText,
-  Palette
+  Palette,
+  Upload,
+  Sparkles,
+  Loader2,
+  Image,
+  RefreshCw
 } from 'lucide-react';
 import { useSubjects } from '@/hooks/useSubjects';
 import { useEducationLevels } from '@/hooks/useEducationLevels';
@@ -57,8 +63,13 @@ export default function SubjectGradingSetup() {
   const educationLevel = levels?.find(l => l.id === educationLevelId);
   const gradeLevel = gradeLevels?.find(g => g.id === gradeLevelId);
 
-  const [activeTab, setActiveTab] = useState<'templates' | 'structure' | 'preview'>('templates');
+  const [activeTab, setActiveTab] = useState<'templates' | 'upload' | 'structure' | 'preview'>('templates');
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  
+  // Upload state
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [currentFile, setCurrentFile] = useState<File | null>(null);
   
   const [structure, setStructure] = useState<GradingStructureData>({
     groups: [],
@@ -195,6 +206,101 @@ export default function SubjectGradingSetup() {
     }, 0);
   };
 
+  // AI Upload handlers
+  const analyzeFile = useCallback(async (file: File) => {
+    setIsAnalyzing(true);
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = (reader.result as string).split(',')[1];
+        
+        if (file.type.startsWith('image/')) {
+          setUploadedImage(reader.result as string);
+        }
+        
+        try {
+          const { data, error } = await supabase.functions.invoke('analyze-grading-template', {
+            body: {
+              fileBase64: base64,
+              fileType: file.type,
+              fileName: file.name
+            }
+          });
+
+          if (error) throw error;
+
+          if (data.structure) {
+            // Convert parsed structure to GradingStructureData
+            const groups: GradingGroup[] = data.structure.groups.map((group: any, index: number) => ({
+              id: `group-${Date.now()}-${index}`,
+              name_ar: group.name || `مجموعة ${index + 1}`,
+              color: GROUP_COLORS[index % GROUP_COLORS.length].color,
+              columns: group.columns.map((col: any, colIndex: number) => ({
+                id: `col-${Date.now()}-${index}-${colIndex}`,
+                name_ar: col.name || `عمود ${colIndex + 1}`,
+                max_score: col.maxScore || 1,
+                type: col.type || 'score'
+              }))
+            }));
+
+            setStructure({
+              groups,
+              settings: {
+                showPercentage: true,
+                passingScore: 50,
+              }
+            });
+            
+            setActiveTab('structure');
+            toast.success('تم تحليل النموذج بنجاح! يمكنك تعديله الآن');
+          } else {
+            throw new Error('فشل في استخراج هيكل القالب');
+          }
+        } catch (err: any) {
+          console.error('Analysis error:', err);
+          if (err.message?.includes('429') || err.message?.includes('rate')) {
+            toast.error('تم تجاوز حد الطلبات، يرجى المحاولة لاحقاً');
+          } else {
+            toast.error('فشل في تحليل الملف');
+          }
+        } finally {
+          setIsAnalyzing(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('Upload error:', err);
+      toast.error('فشل في رفع الملف');
+      setIsAnalyzing(false);
+    }
+  }, []);
+
+  const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'application/pdf'];
+    
+    if (!validTypes.some(t => file.type.includes(t.split('/')[1]))) {
+      toast.error('نوع الملف غير مدعوم. يرجى رفع صورة أو PDF');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('حجم الملف كبير جداً. الحد الأقصى 10 ميجابايت');
+      return;
+    }
+
+    setCurrentFile(file);
+    await analyzeFile(file);
+  }, [analyzeFile]);
+
+  const handleReanalyze = useCallback(async () => {
+    if (!currentFile) return;
+    await analyzeFile(currentFile);
+  }, [currentFile, analyzeFile]);
+
   const handleSave = async () => {
     if (!educationLevelId) {
       toast.error('يجب تحديد المرحلة التعليمية');
@@ -250,7 +356,7 @@ export default function SubjectGradingSetup() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button 
             variant={activeTab === 'templates' ? 'default' : 'outline'}
             onClick={() => setActiveTab('templates')}
@@ -258,6 +364,14 @@ export default function SubjectGradingSetup() {
           >
             <FileText className="h-4 w-4" />
             القوالب الجاهزة
+          </Button>
+          <Button 
+            variant={activeTab === 'upload' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('upload')}
+            className="gap-2"
+          >
+            <Sparkles className="h-4 w-4" />
+            رفع نموذج
           </Button>
           <Button 
             variant={activeTab === 'structure' ? 'default' : 'outline'}
@@ -277,6 +391,94 @@ export default function SubjectGradingSetup() {
             معاينة
           </Button>
         </div>
+
+        {/* Upload Tab */}
+        {activeTab === 'upload' && (
+          <div className="space-y-6">
+            <Card className="border-dashed border-2">
+              <CardContent className="p-8">
+                <label className="flex flex-col items-center justify-center cursor-pointer">
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*,.pdf"
+                    onChange={handleFileUpload}
+                    disabled={isAnalyzing}
+                  />
+                  {isAnalyzing ? (
+                    <div className="text-center">
+                      <div className="relative inline-block mb-4">
+                        <Sparkles className="h-16 w-16 text-primary animate-pulse" />
+                        <Loader2 className="h-8 w-8 animate-spin text-primary absolute -bottom-1 -right-1" />
+                      </div>
+                      <p className="text-xl font-medium">جاري تحليل النموذج بالذكاء الاصطناعي...</p>
+                      <p className="text-muted-foreground mt-2">يتم استخراج الهيكل والدرجات تلقائياً</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="relative inline-block mb-4">
+                        <Upload className="h-16 w-16 text-muted-foreground" />
+                        <Sparkles className="h-6 w-6 text-primary absolute -top-1 -right-1" />
+                      </div>
+                      <p className="text-xl font-medium mb-2">ارفع صورة نموذج الدرجات</p>
+                      <p className="text-muted-foreground text-center max-w-md">
+                        الذكاء الاصطناعي سيتعرف على هيكل النموذج ويحوّله لسجل درجات قابل للتعديل
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        يدعم: صور (PNG, JPG, WEBP) و PDF • الحد: 10 ميجابايت
+                      </p>
+                      <Badge variant="secondary" className="mt-4">
+                        <Sparkles className="h-3 w-3 ml-1" />
+                        مدعوم بالذكاء الاصطناعي
+                      </Badge>
+                    </>
+                  )}
+                </label>
+              </CardContent>
+            </Card>
+
+            {/* Image Preview */}
+            {uploadedImage && (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Image className="h-5 w-5" />
+                    الصورة المرفوعة
+                  </CardTitle>
+                  <Button variant="outline" size="sm" onClick={handleReanalyze} disabled={isAnalyzing}>
+                    {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                    <span className="mr-1">إعادة التحليل</span>
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  <img 
+                    src={uploadedImage} 
+                    alt="النموذج المرفوع" 
+                    className="w-full max-h-96 object-contain rounded-lg bg-muted"
+                  />
+                </CardContent>
+              </Card>
+            )}
+
+            {structure.groups.length > 0 && (
+              <div className="flex items-center justify-center gap-4 p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
+                <CheckCircle2 className="h-6 w-6 text-green-600" />
+                <div>
+                  <p className="font-medium text-green-800 dark:text-green-200">تم استخراج الهيكل بنجاح!</p>
+                  <p className="text-sm text-green-600 dark:text-green-400">
+                    {structure.groups.length} مجموعات • {structure.groups.reduce((s, g) => s + g.columns.length, 0)} أعمدة
+                  </p>
+                </div>
+                <Button onClick={() => setActiveTab('structure')}>
+                  تعديل الهيكل
+                </Button>
+                <Button variant="outline" onClick={() => setActiveTab('preview')}>
+                  معاينة
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
 
         {activeTab === 'templates' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
