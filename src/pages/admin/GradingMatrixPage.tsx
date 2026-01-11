@@ -53,6 +53,7 @@ export default function GradingMatrixPage() {
   const [applyDialogOpen, setApplyDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [applying, setApplying] = useState(false);
+  const [replaceExisting, setReplaceExisting] = useState(false);
 
   // Get structures as a map for quick lookup
   const structureMap = useMemo(() => {
@@ -226,9 +227,10 @@ export default function GradingMatrixPage() {
     return new Set(Array.from(selectedCells).filter(key => !cellsWithStructure.has(key)));
   }, [selectedCells, cellsWithStructure]);
 
-  // Apply template to selected cells (only those without existing structure)
+  // Apply template to selected cells
   const handleApplyTemplate = async () => {
-    if (!selectedTemplate || cellsWithoutStructure.size === 0) return;
+    const cellsToApply = replaceExisting ? selectedCells : cellsWithoutStructure;
+    if (!selectedTemplate || cellsToApply.size === 0) return;
     
     const template = gradingTemplates?.find(t => t.id === selectedTemplate);
     if (!template) return;
@@ -245,7 +247,19 @@ export default function GradingMatrixPage() {
     
     setApplying(true);
     try {
-      const inserts = Array.from(cellsWithoutStructure).map(key => {
+      // If replacing, first delete existing structures for selected cells
+      if (replaceExisting && cellsWithStructure.size > 0) {
+        for (const key of cellsWithStructure) {
+          const [gradeLevelId, subjectId] = key.split(':');
+          await supabase
+            .from('subject_grading_structures')
+            .delete()
+            .eq('grade_level_id', gradeLevelId)
+            .eq('subject_id', subjectId);
+        }
+      }
+      
+      const inserts = Array.from(cellsToApply).map(key => {
         const [gradeLevelId, subjectId] = key.split(':');
         const gradeLevel = gradeLevels?.find(g => g.id === gradeLevelId);
         
@@ -271,6 +285,7 @@ export default function GradingMatrixPage() {
       setApplyDialogOpen(false);
       setSelectedCells(new Set());
       setSelectedTemplate('');
+      setReplaceExisting(false);
       queryClient.invalidateQueries({ queryKey: ['grading_structures'] });
     } catch (error: any) {
       toast.error('فشل في تطبيق القالب: ' + error.message);
@@ -503,26 +518,46 @@ export default function GradingMatrixPage() {
               <div className="grid grid-cols-2 gap-4 p-3 rounded-lg bg-muted/50">
                 <div className="text-center">
                   <p className="text-2xl font-bold text-success">{cellsWithoutStructure.size}</p>
-                  <p className="text-sm text-muted-foreground">فارغة (ستطبق)</p>
+                  <p className="text-sm text-muted-foreground">فارغة</p>
                 </div>
                 <div className="text-center">
                   <p className="text-2xl font-bold text-warning">{cellsWithStructure.size}</p>
-                  <p className="text-sm text-muted-foreground">لديها هيكل (ستتجاهل)</p>
+                  <p className="text-sm text-muted-foreground">لديها هيكل</p>
                 </div>
               </div>
 
+              {/* Replace existing option */}
               {cellsWithStructure.size > 0 && (
+                <div className="flex items-center gap-3 p-3 rounded-lg border">
+                  <Checkbox 
+                    id="replaceExisting"
+                    checked={replaceExisting}
+                    onCheckedChange={(checked) => setReplaceExisting(checked === true)}
+                  />
+                  <div className="flex-1">
+                    <label htmlFor="replaceExisting" className="text-sm font-medium cursor-pointer">
+                      استبدال الهياكل الموجودة
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                      سيتم حذف الهياكل القديمة وتطبيق القالب الجديد على جميع الخلايا المحددة
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {cellsWithStructure.size > 0 && !replaceExisting && (
                 <Alert>
                   <AlertTriangle className="h-4 w-4" />
                   <AlertTitle>تنبيه</AlertTitle>
                   <AlertDescription>
-                    {cellsWithStructure.size} خلية لديها نظام درجات مسبق وسيتم تجاهلها لتجنب التعارض.
+                    {cellsWithStructure.size} خلية لديها نظام درجات مسبق وسيتم تجاهلها.
+                    فعّل خيار "استبدال الهياكل الموجودة" لتطبيق القالب عليها أيضاً.
                   </AlertDescription>
                 </Alert>
               )}
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">اختر القالب الأساسي</label>
+                <label className="text-sm font-medium">اختر القالب</label>
                 <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
                   <SelectTrigger>
                     <SelectValue placeholder="اختر قالب الدرجات" />
@@ -550,9 +585,6 @@ export default function GradingMatrixPage() {
                     )}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
-                  القوالب المتاحة من صفحة "قوالب الدرجات"
-                </p>
               </div>
             </div>
             <DialogFooter>
@@ -561,10 +593,13 @@ export default function GradingMatrixPage() {
               </Button>
               <Button 
                 onClick={handleApplyTemplate} 
-                disabled={applying || !selectedTemplate || cellsWithoutStructure.size === 0}
+                disabled={applying || !selectedTemplate || (replaceExisting ? selectedCells.size === 0 : cellsWithoutStructure.size === 0)}
+                variant={replaceExisting ? "destructive" : "default"}
               >
                 {applying ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
+                ) : replaceExisting ? (
+                  `استبدال وتطبيق على ${selectedCells.size} خلية`
                 ) : (
                   `تطبيق على ${cellsWithoutStructure.size} خلية`
                 )}
