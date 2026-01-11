@@ -87,7 +87,7 @@ interface GradingColumn {
   id: string;
   name_ar: string;
   max_score: number;
-  type: 'score' | 'total' | 'grand_total' | 'percentage' | 'label';
+  type: 'score' | 'total' | 'grand_total' | 'group_sum' | 'percentage' | 'label';
   sourceGroupIds?: string[]; // للمجموع الكلي - المجموعات المراد جمع مجاميعها
   sourceColumnIds?: string[]; // للمجموع - الأعمدة المراد جمعها
   useGroupColor?: boolean; // هل يستخدم لون المجموعة أم أبيض

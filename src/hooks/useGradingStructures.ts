@@ -6,9 +6,9 @@ export interface GradingColumn {
   id: string;
   name_ar: string;
   max_score: number;
-  type: 'score' | 'total' | 'grand_total' | 'percentage' | 'label';
-  sourceGroupIds?: string[];
-  sourceColumnIds?: string[];
+  type: 'score' | 'total' | 'grand_total' | 'group_sum' | 'percentage' | 'label';
+  sourceGroupIds?: string[]; // For grand_total and group_sum - groups to sum from
+  sourceColumnIds?: string[]; // For total - columns to sum, for grand_total - same group columns
   useGroupColor?: boolean;
 }
 
@@ -202,6 +202,7 @@ export function useCreateGradingStructure() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['grading_structures'] });
       queryClient.invalidateQueries({ queryKey: ['default_grading_structures'] });
+      queryClient.invalidateQueries({ queryKey: ['classroom_grading_structure'] });
       toast.success('تم حفظ هيكل الدرجات بنجاح');
     },
     onError: (error) => {
@@ -233,6 +234,7 @@ export function useUpdateGradingStructure() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['grading_structures'] });
       queryClient.invalidateQueries({ queryKey: ['default_grading_structures'] });
+      queryClient.invalidateQueries({ queryKey: ['classroom_grading_structure'] });
       toast.success('تم تحديث هيكل الدرجات بنجاح');
     },
     onError: (error) => {
@@ -256,6 +258,7 @@ export function useDeleteGradingStructure() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['grading_structures'] });
       queryClient.invalidateQueries({ queryKey: ['default_grading_structures'] });
+      queryClient.invalidateQueries({ queryKey: ['classroom_grading_structure'] });
       toast.success('تم حذف هيكل الدرجات بنجاح');
     },
     onError: (error) => {
