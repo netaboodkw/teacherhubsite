@@ -106,6 +106,7 @@ interface GradingStructure {
   settings: {
     showPercentage: boolean;
     passingScore: number;
+    showGrandTotal: boolean;
   };
 }
 
@@ -310,6 +311,7 @@ export function GradingSystemManager() {
     settings: {
       showPercentage: true,
       passingScore: 50,
+      showGrandTotal: true,
     }
   });
 
@@ -836,6 +838,7 @@ export function GradingSystemManager() {
               settings: {
                 showPercentage: true,
                 passingScore: 50,
+                showGrandTotal: true,
               }
             });
             
@@ -958,6 +961,7 @@ export function GradingSystemManager() {
       settings: {
         showPercentage: true,
         passingScore: 50,
+        showGrandTotal: true,
       }
     });
     setActiveTab('builder');
@@ -1025,6 +1029,7 @@ export function GradingSystemManager() {
         settings: {
           showPercentage: true,
           passingScore: 50,
+          showGrandTotal: true,
         }
       });
       setActiveTab('builder');
@@ -1100,7 +1105,7 @@ export function GradingSystemManager() {
                 type: 'score' as const
               }))
             }],
-            settings: { showPercentage: true, passingScore: 50 }
+            settings: { showPercentage: true, passingScore: 50, showGrandTotal: true }
           };
         }
       }
@@ -1561,9 +1566,9 @@ export function GradingSystemManager() {
                 </Card>
               ))}
 
-              {/* Summary */}
+              {/* Summary & Settings */}
               <Card className="bg-muted/50">
-                <CardContent className="py-4">
+                <CardContent className="py-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <Badge variant="outline" className="text-base py-1 px-3">
@@ -1581,6 +1586,25 @@ export function GradingSystemManager() {
                       <Eye className="h-4 w-4 ml-1" />
                       معاينة
                     </Button>
+                  </div>
+                  
+                  {/* Settings */}
+                  <div className="flex items-center gap-6 pt-2 border-t">
+                    <div className="flex items-center gap-2">
+                      <Checkbox 
+                        id="showGrandTotal"
+                        checked={structure.settings.showGrandTotal}
+                        onCheckedChange={(checked) => 
+                          setStructure(prev => ({
+                            ...prev,
+                            settings: { ...prev.settings, showGrandTotal: !!checked }
+                          }))
+                        }
+                      />
+                      <Label htmlFor="showGrandTotal" className="cursor-pointer">
+                        إظهار المجموع الكلي
+                      </Label>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -1622,7 +1646,9 @@ export function GradingSystemManager() {
                         {group.name_ar}
                       </th>
                     ))}
-                    <th className="border p-3 bg-muted text-center">المجموع الكلي</th>
+                    {structure.settings.showGrandTotal && (
+                      <th className="border p-3 bg-muted text-center">المجموع الكلي</th>
+                    )}
                   </tr>
                   <tr>
                     <th className="border p-2 bg-muted/50"></th>
@@ -1638,10 +1664,12 @@ export function GradingSystemManager() {
                         </th>
                       ))
                     )}
-                    <th className="border p-2 bg-muted/50 text-center">
-                      <div>المجموع</div>
-                      <div className="text-xs text-muted-foreground">({calculateTotalMaxScore()})</div>
-                    </th>
+                    {structure.settings.showGrandTotal && (
+                      <th className="border p-2 bg-muted/50 text-center">
+                        <div>المجموع</div>
+                        <div className="text-xs text-muted-foreground">({calculateTotalMaxScore()})</div>
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -1655,7 +1683,9 @@ export function GradingSystemManager() {
                           </td>
                         ))
                       )}
-                      <td className="border p-2 text-center font-medium text-muted-foreground">-</td>
+                      {structure.settings.showGrandTotal && (
+                        <td className="border p-2 text-center font-medium text-muted-foreground">-</td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

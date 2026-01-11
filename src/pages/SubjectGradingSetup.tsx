@@ -76,6 +76,7 @@ export default function SubjectGradingSetup() {
     settings: {
       showPercentage: true,
       passingScore: 50,
+      showGrandTotal: true,
     }
   });
 
@@ -249,6 +250,7 @@ export default function SubjectGradingSetup() {
               settings: {
                 showPercentage: true,
                 passingScore: 50,
+                showGrandTotal: true,
               }
             });
             
@@ -830,7 +832,7 @@ export default function SubjectGradingSetup() {
                 <Button 
                   variant="outline" 
                   onClick={() => {
-                    setStructure({ groups: [], settings: { showPercentage: true, passingScore: 50 } });
+                    setStructure({ groups: [], settings: { showPercentage: true, passingScore: 50, showGrandTotal: true } });
                     setSelectedTemplate(null);
                   }}
                 >
