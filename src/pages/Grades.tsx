@@ -229,7 +229,7 @@ function StructuredGradingView({
       }, 0);
     }
     
-    if (column.type === 'grand_total') {
+    if (column.type === 'grand_total' || column.type === 'group_sum') {
       let total = 0;
       
       // Sum from source groups
@@ -415,7 +415,7 @@ function StructuredGradingView({
                       <div className="flex flex-col items-center gap-1">
                         <span>{column.name_ar}</span>
                         <Badge 
-                          variant={column.type === 'score' ? 'secondary' : column.type === 'total' ? 'default' : 'destructive'}
+                          variant={column.type === 'score' ? 'secondary' : column.type === 'total' ? 'default' : (column.type === 'grand_total' || column.type === 'group_sum') ? 'destructive' : 'outline'}
                           className="text-xs"
                         >
                           {column.max_score}
@@ -487,7 +487,7 @@ function StructuredGradingView({
                             <td 
                               key={column.id}
                               className={`border p-2 text-center ${
-                                column.type === 'grand_total' ? 'bg-primary/10 font-bold' : 
+                                column.type === 'grand_total' || column.type === 'group_sum' ? 'bg-primary/10 font-bold' : 
                                 column.type === 'total' ? 'bg-muted/50 font-semibold' : ''
                               }`}
                               style={{ 
@@ -508,7 +508,7 @@ function StructuredGradingView({
                                   {value > 0 ? value : <Plus className="w-4 h-4" />}
                                 </button>
                               ) : (
-                                <span className={column.type === 'grand_total' ? 'text-primary' : ''}>
+                                <span className={column.type === 'grand_total' || column.type === 'group_sum' ? 'text-primary' : ''}>
                                   {value}
                                 </span>
                               )}

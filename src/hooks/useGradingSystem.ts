@@ -243,6 +243,7 @@ export function useUpdateGradingTemplate() {
       name_ar: string; 
       description?: string;
       periods?: { name: string; name_ar: string; max_score: number; weight: number }[];
+      syncStructures?: boolean; // Whether to sync all structures using this template
     }) => {
       // Update template
       const { error: templateError } = await supabase
@@ -282,11 +283,43 @@ export function useUpdateGradingTemplate() {
         if (periodsError) throw periodsError;
       }
 
+      // Sync all structures that use this template
+      if (template.syncStructures !== false && template.description) {
+        try {
+          const parsedStructure = JSON.parse(template.description);
+          if (parsedStructure.groups && Array.isArray(parsedStructure.groups)) {
+            // Find all structures with this template_id
+            const { data: structures } = await supabase
+              .from('subject_grading_structures')
+              .select('id')
+              .eq('template_id', template.id);
+
+            if (structures && structures.length > 0) {
+              // Update each structure with the new structure data
+              for (const struct of structures) {
+                await supabase
+                  .from('subject_grading_structures')
+                  .update({
+                    name: template.name,
+                    name_ar: template.name_ar,
+                    structure: parsedStructure,
+                  })
+                  .eq('id', struct.id);
+              }
+            }
+          }
+        } catch {
+          // Not a valid JSON, skip syncing
+        }
+      }
+
       return template;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['grading_templates'] });
       queryClient.invalidateQueries({ queryKey: ['grading_template_periods'] });
+      queryClient.invalidateQueries({ queryKey: ['grading_structures'] });
+      queryClient.invalidateQueries({ queryKey: ['classroom_grading_structure'] });
       toast.success('تم تحديث القالب بنجاح');
     },
     onError: (error) => {
