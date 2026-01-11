@@ -10,7 +10,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   DropdownMenu,
@@ -32,9 +31,27 @@ import {
 import { toast } from 'sonner';
 import { 
   ArrowRight, User, Plus, Minus, MessageSquare, Save, Loader2, 
-  Move, Check, X, Clock, FileText, ClipboardCheck, Users,
-  MoreVertical, Archive, Settings, UserPlus
+  Move, Check, X, Clock, FileText, ClipboardCheck,
+  MoreVertical, Archive, Settings, UserPlus, GripVertical
 } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface StudentPosition {
   student_id: string;
@@ -48,18 +65,116 @@ interface SelectedStudent {
   avatar_url: string | null;
 }
 
-interface DragState {
-  isDragging: boolean;
-  studentId: string | null;
-  startX: number;
-  startY: number;
-  offsetX: number;
-  offsetY: number;
-}
-
 interface AttendanceRecord {
   student_id: string;
   status: 'present' | 'absent' | 'late' | 'excused';
+}
+
+interface SortableStudentProps {
+  student: {
+    id: string;
+    name: string;
+    avatar_url: string | null;
+  };
+  isArrangeMode: boolean;
+  onTap: (student: SelectedStudent) => void;
+  getShortName: (name: string) => string;
+}
+
+function SortableStudent({ student, isArrangeMode, onTap, getShortName }: SortableStudentProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: student.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex flex-col items-center p-2 bg-card rounded-xl border-2 shadow-sm transition-all ${
+        isDragging ? 'border-primary shadow-lg scale-105' : 'border-border/50 hover:border-primary/30'
+      }`}
+      onClick={() => !isArrangeMode && onTap(student)}
+    >
+      {isArrangeMode && (
+        <div 
+          {...attributes} 
+          {...listeners}
+          className="absolute -top-1 -right-1 p-1 bg-primary text-primary-foreground rounded-full cursor-grab active:cursor-grabbing touch-none"
+        >
+          <GripVertical className="h-3 w-3" />
+        </div>
+      )}
+      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-1">
+        {student.avatar_url ? (
+          <img
+            src={student.avatar_url}
+            alt={student.name}
+            className="w-full h-full object-cover"
+            draggable={false}
+          />
+        ) : (
+          <User className="h-5 w-5 text-primary" />
+        )}
+      </div>
+      <p className="text-xs text-center font-medium truncate w-full leading-tight">
+        {getShortName(student.name)}
+      </p>
+    </div>
+  );
+}
+
+interface AttendanceStudentProps {
+  student: {
+    id: string;
+    name: string;
+    avatar_url: string | null;
+  };
+  status: AttendanceRecord['status'] | null;
+  onTap: (student: SelectedStudent) => void;
+  getShortName: (name: string) => string;
+  getAttendanceBorder: (status: AttendanceRecord['status'] | null) => string;
+  getAttendanceIcon: (status: AttendanceRecord['status'] | null) => React.ReactNode;
+}
+
+function AttendanceStudent({ student, status, onTap, getShortName, getAttendanceBorder, getAttendanceIcon }: AttendanceStudentProps) {
+  return (
+    <div
+      className={`flex flex-col items-center p-2 bg-card rounded-xl border-2 shadow-sm cursor-pointer transition-all hover:scale-105 active:scale-95 ${getAttendanceBorder(status)}`}
+      onClick={() => onTap(student)}
+    >
+      <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-1">
+        {student.avatar_url ? (
+          <img
+            src={student.avatar_url}
+            alt={student.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <User className="h-5 w-5 text-primary" />
+        )}
+        {status && (
+          <div className="absolute -bottom-1 -right-1 bg-card rounded-full p-0.5 shadow border">
+            {getAttendanceIcon(status)}
+          </div>
+        )}
+      </div>
+      <p className="text-xs text-center font-medium truncate w-full leading-tight">
+        {getShortName(student.name)}
+      </p>
+    </div>
+  );
 }
 
 export default function ClassroomView() {
@@ -69,9 +184,8 @@ export default function ClassroomView() {
   const { data: classroom, isLoading: loadingClassroom } = useClassroom(classroomId || '');
   const { data: students = [], isLoading: loadingStudents } = useStudents(classroomId);
   const archiveClassroom = useArchiveClassroom();
-  const containerRef = useRef<HTMLDivElement>(null);
   
-  const [positions, setPositions] = useState<StudentPosition[]>([]);
+  const [studentOrder, setStudentOrder] = useState<string[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<SelectedStudent | null>(null);
   const [dialogMode, setDialogMode] = useState<'note' | 'attendance'>('note');
   const [noteType, setNoteType] = useState<'positive' | 'negative' | 'note'>('positive');
@@ -82,14 +196,24 @@ export default function ClassroomView() {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<number>(1);
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
-  const [dragState, setDragState] = useState<DragState>({
-    isDragging: false,
-    studentId: null,
-    startX: 0,
-    startY: 0,
-    offsetX: 0,
-    offsetY: 0,
-  });
+
+  // DnD Kit sensors with touch support
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200,
+        tolerance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const handleArchiveClassroom = () => {
     if (!classroomId) return;
@@ -101,12 +225,9 @@ export default function ClassroomView() {
     setArchiveDialogOpen(false);
   };
 
-  const GRID_SIZE = 80;
-  const STUDENT_SIZE = 70;
-
   const today = new Date().toISOString().split('T')[0];
 
-  // Load existing positions and handle new students
+  // Load existing positions and convert to order
   useEffect(() => {
     const loadPositions = async () => {
       if (!classroomId || !user) return;
@@ -115,47 +236,26 @@ export default function ClassroomView() {
         const { data, error } = await supabase
           .from('student_positions')
           .select('student_id, position_x, position_y')
-          .eq('classroom_id', classroomId);
+          .eq('classroom_id', classroomId)
+          .order('position_y', { ascending: true })
+          .order('position_x', { ascending: true });
 
         if (error) throw error;
 
-        const existingPositions = data || [];
-        const existingStudentIds = new Set(existingPositions.map(p => p.student_id));
-        
-        // Find students without positions (new students)
-        const studentsWithoutPositions = students.filter(s => !existingStudentIds.has(s.id));
-        
-        if (studentsWithoutPositions.length > 0) {
-          // Calculate starting position for new students
-          const cols = 5;
-          let maxY = 0;
-          existingPositions.forEach(p => {
-            if (p.position_y > maxY) maxY = p.position_y;
-          });
-          
-          const startRow = existingPositions.length > 0 ? Math.floor(maxY / GRID_SIZE) + 1 : 0;
-          
-          const newPositions = studentsWithoutPositions.map((student, index) => ({
-            student_id: student.id,
-            position_x: (index % cols) * GRID_SIZE + 20,
-            position_y: (startRow + Math.floor(index / cols)) * GRID_SIZE + 20,
-          }));
-          
-          setPositions([...existingPositions, ...newPositions]);
-        } else if (existingPositions.length > 0) {
-          setPositions(existingPositions);
-        } else if (students.length > 0) {
-          // No positions at all, create default for all students
-          const cols = 5;
-          const defaultPositions = students.map((student, index) => ({
-            student_id: student.id,
-            position_x: (index % cols) * GRID_SIZE + 20,
-            position_y: Math.floor(index / cols) * GRID_SIZE + 20,
-          }));
-          setPositions(defaultPositions);
+        if (data && data.length > 0) {
+          // Sort by position and extract order
+          const orderedIds = data.map(p => p.student_id);
+          // Add any new students not in positions
+          const existingIds = new Set(orderedIds);
+          const newStudentIds = students.filter(s => !existingIds.has(s.id)).map(s => s.id);
+          setStudentOrder([...orderedIds, ...newStudentIds]);
+        } else {
+          // Default order from students array
+          setStudentOrder(students.map(s => s.id));
         }
       } catch (error) {
         console.error('Error loading positions:', error);
+        setStudentOrder(students.map(s => s.id));
       } finally {
         setLoadingPositions(false);
       }
@@ -199,75 +299,19 @@ export default function ClassroomView() {
     loadAttendance();
   }, [classroomId, user, today, selectedPeriod]);
 
-  const snapToGrid = (value: number) => {
-    return Math.round(value / GRID_SIZE) * GRID_SIZE;
-  };
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
 
-  const handlePointerDown = (e: React.PointerEvent, studentId: string) => {
-    if (activeTab !== 'arrange') return;
-    
-    e.preventDefault();
-    const target = e.currentTarget as HTMLElement;
-    target.setPointerCapture(e.pointerId);
-    
-    const pos = positions.find(p => p.student_id === studentId);
-    if (!pos) return;
-
-    setDragState({
-      isDragging: true,
-      studentId,
-      startX: e.clientX,
-      startY: e.clientY,
-      offsetX: pos.position_x,
-      offsetY: pos.position_y,
-    });
-  };
-
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!dragState.isDragging || !dragState.studentId || !containerRef.current) return;
-
-    const deltaX = e.clientX - dragState.startX;
-    const deltaY = e.clientY - dragState.startY;
-    
-    const containerRect = containerRef.current.getBoundingClientRect();
-    let newX = dragState.offsetX + deltaX;
-    let newY = dragState.offsetY + deltaY;
-
-    // Always snap to grid while dragging (Snapchat-like behavior)
-    newX = snapToGrid(newX);
-    newY = snapToGrid(newY);
-
-    // Constrain to container
-    newX = Math.max(0, Math.min(newX, snapToGrid(containerRect.width - STUDENT_SIZE)));
-    newY = Math.max(0, Math.min(newY, snapToGrid(containerRect.height - STUDENT_SIZE)));
-
-    setPositions(prev =>
-      prev.map(p =>
-        p.student_id === dragState.studentId
-          ? { ...p, position_x: newX, position_y: newY }
-          : p
-      )
-    );
-  };
-
-  const handlePointerUp = () => {
-    if (!dragState.isDragging || !dragState.studentId) return;
-
-    // Already snapped during drag, no need to snap again
-
-    setDragState({
-      isDragging: false,
-      studentId: null,
-      startX: 0,
-      startY: 0,
-      offsetX: 0,
-      offsetY: 0,
-    });
+    if (over && active.id !== over.id) {
+      setStudentOrder((items) => {
+        const oldIndex = items.indexOf(active.id as string);
+        const newIndex = items.indexOf(over.id as string);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
   };
 
   const handleStudentTap = (student: SelectedStudent) => {
-    if (dragState.isDragging) return;
-    
     if (activeTab === 'attendance') {
       cycleAttendance(student.id);
     } else if (activeTab === 'notes') {
@@ -311,21 +355,21 @@ export default function ClassroomView() {
 
   const getAttendanceIcon = (status: AttendanceRecord['status'] | null) => {
     switch (status) {
-      case 'present': return <Check className="h-4 w-4 text-green-600" />;
-      case 'absent': return <X className="h-4 w-4 text-red-600" />;
-      case 'late': return <Clock className="h-4 w-4 text-yellow-600" />;
-      case 'excused': return <FileText className="h-4 w-4 text-blue-600" />;
+      case 'present': return <Check className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />;
+      case 'absent': return <X className="h-3 w-3 sm:h-4 sm:w-4 text-red-600" />;
+      case 'late': return <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />;
+      case 'excused': return <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />;
       default: return null;
     }
   };
 
   const getAttendanceBorder = (status: AttendanceRecord['status'] | null) => {
     switch (status) {
-      case 'present': return 'border-green-500 bg-green-50';
-      case 'absent': return 'border-red-500 bg-red-50';
-      case 'late': return 'border-yellow-500 bg-yellow-50';
-      case 'excused': return 'border-blue-500 bg-blue-50';
-      default: return 'border-transparent';
+      case 'present': return 'border-green-500 bg-green-50 dark:bg-green-950/30';
+      case 'absent': return 'border-red-500 bg-red-50 dark:bg-red-950/30';
+      case 'late': return 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/30';
+      case 'excused': return 'border-blue-500 bg-blue-50 dark:bg-blue-950/30';
+      default: return 'border-border/50';
     }
   };
 
@@ -339,11 +383,14 @@ export default function ClassroomView() {
         .delete()
         .eq('classroom_id', classroomId);
 
-      const positionsToInsert = positions.map(p => ({
-        student_id: p.student_id,
+      // Convert order to positions (grid-based)
+      const cols = 5;
+      const gridSize = 80;
+      const positionsToInsert = studentOrder.map((studentId, index) => ({
+        student_id: studentId,
         classroom_id: classroomId,
-        position_x: p.position_x,
-        position_y: p.position_y,
+        position_x: (index % cols) * gridSize + 20,
+        position_y: Math.floor(index / cols) * gridSize + 20,
         user_id: user.id,
       }));
 
@@ -354,7 +401,7 @@ export default function ClassroomView() {
       if (error) throw error;
 
       toast.success('تم حفظ ترتيب الطلاب بنجاح');
-      setActiveTab('notes'); // Return to notes tab after saving
+      setActiveTab('notes');
     } catch (error: any) {
       toast.error(error.message || 'حدث خطأ أثناء الحفظ');
     } finally {
@@ -367,7 +414,6 @@ export default function ClassroomView() {
 
     setSaving(true);
     try {
-      // Delete records for this classroom, date, and period
       await supabase
         .from('attendance_records')
         .delete()
@@ -393,7 +439,7 @@ export default function ClassroomView() {
       }
 
       toast.success(`تم حفظ حضور الحصة ${selectedPeriod} بنجاح`);
-      setActiveTab('notes'); // Return to notes tab after saving
+      setActiveTab('notes');
     } catch (error: any) {
       toast.error(error.message || 'حدث خطأ أثناء الحفظ');
     } finally {
@@ -431,9 +477,14 @@ export default function ClassroomView() {
     }
   };
 
-  const getStudentPosition = (studentId: string) => {
-    return positions.find(p => p.student_id === studentId) || { position_x: 0, position_y: 0 };
+  const getShortName = (fullName: string) => {
+    const parts = fullName.split(' ');
+    return parts.slice(0, 2).join(' ');
   };
+
+  const orderedStudents = studentOrder
+    .map(id => students.find(s => s.id === id))
+    .filter(Boolean) as typeof students;
 
   if (loadingClassroom) {
     return (
@@ -451,430 +502,298 @@ export default function ClassroomView() {
     );
   }
 
-  const getShortName = (fullName: string) => {
-    const parts = fullName.split(' ');
-    return parts.slice(0, 2).join(' ');
-  };
-
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      {/* Header */}
-      <div className="bg-card border-b p-4 sticky top-0 z-10">
-        <div className="container mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/teacher/classrooms')}>
-              <ArrowRight className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-xl font-bold">{classroom.name}</h1>
-              <p className="text-sm text-muted-foreground">{classroom.subject}</p>
+      {/* Header - Mobile Optimized */}
+      <div className="bg-card border-b sticky top-0 z-10">
+        <div className="px-3 py-3 sm:px-4 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+              <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate('/teacher/classrooms')}>
+                <ArrowRight className="h-5 w-5" />
+              </Button>
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-xl font-bold truncate">{classroom.name}</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">{classroom.subject}</p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {activeTab === 'notes' && (
-              <>
-                <Button variant="outline" size="sm" onClick={() => setActiveTab('arrange')}>
-                  <Move className="h-4 w-4 ml-1" />
-                  ترتيب الطلاب
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setActiveTab('attendance')}>
-                  <ClipboardCheck className="h-4 w-4 ml-1" />
-                  تسجيل الحضور
-                </Button>
-                
-                {/* More actions dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => navigate(`/teacher/students/new?classroomId=${classroomId}`)}>
-                      <UserPlus className="h-4 w-4 ml-2" />
-                      إضافة طالب
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate(`/teacher/classrooms/${classroomId}/edit`)}>
-                      <Settings className="h-4 w-4 ml-2" />
-                      إعدادات الصف
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem 
-                      onClick={() => setArchiveDialogOpen(true)}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Archive className="h-4 w-4 ml-2" />
-                      أرشفة الصف
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            )}
-            {activeTab === 'arrange' && (
-              <>
-                <Button variant="outline" onClick={() => setActiveTab('notes')}>
-                  رجوع
-                </Button>
-                <Button onClick={savePositions} disabled={saving}>
-                  {saving ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Save className="ml-2 h-4 w-4" />}
-                  حفظ الترتيب
-                </Button>
-              </>
-            )}
-            {activeTab === 'attendance' && (
-              <>
-                <Button variant="outline" onClick={() => setActiveTab('notes')}>
-                  رجوع
-                </Button>
-                <Button onClick={saveAttendance} disabled={saving}>
-                  {saving ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Save className="ml-2 h-4 w-4" />}
-                  حفظ الحضور
-                </Button>
-              </>
-            )}
+            
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+              {activeTab === 'notes' && (
+                <>
+                  {/* Mobile: Show icons only */}
+                  <Button variant="outline" size="icon" className="sm:hidden" onClick={() => setActiveTab('arrange')}>
+                    <Move className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="icon" className="sm:hidden" onClick={() => setActiveTab('attendance')}>
+                    <ClipboardCheck className="h-4 w-4" />
+                  </Button>
+                  
+                  {/* Desktop: Show full buttons */}
+                  <Button variant="outline" size="sm" className="hidden sm:flex" onClick={() => setActiveTab('arrange')}>
+                    <Move className="h-4 w-4 ml-1" />
+                    ترتيب الطلاب
+                  </Button>
+                  <Button variant="outline" size="sm" className="hidden sm:flex" onClick={() => setActiveTab('attendance')}>
+                    <ClipboardCheck className="h-4 w-4 ml-1" />
+                    تسجيل الحضور
+                  </Button>
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="icon">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => navigate(`/teacher/students/new?classroomId=${classroomId}`)}>
+                        <UserPlus className="h-4 w-4 ml-2" />
+                        إضافة طالب
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate(`/teacher/classrooms/${classroomId}/edit`)}>
+                        <Settings className="h-4 w-4 ml-2" />
+                        إعدادات الصف
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={() => setArchiveDialogOpen(true)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Archive className="h-4 w-4 ml-2" />
+                        أرشفة الصف
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              )}
+              
+              {activeTab === 'arrange' && (
+                <>
+                  <Button variant="outline" size="sm" onClick={() => setActiveTab('notes')}>
+                    <X className="h-4 w-4 sm:ml-1" />
+                    <span className="hidden sm:inline">إلغاء</span>
+                  </Button>
+                  <Button size="sm" onClick={savePositions} disabled={saving}>
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 sm:ml-1" />}
+                    <span className="hidden sm:inline">حفظ</span>
+                  </Button>
+                </>
+              )}
+              
+              {activeTab === 'attendance' && (
+                <>
+                  <Button variant="outline" size="sm" onClick={() => setActiveTab('notes')}>
+                    <X className="h-4 w-4 sm:ml-1" />
+                    <span className="hidden sm:inline">إلغاء</span>
+                  </Button>
+                  <Button size="sm" onClick={saveAttendance} disabled={saving}>
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 sm:ml-1" />}
+                    <span className="hidden sm:inline">حفظ</span>
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto p-4">
-        {activeTab === 'arrange' ? (
-          <>
-            {/* Arrange Mode */}
-            <Card className="mb-4 bg-muted/50">
-              <CardContent className="p-4 text-center">
-                <div className="bg-background border-2 border-dashed rounded-lg py-4">
-                  <p className="text-muted-foreground font-medium">السبورة</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="flex items-center justify-center gap-2 mb-4 text-sm text-muted-foreground">
-              <Move className="h-4 w-4" />
-              <span>اسحب الطالب لتحريكه • اضغط عليه لإضافة ملاحظة</span>
+      <div className="p-3 sm:p-4 max-w-4xl mx-auto">
+        {/* Board */}
+        <Card className="mb-3 sm:mb-4 bg-muted/50">
+          <CardContent className="p-3 sm:p-4 text-center">
+            <div className="bg-background border-2 border-dashed rounded-lg py-3 sm:py-4">
+              <p className="text-muted-foreground font-medium text-sm sm:text-base">السبورة</p>
             </div>
+          </CardContent>
+        </Card>
 
-            <Card className="overflow-hidden">
-              <CardContent className="p-0">
-                {loadingPositions || loadingStudents ? (
-                  <div className="flex items-center justify-center h-[500px]">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                  </div>
-                ) : students.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-[400px] text-muted-foreground">
-                    <User className="h-12 w-12 mb-4" />
-                    <p>لا يوجد طلاب في هذا الفصل</p>
-                    <Button 
-                      variant="outline" 
-                      className="mt-4"
-                      onClick={() => navigate(`/teacher/students/new?classroomId=${classroomId}`)}
-                    >
-                      إضافة طالب
-                    </Button>
-                  </div>
-                ) : (
-                  <div
-                    ref={containerRef}
-                    className="relative min-h-[500px] touch-none select-none bg-muted/20"
-                    onPointerMove={handlePointerMove}
-                    onPointerUp={handlePointerUp}
-                    onPointerLeave={handlePointerUp}
-                  >
-                    {students.map((student) => {
-                      const pos = getStudentPosition(student.id);
-                      const isDragging = dragState.studentId === student.id;
-                      
-                      return (
-                        <div
-                          key={student.id}
-                          className={`absolute transition-transform touch-none ${
-                            isDragging 
-                              ? 'scale-110 z-50 cursor-grabbing' 
-                              : 'cursor-grab hover:scale-105'
-                          }`}
-                          style={{
-                            left: pos.position_x,
-                            top: pos.position_y,
-                            width: STUDENT_SIZE,
-                            transition: isDragging ? 'none' : 'transform 0.15s ease-out',
-                          }}
-                          onPointerDown={(e) => handlePointerDown(e, student.id)}
-                          onClick={() => handleStudentTap({
-                            id: student.id,
-                            name: student.name,
-                            avatar_url: student.avatar_url,
-                          })}
-                        >
-                          <div className={`flex flex-col items-center p-1.5 bg-card rounded-xl border-2 shadow-md ${
-                            isDragging ? 'border-primary shadow-lg' : 'border-transparent'
-                          }`}>
-                            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-0.5">
-                              {student.avatar_url ? (
-                                <img
-                                  src={student.avatar_url}
-                                  alt={student.name}
-                                  className="w-full h-full object-cover"
-                                  draggable={false}
-                                />
-                              ) : (
-                                <User className="h-4 w-4 text-primary" />
-                              )}
-                            </div>
-                            <p className="text-[10px] text-center font-medium truncate w-full leading-tight">
-                              {getShortName(student.name)}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </>
-        ) : activeTab === 'attendance' ? (
-          <>
-            {/* Attendance Mode */}
-            <Card className="mb-4 bg-muted/50">
-              <CardContent className="p-4 text-center">
-                <div className="bg-background border-2 border-dashed rounded-lg py-4">
-                  <p className="text-muted-foreground font-medium">السبورة</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Instructions */}
-            <div className="flex items-center justify-center gap-2 mb-4 text-sm text-muted-foreground">
+        {/* Mode-specific instructions */}
+        <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4 text-xs sm:text-sm text-muted-foreground">
+          {activeTab === 'arrange' && (
+            <>
+              <GripVertical className="h-4 w-4" />
+              <span>اسحب أيقونة الترتيب لتحريك الطالب</span>
+            </>
+          )}
+          {activeTab === 'attendance' && (
+            <>
               <ClipboardCheck className="h-4 w-4" />
-              <span>اضغط على الطالب لتغيير حالة الحضور</span>
-            </div>
-
-            {/* Period Selection & Bulk Actions */}
-            <div className="space-y-4 mb-4">
-              {/* Period Selection */}
-              <div className="flex items-center justify-center gap-4">
-                <Label className="text-sm font-medium">الحصة:</Label>
-                <Select value={String(selectedPeriod)} onValueChange={(v) => setSelectedPeriod(Number(v))}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">الحصة 1</SelectItem>
-                    <SelectItem value="2">الحصة 2</SelectItem>
-                    <SelectItem value="3">الحصة 3</SelectItem>
-                    <SelectItem value="4">الحصة 4</SelectItem>
-                    <SelectItem value="5">الحصة 5</SelectItem>
-                    <SelectItem value="6">الحصة 6</SelectItem>
-                    <SelectItem value="7">الحصة 7</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Bulk Attendance Actions */}
-              <div className="flex items-center justify-center gap-2 flex-wrap">
-                <span className="text-sm text-muted-foreground ml-2">تسجيل جماعي:</span>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="gap-1 border-green-500 text-green-600 hover:bg-green-50"
-                  onClick={() => setAllAttendance('present')}
-                >
-                  <Check className="h-3 w-3" />
-                  الكل حاضر
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="gap-1 border-red-500 text-red-600 hover:bg-red-50"
-                  onClick={() => setAllAttendance('absent')}
-                >
-                  <X className="h-3 w-3" />
-                  الكل غائب
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="gap-1 border-yellow-500 text-yellow-600 hover:bg-yellow-50"
-                  onClick={() => setAllAttendance('late')}
-                >
-                  <Clock className="h-3 w-3" />
-                  الكل متأخر
-                </Button>
-              </div>
-
-              {/* Legend */}
-              <div className="flex items-center justify-center gap-4 text-xs">
-                <div className="flex items-center gap-1">
-                  <div className="w-4 h-4 rounded border-2 border-green-500 bg-green-50" />
-                  <span>حاضر</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-4 h-4 rounded border-2 border-red-500 bg-red-50" />
-                  <span>غائب</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-4 h-4 rounded border-2 border-yellow-500 bg-yellow-50" />
-                  <span>متأخر</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-4 h-4 rounded border-2 border-blue-500 bg-blue-50" />
-                  <span>عذر</span>
-                </div>
-              </div>
-            </div>
-
-            <Card className="overflow-hidden">
-              <CardContent className="p-0">
-                {loadingStudents ? (
-                  <div className="flex items-center justify-center h-[500px]">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                  </div>
-                ) : students.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-[400px] text-muted-foreground">
-                    <User className="h-12 w-12 mb-4" />
-                    <p>لا يوجد طلاب في هذا الفصل</p>
-                  </div>
-                ) : (
-                  <div
-                    ref={containerRef}
-                    className="relative min-h-[500px] select-none bg-muted/20"
-                  >
-                    {students.map((student) => {
-                      const pos = getStudentPosition(student.id);
-                      const status = getAttendanceStatus(student.id);
-                      
-                      return (
-                        <div
-                          key={student.id}
-                          className="absolute cursor-pointer hover:scale-105 transition-transform"
-                          style={{
-                            left: pos.position_x,
-                            top: pos.position_y,
-                            width: STUDENT_SIZE,
-                          }}
-                          onClick={() => handleStudentTap({
-                            id: student.id,
-                            name: student.name,
-                            avatar_url: student.avatar_url,
-                          })}
-                        >
-                          <div className={`flex flex-col items-center p-1.5 bg-card rounded-xl border-2 shadow-md ${getAttendanceBorder(status)}`}>
-                            <div className="relative w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-0.5">
-                              {student.avatar_url ? (
-                                <img
-                                  src={student.avatar_url}
-                                  alt={student.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <User className="h-4 w-4 text-primary" />
-                              )}
-                              {status && (
-                                <div className="absolute -bottom-1 -right-1 bg-card rounded-full p-0.5 shadow">
-                                  {getAttendanceIcon(status)}
-                                </div>
-                              )}
-                            </div>
-                            <p className="text-[10px] text-center font-medium truncate w-full leading-tight">
-                              {getShortName(student.name)}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </>
-        ) : (
-          <>
-            {/* Notes Mode (Default) */}
-            <Card className="mb-4 bg-muted/50">
-              <CardContent className="p-4 text-center">
-                <div className="bg-background border-2 border-dashed rounded-lg py-4">
-                  <p className="text-muted-foreground font-medium">السبورة</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Instructions */}
-            <div className="flex items-center justify-center gap-2 mb-4 text-sm text-muted-foreground">
+              <span>اضغط على الطالب لتغيير الحالة</span>
+            </>
+          )}
+          {activeTab === 'notes' && (
+            <>
               <MessageSquare className="h-4 w-4" />
-              <span>اضغط على الطالب لإضافة ملاحظة أو نقاط</span>
+              <span>اضغط على الطالب لإضافة ملاحظة</span>
+            </>
+          )}
+        </div>
+
+        {/* Attendance Controls */}
+        {activeTab === 'attendance' && (
+          <div className="space-y-3 mb-4">
+            {/* Period Selection */}
+            <div className="flex items-center justify-center gap-3">
+              <Label className="text-sm font-medium">الحصة:</Label>
+              <Select value={String(selectedPeriod)} onValueChange={(v) => setSelectedPeriod(Number(v))}>
+                <SelectTrigger className="w-28 sm:w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1,2,3,4,5,6,7].map(n => (
+                    <SelectItem key={n} value={String(n)}>الحصة {n}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            <Card className="overflow-hidden">
-              <CardContent className="p-0">
-                {loadingStudents ? (
-                  <div className="flex items-center justify-center h-[500px]">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                  </div>
-                ) : students.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-[400px] text-muted-foreground">
-                    <User className="h-12 w-12 mb-4" />
-                    <p>لا يوجد طلاب في هذا الفصل</p>
-                    <Button 
-                      variant="outline" 
-                      className="mt-4"
-                      onClick={() => navigate(`/students/new?classroomId=${classroomId}`)}
-                    >
-                      إضافة طالب
-                    </Button>
-                  </div>
-                ) : (
-                  <div
-                    ref={containerRef}
-                    className="relative min-h-[500px] select-none bg-muted/20"
-                  >
-                    {students.map((student) => {
-                      const pos = getStudentPosition(student.id);
-                      
-                      return (
-                        <div
-                          key={student.id}
-                          className="absolute cursor-pointer hover:scale-105 transition-transform"
-                          style={{
-                            left: pos.position_x,
-                            top: pos.position_y,
-                            width: STUDENT_SIZE,
-                          }}
-                          onClick={() => handleStudentTap({
-                            id: student.id,
-                            name: student.name,
-                            avatar_url: student.avatar_url,
-                          })}
-                        >
-                          <div className="flex flex-col items-center p-1.5 bg-card rounded-xl border-2 border-transparent shadow-md hover:border-primary/50">
-                            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-0.5">
-                              {student.avatar_url ? (
-                                <img
-                                  src={student.avatar_url}
-                                  alt={student.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <User className="h-4 w-4 text-primary" />
-                              )}
-                            </div>
-                            <p className="text-[10px] text-center font-medium truncate w-full leading-tight">
-                              {getShortName(student.name)}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </>
+            {/* Bulk Actions */}
+            <div className="flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-1 border-green-500 text-green-600 hover:bg-green-50 text-xs sm:text-sm px-2 sm:px-3"
+                onClick={() => setAllAttendance('present')}
+              >
+                <Check className="h-3 w-3" />
+                <span className="hidden xs:inline">الكل</span> حاضر
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-1 border-red-500 text-red-600 hover:bg-red-50 text-xs sm:text-sm px-2 sm:px-3"
+                onClick={() => setAllAttendance('absent')}
+              >
+                <X className="h-3 w-3" />
+                <span className="hidden xs:inline">الكل</span> غائب
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-1 border-yellow-500 text-yellow-600 hover:bg-yellow-50 text-xs sm:text-sm px-2 sm:px-3"
+                onClick={() => setAllAttendance('late')}
+              >
+                <Clock className="h-3 w-3" />
+                <span className="hidden xs:inline">الكل</span> متأخر
+              </Button>
+            </div>
+
+            {/* Legend */}
+            <div className="flex items-center justify-center gap-3 sm:gap-4 text-xs">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded border-2 border-green-500 bg-green-50" />
+                <span>حاضر</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded border-2 border-red-500 bg-red-50" />
+                <span>غائب</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded border-2 border-yellow-500 bg-yellow-50" />
+                <span>متأخر</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded border-2 border-blue-500 bg-blue-50" />
+                <span>عذر</span>
+              </div>
+            </div>
+          </div>
         )}
+
+        {/* Students Grid */}
+        <Card className="overflow-hidden">
+          <CardContent className="p-3 sm:p-4">
+            {loadingStudents || loadingPositions ? (
+              <div className="flex items-center justify-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : students.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+                <User className="h-12 w-12 mb-4" />
+                <p>لا يوجد طلاب في هذا الفصل</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => navigate(`/teacher/students/new?classroomId=${classroomId}`)}
+                >
+                  إضافة طالب
+                </Button>
+              </div>
+            ) : activeTab === 'arrange' ? (
+              <DndContext 
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext 
+                  items={studentOrder}
+                  strategy={rectSortingStrategy}
+                >
+                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-2 sm:gap-3">
+                    {orderedStudents.map((student) => (
+                      <SortableStudent
+                        key={student.id}
+                        student={student}
+                        isArrangeMode={true}
+                        onTap={handleStudentTap}
+                        getShortName={getShortName}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            ) : activeTab === 'attendance' ? (
+              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-2 sm:gap-3">
+                {orderedStudents.map((student) => (
+                  <AttendanceStudent
+                    key={student.id}
+                    student={student}
+                    status={getAttendanceStatus(student.id)}
+                    onTap={handleStudentTap}
+                    getShortName={getShortName}
+                    getAttendanceBorder={getAttendanceBorder}
+                    getAttendanceIcon={getAttendanceIcon}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-2 sm:gap-3">
+                {orderedStudents.map((student) => (
+                  <div
+                    key={student.id}
+                    className="flex flex-col items-center p-2 bg-card rounded-xl border-2 border-border/50 shadow-sm cursor-pointer transition-all hover:scale-105 hover:border-primary/50 active:scale-95"
+                    onClick={() => handleStudentTap({
+                      id: student.id,
+                      name: student.name,
+                      avatar_url: student.avatar_url,
+                    })}
+                  >
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-1">
+                      {student.avatar_url ? (
+                        <img
+                          src={student.avatar_url}
+                          alt={student.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="h-5 w-5 text-primary" />
+                      )}
+                    </div>
+                    <p className="text-xs text-center font-medium truncate w-full leading-tight">
+                      {getShortName(student.name)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Student Note Dialog */}
       <Dialog open={!!selectedStudent && dialogMode === 'note'} onOpenChange={() => setSelectedStudent(null)}>
-        <DialogContent dir="rtl">
+        <DialogContent dir="rtl" className="max-w-[95vw] sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
@@ -888,7 +807,7 @@ export default function ClassroomView() {
                   <User className="h-5 w-5 text-primary" />
                 )}
               </div>
-              {selectedStudent?.name}
+              <span className="truncate">{selectedStudent?.name}</span>
             </DialogTitle>
             <DialogDescription>
               أضف ملاحظة أو نقاط لهذا الطالب
@@ -901,7 +820,7 @@ export default function ClassroomView() {
               <RadioGroup
                 value={noteType}
                 onValueChange={(v) => setNoteType(v as 'positive' | 'negative' | 'note')}
-                className="flex gap-4"
+                className="flex flex-wrap gap-3 sm:gap-4"
               >
                 <div className="flex items-center gap-2">
                   <RadioGroupItem value="positive" id="positive" />
@@ -954,7 +873,7 @@ export default function ClassroomView() {
 
       {/* Archive Confirmation Dialog */}
       <AlertDialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-[95vw] sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <Archive className="h-5 w-5 text-amber-500" />
@@ -962,18 +881,18 @@ export default function ClassroomView() {
             </AlertDialogTitle>
             <AlertDialogDescription>
               هل أنت متأكد من أرشفة هذا الصف؟
-              <ul className="list-disc list-inside mt-2 space-y-1 text-muted-foreground">
+              <ul className="list-disc list-inside mt-2 space-y-1 text-muted-foreground text-sm">
                 <li>سيتم إخفاء الصف من قائمة صفوفك</li>
-                <li>جميع البيانات ستبقى محفوظة (الطلاب، الدرجات، الحضور)</li>
+                <li>جميع البيانات ستبقى محفوظة</li>
                 <li>يمكن للمشرف استعادة الصف لاحقاً</li>
               </ul>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="w-full sm:w-auto">إلغاء</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleArchiveClassroom}
-              className="bg-amber-500 text-white hover:bg-amber-600"
+              className="w-full sm:w-auto bg-amber-500 text-white hover:bg-amber-600"
             >
               <Archive className="h-4 w-4 ml-1" />
               أرشفة
