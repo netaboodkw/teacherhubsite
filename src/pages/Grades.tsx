@@ -585,6 +585,9 @@ export default function Grades() {
   const [studentDialogOpen, setStudentDialogOpen] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   
+  // Print settings
+  const [useNormalFont, setUseNormalFont] = useState(false);
+  
   // Print ref
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -785,14 +788,25 @@ export default function Grades() {
           </div>
           <div className="flex items-center gap-3">
             {hasStructure && students.length > 0 && (
-              <Button 
-                variant="outline" 
-                onClick={handlePrint}
-                className="print:hidden"
-              >
-                <Printer className="h-4 w-4 ml-2" />
-                طباعة
-              </Button>
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={useNormalFont}
+                    onChange={(e) => setUseNormalFont(e.target.checked)}
+                    className="rounded border-input"
+                  />
+                  خط عادي
+                </label>
+                <Button 
+                  variant="outline" 
+                  onClick={handlePrint}
+                  className="print:hidden"
+                >
+                  <Printer className="h-4 w-4 ml-2" />
+                  طباعة
+                </Button>
+              </div>
             )}
             <Select value={selectedClassroom} onValueChange={setSelectedClassroom}>
               <SelectTrigger className="w-48">
@@ -1042,6 +1056,7 @@ export default function Grades() {
           classroomName={selectedClassroomData?.name || ''}
           departmentHeadName={profile?.department_head_name}
           templateName={gradingStructure.name_ar}
+          useNormalFont={useNormalFont}
         />
       )}
     </TeacherLayout>

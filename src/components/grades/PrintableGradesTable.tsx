@@ -8,6 +8,7 @@ interface PrintableGradesTableProps {
   classroomName: string;
   departmentHeadName?: string | null;
   templateName: string;
+  useNormalFont?: boolean;
 }
 
 export function PrintableGradesTable({
@@ -17,7 +18,8 @@ export function PrintableGradesTable({
   teacherName,
   classroomName,
   departmentHeadName,
-  templateName
+  templateName,
+  useNormalFont = false
 }: PrintableGradesTableProps) {
   
   const calculateColumnValue = (studentId: string, column: GradingColumn, group: GradingGroup): number => {
@@ -121,7 +123,7 @@ export function PrintableGradesTable({
   };
 
   return (
-    <div className="print-container" style={{ display: 'none' }} dir="rtl">
+    <div className={`print-container ${useNormalFont ? 'print-normal-font' : 'print-arabic-font'}`} style={{ display: 'none' }} dir="rtl">
       {/* Print Header - Only Teacher, Classroom, and Department Head */}
       <div className="print-header">
         <h1>{templateName}</h1>
