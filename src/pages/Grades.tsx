@@ -351,7 +351,7 @@ function StructuredGradingView({
   return (
     <div className="space-y-2">
       {/* Collapse/Expand Controls */}
-      <div className="flex items-center gap-2 justify-end">
+      <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" onClick={expandAll} disabled={collapsedGroups.size === 0}>
           <ChevronDown className="h-4 w-4 ml-1" />
           توسيع الكل
@@ -770,23 +770,19 @@ export default function Grades() {
     <TeacherLayout>
       <div className="space-y-6 animate-fade-in print:hidden">
         {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-foreground">سجل الدرجات</h1>
-            {hasStructure && (
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant="secondary" className="text-sm">
-                  {gradingStructure.name_ar}
-                </Badge>
-              </div>
-            )}
-            {!hasStructure && (
-              <p className="text-muted-foreground mt-1">
-                تتبع درجات الطلاب الأسبوعية
-              </p>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+          {/* Controls - Right side in RTL */}
+          <div className="flex items-center gap-3 order-first lg:order-first">
+            <Select value={selectedClassroom} onValueChange={setSelectedClassroom}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="اختر الصف" />
+              </SelectTrigger>
+              <SelectContent>
+                {classrooms.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {hasStructure && students.length > 0 && (
               <div className="flex items-center gap-2">
                 <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
@@ -808,16 +804,23 @@ export default function Grades() {
                 </Button>
               </div>
             )}
-            <Select value={selectedClassroom} onValueChange={setSelectedClassroom}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="اختر الصف" />
-              </SelectTrigger>
-              <SelectContent>
-                {classrooms.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          </div>
+          
+          {/* Title - Left side in RTL */}
+          <div className="lg:mr-auto">
+            <h1 className="text-2xl lg:text-3xl font-bold text-foreground">سجل الدرجات</h1>
+            {hasStructure && (
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant="secondary" className="text-sm">
+                  {gradingStructure.name_ar}
+                </Badge>
+              </div>
+            )}
+            {!hasStructure && (
+              <p className="text-muted-foreground mt-1">
+                تتبع درجات الطلاب الأسبوعية
+              </p>
+            )}
           </div>
         </div>
 
