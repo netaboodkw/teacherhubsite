@@ -15,6 +15,7 @@ import {
   LogOut,
   Grid3X3,
   TreePine,
+  Archive,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -32,6 +33,7 @@ const navItems = [
   { href: '/admin/grading-system', icon: FileText, label: 'قوالب الدرجات' },
   { href: '/admin/grading-matrix', icon: Grid3X3, label: 'مصفوفة التطبيق' },
   { href: '/admin/teachers', icon: Users, label: 'المعلمون' },
+  { href: '/admin/archived-classrooms', icon: Archive, label: 'الصفوف المؤرشفة' },
 ];
 
 export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {

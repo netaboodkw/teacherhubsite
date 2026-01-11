@@ -23,6 +23,7 @@ import AdminSettingsPage from "./pages/admin/AdminSettingsPage";
 import SubjectGradingSetup from "./pages/SubjectGradingSetup";
 import GradingMatrixPage from "./pages/admin/GradingMatrixPage";
 import CurriculumTreePage from "./pages/admin/CurriculumTreePage";
+import ArchivedClassroomsPage from "./pages/admin/ArchivedClassroomsPage";
 
 // Teacher Pages
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
@@ -72,6 +73,7 @@ const App = () => (
           <Route path="/admin/subject-grading" element={<ProtectedRoute><SubjectGradingSetup /></ProtectedRoute>} />
           <Route path="/admin/grading-matrix" element={<ProtectedRoute><GradingMatrixPage /></ProtectedRoute>} />
           <Route path="/admin/curriculum-tree" element={<ProtectedRoute><CurriculumTreePage /></ProtectedRoute>} />
+          <Route path="/admin/archived-classrooms" element={<ProtectedRoute><ArchivedClassroomsPage /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute><AdminSettingsPage /></ProtectedRoute>} />
 
           {/* Teacher Routes */}

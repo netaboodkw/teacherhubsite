@@ -18,6 +18,8 @@ export interface Classroom {
   subject_id: string | null;
   grade_level: number | null;
   grade_level_id: string | null;
+  is_archived: boolean;
+  archived_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -125,6 +127,61 @@ export function useUpdateClassroom() {
   });
 }
 
+// Archive classroom (for teachers - soft delete)
+export function useArchiveClassroom() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('classrooms')
+        .update({ 
+          is_archived: true, 
+          archived_at: new Date().toISOString() 
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classrooms'] });
+      queryClient.invalidateQueries({ queryKey: ['archived_classrooms'] });
+      toast.success('تم أرشفة الصف بنجاح');
+    },
+    onError: (error) => {
+      toast.error('فشل في أرشفة الصف: ' + error.message);
+    },
+  });
+}
+
+// Restore archived classroom (for admins)
+export function useRestoreClassroom() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('classrooms')
+        .update({ 
+          is_archived: false, 
+          archived_at: null 
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classrooms'] });
+      queryClient.invalidateQueries({ queryKey: ['archived_classrooms'] });
+      toast.success('تم استعادة الصف بنجاح');
+    },
+    onError: (error) => {
+      toast.error('فشل في استعادة الصف: ' + error.message);
+    },
+  });
+}
+
+// Permanent delete (for admins only)
 export function useDeleteClassroom() {
   const queryClient = useQueryClient();
 
@@ -139,10 +196,57 @@ export function useDeleteClassroom() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['classrooms'] });
-      toast.success('تم حذف الصف بنجاح');
+      queryClient.invalidateQueries({ queryKey: ['archived_classrooms'] });
+      toast.success('تم حذف الصف نهائياً');
     },
     onError: (error) => {
       toast.error('فشل في حذف الصف: ' + error.message);
+    },
+  });
+}
+
+// Get archived classrooms with teacher info (for admins)
+export interface ArchivedClassroomWithTeacher extends Classroom {
+  teacher_name?: string;
+  teacher_phone?: string;
+  teacher_school?: string;
+}
+
+export function useArchivedClassrooms() {
+  return useQuery({
+    queryKey: ['archived_classrooms'],
+    queryFn: async () => {
+      // First get archived classrooms
+      const { data: classrooms, error: classroomsError } = await supabase
+        .from('classrooms')
+        .select('*')
+        .eq('is_archived', true)
+        .order('archived_at', { ascending: false });
+      
+      if (classroomsError) throw classroomsError;
+      if (!classrooms || classrooms.length === 0) return [];
+
+      // Get unique user IDs
+      const userIds = [...new Set(classrooms.map(c => c.user_id))];
+      
+      // Fetch profiles for these users
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, phone, school_name')
+        .in('user_id', userIds);
+      
+      if (profilesError) throw profilesError;
+
+      // Create a map for quick lookup
+      const profilesMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+      // Combine data
+      return classrooms.map(classroom => ({
+        ...classroom,
+        teacher_name: profilesMap.get(classroom.user_id)?.full_name || 'غير معروف',
+        teacher_phone: profilesMap.get(classroom.user_id)?.phone || null,
+        teacher_school: profilesMap.get(classroom.user_id)?.school_name || null,
+      })) as ArchivedClassroomWithTeacher[];
     },
   });
 }
