@@ -8,11 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCreateGradingStructure, GradingGroup, GradingColumn } from '@/hooks/useGradingStructures';
 import { useEducationLevels } from '@/hooks/useEducationLevels';
 import { useGradeLevels } from '@/hooks/useGradeLevels';
 import { useSubjects } from '@/hooks/useSubjects';
-
 interface ParsedColumn {
   name: string;
   maxScore: number;
@@ -48,6 +48,7 @@ export function TemplateUploader() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [currentFile, setCurrentFile] = useState<File | null>(null);
   
+  const queryClient = useQueryClient();
   const { data: educationLevels } = useEducationLevels();
   const { data: gradeLevels } = useGradeLevels(selectedEducationLevel || undefined);
   const { data: subjects } = useSubjects(selectedEducationLevel || undefined, selectedGradeLevel || undefined);
@@ -269,6 +270,10 @@ export function TemplateUploader() {
           is_default: false
         });
       }
+
+      // Invalidate queries to refresh the templates list
+      await queryClient.invalidateQueries({ queryKey: ['grading_templates'] });
+      await queryClient.invalidateQueries({ queryKey: ['grading_template_periods'] });
 
       toast.success('تم حفظ القالب بنجاح');
       setParsedStructure(null);
