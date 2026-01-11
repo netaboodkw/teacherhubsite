@@ -1,7 +1,9 @@
 import { Student } from '@/hooks/useStudents';
+import { useGrades } from '@/hooks/useGrades';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MoreVertical, HeartPulse } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface StudentCardProps {
@@ -10,11 +12,16 @@ interface StudentCardProps {
 }
 
 export function StudentCard({ student, onClick }: StudentCardProps) {
+  const { data: grades = [] } = useGrades(student.classroom_id, student.id);
+  
   const initials = student.name
     .split(' ')
     .map(n => n[0])
     .join('')
     .slice(0, 2);
+
+  // Calculate total score
+  const totalScore = grades.reduce((sum, g) => sum + g.score, 0);
 
   return (
     <div 
@@ -48,9 +55,16 @@ export function StudentCard({ student, onClick }: StudentCardProps) {
         <h4 className="font-medium text-foreground group-hover:text-primary transition-colors">
           {student.name}
         </h4>
-        <p className="text-sm text-muted-foreground truncate">
-          {student.student_id}
-        </p>
+        <div className="flex items-center gap-2 mt-1">
+          <p className="text-sm text-muted-foreground truncate">
+            {student.student_id}
+          </p>
+          {totalScore > 0 && (
+            <Badge variant="secondary" className="text-xs">
+              الدرجات: {totalScore}
+            </Badge>
+          )}
+        </div>
       </div>
       
       <Button 

@@ -1,20 +1,24 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useClassrooms, Classroom } from '@/hooks/useClassrooms';
 import { useStudents } from '@/hooks/useStudents';
 import { useGrades, useCreateGrade, useUpdateGrade, GradeType } from '@/hooks/useGrades';
+import { useBehaviorNotes } from '@/hooks/useBehaviorNotes';
 import { useClassroomGradingStructure, GradingStructureData, GradingColumn, GradingGroup } from '@/hooks/useGradingStructures';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronRight, ChevronLeft, Plus, Loader2, Table, Settings, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Plus, Loader2, Table, Settings, ChevronDown, ChevronUp, Printer, MessageSquare, Calendar, Clock, X } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { ar } from 'date-fns/locale';
 
 const WEEKS_COUNT = 18; // عدد الأسابيع في الفصل الدراسي
 
@@ -164,13 +168,15 @@ function StructuredGradingView({
   students,
   isLoading,
   grades,
-  onCellClick
+  onCellClick,
+  onStudentClick
 }: {
   structure: GradingStructureData;
   students: any[];
   isLoading: boolean;
   grades: any[];
   onCellClick: (studentId: string, columnId: string, groupId: string, maxScore: number) => void;
+  onStudentClick: (studentId: string) => void;
 }) {
   // Track collapsed groups
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -263,6 +269,26 @@ function StructuredGradingView({
           const col = group.columns.find(c => c.id === colId);
           if (col) {
             total += calculateColumnValue(studentId, col, group);
+          }
+        });
+      }
+      
+      return total;
+    }
+    
+    // Handle external_sum - sum scores from other groups
+    if (column.type === 'external_sum') {
+      let total = 0;
+      
+      if (column.externalSourceColumns) {
+        column.externalSourceColumns.forEach(key => {
+          const [grpId, colId] = key.split(':');
+          const grp = structure.groups.find(g => g.id === grpId);
+          if (grp) {
+            const col = grp.columns.find(c => c.id === colId);
+            if (col) {
+              total += calculateColumnValue(studentId, col, grp);
+            }
           }
         });
       }
@@ -417,7 +443,7 @@ function StructuredGradingView({
                       <div className="flex flex-col items-center gap-1">
                         <span>{column.name_ar}</span>
                         <Badge 
-                          variant={column.type === 'score' ? 'secondary' : column.type === 'total' ? 'default' : (column.type === 'grand_total' || column.type === 'group_sum') ? 'destructive' : 'outline'}
+                          variant={column.type === 'score' ? 'secondary' : column.type === 'total' ? 'default' : (column.type === 'grand_total' || column.type === 'group_sum' || column.type === 'external_sum') ? 'destructive' : 'outline'}
                           className="text-xs"
                         >
                           {column.max_score}
@@ -449,7 +475,10 @@ function StructuredGradingView({
                   return (
                     <tr key={student.id} className="border-b border-border hover:bg-muted/20 transition-colors">
                       <td className="border p-3 sticky right-0 bg-card">
-                        <div className="flex items-center gap-3">
+                        <div 
+                          className="flex items-center gap-3 cursor-pointer hover:text-primary transition-colors"
+                          onClick={() => onStudentClick(student.id)}
+                        >
                           <span className="text-muted-foreground text-sm w-6">{index + 1}</span>
                           <Avatar className="w-9 h-9">
                             {student.avatar_url ? (
@@ -459,7 +488,7 @@ function StructuredGradingView({
                               {initials}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="font-medium text-sm">{student.name}</span>
+                          <span className="font-medium text-sm hover:underline">{student.name}</span>
                         </div>
                       </td>
                       {structure.groups.map(group => {
@@ -489,7 +518,7 @@ function StructuredGradingView({
                             <td 
                               key={column.id}
                               className={`border p-2 text-center ${
-                                column.type === 'grand_total' || column.type === 'group_sum' ? 'bg-primary/10 font-bold' : 
+                                column.type === 'grand_total' || column.type === 'group_sum' || column.type === 'external_sum' ? 'bg-primary/10 font-bold' : 
                                 column.type === 'total' ? 'bg-muted/50 font-semibold' : ''
                               }`}
                               style={{ 
@@ -510,7 +539,7 @@ function StructuredGradingView({
                                   {value > 0 ? value : <Plus className="w-4 h-4" />}
                                 </button>
                               ) : (
-                                <span className={column.type === 'grand_total' || column.type === 'group_sum' ? 'text-primary' : ''}>
+                                <span className={column.type === 'grand_total' || column.type === 'group_sum' || column.type === 'external_sum' ? 'text-primary' : ''}>
                                   {value}
                                 </span>
                               )}
@@ -549,6 +578,13 @@ export default function Grades() {
   } | null>(null);
   const [gradeValue, setGradeValue] = useState('');
   const [gradeType, setGradeType] = useState<GradeType>('participation');
+  
+  // Student details dialog state
+  const [studentDialogOpen, setStudentDialogOpen] = useState(false);
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  
+  // Print ref
+  const printRef = useRef<HTMLDivElement>(null);
 
   // Get selected classroom data
   const selectedClassroomData = useMemo(() => {
@@ -565,9 +601,26 @@ export default function Grades() {
   const { data: students = [] } = useStudents(selectedClassroom || undefined);
   const { data: grades = [], isLoading } = useGrades(selectedClassroom || undefined);
   const { data: gradingStructure, isLoading: structureLoading } = useClassroomGradingStructure(selectedClassroomData);
+  const { data: behaviorNotes = [] } = useBehaviorNotes(selectedStudentId || undefined);
   
   const createGrade = useCreateGrade();
   const updateGrade = useUpdateGrade();
+  
+  // Selected student data
+  const selectedStudent = useMemo(() => {
+    return students.find(s => s.id === selectedStudentId);
+  }, [students, selectedStudentId]);
+  
+  // Open student dialog
+  const openStudentDialog = (studentId: string) => {
+    setSelectedStudentId(studentId);
+    setStudentDialogOpen(true);
+  };
+  
+  // Print function
+  const handlePrint = () => {
+    window.print();
+  };
 
   // الأسابيع المعروضة (4 أسابيع في كل مرة)
   const visibleWeeks = useMemo(() => {
@@ -728,6 +781,16 @@ export default function Grades() {
             )}
           </div>
           <div className="flex items-center gap-3">
+            {hasStructure && students.length > 0 && (
+              <Button 
+                variant="outline" 
+                onClick={handlePrint}
+                className="print:hidden"
+              >
+                <Printer className="h-4 w-4 ml-2" />
+                طباعة
+              </Button>
+            )}
             <Select value={selectedClassroom} onValueChange={setSelectedClassroom}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="اختر الصف" />
@@ -801,6 +864,7 @@ export default function Grades() {
               isLoading={isLoading}
               grades={grades}
               onCellClick={openStructuredGradeDialog}
+              onStudentClick={openStudentDialog}
             />
           ) : (
             <SimpleGradingView
@@ -871,6 +935,96 @@ export default function Grades() {
                 )}
               </Button>
             </div>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Student Details Dialog */}
+        <Dialog open={studentDialogOpen} onOpenChange={setStudentDialogOpen}>
+          <DialogContent className="sm:max-w-lg" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-3">
+                {selectedStudent && (
+                  <>
+                    <Avatar className="w-10 h-10">
+                      {selectedStudent.avatar_url ? (
+                        <AvatarImage src={selectedStudent.avatar_url} alt={selectedStudent.name} />
+                      ) : null}
+                      <AvatarFallback className="bg-primary/10 text-primary">
+                        {selectedStudent.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <span className="font-bold">{selectedStudent.name}</span>
+                      <p className="text-sm text-muted-foreground font-normal">{selectedStudent.student_id}</p>
+                    </div>
+                  </>
+                )}
+              </DialogTitle>
+            </DialogHeader>
+            
+            {selectedStudent && (
+              <div className="space-y-4 mt-4">
+                {/* Notes */}
+                {selectedStudent.notes && (
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-sm font-medium mb-1">ملاحظات:</p>
+                    <p className="text-sm text-muted-foreground">{selectedStudent.notes}</p>
+                  </div>
+                )}
+                
+                {/* Behavior Notes */}
+                <Card>
+                  <CardHeader className="py-3">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      سجل السلوكيات
+                      <Badge variant="secondary" className="mr-auto">{behaviorNotes.length}</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    {behaviorNotes.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        لا توجد ملاحظات سلوكية
+                      </p>
+                    ) : (
+                      <ScrollArea className="h-[200px]">
+                        <div className="space-y-2">
+                          {behaviorNotes.map((note) => (
+                            <div
+                              key={note.id}
+                              className={`p-3 rounded-lg border text-sm ${
+                                note.type === 'positive' ? 'bg-green-50 border-green-200' :
+                                note.type === 'negative' ? 'bg-red-50 border-red-200' :
+                                'bg-muted border-border'
+                              }`}
+                            >
+                              <p className="font-medium">{note.description}</p>
+                              <div className="flex items-center gap-3 mt-2 text-xs opacity-70">
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  {format(new Date(note.date), 'dd MMMM yyyy', { locale: ar })}
+                                </span>
+                                {note.points !== 0 && (
+                                  <Badge variant={note.points > 0 ? 'default' : 'destructive'} className="text-xs">
+                                    {note.points > 0 ? '+' : ''}{note.points}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    )}
+                  </CardContent>
+                </Card>
+                
+                <Link to={`/teacher/students/${selectedStudentId}`}>
+                  <Button variant="outline" className="w-full">
+                    عرض صفحة الطالب الكاملة
+                  </Button>
+                </Link>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>
