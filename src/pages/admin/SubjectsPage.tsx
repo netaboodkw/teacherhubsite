@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,7 +21,6 @@ const GRADE_TYPE_LABELS: Record<GradeType, string> = {
 };
 
 export default function SubjectsPage() {
-  const navigate = useNavigate();
   const { data: educationLevels, isLoading: levelsLoading } = useEducationLevels();
   const [selectedLevelId, setSelectedLevelId] = useState<string>('');
   const [selectedGradeLevelId, setSelectedGradeLevelId] = useState<string>('');
@@ -90,7 +88,7 @@ export default function SubjectsPage() {
       setDialogOpen(false);
     } else {
       // If no grade level selected and there are grade levels, add to all
-      const result = await createSubject.mutateAsync({
+      await createSubject.mutateAsync({
         education_level_id: selectedLevelId,
         ...form,
         grade_level_id: form.grade_level_id || null,
@@ -99,9 +97,7 @@ export default function SubjectsPage() {
           : undefined,
       });
       setDialogOpen(false);
-      if (result?.id) {
-        navigate(`/admin/subject-grading?subject_id=${result.id}&education_level_id=${selectedLevelId}${form.grade_level_id ? `&grade_level_id=${form.grade_level_id}` : ''}`);
-      }
+      // No longer navigate to grading setup - just save and close
     }
   };
 

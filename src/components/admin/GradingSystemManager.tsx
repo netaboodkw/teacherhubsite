@@ -39,6 +39,11 @@ import {
   useDeleteGradingTemplate,
   GradingTemplate,
 } from '@/hooks/useGradingSystem';
+import {
+  useGradingStructures,
+  useCreateGradingStructure,
+  useDeleteGradingStructure,
+} from '@/hooks/useGradingStructures';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   DndContext,
@@ -58,7 +63,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-// ألوان المجموعات
+// ألوان المجموعات - Extended
 const GROUP_COLORS = [
   { id: 'yellow', color: '#fef3c7', name: 'أصفر', border: '#fbbf24' },
   { id: 'green', color: '#d1fae5', name: 'أخضر', border: '#34d399' },
@@ -66,13 +71,23 @@ const GROUP_COLORS = [
   { id: 'red', color: '#fecaca', name: 'أحمر', border: '#f87171' },
   { id: 'purple', color: '#e9d5ff', name: 'بنفسجي', border: '#a78bfa' },
   { id: 'orange', color: '#fed7aa', name: 'برتقالي', border: '#fb923c' },
+  { id: 'pink', color: '#fce7f3', name: 'وردي', border: '#f472b6' },
+  { id: 'cyan', color: '#cffafe', name: 'سماوي', border: '#22d3d8' },
+  { id: 'lime', color: '#ecfccb', name: 'ليموني', border: '#a3e635' },
+  { id: 'amber', color: '#fef3c7', name: 'كهرماني', border: '#fbbf24' },
+  { id: 'teal', color: '#ccfbf1', name: 'أزرق مخضر', border: '#2dd4bf' },
+  { id: 'indigo', color: '#e0e7ff', name: 'نيلي', border: '#818cf8' },
+  { id: 'rose', color: '#ffe4e6', name: 'وردي داكن', border: '#fb7185' },
+  { id: 'emerald', color: '#d1fae5', name: 'زمردي', border: '#34d399' },
+  { id: 'sky', color: '#e0f2fe', name: 'سماء', border: '#38bdf8' },
+  { id: 'violet', color: '#ede9fe', name: 'بنفسجي فاتح', border: '#8b5cf6' },
 ];
 
 interface GradingColumn {
   id: string;
   name_ar: string;
   max_score: number;
-  type: 'score' | 'total' | 'grand_total';
+  type: 'score' | 'total' | 'grand_total' | 'percentage' | 'label';
   sourceGroupIds?: string[]; // للمجموع الكلي - المجموعات المراد جمع مجاميعها
   sourceColumnIds?: string[]; // للمجموع - الأعمدة المراد جمعها
   useGroupColor?: boolean; // هل يستخدم لون المجموعة أم أبيض
@@ -94,7 +109,7 @@ interface GradingStructure {
   };
 }
 
-type ActiveTab = 'templates' | 'upload' | 'builder' | 'preview';
+type ActiveTab = 'templates' | 'upload' | 'builder' | 'preview' | 'assignments';
 
 // Sortable Column Item Component
 interface SortableColumnProps {
@@ -255,10 +270,18 @@ export function GradingSystemManager() {
   const { data: allSubjects } = useSubjects();
   const { data: templates, isLoading: templatesLoading } = useGradingTemplates();
 
+  // Get grading structures (applied templates)
+  const [assignmentsFilterEducationLevel, setAssignmentsFilterEducationLevel] = useState<string>('');
+  const { data: appliedStructures, isLoading: structuresLoading } = useGradingStructures(
+    assignmentsFilterEducationLevel ? { education_level_id: assignmentsFilterEducationLevel } : undefined
+  );
+
   // Mutations
   const createTemplate = useCreateGradingTemplate();
   const updateTemplate = useUpdateGradingTemplate();
   const deleteTemplate = useDeleteGradingTemplate();
+  const createGradingStructure = useCreateGradingStructure();
+  const deleteGradingStructure = useDeleteGradingStructure();
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<ActiveTab>('templates');
@@ -938,14 +961,48 @@ export function GradingSystemManager() {
     
     setIsAssigning(true);
     try {
-      const { data: templatePeriods } = await supabase
-        .from('grading_template_periods')
-        .select('*')
-        .eq('template_id', selectedTemplate.id)
-        .order('display_order', { ascending: true });
+      // Parse full structure from template description
+      let fullStructure: GradingStructure | null = null;
+      if (selectedTemplate.description) {
+        try {
+          const parsed = JSON.parse(selectedTemplate.description);
+          if (parsed.groups && Array.isArray(parsed.groups)) {
+            fullStructure = parsed as GradingStructure;
+          }
+        } catch {
+          // Not a valid JSON structure
+        }
+      }
 
-      if (!templatePeriods || templatePeriods.length === 0) {
-        toast.error('القالب لا يحتوي على فترات');
+      // If no full structure, try to build one from template periods
+      if (!fullStructure) {
+        const { data: templatePeriods } = await supabase
+          .from('grading_template_periods')
+          .select('*')
+          .eq('template_id', selectedTemplate.id)
+          .order('display_order', { ascending: true });
+
+        if (templatePeriods && templatePeriods.length > 0) {
+          fullStructure = {
+            groups: [{
+              id: `group-${Date.now()}`,
+              name_ar: selectedTemplate.name_ar,
+              color: GROUP_COLORS[0].color,
+              border: GROUP_COLORS[0].border,
+              columns: templatePeriods.map((p, i) => ({
+                id: `col-${Date.now()}-${i}`,
+                name_ar: p.name_ar,
+                max_score: p.max_score,
+                type: 'score' as const
+              }))
+            }],
+            settings: { showPercentage: true, passingScore: 50 }
+          };
+        }
+      }
+
+      if (!fullStructure) {
+        toast.error('القالب لا يحتوي على هيكل صالح');
         return;
       }
 
@@ -956,34 +1013,26 @@ export function GradingSystemManager() {
         ? assignment.subject_ids 
         : [null];
 
-      const periodsToInsert = [];
+      // Insert into subject_grading_structures
       for (const gradeId of gradeLevels) {
         for (const subjectId of subjects) {
-          for (const period of templatePeriods) {
-            periodsToInsert.push({
-              education_level_id: assignment.education_level_id,
-              grade_level_id: gradeId,
-              subject_id: subjectId,
-              name: period.name,
-              name_ar: period.name_ar,
-              max_score: period.max_score,
-              weight: period.weight,
-              display_order: period.display_order,
-              is_active: true,
-            });
-          }
+          await createGradingStructure.mutateAsync({
+            education_level_id: assignment.education_level_id,
+            grade_level_id: gradeId,
+            subject_id: subjectId,
+            template_id: selectedTemplate.id,
+            name: selectedTemplate.name,
+            name_ar: selectedTemplate.name_ar,
+            structure: fullStructure,
+            is_default: false,
+          });
         }
       }
 
-      const { error } = await supabase
-        .from('grading_periods')
-        .insert(periodsToInsert);
-
-      if (error) throw error;
-
-      toast.success(`تم تطبيق القالب بنجاح`);
+      const count = gradeLevels.length * subjects.length;
+      toast.success(`تم تطبيق القالب على ${count} ${count === 1 ? 'عنصر' : 'عناصر'}`);
       setAssignDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['grading_periods'] });
+      queryClient.invalidateQueries({ queryKey: ['grading_structures'] });
     } catch (error) {
       console.error('Assignment error:', error);
       toast.error('فشل في تطبيق القالب');
@@ -1040,6 +1089,17 @@ export function GradingSystemManager() {
         >
           <Eye className="h-4 w-4" />
           معاينة
+        </Button>
+        <Button 
+          variant={activeTab === 'assignments' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('assignments')}
+          className="gap-2"
+        >
+          <CheckCircle2 className="h-4 w-4" />
+          التطبيقات
+          {appliedStructures && appliedStructures.length > 0 && (
+            <Badge variant="secondary" className="mr-1">{appliedStructures.length}</Badge>
+          )}
         </Button>
       </div>
 
@@ -1478,6 +1538,133 @@ export function GradingSystemManager() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* Assignments Tab - Show applied templates */}
+      {activeTab === 'assignments' && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5" />
+                القوالب المطبقة
+              </CardTitle>
+              <CardDescription className="mt-1">
+                عرض القوالب المطبقة على المراحل والصفوف والمواد
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label className="whitespace-nowrap">المرحلة:</Label>
+              <Select 
+                value={assignmentsFilterEducationLevel || "all"} 
+                onValueChange={(v) => setAssignmentsFilterEducationLevel(v === "all" ? "" : v)}
+              >
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="جميع المراحل" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع المراحل</SelectItem>
+                  {levels?.map(level => (
+                    <SelectItem key={level.id} value={level.id}>{level.name_ar}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {structuresLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : !appliedStructures || appliedStructures.length === 0 ? (
+              <div className="text-center py-12">
+                <CheckCircle2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-lg font-medium mb-2">لا توجد تطبيقات</p>
+                <p className="text-muted-foreground mb-4">قم بتطبيق قالب على مرحلة أو صف أو مادة</p>
+                <Button onClick={() => setActiveTab('templates')}>
+                  <FileText className="h-4 w-4 ml-1" />
+                  عرض القوالب
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {appliedStructures.map((struct) => {
+                  const educationLevel = levels?.find(l => l.id === struct.education_level_id);
+                  const gradeLevel = allGradeLevels?.find(g => g.id === struct.grade_level_id);
+                  const subject = allSubjects?.find(s => s.id === struct.subject_id);
+                  const template = templates?.find(t => t.id === struct.template_id);
+                  
+                  return (
+                    <div 
+                      key={struct.id}
+                      className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex-1">
+                        <div className="font-medium">{struct.name_ar}</div>
+                        <div className="flex gap-2 mt-1 flex-wrap">
+                          {educationLevel && (
+                            <Badge variant="outline">{educationLevel.name_ar}</Badge>
+                          )}
+                          {gradeLevel && (
+                            <Badge variant="secondary">{gradeLevel.name_ar}</Badge>
+                          )}
+                          {subject && (
+                            <Badge>{subject.name_ar}</Badge>
+                          )}
+                          {template && (
+                            <Badge variant="outline" className="border-primary text-primary">
+                              <FileText className="h-3 w-3 ml-1" />
+                              {template.name_ar}
+                            </Badge>
+                          )}
+                        </div>
+                        {struct.structure && struct.structure.groups && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {struct.structure.groups.length} مجموعات • {' '}
+                            {struct.structure.groups.reduce((s, g) => s + g.columns.length, 0)} أعمدة
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => {
+                            if (struct.structure) {
+                              // Convert to local GradingStructure format
+                              const converted: GradingStructure = {
+                                groups: struct.structure.groups.map(g => ({
+                                  ...g,
+                                  border: g.border || GROUP_COLORS.find(c => c.color === g.color)?.border || '#ccc'
+                                })),
+                                settings: struct.structure.settings
+                              };
+                              setStructure(converted);
+                              setActiveTab('preview');
+                            }
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => {
+                            if (confirm('هل أنت متأكد من حذف هذا التطبيق؟')) {
+                              deleteGradingStructure.mutate(struct.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* Save Dialog */}

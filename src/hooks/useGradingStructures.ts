@@ -6,13 +6,17 @@ export interface GradingColumn {
   id: string;
   name_ar: string;
   max_score: number;
-  type: 'score' | 'total' | 'percentage' | 'label';
+  type: 'score' | 'total' | 'grand_total' | 'percentage' | 'label';
+  sourceGroupIds?: string[];
+  sourceColumnIds?: string[];
+  useGroupColor?: boolean;
 }
 
 export interface GradingGroup {
   id: string;
   name_ar: string;
   color: string;
+  border?: string;
   columns: GradingColumn[];
 }
 
