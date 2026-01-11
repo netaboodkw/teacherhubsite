@@ -245,19 +245,87 @@ export default function CurriculumTreePage() {
     }
   };
 
-  // Handle delete
+  // Handle delete with dependency checks
   const handleDelete = async () => {
     if (!deleteDialog.item) return;
     
     setDeleting(true);
     try {
+      const id = deleteDialog.item.id;
+
+      // Check for dependencies based on type
+      if (deleteDialog.type === 'education_level') {
+        const { count: classroomsCount } = await supabase
+          .from('classrooms')
+          .select('*', { count: 'exact', head: true })
+          .eq('education_level_id', id);
+
+        if (classroomsCount && classroomsCount > 0) {
+          throw new Error(`لا يمكن حذف هذه المرحلة لأنها مرتبطة بـ ${classroomsCount} فصل/فصول دراسية. يُفضل تعطيلها بدلاً من حذفها.`);
+        }
+
+        const { count: gradeLevelsCount } = await supabase
+          .from('grade_levels')
+          .select('*', { count: 'exact', head: true })
+          .eq('education_level_id', id);
+
+        if (gradeLevelsCount && gradeLevelsCount > 0) {
+          throw new Error(`لا يمكن حذف هذه المرحلة لأنها مرتبطة بـ ${gradeLevelsCount} صف/صفوف دراسية. يُفضل تعطيلها بدلاً من حذفها.`);
+        }
+
+        const { count: subjectsCount } = await supabase
+          .from('subjects')
+          .select('*', { count: 'exact', head: true })
+          .eq('education_level_id', id);
+
+        if (subjectsCount && subjectsCount > 0) {
+          throw new Error(`لا يمكن حذف هذه المرحلة لأنها مرتبطة بـ ${subjectsCount} مادة/مواد دراسية. يُفضل تعطيلها بدلاً من حذفها.`);
+        }
+      } else if (deleteDialog.type === 'grade_level') {
+        const { count: classroomsCount } = await supabase
+          .from('classrooms')
+          .select('*', { count: 'exact', head: true })
+          .eq('grade_level_id', id);
+
+        if (classroomsCount && classroomsCount > 0) {
+          throw new Error(`لا يمكن حذف هذا الصف لأنه مرتبط بـ ${classroomsCount} فصل/فصول دراسية. يُفضل تعطيله بدلاً من حذفه.`);
+        }
+
+        const { count: subjectsCount } = await supabase
+          .from('subjects')
+          .select('*', { count: 'exact', head: true })
+          .eq('grade_level_id', id);
+
+        if (subjectsCount && subjectsCount > 0) {
+          throw new Error(`لا يمكن حذف هذا الصف لأنه مرتبط بـ ${subjectsCount} مادة/مواد دراسية. يُفضل تعطيله بدلاً من حذفه.`);
+        }
+      } else if (deleteDialog.type === 'subject') {
+        const { count: classroomsCount } = await supabase
+          .from('classrooms')
+          .select('*', { count: 'exact', head: true })
+          .eq('subject_id', id);
+
+        if (classroomsCount && classroomsCount > 0) {
+          throw new Error(`لا يمكن حذف هذه المادة لأنها مرتبطة بـ ${classroomsCount} فصل/فصول دراسية. يُفضل تعطيلها بدلاً من حذفها.`);
+        }
+
+        const { count: gradingStructuresCount } = await supabase
+          .from('subject_grading_structures')
+          .select('*', { count: 'exact', head: true })
+          .eq('subject_id', id);
+
+        if (gradingStructuresCount && gradingStructuresCount > 0) {
+          throw new Error(`لا يمكن حذف هذه المادة لأنها مرتبطة بـ ${gradingStructuresCount} هيكل/هياكل تقييم. يُفضل تعطيلها بدلاً من حذفها.`);
+        }
+      }
+
       const tableName = deleteDialog.type === 'education_level' ? 'education_levels' : 
                         deleteDialog.type === 'grade_level' ? 'grade_levels' : 'subjects';
       
       const { error } = await supabase
         .from(tableName)
         .delete()
-        .eq('id', deleteDialog.item.id);
+        .eq('id', id);
       
       if (error) throw error;
       
@@ -265,7 +333,7 @@ export default function CurriculumTreePage() {
       queryClient.invalidateQueries({ queryKey: [deleteDialog.type === 'education_level' ? 'education-levels' : deleteDialog.type === 'grade_level' ? 'grade-levels' : 'subjects'] });
       setDeleteDialog({ open: false, type: 'education_level', item: null });
     } catch (error: any) {
-      toast.error('فشل في الحذف: ' + error.message);
+      toast.error(error.message);
     } finally {
       setDeleting(false);
     }
