@@ -9,6 +9,17 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Switch } from '@/components/ui/switch';
+import { 
   TreePine, 
   ChevronDown, 
   ChevronLeft, 
@@ -19,7 +30,9 @@ import {
   BookOpen,
   Layers,
   Loader2,
-  Search
+  Search,
+  Power,
+  PowerOff
 } from 'lucide-react';
 import { useEducationLevels } from '@/hooks/useEducationLevels';
 import { useGradeLevels } from '@/hooks/useGradeLevels';
@@ -52,6 +65,8 @@ export default function CurriculumTreePage() {
   const [dialog, setDialog] = useState<DialogState>({ open: false, mode: 'add', type: 'education_level' });
   const [formData, setFormData] = useState({ name: '', name_ar: '', grade_number: 1 });
   const [saving, setSaving] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; type: ItemType; item: any }>({ open: false, type: 'education_level', item: null });
+  const [deleting, setDeleting] = useState(false);
 
   // Toggle level expansion
   const toggleLevel = (levelId: string) => {
@@ -210,7 +225,53 @@ export default function CurriculumTreePage() {
     }
   };
 
-  // Filter by search
+  // Handle toggle active status
+  const handleToggleActive = async (type: ItemType, item: any) => {
+    try {
+      const tableName = type === 'education_level' ? 'education_levels' : 
+                        type === 'grade_level' ? 'grade_levels' : 'subjects';
+      
+      const { error } = await supabase
+        .from(tableName)
+        .update({ is_active: !item.is_active })
+        .eq('id', item.id);
+      
+      if (error) throw error;
+      
+      toast.success(item.is_active ? 'تم تعطيل العنصر' : 'تم تفعيل العنصر');
+      queryClient.invalidateQueries({ queryKey: [type === 'education_level' ? 'education-levels' : type === 'grade_level' ? 'grade-levels' : 'subjects'] });
+    } catch (error: any) {
+      toast.error('فشل في تغيير الحالة: ' + error.message);
+    }
+  };
+
+  // Handle delete
+  const handleDelete = async () => {
+    if (!deleteDialog.item) return;
+    
+    setDeleting(true);
+    try {
+      const tableName = deleteDialog.type === 'education_level' ? 'education_levels' : 
+                        deleteDialog.type === 'grade_level' ? 'grade_levels' : 'subjects';
+      
+      const { error } = await supabase
+        .from(tableName)
+        .delete()
+        .eq('id', deleteDialog.item.id);
+      
+      if (error) throw error;
+      
+      toast.success('تم حذف العنصر بنجاح');
+      queryClient.invalidateQueries({ queryKey: [deleteDialog.type === 'education_level' ? 'education-levels' : deleteDialog.type === 'grade_level' ? 'grade-levels' : 'subjects'] });
+      setDeleteDialog({ open: false, type: 'education_level', item: null });
+    } catch (error: any) {
+      toast.error('فشل في الحذف: ' + error.message);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // Filter by search (show all items including inactive for admin)
   const filteredLevels = useMemo(() => {
     if (!searchTerm) return educationLevels || [];
     
@@ -325,7 +386,9 @@ export default function CurriculumTreePage() {
                     onOpenChange={() => toggleLevel(level.id)}
                   >
                     {/* Education Level */}
-                    <div className="flex items-center gap-2 p-3 rounded-lg border bg-primary/5 hover:bg-primary/10 transition-colors">
+                    <div className={`flex items-center gap-2 p-3 rounded-lg border transition-colors ${
+                      level.is_active !== false ? 'bg-primary/5 hover:bg-primary/10' : 'bg-muted/50 opacity-60'
+                    }`}>
                       <CollapsibleTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-6 w-6">
                           {expandedLevels.has(level.id) ? (
@@ -337,12 +400,33 @@ export default function CurriculumTreePage() {
                       </CollapsibleTrigger>
                       <GraduationCap className="h-5 w-5 text-primary" />
                       <span className="font-medium flex-1">{level.name_ar}</span>
+                      {level.is_active === false && (
+                        <Badge variant="outline" className="text-xs text-muted-foreground">معطل</Badge>
+                      )}
                       <Badge variant="secondary">{getGradeLevelsFor(level.id).length} صف</Badge>
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openAddDialog('grade_level', level.id)}>
                         <Plus className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditDialog('education_level', level)}>
                         <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className={`h-7 w-7 ${level.is_active !== false ? 'text-green-600' : 'text-muted-foreground'}`}
+                        onClick={() => handleToggleActive('education_level', level)}
+                        title={level.is_active !== false ? 'تعطيل' : 'تفعيل'}
+                      >
+                        {level.is_active !== false ? <Power className="h-4 w-4" /> : <PowerOff className="h-4 w-4" />}
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        onClick={() => setDeleteDialog({ open: true, type: 'education_level', item: level })}
+                        title="حذف"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
 
@@ -354,7 +438,9 @@ export default function CurriculumTreePage() {
                           onOpenChange={() => toggleGrade(gradeLevel.id)}
                         >
                           {/* Grade Level */}
-                          <div className="flex items-center gap-2 p-2 rounded-lg border bg-secondary/5 hover:bg-secondary/10 transition-colors">
+                          <div className={`flex items-center gap-2 p-2 rounded-lg border transition-colors ${
+                            gradeLevel.is_active !== false ? 'bg-secondary/5 hover:bg-secondary/10' : 'bg-muted/50 opacity-60'
+                          }`}>
                             <CollapsibleTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-6 w-6">
                                 {expandedGrades.has(gradeLevel.id) ? (
@@ -366,6 +452,9 @@ export default function CurriculumTreePage() {
                             </CollapsibleTrigger>
                             <Layers className="h-4 w-4 text-secondary" />
                             <span className="flex-1">{gradeLevel.name_ar}</span>
+                            {gradeLevel.is_active === false && (
+                              <Badge variant="outline" className="text-xs text-muted-foreground">معطل</Badge>
+                            )}
                             <Badge variant="outline" className="text-xs">
                               {getSubjectsFor(gradeLevel.id, level.id).length} مادة
                             </Badge>
@@ -375,16 +464,39 @@ export default function CurriculumTreePage() {
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditDialog('grade_level', gradeLevel)}>
                               <Edit className="h-3 w-3" />
                             </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className={`h-6 w-6 ${gradeLevel.is_active !== false ? 'text-green-600' : 'text-muted-foreground'}`}
+                              onClick={() => handleToggleActive('grade_level', gradeLevel)}
+                              title={gradeLevel.is_active !== false ? 'تعطيل' : 'تفعيل'}
+                            >
+                              {gradeLevel.is_active !== false ? <Power className="h-3 w-3" /> : <PowerOff className="h-3 w-3" />}
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6 text-destructive hover:text-destructive"
+                              onClick={() => setDeleteDialog({ open: true, type: 'grade_level', item: gradeLevel })}
+                              title="حذف"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
                           </div>
 
                           <CollapsibleContent className="mr-6 mt-1 space-y-1">
                             {getSubjectsFor(gradeLevel.id, level.id).map(subject => (
                               <div 
                                 key={subject.id}
-                                className="flex items-center gap-2 p-2 rounded-lg border bg-accent/5 hover:bg-accent/10 transition-colors"
+                                className={`flex items-center gap-2 p-2 rounded-lg border transition-colors ${
+                                  subject.is_active !== false ? 'bg-accent/5 hover:bg-accent/10' : 'bg-muted/50 opacity-60'
+                                }`}
                               >
                                 <BookOpen className="h-4 w-4 text-accent mr-6" />
                                 <span className="flex-1 text-sm">{subject.name_ar}</span>
+                                {subject.is_active === false && (
+                                  <Badge variant="outline" className="text-xs text-muted-foreground">معطل</Badge>
+                                )}
                                 {hasGradingStructure(subject.id, gradeLevel.id) ? (
                                   <Badge variant="default" className="text-xs">نظام درجات</Badge>
                                 ) : (
@@ -392,6 +504,24 @@ export default function CurriculumTreePage() {
                                 )}
                                 <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditDialog('subject', subject)}>
                                   <Edit className="h-3 w-3" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className={`h-6 w-6 ${subject.is_active !== false ? 'text-green-600' : 'text-muted-foreground'}`}
+                                  onClick={() => handleToggleActive('subject', subject)}
+                                  title={subject.is_active !== false ? 'تعطيل' : 'تفعيل'}
+                                >
+                                  {subject.is_active !== false ? <Power className="h-3 w-3" /> : <PowerOff className="h-3 w-3" />}
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-6 w-6 text-destructive hover:text-destructive"
+                                  onClick={() => setDeleteDialog({ open: true, type: 'subject', item: subject })}
+                                  title="حذف"
+                                >
+                                  <Trash2 className="h-3 w-3" />
                                 </Button>
                               </div>
                             ))}
@@ -462,6 +592,39 @@ export default function CurriculumTreePage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}>
+          <AlertDialogContent dir="rtl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+              <AlertDialogDescription>
+                هل أنت متأكد من حذف "{deleteDialog.item?.name_ar}"؟
+                {deleteDialog.type === 'education_level' && (
+                  <span className="block mt-2 text-destructive font-medium">
+                    ⚠️ سيتم حذف جميع الصفوف والمواد المرتبطة بهذه المرحلة!
+                  </span>
+                )}
+                {deleteDialog.type === 'grade_level' && (
+                  <span className="block mt-2 text-destructive font-medium">
+                    ⚠️ سيتم حذف جميع المواد المرتبطة بهذا الصف!
+                  </span>
+                )}
+                <span className="block mt-2">هذا الإجراء لا يمكن التراجع عنه.</span>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="gap-2">
+              <AlertDialogCancel>إلغاء</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={deleting}
+              >
+                {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'حذف'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AdminLayout>
   );
