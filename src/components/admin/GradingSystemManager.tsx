@@ -55,7 +55,8 @@ interface GradingColumn {
   id: string;
   name_ar: string;
   max_score: number;
-  type: 'score' | 'total';
+  type: 'score' | 'total' | 'grand_total';
+  sourceGroupIds?: string[]; // للمجموع الكلي - المجموعات المراد جمع مجاميعها
 }
 
 interface GradingGroup {
@@ -252,6 +253,56 @@ export function GradingSystemManager() {
         };
       })
     }));
+  };
+
+  // Add grand total column that sums totals from selected groups
+  const addGrandTotalColumn = (groupId: string) => {
+    // Get all previous groups (before current group)
+    const currentGroupIndex = structure.groups.findIndex(g => g.id === groupId);
+    const previousGroups = structure.groups.slice(0, currentGroupIndex);
+    
+    // Calculate total from all previous groups' totals
+    const grandTotal = previousGroups.reduce((sum, group) => {
+      const groupTotal = group.columns.find(c => c.type === 'total');
+      return sum + (groupTotal?.max_score || 0);
+    }, 0);
+    
+    setStructure(prev => ({
+      ...prev,
+      groups: prev.groups.map(g => {
+        if (g.id !== groupId) return g;
+        return {
+          ...g,
+          columns: [...g.columns, {
+            id: `grandtotal${Date.now()}`,
+            name_ar: 'المجموع الكلي',
+            max_score: grandTotal,
+            type: 'grand_total' as const,
+            sourceGroupIds: previousGroups.map(pg => pg.id)
+          }]
+        };
+      })
+    }));
+  };
+
+  // Calculate group total
+  const calculateGroupTotal = (groupId: string) => {
+    const group = structure.groups.find(g => g.id === groupId);
+    if (!group) return 0;
+    return group.columns
+      .filter(c => c.type === 'score')
+      .reduce((sum, c) => sum + c.max_score, 0);
+  };
+
+  // Calculate grand total from source groups
+  const calculateGrandTotal = (sourceGroupIds?: string[]) => {
+    if (!sourceGroupIds || sourceGroupIds.length === 0) return 0;
+    return sourceGroupIds.reduce((sum, gid) => {
+      const group = structure.groups.find(g => g.id === gid);
+      if (!group) return sum;
+      const totalCol = group.columns.find(c => c.type === 'total');
+      return sum + (totalCol?.max_score || calculateGroupTotal(gid));
+    }, 0);
   };
 
   const calculateTotalMaxScore = () => {
@@ -849,28 +900,48 @@ export function GradingSystemManager() {
                         {group.columns.map((column, colIndex) => (
                           <div 
                             key={column.id} 
-                            className="flex items-center gap-3 p-3 rounded-lg border bg-card"
+                            className={`flex items-center gap-3 p-3 rounded-lg border bg-card ${column.type === 'grand_total' ? 'border-primary bg-primary/5' : ''}`}
                           >
                             <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
-                            <Input 
-                              value={column.name_ar}
-                              onChange={(e) => updateColumn(group.id, column.id, 'name_ar', e.target.value)}
-                              className="flex-1"
-                              placeholder="اسم العمود"
-                            />
+                            <div className="flex-1">
+                              <Input 
+                                value={column.name_ar}
+                                onChange={(e) => updateColumn(group.id, column.id, 'name_ar', e.target.value)}
+                                className="w-full"
+                                placeholder="اسم العمود"
+                              />
+                              {column.type === 'grand_total' && column.sourceGroupIds && (
+                                <div className="flex gap-1 mt-1 flex-wrap">
+                                  <span className="text-xs text-muted-foreground">يجمع:</span>
+                                  {column.sourceGroupIds.map(sgId => {
+                                    const sourceGroup = structure.groups.find(g => g.id === sgId);
+                                    return sourceGroup ? (
+                                      <Badge 
+                                        key={sgId} 
+                                        variant="outline" 
+                                        className="text-xs py-0"
+                                        style={{ borderColor: sourceGroup.border, backgroundColor: sourceGroup.color }}
+                                      >
+                                        {sourceGroup.name_ar}
+                                      </Badge>
+                                    ) : null;
+                                  })}
+                                </div>
+                              )}
+                            </div>
                             <div className="flex items-center gap-2">
                               <Label className="text-xs whitespace-nowrap">الدرجة:</Label>
                               <Input 
                                 type="number"
-                                value={column.max_score}
+                                value={column.type === 'grand_total' ? calculateGrandTotal(column.sourceGroupIds) : column.max_score}
                                 onChange={(e) => updateColumn(group.id, column.id, 'max_score', parseInt(e.target.value) || 0)}
                                 className="w-20"
                                 min={0}
-                                disabled={column.type === 'total'}
+                                disabled={column.type === 'total' || column.type === 'grand_total'}
                               />
                             </div>
-                            <Badge variant={column.type === 'total' ? 'default' : 'secondary'}>
-                              {column.type === 'total' ? 'مجموع' : 'درجة'}
+                            <Badge variant={column.type === 'score' ? 'secondary' : column.type === 'total' ? 'default' : 'destructive'}>
+                              {column.type === 'score' ? 'درجة' : column.type === 'total' ? 'مجموع' : 'مجموع كلي'}
                             </Badge>
                             <Button 
                               variant="ghost" 
@@ -884,7 +955,7 @@ export function GradingSystemManager() {
                       </div>
                       
                       {/* Add column buttons */}
-                      <div className="flex gap-2 pt-2">
+                      <div className="flex gap-2 pt-2 flex-wrap">
                         <Button 
                           variant="outline" 
                           size="sm"
@@ -899,8 +970,19 @@ export function GradingSystemManager() {
                           onClick={() => addTotalColumn(group.id)}
                         >
                           <Calculator className="h-4 w-4 ml-1" />
-                          عمود مجموع
+                          مجموع المجموعة
                         </Button>
+                        {groupIndex > 0 && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => addGrandTotalColumn(group.id)}
+                            className="border-primary text-primary hover:bg-primary/10"
+                          >
+                            <Calculator className="h-4 w-4 ml-1" />
+                            مجموع المجموعات السابقة
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </CardContent>
