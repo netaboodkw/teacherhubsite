@@ -9,13 +9,14 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useEducationLevels } from '@/hooks/useEducationLevels';
 import { supabase } from '@/integrations/supabase/client';
-import { User, School, Phone, Loader2, GraduationCap } from 'lucide-react';
+import { User, School, Phone, Loader2, GraduationCap, BookOpen } from 'lucide-react';
 
 export default function CompleteProfile() {
   const [fullName, setFullName] = useState('');
   const [schoolName, setSchoolName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [educationLevelId, setEducationLevelId] = useState('');
+  const [subject, setSubject] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -35,7 +36,7 @@ export default function CompleteProfile() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!fullName.trim() || !schoolName.trim() || !educationLevelId) {
+    if (!fullName.trim() || !schoolName.trim() || !educationLevelId || !subject.trim()) {
       toast({
         title: 'خطأ',
         description: 'يرجى ملء جميع الحقول',
@@ -64,6 +65,7 @@ export default function CompleteProfile() {
           school_name: schoolName.trim(),
           phone: phoneNumber,
           education_level_id: educationLevelId,
+          subject: subject.trim(),
           is_profile_complete: true,
         })
         .eq('user_id', user.id);
@@ -148,6 +150,23 @@ export default function CompleteProfile() {
               </div>
             </div>
 
+            {/* Subject - Text field */}
+            <div className="space-y-2">
+              <Label htmlFor="subject">المادة التي تدرسها *</Label>
+              <div className="relative">
+                <BookOpen className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="subject"
+                  type="text"
+                  placeholder="الرياضيات، اللغة العربية، العلوم..."
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  className="pr-10"
+                  maxLength={100}
+                />
+              </div>
+            </div>
+
             {/* Education Level - Required */}
             <div className="space-y-2">
               <Label>المرحلة التعليمية *</Label>
@@ -169,7 +188,7 @@ export default function CompleteProfile() {
               <p className="text-xs text-muted-foreground">لا يمكن تغيير المرحلة لاحقاً</p>
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading || !educationLevelId}>
+            <Button type="submit" className="w-full" disabled={loading || !educationLevelId || !subject.trim()}>
               {loading ? (
                 <>
                   <Loader2 className="ml-2 h-4 w-4 animate-spin" />
