@@ -121,8 +121,8 @@ export function PrintableGradesTable({
   };
 
   return (
-    <div className="print-container hidden print:block" dir="rtl">
-      {/* Print Header */}
+    <div className="print-container" style={{ display: 'none' }} dir="rtl">
+      {/* Print Header - Only Teacher, Classroom, and Department Head */}
       <div className="print-header">
         <h1>{templateName}</h1>
         <p><strong>المعلم:</strong> {teacherName}</p>
