@@ -314,6 +314,218 @@ function SortableColumn({
   );
 }
 
+// Sortable Group Item Component - wraps content with drag handle
+interface SortableGroupItemProps {
+  group: GradingGroup;
+  groupIndex: number;
+  structure: GradingStructure;
+  sensors: ReturnType<typeof useSensors>;
+  updateGroup: (groupId: string, field: keyof GradingGroup, value: any) => void;
+  removeGroup: (groupId: string) => void;
+  duplicateGroup: (groupId: string) => void;
+  changeGroupColor: (groupId: string, colorData: typeof GROUP_COLORS[0]) => void;
+  addColumn: (groupId: string) => void;
+  addTotalColumn: (groupId: string) => void;
+  addGroupSumColumn: (groupId: string) => void;
+  addGrandTotalColumn: (groupId: string) => void;
+  openExternalSumDialog: (groupId: string) => void;
+  handleColumnDragEnd: (groupId: string) => (event: DragEndEvent) => void;
+  updateColumn: (groupId: string, columnId: string, field: keyof GradingColumn, value: any) => void;
+  removeColumn: (groupId: string, columnId: string) => void;
+  calculateGrandTotal: (sourceGroupIds?: string[], sourceColumnIds?: string[], externalSourceColumns?: string[]) => number;
+  openEditColumnDialog: (groupId: string, column: GradingColumn) => void;
+}
+
+function SortableGroupItem({
+  group,
+  groupIndex,
+  structure,
+  sensors,
+  updateGroup,
+  removeGroup,
+  duplicateGroup,
+  changeGroupColor,
+  addColumn,
+  addTotalColumn,
+  addGroupSumColumn,
+  addGrandTotalColumn,
+  openExternalSumDialog,
+  handleColumnDragEnd,
+  updateColumn,
+  removeColumn,
+  calculateGrandTotal,
+  openEditColumnDialog,
+}: SortableGroupItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: group.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 1000 : 'auto',
+  };
+
+  return (
+    <div ref={setNodeRef} style={style as React.CSSProperties}>
+      <Card 
+        className={`overflow-hidden ${isDragging ? 'shadow-xl' : ''}`}
+        style={{ borderColor: group.border, borderWidth: '2px' }}
+      >
+        <CardHeader 
+          className="py-3"
+          style={{ backgroundColor: group.color }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button 
+                {...attributes} 
+                {...listeners}
+                className="cursor-grab active:cursor-grabbing touch-none"
+              >
+                <GripVertical className="h-5 w-5 text-muted-foreground" />
+              </button>
+              <Input 
+                value={group.name_ar}
+                onChange={(e) => updateGroup(group.id, 'name_ar', e.target.value)}
+                className="w-48 bg-background/80"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Color picker */}
+              <div className="flex gap-1">
+                {GROUP_COLORS.filter(colorData => {
+                  const isCurrentGroupColor = group.color === colorData.color;
+                  const usedByOtherGroup = structure.groups.some(
+                    g => g.id !== group.id && g.color === colorData.color
+                  );
+                  return isCurrentGroupColor || !usedByOtherGroup;
+                }).map(colorData => (
+                  <button
+                    key={colorData.id}
+                    onClick={() => changeGroupColor(group.id, colorData)}
+                    className="w-6 h-6 rounded-full border-2 transition-transform hover:scale-110"
+                    style={{ 
+                      backgroundColor: colorData.color,
+                      borderColor: group.color === colorData.color ? colorData.border : 'transparent'
+                    }}
+                    title={colorData.name}
+                  />
+                ))}
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => duplicateGroup(group.id)}
+                title="نسخ المجموعة"
+              >
+                <Copy className="h-4 w-4 text-muted-foreground" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => removeGroup(group.id)}
+                title="حذف المجموعة"
+              >
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4">
+          <div className="space-y-3">
+            {/* Columns with DnD */}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleColumnDragEnd(group.id)}
+            >
+              <SortableContext
+                items={group.columns.map(c => c.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="grid gap-2">
+                  {group.columns.map((column) => (
+                    <SortableColumn
+                      key={column.id}
+                      column={column}
+                      groupId={group.id}
+                      group={group}
+                      structure={structure}
+                      updateColumn={updateColumn}
+                      removeColumn={removeColumn}
+                      calculateGrandTotal={calculateGrandTotal}
+                      onEditColumn={openEditColumnDialog}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+            
+            {/* Add column buttons */}
+            <div className="flex gap-2 pt-2 flex-wrap">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => addColumn(group.id)}
+              >
+                <Plus className="h-4 w-4 ml-1" />
+                عمود جديد
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => addTotalColumn(group.id)}
+              >
+                <Calculator className="h-4 w-4 ml-1" />
+                مجموع المجموعة
+              </Button>
+              {groupIndex > 0 && (
+                <>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => openExternalSumDialog(group.id)}
+                    className="border-green-500 text-green-600 hover:bg-green-50"
+                  >
+                    <Calculator className="h-4 w-4 ml-1" />
+                    مجموع درجات خارجية
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => addGroupSumColumn(group.id)}
+                    className="border-amber-500 text-amber-600 hover:bg-amber-50"
+                  >
+                    <Calculator className="h-4 w-4 ml-1" />
+                    مجموع من مجموعات سابقة
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => addGrandTotalColumn(group.id)}
+                    className="border-primary text-primary hover:bg-primary/10"
+                  >
+                    <Calculator className="h-4 w-4 ml-1" />
+                    مجموع كلي
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+
 export function GradingSystemManager() {
   const queryClient = useQueryClient();
   const { data: levels } = useEducationLevels();
@@ -442,7 +654,22 @@ export function GradingSystemManager() {
     }
   };
 
-  // Group management
+  // Handle group reorder
+  const handleGroupDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      setStructure(prev => {
+        const oldIndex = prev.groups.findIndex(g => g.id === active.id);
+        const newIndex = prev.groups.findIndex(g => g.id === over.id);
+        
+        return {
+          ...prev,
+          groups: arrayMove(prev.groups, oldIndex, newIndex)
+        };
+      });
+    }
+  };
   const addGroup = () => {
     const usedColors = structure.groups.map(g => g.color);
     const availableColor = GROUP_COLORS.find(c => !usedColors.includes(c.color)) || GROUP_COLORS[0];
@@ -1731,152 +1958,43 @@ export function GradingSystemManager() {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
-              {structure.groups.map((group, groupIndex) => (
-                <Card 
-                  key={group.id} 
-                  className="overflow-hidden"
-                  style={{ borderColor: group.border, borderWidth: '2px' }}
+            <>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleGroupDragEnd}
+              >
+                <SortableContext
+                  items={structure.groups.map(g => g.id)}
+                  strategy={verticalListSortingStrategy}
                 >
-                  <CardHeader 
-                    className="py-3"
-                    style={{ backgroundColor: group.color }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
-                        <Input 
-                          value={group.name_ar}
-                          onChange={(e) => updateGroup(group.id, 'name_ar', e.target.value)}
-                          className="w-48 bg-background/80"
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {/* Color picker - show only unused colors */}
-                        <div className="flex gap-1">
-                          {GROUP_COLORS.filter(colorData => {
-                            // Show this color if it's the current group's color OR not used by any other group
-                            const isCurrentGroupColor = group.color === colorData.color;
-                            const usedByOtherGroup = structure.groups.some(
-                              g => g.id !== group.id && g.color === colorData.color
-                            );
-                            return isCurrentGroupColor || !usedByOtherGroup;
-                          }).map(colorData => (
-                            <button
-                              key={colorData.id}
-                              onClick={() => changeGroupColor(group.id, colorData)}
-                              className="w-6 h-6 rounded-full border-2 transition-transform hover:scale-110"
-                              style={{ 
-                                backgroundColor: colorData.color,
-                                borderColor: group.color === colorData.color ? colorData.border : 'transparent'
-                              }}
-                              title={colorData.name}
-                            />
-                          ))}
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => duplicateGroup(group.id)}
-                          title="نسخ المجموعة"
-                        >
-                          <Copy className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => removeGroup(group.id)}
-                          title="حذف المجموعة"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    <div className="space-y-3">
-                      {/* Columns with DnD */}
-                      <DndContext
+                  <div className="space-y-4">
+                    {structure.groups.map((group, groupIndex) => (
+                      <SortableGroupItem
+                        key={group.id}
+                        group={group}
+                        groupIndex={groupIndex}
+                        structure={structure}
                         sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragEnd={handleColumnDragEnd(group.id)}
-                      >
-                        <SortableContext
-                          items={group.columns.map(c => c.id)}
-                          strategy={verticalListSortingStrategy}
-                        >
-                          <div className="grid gap-2">
-                            {group.columns.map((column) => (
-                              <SortableColumn
-                                key={column.id}
-                                column={column}
-                                groupId={group.id}
-                                group={group}
-                                structure={structure}
-                                updateColumn={updateColumn}
-                                removeColumn={removeColumn}
-                                calculateGrandTotal={calculateGrandTotal}
-                                onEditColumn={openEditColumnDialog}
-                              />
-                            ))}
-                          </div>
-                        </SortableContext>
-                      </DndContext>
-                      
-                      {/* Add column buttons */}
-                      <div className="flex gap-2 pt-2 flex-wrap">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => addColumn(group.id)}
-                        >
-                          <Plus className="h-4 w-4 ml-1" />
-                          عمود جديد
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => addTotalColumn(group.id)}
-                        >
-                          <Calculator className="h-4 w-4 ml-1" />
-                          مجموع المجموعة
-                        </Button>
-                        {groupIndex > 0 && (
-                          <>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => openExternalSumDialog(group.id)}
-                              className="border-green-500 text-green-600 hover:bg-green-50"
-                            >
-                              <Calculator className="h-4 w-4 ml-1" />
-                              مجموع درجات خارجية
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => addGroupSumColumn(group.id)}
-                              className="border-amber-500 text-amber-600 hover:bg-amber-50"
-                            >
-                              <Calculator className="h-4 w-4 ml-1" />
-                              مجموع من مجموعات سابقة
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => addGrandTotalColumn(group.id)}
-                              className="border-primary text-primary hover:bg-primary/10"
-                            >
-                              <Calculator className="h-4 w-4 ml-1" />
-                              مجموع كلي
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                        updateGroup={updateGroup}
+                        removeGroup={removeGroup}
+                        duplicateGroup={duplicateGroup}
+                        changeGroupColor={changeGroupColor}
+                        addColumn={addColumn}
+                        addTotalColumn={addTotalColumn}
+                        addGroupSumColumn={addGroupSumColumn}
+                        addGrandTotalColumn={addGrandTotalColumn}
+                        openExternalSumDialog={openExternalSumDialog}
+                        handleColumnDragEnd={handleColumnDragEnd}
+                        updateColumn={updateColumn}
+                        removeColumn={removeColumn}
+                        calculateGrandTotal={calculateGrandTotal}
+                        openEditColumnDialog={openEditColumnDialog}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
 
               {/* Summary & Settings */}
               <Card className="bg-muted/50">
@@ -1920,7 +2038,7 @@ export function GradingSystemManager() {
                   </div>
                 </CardContent>
               </Card>
-            </div>
+            </>
           )}
         </div>
       )}
