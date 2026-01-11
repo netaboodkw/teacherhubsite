@@ -1,12 +1,10 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-// Store OTPs temporarily (in production, use Redis or database)
-const otpStore = new Map<string, { code: string; expiresAt: number }>();
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -37,6 +35,8 @@ serve(async (req) => {
     const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
     const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
     const twilioPhone = Deno.env.get("TWILIO_PHONE_NUMBER");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     if (!accountSid || !authToken || !twilioPhone) {
       console.error("Missing Twilio credentials");
@@ -46,13 +46,45 @@ serve(async (req) => {
       );
     }
 
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error("Missing Supabase credentials");
+      return new Response(
+        JSON.stringify({ error: "خطأ في إعدادات الخادم" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Create Supabase client with service role key
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
     if (action === "send") {
       // Generate 6-digit OTP
       const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes expiry
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 minutes expiry
 
-      // Store OTP
-      otpStore.set(formattedPhone, { code: generatedOtp, expiresAt });
+      // Delete any existing OTPs for this phone
+      await supabase
+        .from('otp_codes')
+        .delete()
+        .eq('phone', formattedPhone);
+
+      // Store OTP in database
+      const { error: insertError } = await supabase
+        .from('otp_codes')
+        .insert({
+          phone: formattedPhone,
+          code: generatedOtp,
+          expires_at: expiresAt,
+          verified: false
+        });
+
+      if (insertError) {
+        console.error("Database error:", insertError);
+        return new Response(
+          JSON.stringify({ error: "خطأ في حفظ رمز التحقق" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
 
       // Send SMS via Twilio
       const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
@@ -88,33 +120,53 @@ serve(async (req) => {
       );
 
     } else if (action === "verify") {
-      
-      const stored = otpStore.get(formattedPhone);
-      
-      if (!stored) {
+      // Get OTP from database
+      const { data: otpRecord, error: fetchError } = await supabase
+        .from('otp_codes')
+        .select('*')
+        .eq('phone', formattedPhone)
+        .eq('verified', false)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (fetchError || !otpRecord) {
+        console.error("OTP fetch error:", fetchError);
         return new Response(
           JSON.stringify({ error: "لم يتم إرسال رمز تحقق لهذا الرقم" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      if (Date.now() > stored.expiresAt) {
-        otpStore.delete(formattedPhone);
+      // Check if expired
+      if (new Date() > new Date(otpRecord.expires_at)) {
+        // Delete expired OTP
+        await supabase
+          .from('otp_codes')
+          .delete()
+          .eq('id', otpRecord.id);
+
         return new Response(
           JSON.stringify({ error: "انتهت صلاحية رمز التحقق" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      if (stored.code !== otp) {
+      // Check if OTP matches
+      if (otpRecord.code !== otp) {
         return new Response(
           JSON.stringify({ error: "رمز التحقق غير صحيح" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      // OTP verified successfully
-      otpStore.delete(formattedPhone);
+      // OTP verified successfully - mark as verified and delete
+      await supabase
+        .from('otp_codes')
+        .delete()
+        .eq('id', otpRecord.id);
+
+      console.log(`OTP verified for ${formattedPhone}`);
 
       return new Response(
         JSON.stringify({ success: true, verified: true }),
