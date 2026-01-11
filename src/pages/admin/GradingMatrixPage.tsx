@@ -22,6 +22,7 @@ import { useEducationLevels } from '@/hooks/useEducationLevels';
 import { useGradeLevels } from '@/hooks/useGradeLevels';
 import { useSubjects } from '@/hooks/useSubjects';
 import { useGradingStructures } from '@/hooks/useGradingStructures';
+import { useGradingTemplates } from '@/hooks/useGradingSystem';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
@@ -42,6 +43,7 @@ export default function GradingMatrixPage() {
   const { data: gradeLevels, isLoading: gradesLoading } = useGradeLevels();
   const { data: subjects, isLoading: subjectsLoading } = useSubjects();
   const { data: gradingStructures, isLoading: structuresLoading } = useGradingStructures();
+  const { data: gradingTemplates, isLoading: templatesLoading } = useGradingTemplates();
 
   // Filter state
   const [selectedEducationLevel, setSelectedEducationLevel] = useState<string>('all');
@@ -65,17 +67,11 @@ export default function GradingMatrixPage() {
     return map;
   }, [gradingStructures]);
 
-  // Get available templates - ONLY base templates (default or without grade/subject binding)
+  // Get available templates from grading_templates table (active only)
   const templates = useMemo(() => {
-    if (!gradingStructures) return [];
-    
-    // Only include structures that are true templates:
-    // 1. Marked as is_default = true
-    // 2. OR not tied to any specific grade_level or subject (general templates)
-    return gradingStructures.filter(s => 
-      s.is_default || (!s.grade_level_id && !s.subject_id)
-    );
-  }, [gradingStructures]);
+    if (!gradingTemplates) return [];
+    return gradingTemplates.filter(t => t.is_active);
+  }, [gradingTemplates]);
 
   // Filter subjects and grade levels by education level
   const filteredGradeLevels = useMemo(() => {
@@ -234,15 +230,24 @@ export default function GradingMatrixPage() {
   const handleApplyTemplate = async () => {
     if (!selectedTemplate || cellsWithoutStructure.size === 0) return;
     
-    const template = gradingStructures?.find(s => s.id === selectedTemplate);
+    const template = gradingTemplates?.find(t => t.id === selectedTemplate);
     if (!template) return;
+    
+    // Parse the structure from the template's description (stored as JSON)
+    let structure = {};
+    if (template.description) {
+      try {
+        structure = JSON.parse(template.description);
+      } catch {
+        // Not a valid JSON, use empty structure
+      }
+    }
     
     setApplying(true);
     try {
       const inserts = Array.from(cellsWithoutStructure).map(key => {
         const [gradeLevelId, subjectId] = key.split(':');
         const gradeLevel = gradeLevels?.find(g => g.id === gradeLevelId);
-        const subject = subjects?.find(s => s.id === subjectId);
         
         return {
           name: template.name,
@@ -251,7 +256,7 @@ export default function GradingMatrixPage() {
           grade_level_id: gradeLevelId,
           subject_id: subjectId,
           template_id: template.id,
-          structure: (template as any).structure || {},
+          structure: structure,
           is_default: false,
         };
       });
@@ -274,7 +279,7 @@ export default function GradingMatrixPage() {
     }
   };
 
-  const isLoading = levelsLoading || gradesLoading || subjectsLoading || structuresLoading;
+  const isLoading = levelsLoading || gradesLoading || subjectsLoading || structuresLoading || templatesLoading;
 
   return (
     <AdminLayout>
@@ -525,15 +530,19 @@ export default function GradingMatrixPage() {
                   <SelectContent>
                     {templates.length === 0 ? (
                       <div className="p-4 text-center text-muted-foreground">
-                        لا توجد قوالب أساسية. أنشئ قالب وحدده كـ "افتراضي" أولاً.
+                        لا توجد قوالب. أنشئ قالب من صفحة "قوالب الدرجات" أولاً.
                       </div>
                     ) : (
                       templates.map(template => (
                         <SelectItem key={template.id} value={template.id}>
-                          <div className="flex items-center gap-2">
-                            {template.name_ar}
-                            {template.is_default && (
-                              <Badge variant="secondary" className="text-xs">افتراضي</Badge>
+                          <div className="flex flex-col">
+                            <span>{template.name_ar}</span>
+                            {template.description && (
+                              <span className="text-xs text-muted-foreground">
+                                {template.description.length > 50 
+                                  ? 'قالب كامل' 
+                                  : template.description}
+                              </span>
                             )}
                           </div>
                         </SelectItem>
@@ -542,7 +551,7 @@ export default function GradingMatrixPage() {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  تظهر فقط القوالب الأساسية (الافتراضية أو العامة غير المرتبطة بمادة/صف معين)
+                  القوالب المتاحة من صفحة "قوالب الدرجات"
                 </p>
               </div>
             </div>
