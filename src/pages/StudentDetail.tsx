@@ -4,6 +4,8 @@ import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useStudent, useUpdateStudent, useDeleteStudent } from '@/hooks/useStudents';
 import { useClassroom } from '@/hooks/useClassrooms';
 import { useBehaviorNotes, useUpdateBehaviorNote, useDeleteBehaviorNote } from '@/hooks/useBehaviorNotes';
+import { useGrades } from '@/hooks/useGrades';
+import { useAttendance } from '@/hooks/useAttendance';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,7 +19,8 @@ import { StudentAvatarUpload } from '@/components/students/StudentAvatarUpload';
 import { toast } from 'sonner';
 import { 
   ArrowRight, Save, Loader2, User, Plus, Minus, MessageSquare, 
-  Trash2, Edit2, Calendar, Clock, HeartPulse
+  Trash2, Edit2, Calendar, Clock, HeartPulse, GraduationCap,
+  UserX, ThumbsUp, ThumbsDown, BarChart3
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -28,6 +31,11 @@ export default function StudentDetail() {
   const { data: student, isLoading: loadingStudent } = useStudent(studentId || '');
   const { data: classroom } = useClassroom(student?.classroom_id || '');
   const { data: behaviorNotes = [], isLoading: loadingNotes } = useBehaviorNotes(studentId);
+  const { data: grades = [] } = useGrades(student?.classroom_id || undefined, studentId);
+  const { data: allAttendance = [] } = useAttendance(student?.classroom_id || undefined);
+  
+  // Filter attendance for this student
+  const studentAttendance = allAttendance.filter(a => a.student_id === studentId);
   
   const updateStudent = useUpdateStudent();
   const deleteStudent = useDeleteStudent();
@@ -49,6 +57,15 @@ export default function StudentDetail() {
     .map(n => n[0])
     .join('')
     .slice(0, 2) || '';
+
+  // Calculate statistics
+  const totalScore = grades.reduce((sum, g) => sum + g.score, 0);
+  const absentCount = studentAttendance.filter(a => a.status === 'absent').length;
+  const lateCount = studentAttendance.filter(a => a.status === 'late').length;
+  const presentCount = studentAttendance.filter(a => a.status === 'present').length;
+  const positiveNotes = behaviorNotes.filter(n => n.type === 'positive').length;
+  const negativeNotes = behaviorNotes.filter(n => n.type === 'negative').length;
+  const totalPoints = behaviorNotes.reduce((sum, note) => sum + note.points, 0);
 
   const handleStartEdit = () => {
     if (student) {
@@ -133,8 +150,6 @@ export default function StudentDetail() {
     }
   };
 
-  const totalPoints = behaviorNotes.reduce((sum, note) => sum + note.points, 0);
-
   if (loadingStudent) {
     return (
       <TeacherLayout>
@@ -192,6 +207,57 @@ export default function StudentDetail() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+        </div>
+
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <Card className="bg-primary/10 border-primary/20">
+            <CardContent className="p-4 text-center">
+              <GraduationCap className="h-6 w-6 mx-auto mb-2 text-primary" />
+              <p className="text-2xl font-bold text-primary">{totalScore}</p>
+              <p className="text-xs text-muted-foreground">مجموع الدرجات</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-success/10 border-success/20">
+            <CardContent className="p-4 text-center">
+              <User className="h-6 w-6 mx-auto mb-2 text-success" />
+              <p className="text-2xl font-bold text-success">{presentCount}</p>
+              <p className="text-xs text-muted-foreground">أيام الحضور</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-destructive/10 border-destructive/20">
+            <CardContent className="p-4 text-center">
+              <UserX className="h-6 w-6 mx-auto mb-2 text-destructive" />
+              <p className="text-2xl font-bold text-destructive">{absentCount}</p>
+              <p className="text-xs text-muted-foreground">أيام الغياب</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-warning/10 border-warning/20">
+            <CardContent className="p-4 text-center">
+              <Clock className="h-6 w-6 mx-auto mb-2 text-warning" />
+              <p className="text-2xl font-bold text-warning">{lateCount}</p>
+              <p className="text-xs text-muted-foreground">أيام التأخير</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-green-500/10 border-green-500/20">
+            <CardContent className="p-4 text-center">
+              <ThumbsUp className="h-6 w-6 mx-auto mb-2 text-green-600" />
+              <p className="text-2xl font-bold text-green-600">{positiveNotes}</p>
+              <p className="text-xs text-muted-foreground">سلوكيات إيجابية</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-red-500/10 border-red-500/20">
+            <CardContent className="p-4 text-center">
+              <ThumbsDown className="h-6 w-6 mx-auto mb-2 text-red-600" />
+              <p className="text-2xl font-bold text-red-600">{negativeNotes}</p>
+              <p className="text-xs text-muted-foreground">سلوكيات سلبية</p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Student Info Card */}
@@ -309,6 +375,29 @@ export default function StudentDetail() {
             )}
           </CardContent>
         </Card>
+
+        {/* Grades Summary */}
+        {grades.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <GraduationCap className="h-5 w-5" />
+                آخر الدرجات
+                <Badge variant="secondary" className="mr-auto">{grades.length}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                {grades.slice(0, 12).map((grade) => (
+                  <div key={grade.id} className="p-3 rounded-lg bg-muted/50 text-center">
+                    <p className="text-lg font-bold text-primary">{grade.score}/{grade.max_score}</p>
+                    <p className="text-xs text-muted-foreground truncate">{grade.title}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Behavior Notes */}
         <Card>
