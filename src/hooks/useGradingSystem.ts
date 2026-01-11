@@ -184,22 +184,25 @@ export function useCreateGradingTemplate() {
       name: string; 
       name_ar: string; 
       description?: string;
-      periods: { name: string; name_ar: string; max_score: number; weight: number }[];
+      periods: { name: string; name_ar: string; max_score: number; weight: number; group_name?: string; type?: string }[];
+      full_structure?: any; // Store the full structure as JSON
     }) => {
-      // Create template
+      // Create template with full structure in description (as JSON)
+      const structureJson = template.full_structure ? JSON.stringify(template.full_structure) : null;
+      
       const { data: templateData, error: templateError } = await supabase
         .from('grading_templates')
         .insert({
           name: template.name,
           name_ar: template.name_ar,
-          description: template.description || null,
+          description: structureJson || template.description || null,
         })
         .select()
         .single();
 
       if (templateError) throw templateError;
 
-      // Create periods
+      // Create periods (for backward compatibility)
       if (template.periods.length > 0) {
         const periodsToInsert = template.periods.map((period, index) => ({
           template_id: templateData.id,

@@ -104,7 +104,8 @@ interface SortableColumnProps {
   structure: GradingStructure;
   updateColumn: (groupId: string, columnId: string, field: keyof GradingColumn, value: any) => void;
   removeColumn: (groupId: string, columnId: string) => void;
-  calculateGrandTotal: (sourceGroupIds?: string[]) => number;
+  calculateGrandTotal: (sourceGroupIds?: string[], sourceColumnIds?: string[]) => number;
+  onEditColumn: (groupId: string, column: GradingColumn) => void;
 }
 
 function SortableColumn({ 
@@ -114,7 +115,8 @@ function SortableColumn({
   structure, 
   updateColumn, 
   removeColumn,
-  calculateGrandTotal 
+  calculateGrandTotal,
+  onEditColumn
 }: SortableColumnProps) {
   const {
     attributes,
@@ -172,11 +174,11 @@ function SortableColumn({
             })}
           </div>
         )}
-        {/* Show source groups for grand total */}
-        {column.type === 'grand_total' && column.sourceGroupIds && (
+        {/* Show source groups and columns for grand total */}
+        {column.type === 'grand_total' && (
           <div className="flex gap-1 mt-1 flex-wrap">
             <span className="text-xs text-muted-foreground">يجمع:</span>
-            {column.sourceGroupIds.map(sgId => {
+            {column.sourceGroupIds?.map(sgId => {
               const sourceGroup = structure.groups.find(g => g.id === sgId);
               return sourceGroup ? (
                 <Badge 
@@ -189,6 +191,18 @@ function SortableColumn({
                 </Badge>
               ) : null;
             })}
+            {column.sourceColumnIds?.map(scId => {
+              const sourceCol = group.columns.find(c => c.id === scId);
+              return sourceCol ? (
+                <Badge 
+                  key={scId} 
+                  variant="outline" 
+                  className="text-xs py-0"
+                >
+                  {sourceCol.name_ar}
+                </Badge>
+              ) : null;
+            })}
           </div>
         )}
       </div>
@@ -196,7 +210,7 @@ function SortableColumn({
         <Label className="text-xs whitespace-nowrap">الدرجة:</Label>
         <Input 
           type="number"
-          value={column.type === 'grand_total' ? calculateGrandTotal(column.sourceGroupIds) : column.max_score}
+          value={column.type === 'grand_total' ? calculateGrandTotal(column.sourceGroupIds, column.sourceColumnIds) : column.max_score}
           onChange={(e) => updateColumn(groupId, column.id, 'max_score', parseInt(e.target.value) || 0)}
           className="w-20"
           min={0}
@@ -213,6 +227,16 @@ function SortableColumn({
           </Badge>
         )}
       </div>
+      {(column.type === 'total' || column.type === 'grand_total') && (
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={() => onEditColumn(groupId, column)}
+          title="تعديل"
+        >
+          <Edit className="h-4 w-4" />
+        </Button>
+      )}
       <Button 
         variant="ghost" 
         size="sm"
@@ -284,6 +308,8 @@ export function GradingSystemManager() {
   const [selectedSourceGroups, setSelectedSourceGroups] = useState<string[]>([]);
   const [newColumnUseGroupColor, setNewColumnUseGroupColor] = useState(true);
   const [newColumnName, setNewColumnName] = useState('');
+  const [editingColumnId, setEditingColumnId] = useState<string | null>(null); // For editing existing columns
+  const [selectedSameGroupColumns, setSelectedSameGroupColumns] = useState<string[]>([]); // For grand total from same group
 
   // Get filtered data based on selected education level
   const filteredGradeLevels = allGradeLevels?.filter(
@@ -375,113 +401,218 @@ export function GradingSystemManager() {
     setColumnConfigType('score');
     setNewColumnName('');
     setNewColumnUseGroupColor(true);
+    setEditingColumnId(null);
     setColumnConfigDialogOpen(true);
   };
 
   // Open dialog for total column
-  const openTotalColumnDialog = (groupId: string) => {
+  const openTotalColumnDialog = (groupId: string, existingColumn?: GradingColumn) => {
     const group = structure.groups.find(g => g.id === groupId);
     if (!group) return;
     
     const scoreColumns = group.columns.filter(c => c.type === 'score');
     setColumnConfigGroupId(groupId);
     setColumnConfigType('total');
-    setSelectedSourceColumns(scoreColumns.map(c => c.id)); // Select all by default
-    setNewColumnName('المجموع');
-    setNewColumnUseGroupColor(true);
+    
+    if (existingColumn) {
+      setEditingColumnId(existingColumn.id);
+      setSelectedSourceColumns(existingColumn.sourceColumnIds || scoreColumns.map(c => c.id));
+      setNewColumnName(existingColumn.name_ar);
+      setNewColumnUseGroupColor(existingColumn.useGroupColor !== false);
+    } else {
+      setEditingColumnId(null);
+      setSelectedSourceColumns(scoreColumns.map(c => c.id)); // Select all by default
+      setNewColumnName('المجموع');
+      setNewColumnUseGroupColor(true);
+    }
     setColumnConfigDialogOpen(true);
   };
 
-  // Open dialog for grand total column
-  const openGrandTotalDialog = (groupId: string) => {
+  // Open dialog for grand total column - can now include columns from same group
+  const openGrandTotalDialog = (groupId: string, existingColumn?: GradingColumn) => {
     const currentGroupIndex = structure.groups.findIndex(g => g.id === groupId);
     const previousGroups = structure.groups.slice(0, currentGroupIndex);
+    const currentGroup = structure.groups[currentGroupIndex];
     
     setColumnConfigGroupId(groupId);
     setColumnConfigType('grand_total');
-    setSelectedSourceGroups(previousGroups.map(g => g.id)); // Select all previous by default
-    setNewColumnName('المجموع الكلي');
-    setNewColumnUseGroupColor(true);
+    
+    if (existingColumn) {
+      setEditingColumnId(existingColumn.id);
+      setSelectedSourceGroups(existingColumn.sourceGroupIds || previousGroups.map(g => g.id));
+      setSelectedSameGroupColumns(existingColumn.sourceColumnIds || []);
+      setNewColumnName(existingColumn.name_ar);
+      setNewColumnUseGroupColor(existingColumn.useGroupColor !== false);
+    } else {
+      setEditingColumnId(null);
+      setSelectedSourceGroups(previousGroups.map(g => g.id)); // Select all previous by default
+      setSelectedSameGroupColumns([]); // No same-group columns by default
+      setNewColumnName('المجموع الكلي');
+      setNewColumnUseGroupColor(true);
+    }
     setColumnConfigDialogOpen(true);
   };
 
-  // Create column after configuration
+  // Open edit dialog for existing column
+  const openEditColumnDialog = (groupId: string, column: GradingColumn) => {
+    if (column.type === 'score') {
+      setColumnConfigGroupId(groupId);
+      setColumnConfigType('score');
+      setNewColumnName(column.name_ar);
+      setNewColumnUseGroupColor(column.useGroupColor !== false);
+      setEditingColumnId(column.id);
+      setColumnConfigDialogOpen(true);
+    } else if (column.type === 'total') {
+      openTotalColumnDialog(groupId, column);
+    } else if (column.type === 'grand_total') {
+      openGrandTotalDialog(groupId, column);
+    }
+  };
+
+  // Create or update column after configuration
   const handleCreateColumn = () => {
     const groupId = columnConfigGroupId;
     
-    if (columnConfigType === 'score') {
-      // Add regular score column
+    if (editingColumnId) {
+      // Update existing column
       setStructure(prev => ({
         ...prev,
         groups: prev.groups.map(g => {
           if (g.id !== groupId) return g;
           return {
             ...g,
-            columns: [...g.columns, {
-              id: `col${Date.now()}`,
-              name_ar: newColumnName || `عمود ${g.columns.length + 1}`,
-              max_score: 1,
-              type: 'score' as const,
-              useGroupColor: newColumnUseGroupColor
-            }]
+            columns: g.columns.map(c => {
+              if (c.id !== editingColumnId) return c;
+              
+              if (columnConfigType === 'score') {
+                return {
+                  ...c,
+                  name_ar: newColumnName || c.name_ar,
+                  useGroupColor: newColumnUseGroupColor
+                };
+              } else if (columnConfigType === 'total') {
+                const totalScore = g.columns
+                  .filter(col => selectedSourceColumns.includes(col.id))
+                  .reduce((sum, col) => sum + col.max_score, 0);
+                return {
+                  ...c,
+                  name_ar: newColumnName || c.name_ar,
+                  max_score: totalScore,
+                  sourceColumnIds: selectedSourceColumns,
+                  useGroupColor: newColumnUseGroupColor
+                };
+              } else {
+                // grand_total - calculate from groups + same group columns
+                let grandTotal = selectedSourceGroups.reduce((sum, gid) => {
+                  const grp = prev.groups.find(gr => gr.id === gid);
+                  if (!grp) return sum;
+                  const totalCol = grp.columns.find(col => col.type === 'total');
+                  return sum + (totalCol?.max_score || calculateGroupTotal(gid));
+                }, 0);
+                
+                // Add same-group columns
+                grandTotal += g.columns
+                  .filter(col => selectedSameGroupColumns.includes(col.id))
+                  .reduce((sum, col) => sum + col.max_score, 0);
+                
+                return {
+                  ...c,
+                  name_ar: newColumnName || c.name_ar,
+                  max_score: grandTotal,
+                  sourceGroupIds: selectedSourceGroups,
+                  sourceColumnIds: selectedSameGroupColumns,
+                  useGroupColor: newColumnUseGroupColor
+                };
+              }
+            })
           };
         })
       }));
-    } else if (columnConfigType === 'total') {
-      // Calculate total from selected columns
-      const group = structure.groups.find(g => g.id === groupId);
-      if (!group) return;
-      
-      const totalScore = group.columns
-        .filter(c => selectedSourceColumns.includes(c.id))
-        .reduce((sum, c) => sum + c.max_score, 0);
-      
-      setStructure(prev => ({
-        ...prev,
-        groups: prev.groups.map(g => {
-          if (g.id !== groupId) return g;
-          return {
-            ...g,
-            columns: [...g.columns, {
-              id: `total${Date.now()}`,
-              name_ar: newColumnName || 'المجموع',
-              max_score: totalScore,
-              type: 'total' as const,
-              sourceColumnIds: selectedSourceColumns,
-              useGroupColor: newColumnUseGroupColor
-            }]
-          };
-        })
-      }));
-    } else if (columnConfigType === 'grand_total') {
-      // Calculate grand total from selected groups
-      const grandTotal = selectedSourceGroups.reduce((sum, gid) => {
-        const group = structure.groups.find(g => g.id === gid);
-        if (!group) return sum;
-        const totalCol = group.columns.find(c => c.type === 'total');
-        return sum + (totalCol?.max_score || calculateGroupTotal(gid));
-      }, 0);
-      
-      setStructure(prev => ({
-        ...prev,
-        groups: prev.groups.map(g => {
-          if (g.id !== groupId) return g;
-          return {
-            ...g,
-            columns: [...g.columns, {
-              id: `grandtotal${Date.now()}`,
-              name_ar: newColumnName || 'المجموع الكلي',
-              max_score: grandTotal,
-              type: 'grand_total' as const,
-              sourceGroupIds: selectedSourceGroups,
-              useGroupColor: newColumnUseGroupColor
-            }]
-          };
-        })
-      }));
+    } else {
+      // Create new column
+      if (columnConfigType === 'score') {
+        setStructure(prev => ({
+          ...prev,
+          groups: prev.groups.map(g => {
+            if (g.id !== groupId) return g;
+            return {
+              ...g,
+              columns: [...g.columns, {
+                id: `col${Date.now()}`,
+                name_ar: newColumnName || `عمود ${g.columns.length + 1}`,
+                max_score: 1,
+                type: 'score' as const,
+                useGroupColor: newColumnUseGroupColor
+              }]
+            };
+          })
+        }));
+      } else if (columnConfigType === 'total') {
+        const group = structure.groups.find(g => g.id === groupId);
+        if (!group) return;
+        
+        const totalScore = group.columns
+          .filter(c => selectedSourceColumns.includes(c.id))
+          .reduce((sum, c) => sum + c.max_score, 0);
+        
+        setStructure(prev => ({
+          ...prev,
+          groups: prev.groups.map(g => {
+            if (g.id !== groupId) return g;
+            return {
+              ...g,
+              columns: [...g.columns, {
+                id: `total${Date.now()}`,
+                name_ar: newColumnName || 'المجموع',
+                max_score: totalScore,
+                type: 'total' as const,
+                sourceColumnIds: selectedSourceColumns,
+                useGroupColor: newColumnUseGroupColor
+              }]
+            };
+          })
+        }));
+      } else if (columnConfigType === 'grand_total') {
+        const currentGroup = structure.groups.find(g => g.id === groupId);
+        
+        // Calculate from other groups
+        let grandTotal = selectedSourceGroups.reduce((sum, gid) => {
+          const group = structure.groups.find(g => g.id === gid);
+          if (!group) return sum;
+          const totalCol = group.columns.find(c => c.type === 'total');
+          return sum + (totalCol?.max_score || calculateGroupTotal(gid));
+        }, 0);
+        
+        // Add same-group columns
+        if (currentGroup) {
+          grandTotal += currentGroup.columns
+            .filter(c => selectedSameGroupColumns.includes(c.id))
+            .reduce((sum, c) => sum + c.max_score, 0);
+        }
+        
+        setStructure(prev => ({
+          ...prev,
+          groups: prev.groups.map(g => {
+            if (g.id !== groupId) return g;
+            return {
+              ...g,
+              columns: [...g.columns, {
+                id: `grandtotal${Date.now()}`,
+                name_ar: newColumnName || 'المجموع الكلي',
+                max_score: grandTotal,
+                type: 'grand_total' as const,
+                sourceGroupIds: selectedSourceGroups,
+                sourceColumnIds: selectedSameGroupColumns,
+                useGroupColor: newColumnUseGroupColor
+              }]
+            };
+          })
+        }));
+      }
     }
     
     setColumnConfigDialogOpen(false);
+    setEditingColumnId(null);
   };
 
   const addColumn = (groupId: string) => {
@@ -534,15 +665,30 @@ export function GradingSystemManager() {
       .reduce((sum, c) => sum + c.max_score, 0);
   };
 
-  // Calculate grand total from source groups
-  const calculateGrandTotal = (sourceGroupIds?: string[]) => {
-    if (!sourceGroupIds || sourceGroupIds.length === 0) return 0;
-    return sourceGroupIds.reduce((sum, gid) => {
-      const group = structure.groups.find(g => g.id === gid);
-      if (!group) return sum;
-      const totalCol = group.columns.find(c => c.type === 'total');
-      return sum + (totalCol?.max_score || calculateGroupTotal(gid));
-    }, 0);
+  // Calculate grand total from source groups and same-group columns
+  const calculateGrandTotal = (sourceGroupIds?: string[], sourceColumnIds?: string[]) => {
+    let total = 0;
+    
+    // Sum from other groups
+    if (sourceGroupIds && sourceGroupIds.length > 0) {
+      total += sourceGroupIds.reduce((sum, gid) => {
+        const group = structure.groups.find(g => g.id === gid);
+        if (!group) return sum;
+        const totalCol = group.columns.find(c => c.type === 'total');
+        return sum + (totalCol?.max_score || calculateGroupTotal(gid));
+      }, 0);
+    }
+    
+    // Sum from same-group columns (for grand_total that includes columns from its own group)
+    if (sourceColumnIds && sourceColumnIds.length > 0) {
+      // Find which group contains these columns
+      for (const grp of structure.groups) {
+        const columnsInGroup = grp.columns.filter(c => sourceColumnIds.includes(c.id));
+        total += columnsInGroup.reduce((sum, c) => sum + c.max_score, 0);
+      }
+    }
+    
+    return total;
   };
 
   const calculateTotalMaxScore = () => {
@@ -648,7 +794,7 @@ export function GradingSystemManager() {
     await analyzeFile(currentFile);
   }, [currentFile, analyzeFile]);
 
-  // Save structure as template
+  // Save structure as template (with full structure)
   const handleSaveAsTemplate = async () => {
     if (!templateName.trim()) {
       toast.error('يرجى إدخال اسم القالب');
@@ -662,13 +808,15 @@ export function GradingSystemManager() {
 
     setIsSaving(true);
     try {
-      // Convert structure to template periods
+      // Convert structure to template periods (for backward compatibility)
       const periods = structure.groups.flatMap((group, groupIndex) => 
-        group.columns.filter(col => col.type === 'score').map((col, colIndex) => ({
+        group.columns.map((col, colIndex) => ({
           name: col.name_ar,
           name_ar: col.name_ar,
           max_score: col.max_score,
           weight: 1,
+          group_name: group.name_ar,
+          type: col.type,
         }))
       );
 
@@ -677,6 +825,7 @@ export function GradingSystemManager() {
         name_ar: templateName,
         description: templateDescription,
         periods,
+        full_structure: structure, // Save the complete structure
       });
 
       setSaveDialogOpen(false);
@@ -694,6 +843,36 @@ export function GradingSystemManager() {
 
   // Load template into builder
   const loadTemplateToBuilder = async (template: GradingTemplate) => {
+    // Try to parse full structure from description first
+    if (template.description) {
+      try {
+        const savedStructure = JSON.parse(template.description);
+        if (savedStructure.groups && Array.isArray(savedStructure.groups)) {
+          // Regenerate IDs to avoid conflicts
+          const newStructure: GradingStructure = {
+            groups: savedStructure.groups.map((g: GradingGroup, gi: number) => ({
+              ...g,
+              id: `group-${Date.now()}-${gi}`,
+              columns: g.columns.map((c: GradingColumn, ci: number) => ({
+                ...c,
+                id: `col-${Date.now()}-${gi}-${ci}`,
+              }))
+            })),
+            settings: savedStructure.settings || {
+              showPercentage: true,
+              passingScore: 50,
+            }
+          };
+          setStructure(newStructure);
+          setActiveTab('builder');
+          return;
+        }
+      } catch {
+        // Not a valid JSON, fall back to periods
+      }
+    }
+
+    // Fallback: Load from template periods
     const { data: templatePeriods } = await supabase
       .from('grading_template_periods')
       .select('*')
@@ -701,7 +880,6 @@ export function GradingSystemManager() {
       .order('display_order', { ascending: true });
 
     if (templatePeriods && templatePeriods.length > 0) {
-      // Create a single group with all periods as columns
       const group: GradingGroup = {
         id: `group-${Date.now()}`,
         name_ar: template.name_ar,
@@ -1156,6 +1334,7 @@ export function GradingSystemManager() {
                                 updateColumn={updateColumn}
                                 removeColumn={removeColumn}
                                 calculateGrandTotal={calculateGrandTotal}
+                                onEditColumn={openEditColumnDialog}
                               />
                             ))}
                           </div>
@@ -1501,64 +1680,130 @@ export function GradingSystemManager() {
 
             {/* Source Groups Selection for Grand Total */}
             {columnConfigType === 'grand_total' && (
-              <div>
-                <Label className="mb-2 block">ما هي المجموعات التي تريد جمع مجاميعها؟</Label>
-                <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3">
-                  {(() => {
-                    const currentGroupIndex = structure.groups.findIndex(g => g.id === columnConfigGroupId);
-                    const previousGroups = structure.groups.slice(0, currentGroupIndex);
-                    return previousGroups.length > 0 ? (
-                      <>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm text-muted-foreground">اختر المجموعات</span>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => setSelectedSourceGroups(previousGroups.map(g => g.id))}
-                          >
-                            تحديد الكل
-                          </Button>
-                        </div>
-                        {previousGroups.map(grp => {
-                          const groupTotal = grp.columns.find(c => c.type === 'total');
-                          const totalScore = groupTotal?.max_score || calculateGroupTotal(grp.id);
-                          return (
-                            <div key={grp.id} className="flex items-center gap-2">
+              <div className="space-y-4">
+                {/* Previous groups */}
+                <div>
+                  <Label className="mb-2 block">المجموعات السابقة</Label>
+                  <div className="space-y-2 max-h-32 overflow-y-auto border rounded-lg p-3">
+                    {(() => {
+                      const currentGroupIndex = structure.groups.findIndex(g => g.id === columnConfigGroupId);
+                      const previousGroups = structure.groups.slice(0, currentGroupIndex);
+                      return previousGroups.length > 0 ? (
+                        <>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm text-muted-foreground">اختر المجموعات</span>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => setSelectedSourceGroups(previousGroups.map(g => g.id))}
+                            >
+                              تحديد الكل
+                            </Button>
+                          </div>
+                          {previousGroups.map(grp => {
+                            const groupTotal = grp.columns.find(c => c.type === 'total');
+                            const totalScore = groupTotal?.max_score || calculateGroupTotal(grp.id);
+                            return (
+                              <div key={grp.id} className="flex items-center gap-2">
+                                <Checkbox 
+                                  checked={selectedSourceGroups.includes(grp.id)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setSelectedSourceGroups(prev => [...prev, grp.id]);
+                                    } else {
+                                      setSelectedSourceGroups(prev => prev.filter(id => id !== grp.id));
+                                    }
+                                  }}
+                                />
+                                <div 
+                                  className="w-4 h-4 rounded-full border-2"
+                                  style={{ backgroundColor: grp.color, borderColor: grp.border }}
+                                />
+                                <span className="text-sm">{grp.name_ar}</span>
+                                <Badge variant="outline" className="text-xs">{totalScore}</Badge>
+                              </div>
+                            );
+                          })}
+                        </>
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-2">
+                          لا توجد مجموعات سابقة
+                        </p>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Same group columns */}
+                <div>
+                  <Label className="mb-2 block">أعمدة من نفس المجموعة (اختياري)</Label>
+                  <div className="space-y-2 max-h-32 overflow-y-auto border rounded-lg p-3">
+                    {(() => {
+                      const currentGroup = structure.groups.find(g => g.id === columnConfigGroupId);
+                      const availableColumns = currentGroup?.columns.filter(c => 
+                        c.type === 'score' || c.type === 'total'
+                      ) || [];
+                      return availableColumns.length > 0 ? (
+                        <>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm text-muted-foreground">اختر الأعمدة</span>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => setSelectedSameGroupColumns(availableColumns.map(c => c.id))}
+                            >
+                              تحديد الكل
+                            </Button>
+                          </div>
+                          {availableColumns.map(col => (
+                            <div key={col.id} className="flex items-center gap-2">
                               <Checkbox 
-                                checked={selectedSourceGroups.includes(grp.id)}
+                                checked={selectedSameGroupColumns.includes(col.id)}
                                 onCheckedChange={(checked) => {
                                   if (checked) {
-                                    setSelectedSourceGroups(prev => [...prev, grp.id]);
+                                    setSelectedSameGroupColumns(prev => [...prev, col.id]);
                                   } else {
-                                    setSelectedSourceGroups(prev => prev.filter(id => id !== grp.id));
+                                    setSelectedSameGroupColumns(prev => prev.filter(id => id !== col.id));
                                   }
                                 }}
                               />
-                              <div 
-                                className="w-4 h-4 rounded-full border-2"
-                                style={{ backgroundColor: grp.color, borderColor: grp.border }}
-                              />
-                              <span className="text-sm">{grp.name_ar}</span>
-                              <Badge variant="outline" className="text-xs">{totalScore}</Badge>
+                              <span className="text-sm">{col.name_ar}</span>
+                              <Badge variant={col.type === 'total' ? 'default' : 'outline'} className="text-xs">
+                                {col.max_score}
+                              </Badge>
                             </div>
-                          );
-                        })}
-                      </>
-                    ) : (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        لا توجد مجموعات سابقة للجمع منها
-                      </p>
-                    );
-                  })()}
+                          ))}
+                        </>
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-2">
+                          لا توجد أعمدة
+                        </p>
+                      );
+                    })()}
+                  </div>
                 </div>
-                {selectedSourceGroups.length > 0 && (
-                  <div className="mt-2 text-sm text-muted-foreground">
-                    المجموع الكلي: {selectedSourceGroups.reduce((sum, gid) => {
-                      const grp = structure.groups.find(g => g.id === gid);
-                      if (!grp) return sum;
-                      const totalCol = grp.columns.find(c => c.type === 'total');
-                      return sum + (totalCol?.max_score || calculateGroupTotal(gid));
-                    }, 0)}
+
+                {/* Total calculation */}
+                {(selectedSourceGroups.length > 0 || selectedSameGroupColumns.length > 0) && (
+                  <div className="p-2 bg-muted rounded-lg text-sm">
+                    <span className="font-medium">المجموع الكلي: </span>
+                    {(() => {
+                      let total = selectedSourceGroups.reduce((sum, gid) => {
+                        const grp = structure.groups.find(g => g.id === gid);
+                        if (!grp) return sum;
+                        const totalCol = grp.columns.find(c => c.type === 'total');
+                        return sum + (totalCol?.max_score || calculateGroupTotal(gid));
+                      }, 0);
+                      
+                      const currentGroup = structure.groups.find(g => g.id === columnConfigGroupId);
+                      if (currentGroup) {
+                        total += currentGroup.columns
+                          .filter(c => selectedSameGroupColumns.includes(c.id))
+                          .reduce((sum, c) => sum + c.max_score, 0);
+                      }
+                      
+                      return total;
+                    })()}
                   </div>
                 )}
               </div>
@@ -1596,7 +1841,7 @@ export function GradingSystemManager() {
               onClick={handleCreateColumn} 
               disabled={
                 (columnConfigType === 'total' && selectedSourceColumns.length === 0) ||
-                (columnConfigType === 'grand_total' && selectedSourceGroups.length === 0)
+                (columnConfigType === 'grand_total' && selectedSourceGroups.length === 0 && selectedSameGroupColumns.length === 0)
               }
             >
               <Plus className="h-4 w-4 ml-1" />
