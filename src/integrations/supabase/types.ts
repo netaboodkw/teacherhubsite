@@ -151,6 +151,7 @@ export type Database = {
       }
       classrooms: {
         Row: {
+          archived_at: string | null
           class_schedule: Json | null
           color: string
           created_at: string
@@ -158,6 +159,7 @@ export type Database = {
           grade_level: number | null
           grade_level_id: string | null
           id: string
+          is_archived: boolean
           name: string
           schedule: string | null
           subject: string
@@ -166,6 +168,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          archived_at?: string | null
           class_schedule?: Json | null
           color?: string
           created_at?: string
@@ -173,6 +176,7 @@ export type Database = {
           grade_level?: number | null
           grade_level_id?: string | null
           id?: string
+          is_archived?: boolean
           name: string
           schedule?: string | null
           subject: string
@@ -181,6 +185,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          archived_at?: string | null
           class_schedule?: Json | null
           color?: string
           created_at?: string
@@ -188,6 +193,7 @@ export type Database = {
           grade_level?: number | null
           grade_level_id?: string | null
           id?: string
+          is_archived?: boolean
           name?: string
           schedule?: string | null
           subject?: string

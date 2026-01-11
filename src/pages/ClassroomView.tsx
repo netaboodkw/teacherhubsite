@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStudents } from '@/hooks/useStudents';
-import { useClassroom } from '@/hooks/useClassrooms';
+import { useClassroom, useArchiveClassroom } from '@/hooks/useClassrooms';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -12,10 +12,28 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { 
   ArrowRight, User, Plus, Minus, MessageSquare, Save, Loader2, 
-  Move, Check, X, Clock, FileText, ClipboardCheck, Users
+  Move, Check, X, Clock, FileText, ClipboardCheck, Users,
+  MoreVertical, Archive, Settings, UserPlus
 } from 'lucide-react';
 
 interface StudentPosition {
@@ -50,6 +68,7 @@ export default function ClassroomView() {
   const { user } = useAuth();
   const { data: classroom, isLoading: loadingClassroom } = useClassroom(classroomId || '');
   const { data: students = [], isLoading: loadingStudents } = useStudents(classroomId);
+  const archiveClassroom = useArchiveClassroom();
   const containerRef = useRef<HTMLDivElement>(null);
   
   const [positions, setPositions] = useState<StudentPosition[]>([]);
@@ -62,6 +81,7 @@ export default function ClassroomView() {
   const [activeTab, setActiveTab] = useState<'notes' | 'arrange' | 'attendance'>('notes');
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<number>(1);
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
     studentId: null,
@@ -70,6 +90,16 @@ export default function ClassroomView() {
     offsetX: 0,
     offsetY: 0,
   });
+
+  const handleArchiveClassroom = () => {
+    if (!classroomId) return;
+    archiveClassroom.mutate(classroomId, {
+      onSuccess: () => {
+        navigate('/teacher/classrooms');
+      }
+    });
+    setArchiveDialogOpen(false);
+  };
 
   const GRID_SIZE = 80;
   const STUDENT_SIZE = 70;
@@ -449,6 +479,29 @@ export default function ClassroomView() {
                   <ClipboardCheck className="h-4 w-4 ml-1" />
                   تسجيل الحضور
                 </Button>
+                
+                {/* More actions dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => navigate(`/teacher/students/new?classroomId=${classroomId}`)}>
+                      <UserPlus className="h-4 w-4 ml-2" />
+                      إضافة طالب
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={() => setArchiveDialogOpen(true)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Archive className="h-4 w-4 ml-2" />
+                      أرشفة الصف
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             )}
             {activeTab === 'arrange' && (
@@ -892,6 +945,36 @@ export default function ClassroomView() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Archive Confirmation Dialog */}
+      <AlertDialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Archive className="h-5 w-5 text-amber-500" />
+              أرشفة الصف
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              هل أنت متأكد من أرشفة هذا الصف؟
+              <ul className="list-disc list-inside mt-2 space-y-1 text-muted-foreground">
+                <li>سيتم إخفاء الصف من قائمة صفوفك</li>
+                <li>جميع البيانات ستبقى محفوظة (الطلاب، الدرجات، الحضور)</li>
+                <li>يمكن للمشرف استعادة الصف لاحقاً</li>
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleArchiveClassroom}
+              className="bg-amber-500 text-white hover:bg-amber-600"
+            >
+              <Archive className="h-4 w-4 ml-1" />
+              أرشفة
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
