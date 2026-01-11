@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,12 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
-import { Phone, ArrowLeft, Loader2, GraduationCap } from 'lucide-react';
+import { Phone, ArrowLeft, Loader2, GraduationCap, Timer } from 'lucide-react';
 import heroBg from '@/assets/hero-bg.jpg';
 import { supabase } from '@/integrations/supabase/client';
 
 const KUWAIT_PHONE_REGEX = /^[569]\d{7}$/;
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const RESEND_COOLDOWN = 60; // seconds
 
 export default function TeacherAuth() {
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
@@ -21,8 +22,33 @@ export default function TeacherAuth() {
   const [loading, setLoading] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
   const { signIn, signUp } = useAuth();
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (countdown > 0) {
+      timerRef.current = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+    }
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [countdown]);
+
+  // Start countdown when entering OTP step
+  useEffect(() => {
+    if (step === 'otp') {
+      setCountdown(RESEND_COOLDOWN);
+    } else {
+      setCountdown(0);
+    }
+  }, [step]);
 
   const validateKuwaitiPhone = (phoneNumber: string): boolean => {
     return KUWAIT_PHONE_REGEX.test(phoneNumber);
@@ -140,10 +166,13 @@ export default function TeacherAuth() {
   };
 
   const handleResendOTP = async () => {
+    if (countdown > 0) return;
+    
     setResendLoading(true);
     const otpSent = await sendOTP(phone);
     if (otpSent) {
       toast.success('تم إعادة إرسال رمز التحقق');
+      setCountdown(RESEND_COOLDOWN);
     }
     setResendLoading(false);
   };
@@ -287,23 +316,30 @@ export default function TeacherAuth() {
                   )}
                 </Button>
                 
-                <div className="text-center">
-                  <Button
-                    type="button"
-                    variant="link"
-                    onClick={handleResendOTP}
-                    disabled={resendLoading}
-                    className="text-sm"
-                  >
-                    {resendLoading ? (
-                      <>
-                        <Loader2 className="ml-2 h-3 w-3 animate-spin" />
-                        جاري الإرسال...
-                      </>
-                    ) : (
-                      'إعادة إرسال رمز التحقق'
-                    )}
-                  </Button>
+                <div className="text-center space-y-2">
+                  {countdown > 0 ? (
+                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                      <Timer className="h-4 w-4" />
+                      <span>إعادة الإرسال بعد {countdown} ثانية</span>
+                    </div>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="link"
+                      onClick={handleResendOTP}
+                      disabled={resendLoading}
+                      className="text-sm"
+                    >
+                      {resendLoading ? (
+                        <>
+                          <Loader2 className="ml-2 h-3 w-3 animate-spin" />
+                          جاري الإرسال...
+                        </>
+                      ) : (
+                        'إعادة إرسال رمز التحقق'
+                      )}
+                    </Button>
+                  )}
                 </div>
               </form>
             )}
