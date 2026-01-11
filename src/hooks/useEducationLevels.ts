@@ -81,6 +81,36 @@ export function useDeleteEducationLevel() {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // Check for dependent classrooms first
+      const { count: classroomsCount } = await supabase
+        .from('classrooms')
+        .select('*', { count: 'exact', head: true })
+        .eq('education_level_id', id);
+
+      if (classroomsCount && classroomsCount > 0) {
+        throw new Error(`لا يمكن حذف هذه المرحلة لأنها مرتبطة بـ ${classroomsCount} فصل/فصول دراسية`);
+      }
+
+      // Check for dependent grade levels
+      const { count: gradeLevelsCount } = await supabase
+        .from('grade_levels')
+        .select('*', { count: 'exact', head: true })
+        .eq('education_level_id', id);
+
+      if (gradeLevelsCount && gradeLevelsCount > 0) {
+        throw new Error(`لا يمكن حذف هذه المرحلة لأنها مرتبطة بـ ${gradeLevelsCount} صف/صفوف دراسية`);
+      }
+
+      // Check for dependent subjects
+      const { count: subjectsCount } = await supabase
+        .from('subjects')
+        .select('*', { count: 'exact', head: true })
+        .eq('education_level_id', id);
+
+      if (subjectsCount && subjectsCount > 0) {
+        throw new Error(`لا يمكن حذف هذه المرحلة لأنها مرتبطة بـ ${subjectsCount} مادة/مواد دراسية`);
+      }
+
       const { error } = await supabase
         .from('education_levels')
         .delete()
@@ -92,8 +122,8 @@ export function useDeleteEducationLevel() {
       queryClient.invalidateQueries({ queryKey: ['education_levels'] });
       toast.success('تم حذف المرحلة بنجاح');
     },
-    onError: (error) => {
-      toast.error('فشل في حذف المرحلة: ' + error.message);
+    onError: (error: Error) => {
+      toast.error(error.message);
     },
   });
 }
