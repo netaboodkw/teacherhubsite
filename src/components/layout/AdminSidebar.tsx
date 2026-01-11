@@ -29,7 +29,7 @@ const navItems = [
   { href: '/admin/education-levels', icon: GraduationCap, label: 'المراحل التعليمية' },
   { href: '/admin/grade-levels', icon: Layers, label: 'الصفوف الدراسية' },
   { href: '/admin/subjects', icon: BookOpen, label: 'المواد' },
-  { href: '/admin/grading-system', icon: FileText, label: 'نظام الدرجات' },
+  { href: '/admin/grading-system', icon: FileText, label: 'سجل الدرجات' },
   { href: '/admin/teachers', icon: Users, label: 'المعلمون' },
 ];
 

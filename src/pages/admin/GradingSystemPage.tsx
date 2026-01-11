@@ -9,8 +9,8 @@ export default function GradingSystemPage() {
         <div className="flex items-center gap-3">
           <FileText className="h-8 w-8 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold">نظام الدرجات</h1>
-            <p className="text-muted-foreground">إدارة فترات التقييم وقوالب الدرجات</p>
+            <h1 className="text-2xl font-bold">سجل الدرجات</h1>
+            <p className="text-muted-foreground">إدارة قوالب وهياكل سجل الدرجات</p>
           </div>
         </div>
 
