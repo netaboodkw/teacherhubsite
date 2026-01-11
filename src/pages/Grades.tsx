@@ -5,6 +5,8 @@ import { useStudents } from '@/hooks/useStudents';
 import { useGrades, useCreateGrade, useUpdateGrade, GradeType } from '@/hooks/useGrades';
 import { useBehaviorNotes } from '@/hooks/useBehaviorNotes';
 import { useClassroomGradingStructure, GradingStructureData, GradingColumn, GradingGroup } from '@/hooks/useGradingStructures';
+import { useProfile } from '@/hooks/useProfile';
+import { PrintableGradesTable } from '@/components/grades/PrintableGradesTable';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -602,6 +604,7 @@ export default function Grades() {
   const { data: grades = [], isLoading } = useGrades(selectedClassroom || undefined);
   const { data: gradingStructure, isLoading: structureLoading } = useClassroomGradingStructure(selectedClassroomData);
   const { data: behaviorNotes = [] } = useBehaviorNotes(selectedStudentId || undefined);
+  const { profile } = useProfile();
   
   const createGrade = useCreateGrade();
   const updateGrade = useUpdateGrade();
@@ -762,7 +765,7 @@ export default function Grades() {
 
   return (
     <TeacherLayout>
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-6 animate-fade-in print:hidden">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
@@ -1028,6 +1031,19 @@ export default function Grades() {
           </DialogContent>
         </Dialog>
       </div>
+      
+      {/* Printable Table - Outside the hidden div, shown only when printing */}
+      {hasStructure && gradingStructure && (
+        <PrintableGradesTable
+          structure={gradingStructure.structure}
+          students={students}
+          grades={grades}
+          teacherName={profile?.full_name || ''}
+          classroomName={selectedClassroomData?.name || ''}
+          departmentHeadName={profile?.department_head_name}
+          templateName={gradingStructure.name_ar}
+        />
+      )}
     </TeacherLayout>
   );
 }
