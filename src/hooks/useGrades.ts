@@ -23,20 +23,49 @@ export function useGrades(classroomId?: string, studentId?: string) {
   return useQuery({
     queryKey: ['grades', classroomId, studentId],
     queryFn: async () => {
+      // If classroomId is provided, fetch grades for that classroom directly
+      if (classroomId) {
+        let query = supabase
+          .from('grades')
+          .select('*')
+          .eq('classroom_id', classroomId)
+          .order('date', { ascending: false });
+        
+        if (studentId) {
+          query = query.eq('student_id', studentId);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return data as Grade[];
+      }
+      
+      // Otherwise, fetch grades but exclude those from archived classrooms
+      // First get non-archived classroom IDs
+      const { data: activeClassrooms, error: classroomsError } = await supabase
+        .from('classrooms')
+        .select('id')
+        .eq('is_archived', false);
+      
+      if (classroomsError) throw classroomsError;
+      
+      const activeClassroomIds = activeClassrooms?.map(c => c.id) || [];
+      
+      if (activeClassroomIds.length === 0) {
+        return [] as Grade[];
+      }
+      
       let query = supabase
         .from('grades')
         .select('*')
+        .in('classroom_id', activeClassroomIds)
         .order('date', { ascending: false });
       
-      if (classroomId) {
-        query = query.eq('classroom_id', classroomId);
-      }
       if (studentId) {
         query = query.eq('student_id', studentId);
       }
 
       const { data, error } = await query;
-      
       if (error) throw error;
       return data as Grade[];
     },
