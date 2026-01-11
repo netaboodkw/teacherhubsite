@@ -25,6 +25,7 @@ import {
   CheckCircle2,
   Image,
   RefreshCw,
+  Copy,
   Save,
   Eye
 } from 'lucide-react';
@@ -476,6 +477,45 @@ export function GradingSystemManager() {
       ...prev,
       groups: prev.groups.filter(g => g.id !== groupId)
     }));
+  };
+
+  // Copy/duplicate a group
+  const duplicateGroup = (groupId: string) => {
+    const groupToCopy = structure.groups.find(g => g.id === groupId);
+    if (!groupToCopy) return;
+
+    // Find an available color
+    const usedColors = structure.groups.map(g => g.color);
+    const availableColor = GROUP_COLORS.find(c => !usedColors.includes(c.color)) || GROUP_COLORS[0];
+
+    const timestamp = Date.now();
+    const newGroup: GradingGroup = {
+      id: `group${timestamp}`,
+      name_ar: `${groupToCopy.name_ar} (نسخة)`,
+      color: availableColor.color,
+      border: availableColor.border,
+      columns: groupToCopy.columns.map((col, idx) => ({
+        ...col,
+        id: `col${timestamp}_${idx}`,
+        // Reset source references for copied columns since they reference old group
+        sourceGroupIds: undefined,
+        sourceColumnIds: undefined,
+        externalSourceColumns: undefined,
+      }))
+    };
+
+    // Insert the new group right after the original
+    const groupIndex = structure.groups.findIndex(g => g.id === groupId);
+    setStructure(prev => ({
+      ...prev,
+      groups: [
+        ...prev.groups.slice(0, groupIndex + 1),
+        newGroup,
+        ...prev.groups.slice(groupIndex + 1)
+      ]
+    }));
+
+    toast.success('تم نسخ المجموعة بنجاح');
   };
 
   const changeGroupColor = (groupId: string, colorData: typeof GROUP_COLORS[0]) => {
@@ -1737,7 +1777,16 @@ export function GradingSystemManager() {
                         <Button 
                           variant="ghost" 
                           size="sm"
+                          onClick={() => duplicateGroup(group.id)}
+                          title="نسخ المجموعة"
+                        >
+                          <Copy className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
                           onClick={() => removeGroup(group.id)}
+                          title="حذف المجموعة"
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
