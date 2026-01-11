@@ -5,20 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Edit, Trash2, Loader2, BookOpen } from 'lucide-react';
 import { useEducationLevels } from '@/hooks/useEducationLevels';
 import { useGradeLevels } from '@/hooks/useGradeLevels';
-import { useSubjects, useCreateSubject, useUpdateSubject, useDeleteSubject, GradeType } from '@/hooks/useSubjects';
-
-const GRADE_TYPE_LABELS: Record<GradeType, string> = {
-  exam: 'اختبار',
-  assignment: 'واجب',
-  participation: 'مشاركة',
-  project: 'مشروع',
-};
+import { useSubjects, useCreateSubject, useUpdateSubject, useDeleteSubject } from '@/hooks/useSubjects';
 
 export default function SubjectsPage() {
   const { data: educationLevels, isLoading: levelsLoading } = useEducationLevels();
@@ -36,9 +28,6 @@ export default function SubjectsPage() {
   const [form, setForm] = useState({
     name: '',
     name_ar: '',
-    weeks_count: 18,
-    max_score: 100,
-    grade_types: ['exam', 'assignment', 'participation', 'project'] as GradeType[],
     grade_level_id: '' as string,
   });
 
@@ -48,9 +37,6 @@ export default function SubjectsPage() {
       setForm({
         name: subject.name,
         name_ar: subject.name_ar,
-        weeks_count: subject.weeks_count,
-        max_score: subject.max_score,
-        grade_types: subject.grade_types || [],
         grade_level_id: subject.grade_level_id || '',
       });
     } else {
@@ -58,23 +44,12 @@ export default function SubjectsPage() {
       setForm({
         name: '',
         name_ar: '',
-        weeks_count: 18,
-        max_score: 100,
-        grade_types: ['exam', 'assignment', 'participation', 'project'],
         grade_level_id: selectedGradeLevelId || '',
       });
     }
     setDialogOpen(true);
   };
 
-  const toggleGradeType = (type: GradeType) => {
-    setForm(prev => ({
-      ...prev,
-      grade_types: prev.grade_types.includes(type)
-        ? prev.grade_types.filter(t => t !== type)
-        : [...prev.grade_types, type],
-    }));
-  };
 
   const handleSave = async () => {
     if (!form.name_ar || !selectedLevelId) return;
@@ -187,8 +162,6 @@ export default function SubjectsPage() {
                           {subjectGradeLevel && (
                             <Badge className="text-xs">{subjectGradeLevel.name_ar}</Badge>
                           )}
-                          <Badge variant="outline" className="text-xs">{subject.weeks_count} أسبوع</Badge>
-                          <Badge variant="outline" className="text-xs">{subject.max_score} درجة</Badge>
                         </div>
                       </div>
                       <div className="flex gap-2">
@@ -248,39 +221,6 @@ export default function SubjectsPage() {
                 onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="e.g. Mathematics"
               />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>عدد الأسابيع</Label>
-                <Input
-                  type="number"
-                  value={form.weeks_count}
-                  onChange={(e) => setForm(prev => ({ ...prev, weeks_count: parseInt(e.target.value) || 18 }))}
-                />
-              </div>
-              <div>
-                <Label>الدرجة القصوى</Label>
-                <Input
-                  type="number"
-                  value={form.max_score}
-                  onChange={(e) => setForm(prev => ({ ...prev, max_score: parseInt(e.target.value) || 100 }))}
-                />
-              </div>
-            </div>
-            <div>
-              <Label className="mb-2 block">أنواع التقييم</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {(Object.keys(GRADE_TYPE_LABELS) as GradeType[]).map((type) => (
-                  <div key={type} className="flex items-center gap-2">
-                    <Checkbox
-                      id={type}
-                      checked={form.grade_types.includes(type)}
-                      onCheckedChange={() => toggleGradeType(type)}
-                    />
-                    <label htmlFor={type} className="text-sm">{GRADE_TYPE_LABELS[type]}</label>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
           <DialogFooter>
