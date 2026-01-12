@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from './useAuth';
 
 export interface ClassSchedule {
   [day: string]: number[];
@@ -38,6 +39,40 @@ export function useClassrooms() {
       if (error) throw error;
       return data as Classroom[];
     },
+  });
+}
+
+// Hook to check which templates are in use by classrooms
+export function useTemplatesInUse() {
+  const { user } = useAuth();
+  
+  return useQuery({
+    queryKey: ['templates-in-use', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('classrooms')
+        .select('teacher_template_id, name')
+        .eq('user_id', user.id)
+        .not('teacher_template_id', 'is', null);
+      
+      if (error) throw error;
+      
+      // Create a map of template_id -> classroom names using it
+      const templateUsage: Record<string, string[]> = {};
+      (data || []).forEach(classroom => {
+        if (classroom.teacher_template_id) {
+          if (!templateUsage[classroom.teacher_template_id]) {
+            templateUsage[classroom.teacher_template_id] = [];
+          }
+          templateUsage[classroom.teacher_template_id].push(classroom.name);
+        }
+      });
+      
+      return templateUsage;
+    },
+    enabled: !!user?.id,
   });
 }
 
