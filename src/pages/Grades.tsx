@@ -1153,38 +1153,37 @@ export default function Grades() {
 
         {/* Grade Dialog - Optimized for mobile */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen} modal>
-          <DialogContent className="sm:max-w-sm" dir="rtl">
-            <DialogHeader>
-              <DialogTitle className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <span>
-                    {selectedCell?.week 
-                      ? (getGradeForWeek(selectedCell.studentId, selectedCell.week) ? 'تعديل الدرجة' : 'إضافة درجة')
-                      : (grades.find(g => g.student_id === selectedCell?.studentId && g.title === selectedCell?.columnId) ? 'تعديل الدرجة' : 'إضافة درجة')
-                    }
-                  </span>
-                  <Badge variant="secondary">
-                    {getCurrentStudentIndex() + 1} / {students.length}
-                  </Badge>
-                </div>
-                {getCurrentColumnName() && (
-                  <Badge variant="outline" className="w-fit text-base font-semibold">
-                    {getCurrentColumnName()}
-                  </Badge>
-                )}
+          <DialogContent className="sm:max-w-sm max-h-[90vh] overflow-y-auto" dir="rtl">
+            <DialogHeader className="pb-2">
+              <DialogTitle className="text-center text-lg">
+                {selectedCell?.week 
+                  ? (getGradeForWeek(selectedCell.studentId, selectedCell.week) ? 'تعديل الدرجة' : 'إدخال الدرجة')
+                  : (grades.find(g => g.student_id === selectedCell?.studentId && g.title === selectedCell?.columnId) ? 'تعديل الدرجة' : 'إدخال الدرجة')
+                }
+                <Badge variant="secondary" className="mr-2">
+                  {getCurrentStudentIndex() + 1} / {students.length}
+                </Badge>
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 mt-4">
+            
+            <div className="space-y-3">
               {/* اسم الطالب */}
-              <div className="text-center p-2 bg-muted rounded-lg">
-                <span className="font-medium">{getCurrentStudentName()}</span>
+              <div className="text-center p-3 bg-muted rounded-lg">
+                <span className="font-bold text-lg">{getCurrentStudentName()}</span>
               </div>
               
+              {/* اسم العمود - بارز ومميز */}
+              {getCurrentColumnName() && (
+                <div className="text-center p-2 bg-primary/10 rounded-lg border border-primary/20">
+                  <span className="font-semibold text-primary">{getCurrentColumnName()}</span>
+                </div>
+              )}
+
               {selectedCell?.week !== undefined && (
                 <div className="space-y-2">
-                  <Label>نوع التقييم</Label>
+                  <Label className="text-sm">نوع التقييم</Label>
                   <Select value={gradeType} onValueChange={(v) => setGradeType(v as GradeType)}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-10">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1196,8 +1195,9 @@ export default function Grades() {
                   </Select>
                 </div>
               )}
+              
               <div className="space-y-2">
-                <Label>الدرجة (من {selectedCell?.maxScore || 10})</Label>
+                <Label className="text-sm">الدرجة (الحد الأقصى: {selectedCell?.maxScore || 10})</Label>
                 <Input
                   type="text"
                   inputMode="numeric"
@@ -1209,12 +1209,12 @@ export default function Grades() {
                     setGradeValue(val);
                   }}
                   placeholder="0"
-                  className="text-center text-3xl h-16 font-bold"
+                  className="text-center text-2xl h-14 font-bold"
                 />
               </div>
               
               {/* Quick grade buttons - optimized for mobile */}
-              <div className="grid grid-cols-6 gap-1.5">
+              <div className="flex flex-wrap justify-center gap-2">
                 {useMemo(() => {
                   const max = selectedCell?.maxScore || 10;
                   const values = max <= 10 
@@ -1227,7 +1227,7 @@ export default function Grades() {
                     type="button"
                     variant={gradeValue === String(val) ? "default" : "outline"}
                     size="sm"
-                    className="h-11 text-lg font-bold touch-manipulation"
+                    className="w-12 h-10 text-base font-bold touch-manipulation"
                     onClick={() => setGradeValue(String(val))}
                   >
                     {val}
@@ -1236,17 +1236,17 @@ export default function Grades() {
               </div>
               
               {/* أزرار التنقل والحفظ */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 pt-2">
                 <Button 
                   variant="outline"
                   onClick={goToPrevStudent}
                   disabled={getCurrentStudentIndex() <= 0}
-                  className="flex-1"
+                  className="flex-1 h-11"
                 >
                   السابق
                 </Button>
                 <Button
-                  className="flex-[2] gradient-hero"
+                  className="flex-[2] h-11 gradient-hero"
                   onClick={() => handleSaveGrade(true)}
                   disabled={createGrade.isPending || updateGrade.isPending || !gradeValue}
                 >
@@ -1260,7 +1260,7 @@ export default function Grades() {
                   variant="outline"
                   onClick={goToNextStudent}
                   disabled={getCurrentStudentIndex() >= students.length - 1}
-                  className="flex-1"
+                  className="flex-1 h-11"
                 >
                   التالي
                 </Button>
@@ -1270,7 +1270,7 @@ export default function Grades() {
               <Button 
                 variant="ghost"
                 onClick={() => setIsDialogOpen(false)}
-                className="w-full"
+                className="w-full h-10"
               >
                 إغلاق
               </Button>
