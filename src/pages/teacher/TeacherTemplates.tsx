@@ -47,9 +47,11 @@ function StructureEditor({
   structure: GradingStructureData; 
   onChange: (structure: GradingStructureData) => void;
 }) {
+  const [internalSumDialogOpen, setInternalSumDialogOpen] = useState(false);
   const [externalSumDialogOpen, setExternalSumDialogOpen] = useState(false);
   const [groupSumDialogOpen, setGroupSumDialogOpen] = useState(false);
   const [grandTotalDialogOpen, setGrandTotalDialogOpen] = useState(false);
+  const [editingSumColumn, setEditingSumColumn] = useState<{ groupId: string; columnId: string; type: string } | null>(null);
   const [currentGroupId, setCurrentGroupId] = useState<string | null>(null);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [columnName, setColumnName] = useState('');
@@ -70,6 +72,29 @@ function StructureEditor({
     });
   };
 
+  // Duplicate a group
+  const duplicateGroup = (groupId: string) => {
+    const group = structure.groups.find(g => g.id === groupId);
+    if (!group) return;
+
+    const usedColors = structure.groups?.map(g => g.color) || [];
+    const availableColor = GROUP_COLORS.find(c => !usedColors.includes(c.color))?.color || group.color;
+    
+    const newGroup: GradingGroup = {
+      id: `group_${Date.now()}`,
+      name_ar: `${group.name_ar} (نسخة)`,
+      color: availableColor,
+      columns: group.columns.map(col => ({
+        ...col,
+        id: `col_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      }))
+    };
+    onChange({
+      ...structure,
+      groups: [...structure.groups, newGroup]
+    });
+  };
+
   const updateGroup = (groupId: string, updates: Partial<GradingGroup>) => {
     onChange({
       ...structure,
@@ -84,15 +109,15 @@ function StructureEditor({
     });
   };
 
-  const addColumn = (groupId: string, type: 'score' | 'total') => {
+  const addColumn = (groupId: string, type: 'score') => {
     const group = structure.groups.find(g => g.id === groupId);
     if (!group) return;
 
     const newColumn: GradingColumn = {
       id: `col_${Date.now()}`,
-      name_ar: type === 'score' ? `درجة ${group.columns.length + 1}` : 'المجموع',
+      name_ar: `درجة ${group.columns.length + 1}`,
       type,
-      max_score: type === 'score' ? 10 : 0
+      max_score: 10
     };
 
     updateGroup(groupId, {
@@ -118,11 +143,33 @@ function StructureEditor({
     });
   };
 
-  // Open external sum dialog
-  const openExternalSumDialog = (groupId: string) => {
+  // Open internal sum dialog (columns from same group)
+  const openInternalSumDialog = (groupId: string, editColumn?: { columnId: string; name: string; sources: string[] }) => {
     setCurrentGroupId(groupId);
-    setSelectedSources([]);
-    setColumnName('مجموع خارجي');
+    if (editColumn) {
+      setEditingSumColumn({ groupId, columnId: editColumn.columnId, type: 'internal_sum' });
+      setColumnName(editColumn.name);
+      setSelectedSources(editColumn.sources);
+    } else {
+      setEditingSumColumn(null);
+      setColumnName('مجموع داخلي');
+      setSelectedSources([]);
+    }
+    setInternalSumDialogOpen(true);
+  };
+
+  // Open external sum dialog (any columns from any group)
+  const openExternalSumDialog = (groupId: string, editColumn?: { columnId: string; name: string; sources: string[] }) => {
+    setCurrentGroupId(groupId);
+    if (editColumn) {
+      setEditingSumColumn({ groupId, columnId: editColumn.columnId, type: 'external_sum' });
+      setColumnName(editColumn.name);
+      setSelectedSources(editColumn.sources);
+    } else {
+      setEditingSumColumn(null);
+      setColumnName('مجموع خارجي');
+      setSelectedSources([]);
+    }
     setExternalSumDialogOpen(true);
   };
 
@@ -131,6 +178,7 @@ function StructureEditor({
     setCurrentGroupId(groupId);
     setSelectedSources([]);
     setColumnName('مجموع المجموعات');
+    setEditingSumColumn(null);
     setGroupSumDialogOpen(true);
   };
 
@@ -139,28 +187,68 @@ function StructureEditor({
     setCurrentGroupId(groupId);
     setSelectedSources([]);
     setColumnName('المجموع الكلي');
+    setEditingSumColumn(null);
     setGrandTotalDialogOpen(true);
   };
 
-  // Add external sum column
-  const addExternalSumColumn = () => {
+  // Add/Update internal sum column (same group)
+  const saveInternalSumColumn = () => {
     if (!currentGroupId || selectedSources.length === 0) return;
 
-    const newColumn: GradingColumn = {
-      id: `col_${Date.now()}`,
-      name_ar: columnName || 'مجموع خارجي',
-      type: 'external_sum',
-      max_score: 0,
-      externalSourceColumns: selectedSources
-    };
+    const group = structure.groups.find(g => g.id === currentGroupId);
+    if (!group) return;
+
+    if (editingSumColumn) {
+      // Update existing column
+      updateColumn(currentGroupId, editingSumColumn.columnId, {
+        name_ar: columnName || 'مجموع داخلي',
+        internalSourceColumns: selectedSources
+      });
+    } else {
+      // Create new column
+      const newColumn: GradingColumn = {
+        id: `col_${Date.now()}`,
+        name_ar: columnName || 'مجموع داخلي',
+        type: 'internal_sum',
+        max_score: 0,
+        internalSourceColumns: selectedSources
+      };
+      updateGroup(currentGroupId, {
+        columns: [...group.columns, newColumn]
+      });
+    }
+    setInternalSumDialogOpen(false);
+    setEditingSumColumn(null);
+  };
+
+  // Add/Update external sum column (any group)
+  const saveExternalSumColumn = () => {
+    if (!currentGroupId || selectedSources.length === 0) return;
 
     const group = structure.groups.find(g => g.id === currentGroupId);
-    if (group) {
+    if (!group) return;
+
+    if (editingSumColumn) {
+      // Update existing column
+      updateColumn(currentGroupId, editingSumColumn.columnId, {
+        name_ar: columnName || 'مجموع خارجي',
+        externalSourceColumns: selectedSources
+      });
+    } else {
+      // Create new column
+      const newColumn: GradingColumn = {
+        id: `col_${Date.now()}`,
+        name_ar: columnName || 'مجموع خارجي',
+        type: 'external_sum',
+        max_score: 0,
+        externalSourceColumns: selectedSources
+      };
       updateGroup(currentGroupId, {
         columns: [...group.columns, newColumn]
       });
     }
     setExternalSumDialogOpen(false);
+    setEditingSumColumn(null);
   };
 
   // Add group sum column
@@ -205,26 +293,40 @@ function StructureEditor({
     setGrandTotalDialogOpen(false);
   };
 
-  // Get all score columns from other groups
-  const getExternalScoreColumns = (currentGroupId: string) => {
-    return structure.groups
-      .filter(g => g.id !== currentGroupId)
-      .flatMap(g => g.columns
-        .filter(c => c.type === 'score')
+  // Get columns from same group (for internal sum)
+  const getInternalColumns = (groupId: string, excludeColumnId?: string) => {
+    const group = structure.groups.find(g => g.id === groupId);
+    if (!group) return [];
+    
+    return group.columns
+      .filter(c => c.id !== excludeColumnId && (c.type === 'score' || c.type === 'internal_sum'))
+      .map(c => ({
+        key: c.id,
+        columnName: c.name_ar,
+        type: c.type
+      }));
+  };
+
+  // Get all columns from all groups (for external sum)
+  const getAllColumnsForExternalSum = (currentGroupId: string, excludeColumnId?: string) => {
+    return structure.groups.flatMap(g => 
+      g.columns
+        .filter(c => c.id !== excludeColumnId && (c.type === 'score' || c.type === 'internal_sum' || c.type === 'external_sum'))
         .map(c => ({
           key: `${g.id}:${c.id}`,
           groupName: g.name_ar,
           columnName: c.name_ar,
-          groupColor: g.color
+          groupColor: g.color,
+          type: c.type
         }))
-      );
+    );
   };
 
   // Get all total columns from all groups
   const getTotalColumns = () => {
     return structure.groups.flatMap(g => 
       g.columns
-        .filter(c => c.type === 'total' || c.type === 'group_sum' || c.type === 'external_sum')
+        .filter(c => c.type === 'internal_sum' || c.type === 'group_sum' || c.type === 'external_sum')
         .map(c => ({
           key: `${g.id}:${c.id}`,
           groupName: g.name_ar,
@@ -235,15 +337,36 @@ function StructureEditor({
   };
 
   // Calculate total score for a column
-  const calculateColumnTotal = (column: GradingColumn) => {
+  const calculateColumnTotal = (column: GradingColumn, groupId: string) => {
+    if (column.type === 'internal_sum' && column.internalSourceColumns) {
+      let total = 0;
+      const group = structure.groups.find(g => g.id === groupId);
+      if (group) {
+        column.internalSourceColumns.forEach(colId => {
+          const col = group.columns.find(c => c.id === colId);
+          if (col) {
+            if (col.type === 'score') {
+              total += col.max_score;
+            } else if (col.type === 'internal_sum') {
+              total += calculateColumnTotal(col, groupId);
+            }
+          }
+        });
+      }
+      return total;
+    }
     if (column.type === 'external_sum' && column.externalSourceColumns) {
       let total = 0;
       column.externalSourceColumns.forEach(key => {
         const [grpId, colId] = key.split(':');
         const group = structure.groups.find(g => g.id === grpId);
         const col = group?.columns.find(c => c.id === colId);
-        if (col && col.type === 'score') {
-          total += col.max_score;
+        if (col) {
+          if (col.type === 'score') {
+            total += col.max_score;
+          } else {
+            total += calculateColumnTotal(col, grpId);
+          }
         }
       });
       return total;
@@ -256,7 +379,7 @@ function StructureEditor({
           const group = structure.groups.find(g => g.id === grpId);
           const col = group?.columns.find(c => c.id === colId);
           if (col) {
-            total += col.max_score;
+            total += calculateColumnTotal(col, grpId);
           }
         }
       });
@@ -269,7 +392,7 @@ function StructureEditor({
   const getColumnTypeLabel = (type: string) => {
     switch (type) {
       case 'score': return 'درجة';
-      case 'total': return 'مجموع';
+      case 'internal_sum': return 'مجموع داخلي';
       case 'external_sum': return 'مجموع خارجي';
       case 'group_sum': return 'مجموع مجموعات';
       case 'grand_total': return 'مجموع كلي';
@@ -280,7 +403,7 @@ function StructureEditor({
   const getColumnTypeBadgeVariant = (type: string) => {
     switch (type) {
       case 'score': return 'secondary';
-      case 'total': return 'default';
+      case 'internal_sum': return 'default';
       case 'external_sum': return 'outline';
       case 'group_sum': return 'outline';
       case 'grand_total': return 'destructive';
@@ -320,8 +443,19 @@ function StructureEditor({
                         type="button"
                         variant="ghost"
                         size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        onClick={() => duplicateGroup(group.id)}
+                        title="نسخ المجموعة"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
                         className="h-8 w-8 text-destructive"
                         onClick={() => deleteGroup(group.id)}
+                        title="حذف المجموعة"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -368,9 +502,32 @@ function StructureEditor({
                         />
                         <Badge 
                           variant={getColumnTypeBadgeVariant(column.type) as any} 
-                          className={`text-xs ${column.type === 'external_sum' ? 'border-green-500 text-green-600' : column.type === 'group_sum' ? 'border-amber-500 text-amber-600' : ''}`}
+                          className={`text-xs cursor-pointer ${
+                            column.type === 'external_sum' ? 'border-green-500 text-green-600' : 
+                            column.type === 'internal_sum' ? 'border-blue-500 text-blue-600' :
+                            column.type === 'group_sum' ? 'border-amber-500 text-amber-600' : ''
+                          }`}
+                          onClick={() => {
+                            // Allow editing sum columns
+                            if (column.type === 'internal_sum' && column.internalSourceColumns) {
+                              openInternalSumDialog(group.id, {
+                                columnId: column.id,
+                                name: column.name_ar,
+                                sources: column.internalSourceColumns
+                              });
+                            } else if (column.type === 'external_sum' && column.externalSourceColumns) {
+                              openExternalSumDialog(group.id, {
+                                columnId: column.id,
+                                name: column.name_ar,
+                                sources: column.externalSourceColumns
+                              });
+                            }
+                          }}
                         >
                           {getColumnTypeLabel(column.type)}
+                          {(column.type === 'internal_sum' || column.type === 'external_sum') && (
+                            <Edit className="h-3 w-3 mr-1 inline" />
+                          )}
                         </Badge>
                         {column.type === 'score' ? (
                           <Input
@@ -382,7 +539,7 @@ function StructureEditor({
                           />
                         ) : (
                           <span className="text-sm text-muted-foreground w-16 text-center">
-                            {calculateColumnTotal(column)}
+                            {calculateColumnTotal(column, group.id)}
                           </span>
                         )}
                         <Button
@@ -411,11 +568,11 @@ function StructureEditor({
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-7 text-xs"
-                        onClick={() => addColumn(group.id, 'total')}
+                        className="h-7 text-xs border-blue-500 text-blue-600 hover:bg-blue-50"
+                        onClick={() => openInternalSumDialog(group.id)}
                       >
                         <Calculator className="h-3 w-3 ml-1" />
-                        مجموع
+                        مجموع داخلي
                       </Button>
                       <Button
                         type="button"
@@ -456,11 +613,68 @@ function StructureEditor({
         )}
       </ScrollArea>
 
+      {/* Internal Sum Dialog */}
+      <Dialog open={internalSumDialogOpen} onOpenChange={setInternalSumDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingSumColumn ? 'تعديل المجموع الداخلي' : 'إضافة مجموع داخلي'}</DialogTitle>
+            <DialogDescription>
+              اختر الأعمدة من نفس المجموعة لجمعها
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>اسم العمود</Label>
+              <Input 
+                value={columnName} 
+                onChange={(e) => setColumnName(e.target.value)}
+                placeholder="مجموع داخلي"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>اختر الأعمدة للجمع</Label>
+              <div className="max-h-48 overflow-y-auto space-y-2 border rounded p-2">
+                {currentGroupId && getInternalColumns(currentGroupId, editingSumColumn?.columnId).map((col) => (
+                  <div key={col.key} className="flex items-center gap-2">
+                    <Checkbox 
+                      checked={selectedSources.includes(col.key)}
+                      onCheckedChange={(checked) => {
+                        setSelectedSources(prev => 
+                          checked 
+                            ? [...prev, col.key]
+                            : prev.filter(k => k !== col.key)
+                        );
+                      }}
+                    />
+                    <Badge variant="outline" className={col.type === 'internal_sum' ? 'border-blue-500' : ''}>
+                      {col.type === 'internal_sum' ? 'مجموع' : 'درجة'}
+                    </Badge>
+                    <span className="text-sm">{col.columnName}</span>
+                  </div>
+                ))}
+                {currentGroupId && getInternalColumns(currentGroupId, editingSumColumn?.columnId).length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-2">لا توجد أعمدة في هذه المجموعة</p>
+                )}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setInternalSumDialogOpen(false); setEditingSumColumn(null); }}>إلغاء</Button>
+            <Button onClick={saveInternalSumColumn} disabled={selectedSources.length === 0}>
+              {editingSumColumn ? 'حفظ' : 'إضافة'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* External Sum Dialog */}
       <Dialog open={externalSumDialogOpen} onOpenChange={setExternalSumDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>إضافة مجموع درجات خارجي</DialogTitle>
+            <DialogTitle>{editingSumColumn ? 'تعديل المجموع الخارجي' : 'إضافة مجموع خارجي'}</DialogTitle>
+            <DialogDescription>
+              اختر أعمدة الدرجات أو المجاميع من أي مجموعة
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -472,9 +686,9 @@ function StructureEditor({
               />
             </div>
             <div className="space-y-2">
-              <Label>اختر الدرجات من المجموعات الأخرى</Label>
+              <Label>اختر الأعمدة للجمع</Label>
               <div className="max-h-48 overflow-y-auto space-y-2 border rounded p-2">
-                {currentGroupId && getExternalScoreColumns(currentGroupId).map((col) => (
+                {currentGroupId && getAllColumnsForExternalSum(currentGroupId, editingSumColumn?.columnId).map((col) => (
                   <div key={col.key} className="flex items-center gap-2">
                     <Checkbox 
                       checked={selectedSources.includes(col.key)}
@@ -490,14 +704,19 @@ function StructureEditor({
                       {col.groupName}
                     </Badge>
                     <span className="text-sm">{col.columnName}</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {col.type === 'score' ? 'درجة' : 'مجموع'}
+                    </Badge>
                   </div>
                 ))}
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setExternalSumDialogOpen(false)}>إلغاء</Button>
-            <Button onClick={addExternalSumColumn} disabled={selectedSources.length === 0}>إضافة</Button>
+            <Button variant="outline" onClick={() => { setExternalSumDialogOpen(false); setEditingSumColumn(null); }}>إلغاء</Button>
+            <Button onClick={saveExternalSumColumn} disabled={selectedSources.length === 0}>
+              {editingSumColumn ? 'حفظ' : 'إضافة'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

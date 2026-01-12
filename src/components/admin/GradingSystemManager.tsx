@@ -88,10 +88,11 @@ interface GradingColumn {
   id: string;
   name_ar: string;
   max_score: number;
-  type: 'score' | 'total' | 'grand_total' | 'group_sum' | 'external_sum' | 'percentage' | 'label';
+  type: 'score' | 'total' | 'grand_total' | 'group_sum' | 'external_sum' | 'internal_sum' | 'percentage' | 'label';
   sourceGroupIds?: string[]; // للمجموع الكلي - المجموعات المراد جمع مجاميعها
   sourceColumnIds?: string[]; // للمجموع - الأعمدة المراد جمعها
   externalSourceColumns?: string[]; // للجمع الخارجي - أعمدة درجات من مجموعات أخرى (format: "groupId:columnId")
+  internalSourceColumns?: string[]; // للمجموع الداخلي - أعمدة من نفس المجموعة
   useGroupColor?: boolean; // هل يستخدم لون المجموعة أم أبيض
 }
 
