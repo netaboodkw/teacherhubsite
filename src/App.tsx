@@ -9,7 +9,6 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Landing from "./pages/Landing";
 import TeacherAuth from "./pages/auth/TeacherAuth";
 import AdminAuth from "./pages/auth/AdminAuth";
-import CompleteProfile from "./pages/CompleteProfile";
 import NotFound from "./pages/NotFound";
 
 // Admin Pages
@@ -53,7 +52,6 @@ const App = () => (
           <Route path="/" element={<Landing />} />
           <Route path="/auth/teacher" element={<TeacherAuth />} />
           <Route path="/auth/admin" element={<AdminAuth />} />
-          <Route path="/complete-profile" element={<CompleteProfile />} />
 
           {/* Legacy redirects */}
           <Route path="/auth" element={<Navigate to="/auth/teacher" replace />} />
