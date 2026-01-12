@@ -183,17 +183,43 @@ export function AITemplateCreator({ open, onOpenChange, onTemplateReady }: AITem
     
     const GROUP_COLORS = ['#bfdbfe', '#bbf7d0', '#fef08a', '#fbcfe8', '#ddd6fe', '#fed7aa', '#a5f3fc', '#fecdd3'];
     
-    const groups: GradingGroup[] = parsedStructure.groups.map((group, groupIndex) => ({
-      id: `group-${Date.now()}-${groupIndex}`,
-      name_ar: group.name,
-      color: GROUP_COLORS[groupIndex % GROUP_COLORS.length],
-      columns: group.columns.map((col, colIndex): GradingColumn => ({
-        id: `col-${Date.now()}-${groupIndex}-${colIndex}`,
-        name_ar: col.name,
-        max_score: col.maxScore,
-        type: col.type === 'total' ? 'internal_sum' : 'score'
-      }))
-    }));
+    const groups: GradingGroup[] = parsedStructure.groups.map((group, groupIndex) => {
+      const groupId = `group-${Date.now()}-${groupIndex}`;
+      
+      // First pass: create all score columns and collect their IDs
+      const scoreColumnIds: string[] = [];
+      const columns: GradingColumn[] = [];
+      
+      group.columns.forEach((col, colIndex) => {
+        const colId = `col-${Date.now()}-${groupIndex}-${colIndex}`;
+        
+        if (col.type === 'score') {
+          scoreColumnIds.push(colId);
+          columns.push({
+            id: colId,
+            name_ar: col.name,
+            max_score: col.maxScore,
+            type: 'score'
+          });
+        } else if (col.type === 'total') {
+          // For total columns, set internalSourceColumns to all previous score columns
+          columns.push({
+            id: colId,
+            name_ar: col.name,
+            max_score: 0, // Will be calculated
+            type: 'internal_sum',
+            internalSourceColumns: [...scoreColumnIds] // Copy all score column IDs collected so far
+          });
+        }
+      });
+      
+      return {
+        id: groupId,
+        name_ar: group.name,
+        color: GROUP_COLORS[groupIndex % GROUP_COLORS.length],
+        columns
+      };
+    });
 
     return {
       groups,
