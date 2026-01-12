@@ -62,6 +62,12 @@ export default function Landing() {
                 <ArrowLeft className="mr-2 h-5 w-5" />
               </Button>
             </Link>
+            <Link to="/auth/department-head">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto border-background/50 text-primary-foreground hover:bg-background/20 h-12 px-8 text-base">
+                دخول رؤساء الأقسام
+                <ArrowLeft className="mr-2 h-5 w-5" />
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
