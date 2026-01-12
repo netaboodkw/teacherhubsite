@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   GraduationCap, Users, ClipboardCheck, BarChart3, Sparkles, ArrowLeft, 
   FileSpreadsheet, Calendar, UserPlus, Shield, Bell, Printer, 
-  Smartphone, Cloud, CheckCircle, Star, Gift, Building2
+  Smartphone, Cloud, CheckCircle, Star, Gift, Building2, Camera, Eye
 } from 'lucide-react';
 import heroBg from '@/assets/hero-bg.jpg';
 
@@ -15,6 +15,12 @@ const features = [
     title: 'إدارة الطلاب',
     description: 'أضف طلابك بسهولة مع إمكانية الاستيراد الذكي من الصور والملفات',
     color: 'bg-blue-500',
+  },
+  {
+    icon: Camera,
+    title: 'صور الطلاب',
+    description: 'أضف صوراً لكل طالب لسهولة التعرف عليهم ومتابعتهم',
+    color: 'bg-teal-500',
   },
   {
     icon: ClipboardCheck,
@@ -39,6 +45,12 @@ const features = [
     title: 'الفصل التفاعلي',
     description: 'رتّب مقاعد الطلاب وسجل الملاحظات السلوكية الإيجابية والسلبية',
     color: 'bg-pink-500',
+  },
+  {
+    icon: Eye,
+    title: 'متابعة رئيس القسم',
+    description: 'يمكن لرئيس القسم متابعة أداء المعلمين والطلاب بشكل مستمر',
+    color: 'bg-amber-500',
   },
   {
     icon: Calendar,
