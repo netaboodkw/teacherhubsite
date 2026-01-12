@@ -37,6 +37,7 @@ import Settings from "./pages/Settings";
 
 // Department Head Pages
 import DepartmentHeadDashboard from "./pages/department-head/DepartmentHeadDashboard";
+import DepartmentHeadReports from "./pages/department-head/DepartmentHeadReports";
 import TeacherDetailsView from "./pages/department-head/TeacherDetailsView";
 
 const queryClient = new QueryClient();
@@ -89,6 +90,7 @@ const App = () => (
 
           {/* Department Head Routes */}
           <Route path="/department-head" element={<ProtectedRoute><DepartmentHeadDashboard /></ProtectedRoute>} />
+          <Route path="/department-head/reports" element={<ProtectedRoute><DepartmentHeadReports /></ProtectedRoute>} />
           <Route path="/department-head/teacher/:teacherId" element={<ProtectedRoute><TeacherDetailsView /></ProtectedRoute>} />
 
           <Route path="*" element={<NotFound />} />
