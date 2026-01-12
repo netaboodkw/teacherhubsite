@@ -63,7 +63,9 @@ export interface SubscriptionNotification {
 
 export interface SubscriptionSettings {
   enabled: boolean;
+  trial_enabled: boolean;
   trial_days: number;
+  expiry_behavior: 'read_only' | 'full_lockout';
 }
 
 // Check if subscriptions are enabled
@@ -79,7 +81,7 @@ export function useSubscriptionSettings() {
       
       if (error) throw error;
       const value = data?.value as unknown as SubscriptionSettings | null;
-      return value || { enabled: false, trial_days: 10 };
+      return value || { enabled: false, trial_enabled: true, trial_days: 100, expiry_behavior: 'read_only' as const };
     },
   });
 }
@@ -468,13 +470,23 @@ export function useDeleteDiscountCode() {
 
 // Check subscription status helper
 export function getSubscriptionStatus(subscription: TeacherSubscription | null, settings: SubscriptionSettings | undefined) {
+  const defaultSettings: SubscriptionSettings = {
+    enabled: false,
+    trial_enabled: true,
+    trial_days: 100,
+    expiry_behavior: 'read_only'
+  };
+  
+  const effectiveSettings = settings || defaultSettings;
+  
   // If subscriptions not enabled, everyone has access
-  if (!settings?.enabled) {
-    return { hasAccess: true, isReadOnly: false, status: 'free' as const, daysRemaining: null };
+  if (!effectiveSettings.enabled) {
+    return { hasAccess: true, isReadOnly: false, status: 'free' as const, daysRemaining: null, isLocked: false };
   }
   
   if (!subscription) {
-    return { hasAccess: false, isReadOnly: true, status: 'none' as const, daysRemaining: null };
+    const isLocked = effectiveSettings.expiry_behavior === 'full_lockout';
+    return { hasAccess: !isLocked, isReadOnly: !isLocked, status: 'none' as const, daysRemaining: null, isLocked };
   }
   
   const now = new Date();
@@ -484,9 +496,10 @@ export function getSubscriptionStatus(subscription: TeacherSubscription | null, 
     const daysRemaining = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     
     if (daysRemaining > 0) {
-      return { hasAccess: true, isReadOnly: false, status: 'trial' as const, daysRemaining };
+      return { hasAccess: true, isReadOnly: false, status: 'trial' as const, daysRemaining, isLocked: false };
     } else {
-      return { hasAccess: true, isReadOnly: true, status: 'trial_expired' as const, daysRemaining: 0 };
+      const isLocked = effectiveSettings.expiry_behavior === 'full_lockout';
+      return { hasAccess: !isLocked, isReadOnly: !isLocked, status: 'trial_expired' as const, daysRemaining: 0, isLocked };
     }
   }
   
@@ -495,15 +508,18 @@ export function getSubscriptionStatus(subscription: TeacherSubscription | null, 
     const daysRemaining = Math.ceil((subEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     
     if (daysRemaining > 0) {
-      return { hasAccess: true, isReadOnly: false, status: 'active' as const, daysRemaining };
+      return { hasAccess: true, isReadOnly: false, status: 'active' as const, daysRemaining, isLocked: false };
     } else {
-      return { hasAccess: true, isReadOnly: true, status: 'expired' as const, daysRemaining: 0 };
+      const isLocked = effectiveSettings.expiry_behavior === 'full_lockout';
+      return { hasAccess: !isLocked, isReadOnly: !isLocked, status: 'expired' as const, daysRemaining: 0, isLocked };
     }
   }
   
   if (subscription.status === 'expired' || subscription.is_read_only) {
-    return { hasAccess: true, isReadOnly: true, status: 'expired' as const, daysRemaining: 0 };
+    const isLocked = effectiveSettings.expiry_behavior === 'full_lockout';
+    return { hasAccess: !isLocked, isReadOnly: !isLocked, status: 'expired' as const, daysRemaining: 0, isLocked };
   }
   
-  return { hasAccess: false, isReadOnly: true, status: 'none' as const, daysRemaining: null };
+  const isLocked = effectiveSettings.expiry_behavior === 'full_lockout';
+  return { hasAccess: !isLocked, isReadOnly: !isLocked, status: 'none' as const, daysRemaining: null, isLocked };
 }

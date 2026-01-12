@@ -34,12 +34,41 @@ serve(async (req) => {
 
     const { action, ...params } = await req.json();
 
-    const MYFATOORAH_API_KEY = Deno.env.get("MYFATOORAH_API_KEY");
-    const MYFATOORAH_BASE_URL = Deno.env.get("MYFATOORAH_BASE_URL") || "https://api.myfatoorah.com";
+    // Try to get API key from system_settings first, then fall back to environment variable
+    let myfatoorahApiKey = Deno.env.get("MYFATOORAH_API_KEY");
+    let myfatoorahTestMode = false;
 
-    if (!MYFATOORAH_API_KEY) {
+    // Get settings from database
+    const { data: apiKeySetting } = await supabaseClient
+      .from("system_settings")
+      .select("value")
+      .eq("key", "myfatoorah_api_key")
+      .maybeSingle();
+
+    const { data: testModeSetting } = await supabaseClient
+      .from("system_settings")
+      .select("value")
+      .eq("key", "myfatoorah_test_mode")
+      .maybeSingle();
+
+    if (apiKeySetting?.value && typeof apiKeySetting.value === 'string' && apiKeySetting.value.trim()) {
+      myfatoorahApiKey = apiKeySetting.value;
+    }
+
+    if (testModeSetting?.value !== undefined) {
+      myfatoorahTestMode = testModeSetting.value === true || testModeSetting.value === 'true';
+    }
+
+    // Determine base URL based on test mode
+    const MYFATOORAH_BASE_URL = myfatoorahTestMode 
+      ? "https://apitest.myfatoorah.com" 
+      : "https://api.myfatoorah.com";
+
+    if (!myfatoorahApiKey) {
       throw new Error("MyFatoorah API key not configured");
     }
+
+    const MYFATOORAH_API_KEY = myfatoorahApiKey;
 
     if (action === "initiate-payment") {
       const { packageId, discountCode, callbackUrl, errorUrl } = params;

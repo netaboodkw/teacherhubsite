@@ -53,7 +53,9 @@ export default function SubscriptionsPage() {
   const deleteCode = useDeleteDiscountCode();
 
   const [enabled, setEnabled] = useState(settings?.enabled ?? false);
-  const [trialDays, setTrialDays] = useState(settings?.trial_days ?? 10);
+  const [trialEnabled, setTrialEnabled] = useState(settings?.trial_enabled ?? true);
+  const [trialDays, setTrialDays] = useState(settings?.trial_days ?? 100);
+  const [expiryBehavior, setExpiryBehavior] = useState<'read_only' | 'full_lockout'>(settings?.expiry_behavior as 'read_only' | 'full_lockout' ?? 'read_only');
 
   // Dialog states
   const [courseDialog, setCourseDialog] = useState(false);
@@ -107,7 +109,12 @@ export default function SubscriptionsPage() {
   });
 
   const handleSaveSettings = () => {
-    updateSettings.mutate({ enabled, trial_days: trialDays });
+    updateSettings.mutate({ 
+      enabled, 
+      trial_enabled: trialEnabled,
+      trial_days: trialDays,
+      expiry_behavior: expiryBehavior
+    });
   };
 
   const openCourseDialog = (course?: SubscriptionCourse) => {
@@ -316,21 +323,87 @@ export default function SubscriptionsPage() {
                 </div>
 
                 {enabled && (
-                  <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
-                    <div className="space-y-2">
-                      <Label htmlFor="trial_days">مدة الفترة التجريبية (بالأيام)</Label>
-                      <Input
-                        id="trial_days"
-                        type="number"
-                        min={0}
-                        max={30}
-                        value={trialDays}
-                        onChange={(e) => setTrialDays(parseInt(e.target.value) || 0)}
-                        className="max-w-xs"
+                  <div className="space-y-6 p-4 border rounded-lg bg-muted/50">
+                    {/* Trial Period Settings */}
+                    <div className="flex items-center justify-between p-4 border rounded-lg bg-background">
+                      <div>
+                        <Label className="text-base font-medium">تفعيل الفترة التجريبية المجانية</Label>
+                        <p className="text-sm text-muted-foreground">
+                          إتاحة فترة مجانية للمعلمين الجدد قبل إلزامهم بالاشتراك
+                        </p>
+                      </div>
+                      <Switch
+                        checked={trialEnabled}
+                        onCheckedChange={setTrialEnabled}
                       />
-                      <p className="text-sm text-muted-foreground">
-                        عدد الأيام المجانية للمعلمين الجدد قبل الحاجة للاشتراك
+                    </div>
+
+                    {trialEnabled && (
+                      <div className="space-y-2 p-4 border rounded-lg bg-background">
+                        <Label htmlFor="trial_days">مدة الفترة التجريبية (بالأيام)</Label>
+                        <Input
+                          id="trial_days"
+                          type="number"
+                          min={1}
+                          max={365}
+                          value={trialDays}
+                          onChange={(e) => setTrialDays(parseInt(e.target.value) || 100)}
+                          className="max-w-xs"
+                        />
+                        <p className="text-sm text-muted-foreground">
+                          عدد الأيام المجانية للمعلمين الجدد (الافتراضي: 100 يوم)
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Expiry Behavior */}
+                    <div className="space-y-3 p-4 border rounded-lg bg-background">
+                      <Label className="text-base font-medium">السلوك عند انتهاء الاشتراك</Label>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        ماذا يحدث عند انتهاء الفترة التجريبية أو الاشتراك المدفوع؟
                       </p>
+                      <div className="space-y-3">
+                        <div 
+                          className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                            expiryBehavior === 'read_only' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                          }`}
+                          onClick={() => setExpiryBehavior('read_only')}
+                        >
+                          <div className={`w-4 h-4 rounded-full border-2 mt-0.5 flex items-center justify-center ${
+                            expiryBehavior === 'read_only' ? 'border-primary' : 'border-muted-foreground'
+                          }`}>
+                            {expiryBehavior === 'read_only' && (
+                              <div className="w-2 h-2 rounded-full bg-primary" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium">وضع القراءة فقط</p>
+                            <p className="text-sm text-muted-foreground">
+                              يمكن للمعلم عرض بياناته ولكن لا يمكنه إضافة أو تعديل أي شيء
+                            </p>
+                          </div>
+                        </div>
+                        <div 
+                          className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                            expiryBehavior === 'full_lockout' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                          }`}
+                          onClick={() => setExpiryBehavior('full_lockout')}
+                        >
+                          <div className={`w-4 h-4 rounded-full border-2 mt-0.5 flex items-center justify-center ${
+                            expiryBehavior === 'full_lockout' ? 'border-primary' : 'border-muted-foreground'
+                          }`}>
+                            {expiryBehavior === 'full_lockout' && (
+                              <div className="w-2 h-2 rounded-full bg-primary" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium">إغلاق كامل</p>
+                            <p className="text-sm text-muted-foreground">
+                              يُجبر المعلم على الاشتراك قبل الوصول لأي جزء من النظام
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
