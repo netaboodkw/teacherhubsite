@@ -172,7 +172,8 @@ function StructuredGradingView({
   isLoading,
   grades,
   onCellClick,
-  onStudentClick
+  onStudentClick,
+  onBulkEntry
 }: {
   structure: GradingStructureData;
   students: any[];
@@ -180,6 +181,7 @@ function StructuredGradingView({
   grades: any[];
   onCellClick: (studentId: string, columnId: string, groupId: string, maxScore: number) => void;
   onStudentClick: (studentId: string) => void;
+  onBulkEntry: (columnId: string, columnName: string, maxScore: number) => void;
 }) {
   // Track collapsed groups
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -474,12 +476,26 @@ function StructuredGradingView({
                     >
                       <div className="flex flex-col items-center gap-1">
                         <span>{column.name_ar}</span>
-                        <Badge 
-                          variant={column.type === 'score' ? 'secondary' : column.type === 'total' ? 'default' : (column.type === 'grand_total' || column.type === 'group_sum' || column.type === 'external_sum') ? 'destructive' : 'outline'}
-                          className="text-xs"
-                        >
-                          {getColumnDisplayMaxScore(column)}
-                        </Badge>
+                        <div className="flex items-center gap-1">
+                          <Badge 
+                            variant={column.type === 'score' ? 'secondary' : column.type === 'total' ? 'default' : (column.type === 'grand_total' || column.type === 'group_sum' || column.type === 'external_sum') ? 'destructive' : 'outline'}
+                            className="text-xs"
+                          >
+                            {getColumnDisplayMaxScore(column)}
+                          </Badge>
+                          {column.type === 'score' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onBulkEntry(column.id, column.name_ar, column.max_score);
+                              }}
+                              className="p-1 rounded hover:bg-background/50 transition-colors"
+                              title="إدخال جماعي"
+                            >
+                              <Users className="h-3 w-3" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </th>
                   ));
@@ -960,6 +976,7 @@ export default function Grades() {
               grades={grades}
               onCellClick={openStructuredGradeDialog}
               onStudentClick={openStudentDialog}
+              onBulkEntry={openBulkEntry}
             />
           ) : (
             <SimpleGradingView
