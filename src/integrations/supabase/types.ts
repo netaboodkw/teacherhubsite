@@ -235,6 +235,39 @@ export type Database = {
           },
         ]
       }
+      department_heads: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       education_levels: {
         Row: {
           created_at: string
@@ -823,6 +856,36 @@ export type Database = {
           },
         ]
       }
+      teacher_department_head_invitations: {
+        Row: {
+          created_at: string
+          department_head_email: string
+          department_head_id: string | null
+          id: string
+          status: string
+          teacher_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department_head_email: string
+          department_head_id?: string | null
+          id?: string
+          status?: string
+          teacher_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department_head_email?: string
+          department_head_id?: string | null
+          id?: string
+          status?: string
+          teacher_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       teacher_grading_templates: {
         Row: {
           created_at: string
@@ -910,7 +973,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "department_head"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1038,7 +1101,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "department_head"],
     },
   },
 } as const
