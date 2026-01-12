@@ -2,12 +2,15 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 // Hook to get classrooms for a specific teacher (for department head view)
+// RLS allows department heads to view supervised teacher classrooms
 export function useTeacherClassrooms(teacherId: string | null) {
   return useQuery({
-    queryKey: ['teacher_classrooms', teacherId],
+    queryKey: ['teacher_classrooms_dh', teacherId],
     queryFn: async () => {
       if (!teacherId) return [];
 
+      // The RLS policy allows department heads to view classrooms where
+      // the teacher has an accepted invitation from them
       const { data, error } = await supabase
         .from('classrooms')
         .select(`
@@ -30,7 +33,7 @@ export function useTeacherClassrooms(teacherId: string | null) {
 // Hook to get a specific classroom
 export function useTeacherClassroom(classroomId: string | null) {
   return useQuery({
-    queryKey: ['teacher_classroom', classroomId],
+    queryKey: ['teacher_classroom_dh', classroomId],
     queryFn: async () => {
       if (!classroomId) return null;
 
@@ -54,9 +57,10 @@ export function useTeacherClassroom(classroomId: string | null) {
 }
 
 // Hook to get students for a specific teacher
+// RLS allows department heads to view students of supervised teachers
 export function useTeacherStudents(teacherId: string | null, classroomId?: string) {
   return useQuery({
-    queryKey: ['teacher_students', teacherId, classroomId],
+    queryKey: ['teacher_students_dh', teacherId, classroomId],
     queryFn: async () => {
       if (!teacherId) return [];
 
@@ -83,12 +87,14 @@ export function useTeacherStudents(teacherId: string | null, classroomId?: strin
 }
 
 // Hook to get grades for a specific teacher/classroom
+// RLS allows department heads to view grades of supervised teachers
 export function useTeacherGrades(teacherId: string | null, classroomId?: string) {
   return useQuery({
-    queryKey: ['teacher_grades', teacherId, classroomId],
+    queryKey: ['teacher_grades_dh', teacherId, classroomId],
     queryFn: async () => {
       if (!teacherId) return [];
 
+      // Query grades - RLS will filter to only show grades from supervised teachers
       let query = supabase
         .from('grades')
         .select('*')
@@ -100,7 +106,10 @@ export function useTeacherGrades(teacherId: string | null, classroomId?: string)
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching grades:', error);
+        throw error;
+      }
       return data || [];
     },
     enabled: !!teacherId,
@@ -110,7 +119,7 @@ export function useTeacherGrades(teacherId: string | null, classroomId?: string)
 // Hook to get attendance for a specific teacher
 export function useTeacherAttendance(teacherId: string | null, classroomId?: string, date?: string) {
   return useQuery({
-    queryKey: ['teacher_attendance', teacherId, classroomId, date],
+    queryKey: ['teacher_attendance_dh', teacherId, classroomId, date],
     queryFn: async () => {
       if (!teacherId) return [];
 
@@ -143,7 +152,7 @@ export function useTeacherAttendance(teacherId: string | null, classroomId?: str
 // Hook to get behavior notes for a specific teacher
 export function useTeacherBehaviorNotes(teacherId: string | null, classroomId?: string, studentId?: string) {
   return useQuery({
-    queryKey: ['teacher_behavior_notes', teacherId, classroomId, studentId],
+    queryKey: ['teacher_behavior_notes_dh', teacherId, classroomId, studentId],
     queryFn: async () => {
       if (!teacherId) return [];
 
@@ -176,7 +185,7 @@ export function useTeacherBehaviorNotes(teacherId: string | null, classroomId?: 
 // Hook to get student positions for a classroom
 export function useTeacherStudentPositions(classroomId: string | null) {
   return useQuery({
-    queryKey: ['teacher_student_positions', classroomId],
+    queryKey: ['teacher_student_positions_dh', classroomId],
     queryFn: async () => {
       if (!classroomId) return [];
 
