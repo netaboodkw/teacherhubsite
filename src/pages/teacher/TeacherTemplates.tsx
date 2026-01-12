@@ -24,8 +24,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-import { Plus, Loader2, Edit, Trash2, Copy, FileText, LayoutGrid, Calculator, Sigma, ExternalLink, Share2, Download, Link2, Link2Off, Lock, AlertTriangle } from 'lucide-react';
+import { Plus, Loader2, Edit, Trash2, Copy, FileText, LayoutGrid, Calculator, Sigma, ExternalLink, Share2, Download, Link2, Link2Off, Lock, AlertTriangle, Sparkles } from 'lucide-react';
 import { GradingStructureData, GradingGroup, GradingColumn } from '@/hooks/useGradingStructures';
+import { DraggableStructureEditor } from '@/components/teacher/DraggableStructureEditor';
+import { AITemplateCreator } from '@/components/teacher/AITemplateCreator';
 
 // ألوان المجموعات - باستيل
 const GROUP_COLORS = [
@@ -838,6 +840,7 @@ export default function TeacherTemplates() {
   const [shareCode, setShareCode] = useState('');
   const [importCode, setImportCode] = useState('');
   const [currentShareTemplate, setCurrentShareTemplate] = useState<TeacherTemplate | null>(null);
+  const [aiTemplateDialogOpen, setAiTemplateDialogOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     name_ar: '',
@@ -1042,10 +1045,14 @@ export default function TeacherTemplates() {
             <h1 className="text-2xl font-bold">قوالب الدرجات</h1>
             <p className="text-muted-foreground">أنشئ قوالب درجات خاصة بك وطبقها على فصولك</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
               <Download className="h-4 w-4 ml-2" />
               استيراد قالب
+            </Button>
+            <Button variant="outline" onClick={() => setAiTemplateDialogOpen(true)}>
+              <Sparkles className="h-4 w-4 ml-2" />
+              إنشاء بالذكاء الاصطناعي
             </Button>
             <Button onClick={openCreateDialog}>
               <Plus className="h-4 w-4 ml-2" />
@@ -1273,7 +1280,7 @@ export default function TeacherTemplates() {
               </p>
             </div>
 
-            <StructureEditor
+            <DraggableStructureEditor
               structure={formData.structure}
               onChange={(structure) => setFormData({ ...formData, structure })}
             />
@@ -1437,6 +1444,21 @@ export default function TeacherTemplates() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* AI Template Creator Dialog */}
+      <AITemplateCreator
+        open={aiTemplateDialogOpen}
+        onOpenChange={setAiTemplateDialogOpen}
+        onTemplateReady={(templateName, structure) => {
+          setFormData({
+            name_ar: templateName,
+            description: 'تم إنشاؤه بالذكاء الاصطناعي',
+            structure
+          });
+          setEditingTemplate(null);
+          setDialogOpen(true);
+        }}
+      />
     </TeacherLayout>
   );
 }
