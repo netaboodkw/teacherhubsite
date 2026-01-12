@@ -31,13 +31,30 @@ export function PrintableGradesTable({
       return grade?.score || 0;
     }
     
+    // Handle internal_sum - sum selected columns from same group
+    if (column.type === 'internal_sum') {
+      let total = 0;
+      
+      // Use internalSourceColumns if available, otherwise sourceColumnIds
+      const sourceIds = column.internalSourceColumns || column.sourceColumnIds || [];
+      
+      sourceIds.forEach(colId => {
+        const col = group.columns.find(c => c.id === colId);
+        if (col) {
+          total += calculateColumnValue(studentId, col, group);
+        }
+      });
+      
+      return total;
+    }
+    
     if (column.type === 'total') {
       const sourceIds = column.sourceColumnIds || group.columns.filter(c => c.type === 'score').map(c => c.id);
       return sourceIds.reduce((sum, colId) => {
         const col = group.columns.find(c => c.id === colId);
-        if (col && col.type === 'score') {
-          const grade = grades.find(g => g.student_id === studentId && g.title === colId);
-          return sum + (grade?.score || 0);
+        if (col) {
+          // Allow summing any column type (score, internal_sum, etc.)
+          return sum + calculateColumnValue(studentId, col, group);
         }
         return sum;
       }, 0);
