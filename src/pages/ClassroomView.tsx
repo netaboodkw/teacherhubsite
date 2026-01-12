@@ -917,7 +917,7 @@ export default function ClassroomView() {
 
       {/* Student Note Dialog */}
       <Dialog open={!!selectedStudent && dialogMode === 'note'} onOpenChange={() => setSelectedStudent(null)}>
-        <DialogContent dir="rtl" className="max-w-[95vw] sm:max-w-md">
+        <DialogContent dir="rtl" className="max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
@@ -934,11 +934,90 @@ export default function ClassroomView() {
               <span className="truncate">{selectedStudent?.name}</span>
             </DialogTitle>
             <DialogDescription>
-              أضف ملاحظة أو نقاط لهذا الطالب
+              اختر ملاحظة سريعة أو اكتب ملاحظة مخصصة
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* Quick Positive Options */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1 text-green-600">
+                <Plus className="h-4 w-4" />
+                ملاحظات إيجابية سريعة
+              </Label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  'مشاركة ممتازة',
+                  'إجابة صحيحة',
+                  'سلوك مميز',
+                  'تعاون مع الزملاء',
+                  'التزام بالنظام',
+                  'إبداع في الحل',
+                  'مساعدة الآخرين',
+                  'حفظ متقن',
+                ].map((option) => (
+                  <Button
+                    key={option}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="border-green-200 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 dark:bg-green-950/30 dark:border-green-800 dark:text-green-400"
+                    onClick={() => {
+                      setNoteType('positive');
+                      setNoteDescription(option);
+                    }}
+                  >
+                    {option}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Negative Options */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1 text-red-600">
+                <Minus className="h-4 w-4" />
+                ملاحظات سلبية سريعة
+              </Label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  'عدم الانتباه',
+                  'الحديث مع الزملاء',
+                  'عدم إحضار الكتاب',
+                  'عدم حل الواجب',
+                  'التأخر عن الحصة',
+                  'إزعاج الآخرين',
+                  'استخدام الجوال',
+                  'عدم المشاركة',
+                ].map((option) => (
+                  <Button
+                    key={option}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="border-red-200 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800 dark:bg-red-950/30 dark:border-red-800 dark:text-red-400"
+                    onClick={() => {
+                      setNoteType('negative');
+                      setNoteDescription(option);
+                    }}
+                  >
+                    {option}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">أو اكتب ملاحظة مخصصة</span>
+              </div>
+            </div>
+
+            {/* Custom Note Type */}
             <div className="space-y-2">
               <Label>نوع الملاحظة</Label>
               <RadioGroup
@@ -977,7 +1056,7 @@ export default function ClassroomView() {
                 placeholder="اكتب الملاحظة هنا..."
                 value={noteDescription}
                 onChange={(e) => setNoteDescription(e.target.value)}
-                className="min-h-[100px]"
+                className="min-h-[80px]"
               />
             </div>
 
