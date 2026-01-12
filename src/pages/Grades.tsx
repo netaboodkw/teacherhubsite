@@ -6,14 +6,16 @@ import { useGrades, useCreateGrade, useUpdateGrade, GradeType } from '@/hooks/us
 import { useBehaviorNotes } from '@/hooks/useBehaviorNotes';
 import { useClassroomGradingStructure, GradingStructureData, GradingColumn, GradingGroup } from '@/hooks/useGradingStructures';
 import { useProfile } from '@/hooks/useProfile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { PrintableGradesTable } from '@/components/grades/PrintableGradesTable';
 import { BulkGradeEntry } from '@/components/grades/BulkGradeEntry';
+import { MobileGradesView } from '@/components/grades/MobileGradesView';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronRight, ChevronLeft, Plus, Loader2, Table, Settings, ChevronDown, ChevronUp, Printer, MessageSquare, Calendar, Clock, X, Users } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Plus, Loader2, Table, Settings, ChevronDown, ChevronUp, Printer, MessageSquare, Calendar, Clock, X, Users, Smartphone } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -642,6 +644,8 @@ export default function Grades() {
   
   // Print settings
   const [useNormalFont, setUseNormalFont] = useState(false);
+  const [forceMobileView, setForceMobileView] = useState(false);
+  const isMobile = useIsMobile();
   
   // Print ref
   const printRef = useRef<HTMLDivElement>(null);
@@ -875,24 +879,40 @@ export default function Grades() {
               </SelectContent>
             </Select>
             {hasStructure && students.length > 0 && (
-              <div className="flex items-center gap-2">
-                <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={useNormalFont}
-                    onChange={(e) => setUseNormalFont(e.target.checked)}
-                    className="rounded border-input"
-                  />
-                  خط عادي
-                </label>
-                <Button 
-                  variant="outline" 
-                  onClick={handlePrint}
-                  className="print:hidden"
-                >
-                  <Printer className="h-4 w-4 ml-2" />
-                  طباعة
-                </Button>
+              <div className="flex items-center gap-2 flex-wrap">
+                {!isMobile && (
+                  <Button 
+                    variant={forceMobileView ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setForceMobileView(!forceMobileView)}
+                    className="gap-1"
+                  >
+                    <Smartphone className="h-4 w-4" />
+                    <span className="hidden sm:inline">عرض الهاتف</span>
+                  </Button>
+                )}
+                {!isMobile && !forceMobileView && (
+                  <>
+                    <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={useNormalFont}
+                        onChange={(e) => setUseNormalFont(e.target.checked)}
+                        className="rounded border-input"
+                      />
+                      خط عادي
+                    </label>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handlePrint}
+                      className="print:hidden"
+                    >
+                      <Printer className="h-4 w-4 ml-2" />
+                      طباعة
+                    </Button>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -969,15 +989,48 @@ export default function Grades() {
         {/* Grading View */}
         {!structureLoading && (
           hasStructure ? (
-            <StructuredGradingView
-              structure={gradingStructure.structure}
-              students={students}
-              isLoading={isLoading}
-              grades={grades}
-              onCellClick={openStructuredGradeDialog}
-              onStudentClick={openStudentDialog}
-              onBulkEntry={openBulkEntry}
-            />
+            (isMobile || forceMobileView) ? (
+              <MobileGradesView
+                structure={gradingStructure.structure}
+                students={students}
+                grades={grades}
+                isLoading={isLoading}
+                onSaveGrade={async (studentId, columnId, score, maxScore) => {
+                  const existingGrade = grades.find(g => 
+                    g.student_id === studentId && 
+                    g.title === columnId
+                  );
+                  
+                  if (existingGrade) {
+                    await updateGrade.mutateAsync({
+                      id: existingGrade.id,
+                      score: score,
+                      type: 'participation',
+                    });
+                  } else {
+                    await createGrade.mutateAsync({
+                      student_id: studentId,
+                      classroom_id: selectedClassroom,
+                      type: 'participation',
+                      title: columnId,
+                      score: score,
+                      max_score: maxScore,
+                      week_number: 1,
+                    });
+                  }
+                }}
+              />
+            ) : (
+              <StructuredGradingView
+                structure={gradingStructure.structure}
+                students={students}
+                isLoading={isLoading}
+                grades={grades}
+                onCellClick={openStructuredGradeDialog}
+                onStudentClick={openStudentDialog}
+                onBulkEntry={openBulkEntry}
+              />
+            )
           ) : (
             <SimpleGradingView
               students={students}

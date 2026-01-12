@@ -5,13 +5,14 @@ import { useGradeLevels } from '@/hooks/useGradeLevels';
 import { useSubjects } from '@/hooks/useSubjects';
 import { useProfile } from '@/hooks/useProfile';
 import { useEducationLevels } from '@/hooks/useEducationLevels';
+import { useTeacherTemplates } from '@/hooks/useTeacherTemplates';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ClassScheduleEditor, ClassSchedule } from '@/components/classrooms/ClassScheduleEditor';
-import { ArrowRight, GraduationCap, Loader2, Settings } from 'lucide-react';
+import { ArrowRight, GraduationCap, Loader2, Settings, Table } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const colorOptions = [
@@ -29,6 +30,7 @@ export default function EditClassroom() {
   const navigate = useNavigate();
   const { profile, isLoading: profileLoading } = useProfile();
   const { data: educationLevels } = useEducationLevels();
+  const { data: teacherTemplates = [] } = useTeacherTemplates();
   
   const teacherEducationLevelId = profile?.education_level_id || '';
   const teacherEducationLevel = educationLevels?.find(l => l.id === teacherEducationLevelId);
@@ -45,6 +47,7 @@ export default function EditClassroom() {
     education_level_id: '',
     subject_id: '',
     grade_level_id: '',
+    teacher_template_id: '',
   });
   const [classSchedule, setClassSchedule] = useState<ClassSchedule>({});
   const [initialized, setInitialized] = useState(false);
@@ -60,6 +63,7 @@ export default function EditClassroom() {
         education_level_id: classroom.education_level_id || teacherEducationLevelId,
         subject_id: classroom.subject_id || '',
         grade_level_id: classroom.grade_level_id || '',
+        teacher_template_id: classroom.teacher_template_id || '',
       });
       setClassSchedule(classroom.class_schedule || {});
       setSelectedGradeLevelId(classroom.grade_level_id || '');
@@ -91,6 +95,7 @@ export default function EditClassroom() {
       education_level_id: formData.education_level_id || null,
       subject_id: formData.subject_id || null,
       grade_level_id: formData.grade_level_id || null,
+      teacher_template_id: formData.teacher_template_id || null,
     });
     navigate(`/teacher/classrooms/${classroomId}`);
   };
@@ -214,6 +219,44 @@ export default function EditClassroom() {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
               />
+            </div>
+
+            {/* Grading Template */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Table className="h-4 w-4" />
+                قالب الدرجات
+              </Label>
+              <Select 
+                value={formData.teacher_template_id} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, teacher_template_id: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={
+                    teacherTemplates.length === 0 
+                      ? "لا توجد قوالب - أنشئ قالباً أولاً" 
+                      : "اختر قالب الدرجات"
+                  } />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">بدون قالب</SelectItem>
+                  {teacherTemplates.filter(t => t.is_active).map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{template.name_ar}</span>
+                        <Badge variant="secondary" className="text-xs">
+                          {template.structure?.groups?.length || 0} مجموعات
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {teacherTemplates.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  يمكنك إنشاء قوالب الدرجات من صفحة "قوالب الدرجات" في القائمة الجانبية
+                </p>
+              )}
             </div>
 
             {/* Schedule Editor */}
