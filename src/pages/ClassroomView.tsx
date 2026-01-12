@@ -36,24 +36,6 @@ import {
   Move, Check, X, Clock, FileText, ClipboardCheck,
   MoreVertical, Archive, Settings, UserPlus, GripVertical, HeartPulse, StickyNote
 } from 'lucide-react';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  rectSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 
 interface StudentPosition {
   student_id: string;
@@ -72,56 +54,134 @@ interface AttendanceRecord {
   status: 'present' | 'absent' | 'late' | 'excused';
 }
 
-interface SortableStudentProps {
+interface DraggableStudentProps {
   student: {
     id: string;
     name: string;
     avatar_url: string | null;
   };
+  position: { x: number; y: number };
   isArrangeMode: boolean;
+  onPositionChange: (studentId: string, x: number, y: number) => void;
   onTap: (student: SelectedStudent) => void;
   getShortName: (name: string) => string;
+  containerRef: React.RefObject<HTMLDivElement>;
 }
 
-function SortableStudent({ student, isArrangeMode, onTap, getShortName }: SortableStudentProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: student.id });
+function DraggableStudent({ 
+  student, 
+  position, 
+  isArrangeMode, 
+  onPositionChange, 
+  onTap, 
+  getShortName,
+  containerRef 
+}: DraggableStudentProps) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const nodeRef = useRef<HTMLDivElement>(null);
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition: transition || 'transform 200ms ease',
-    opacity: isDragging ? 0.7 : 1,
-    zIndex: isDragging ? 100 : 1,
-    cursor: isArrangeMode ? (isDragging ? 'grabbing' : 'grab') : 'pointer',
+  const handleDragStart = (clientX: number, clientY: number) => {
+    if (!isArrangeMode || !nodeRef.current) return;
+    
+    const rect = nodeRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    });
+    setIsDragging(true);
   };
+
+  const handleDrag = (clientX: number, clientY: number) => {
+    if (!isDragging || !containerRef.current) return;
+    
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const nodeWidth = nodeRef.current?.offsetWidth || 100;
+    const nodeHeight = nodeRef.current?.offsetHeight || 120;
+    
+    let newX = clientX - containerRect.left - dragOffset.x;
+    let newY = clientY - containerRect.top - dragOffset.y;
+    
+    // Clamp to container bounds
+    newX = Math.max(0, Math.min(newX, containerRect.width - nodeWidth));
+    newY = Math.max(0, Math.min(newY, containerRect.height - nodeHeight));
+    
+    onPositionChange(student.id, newX, newY);
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
+  // Mouse events
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!isArrangeMode) return;
+    e.preventDefault();
+    handleDragStart(e.clientX, e.clientY);
+  };
+
+  // Touch events
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isArrangeMode) return;
+    const touch = e.touches[0];
+    handleDragStart(touch.clientX, touch.clientY);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    handleDrag(touch.clientX, touch.clientY);
+  };
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      handleDrag(e.clientX, e.clientY);
+    };
+
+    const handleMouseUp = () => {
+      handleDragEnd();
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragOffset]);
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      className={`relative flex flex-col items-center p-3 bg-card rounded-xl border-2 shadow-sm min-h-[90px] select-none ${
+      ref={nodeRef}
+      style={{
+        position: 'absolute',
+        left: position.x,
+        top: position.y,
+        zIndex: isDragging ? 100 : 1,
+        cursor: isArrangeMode ? (isDragging ? 'grabbing' : 'grab') : 'pointer',
+        touchAction: isArrangeMode ? 'none' : 'auto',
+      }}
+      className={`flex flex-col items-center p-3 bg-card rounded-xl border-2 shadow-sm select-none transition-shadow ${
         isDragging 
-          ? 'border-primary shadow-xl scale-110 ring-2 ring-primary/30' 
+          ? 'border-primary shadow-xl scale-105 ring-2 ring-primary/30' 
           : 'border-border/50 hover:border-primary/30 hover:shadow-md'
       }`}
-      onClick={() => !isArrangeMode && onTap(student)}
+      onClick={() => !isArrangeMode && !isDragging && onTap(student)}
+      onMouseDown={handleMouseDown}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleDragEnd}
     >
       {isArrangeMode && (
-        <div 
-          {...attributes} 
-          {...listeners}
-          className="absolute -top-2 -right-2 p-2 bg-primary text-primary-foreground rounded-full cursor-grab active:cursor-grabbing touch-none z-10 shadow-lg hover:scale-110 transition-transform"
-        >
+        <div className="absolute -top-2 -right-2 p-2 bg-primary text-primary-foreground rounded-full z-10 shadow-lg">
           <GripVertical className="h-4 w-4" />
         </div>
       )}
-      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-2">
+      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-2">
         {student.avatar_url ? (
           <img
             src={student.avatar_url}
@@ -130,10 +190,10 @@ function SortableStudent({ student, isArrangeMode, onTap, getShortName }: Sortab
             draggable={false}
           />
         ) : (
-          <User className="h-6 w-6 text-primary" />
+          <User className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
         )}
       </div>
-      <p className="text-xs text-center font-medium truncate w-full leading-tight px-1">
+      <p className="text-sm text-center font-medium truncate w-full leading-tight px-1 max-w-[90px]">
         {getShortName(student.name)}
       </p>
     </div>
@@ -156,10 +216,10 @@ interface AttendanceStudentProps {
 function AttendanceStudent({ student, status, onTap, getShortName, getAttendanceBorder, getAttendanceIcon }: AttendanceStudentProps) {
   return (
     <div
-      className={`flex flex-col items-center p-2 bg-card rounded-xl border-2 shadow-sm cursor-pointer transition-all hover:scale-105 active:scale-95 ${getAttendanceBorder(status)}`}
+      className={`flex flex-col items-center p-3 bg-card rounded-xl border-2 shadow-sm cursor-pointer transition-all hover:scale-105 active:scale-95 ${getAttendanceBorder(status)}`}
       onClick={() => onTap(student)}
     >
-      <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-1">
+      <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-2">
         {student.avatar_url ? (
           <img
             src={student.avatar_url}
@@ -167,7 +227,7 @@ function AttendanceStudent({ student, status, onTap, getShortName, getAttendance
             className="w-full h-full object-cover"
           />
         ) : (
-          <User className="h-5 w-5 text-primary" />
+          <User className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
         )}
         {status && (
           <div className="absolute -bottom-1 -right-1 bg-card rounded-full p-0.5 shadow border">
@@ -175,7 +235,7 @@ function AttendanceStudent({ student, status, onTap, getShortName, getAttendance
           </div>
         )}
       </div>
-      <p className="text-xs text-center font-medium truncate w-full leading-tight">
+      <p className="text-sm text-center font-medium truncate w-full leading-tight">
         {getShortName(student.name)}
       </p>
     </div>
@@ -190,8 +250,9 @@ export default function ClassroomView() {
   const { data: students = [], isLoading: loadingStudents } = useStudents(classroomId);
   const { data: behaviorNotes = [] } = useBehaviorNotesByClassroom(classroomId);
   const archiveClassroom = useArchiveClassroom();
+  const arrangeContainerRef = useRef<HTMLDivElement>(null);
   
-  const [studentOrder, setStudentOrder] = useState<string[]>([]);
+  const [studentPositions, setStudentPositions] = useState<Map<string, { x: number; y: number }>>(new Map());
   const [selectedStudent, setSelectedStudent] = useState<SelectedStudent | null>(null);
   const [dialogMode, setDialogMode] = useState<'note' | 'attendance'>('note');
   const [noteType, setNoteType] = useState<'positive' | 'negative' | 'note'>('positive');
@@ -212,24 +273,6 @@ export default function ClassroomView() {
     return noteMap;
   }, [behaviorNotes]);
 
-  // DnD Kit sensors with touch support
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 200,
-        tolerance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
   const handleArchiveClassroom = () => {
     if (!classroomId) return;
     archiveClassroom.mutate(classroomId, {
@@ -242,7 +285,7 @@ export default function ClassroomView() {
 
   const today = new Date().toISOString().split('T')[0];
 
-  // Load existing positions and convert to order
+  // Load existing positions
   useEffect(() => {
     const loadPositions = async () => {
       if (!classroomId || !user) return;
@@ -251,26 +294,55 @@ export default function ClassroomView() {
         const { data, error } = await supabase
           .from('student_positions')
           .select('student_id, position_x, position_y')
-          .eq('classroom_id', classroomId)
-          .order('position_y', { ascending: true })
-          .order('position_x', { ascending: true });
+          .eq('classroom_id', classroomId);
 
         if (error) throw error;
 
+        const positionsMap = new Map<string, { x: number; y: number }>();
+        
         if (data && data.length > 0) {
-          // Sort by position and extract order
-          const orderedIds = data.map(p => p.student_id);
-          // Add any new students not in positions
-          const existingIds = new Set(orderedIds);
-          const newStudentIds = students.filter(s => !existingIds.has(s.id)).map(s => s.id);
-          setStudentOrder([...orderedIds, ...newStudentIds]);
-        } else {
-          // Default order from students array
-          setStudentOrder(students.map(s => s.id));
+          data.forEach(p => {
+            positionsMap.set(p.student_id, { x: p.position_x, y: p.position_y });
+          });
         }
+        
+        // Add default positions for students without saved positions
+        const cardWidth = 110;
+        const cardHeight = 130;
+        const cols = 5;
+        const gap = 20;
+        
+        students.forEach((student, index) => {
+          if (!positionsMap.has(student.id)) {
+            const col = index % cols;
+            const row = Math.floor(index / cols);
+            positionsMap.set(student.id, {
+              x: col * (cardWidth + gap) + gap,
+              y: row * (cardHeight + gap) + gap
+            });
+          }
+        });
+        
+        setStudentPositions(positionsMap);
       } catch (error) {
         console.error('Error loading positions:', error);
-        setStudentOrder(students.map(s => s.id));
+        // Set default grid positions
+        const positionsMap = new Map<string, { x: number; y: number }>();
+        const cardWidth = 110;
+        const cardHeight = 130;
+        const cols = 5;
+        const gap = 20;
+        
+        students.forEach((student, index) => {
+          const col = index % cols;
+          const row = Math.floor(index / cols);
+          positionsMap.set(student.id, {
+            x: col * (cardWidth + gap) + gap,
+            y: row * (cardHeight + gap) + gap
+          });
+        });
+        
+        setStudentPositions(positionsMap);
       } finally {
         setLoadingPositions(false);
       }
@@ -314,16 +386,12 @@ export default function ClassroomView() {
     loadAttendance();
   }, [classroomId, user, today, selectedPeriod]);
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-      setStudentOrder((items) => {
-        const oldIndex = items.indexOf(active.id as string);
-        const newIndex = items.indexOf(over.id as string);
-        return arrayMove(items, oldIndex, newIndex);
-      });
-    }
+  const handlePositionChange = (studentId: string, x: number, y: number) => {
+    setStudentPositions(prev => {
+      const newMap = new Map(prev);
+      newMap.set(studentId, { x, y });
+      return newMap;
+    });
   };
 
   const handleStudentTap = (student: SelectedStudent) => {
@@ -370,10 +438,10 @@ export default function ClassroomView() {
 
   const getAttendanceIcon = (status: AttendanceRecord['status'] | null) => {
     switch (status) {
-      case 'present': return <Check className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />;
-      case 'absent': return <X className="h-3 w-3 sm:h-4 sm:w-4 text-red-600" />;
-      case 'late': return <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />;
-      case 'excused': return <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />;
+      case 'present': return <Check className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />;
+      case 'absent': return <X className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />;
+      case 'late': return <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600" />;
+      case 'excused': return <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />;
       default: return null;
     }
   };
@@ -398,14 +466,11 @@ export default function ClassroomView() {
         .delete()
         .eq('classroom_id', classroomId);
 
-      // Convert order to positions (grid-based)
-      const cols = 5;
-      const gridSize = 80;
-      const positionsToInsert = studentOrder.map((studentId, index) => ({
+      const positionsToInsert = Array.from(studentPositions.entries()).map(([studentId, pos]) => ({
         student_id: studentId,
         classroom_id: classroomId,
-        position_x: (index % cols) * gridSize + 20,
-        position_y: Math.floor(index / cols) * gridSize + 20,
+        position_x: Math.round(pos.x),
+        position_y: Math.round(pos.y),
         user_id: user.id,
       }));
 
@@ -497,9 +562,15 @@ export default function ClassroomView() {
     return parts.slice(0, 2).join(' ');
   };
 
-  const orderedStudents = studentOrder
-    .map(id => students.find(s => s.id === id))
-    .filter(Boolean) as typeof students;
+  // Calculate container height based on positions
+  const containerHeight = useMemo(() => {
+    if (studentPositions.size === 0) return 400;
+    let maxY = 0;
+    studentPositions.forEach(pos => {
+      if (pos.y > maxY) maxY = pos.y;
+    });
+    return Math.max(400, maxY + 150);
+  }, [studentPositions]);
 
   if (loadingClassroom) {
     return (
@@ -613,7 +684,7 @@ export default function ClassroomView() {
       </div>
 
       {/* Main Content */}
-      <div className="p-3 sm:p-4 max-w-4xl mx-auto">
+      <div className="p-3 sm:p-4 max-w-5xl mx-auto">
         {/* Board */}
         <Card className="mb-3 sm:mb-4 bg-muted/50">
           <CardContent className="p-3 sm:p-4 text-center">
@@ -628,7 +699,7 @@ export default function ClassroomView() {
           {activeTab === 'arrange' && (
             <>
               <GripVertical className="h-4 w-4" />
-              <span>اسحب أيقونة الترتيب لتحريك الطالب</span>
+              <span>اسحب الطالب وضعه في المكان المطلوب</span>
             </>
           )}
           {activeTab === 'attendance' && (
@@ -736,31 +807,30 @@ export default function ClassroomView() {
                 </Button>
               </div>
             ) : activeTab === 'arrange' ? (
-              <DndContext 
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
+              <div 
+                ref={arrangeContainerRef}
+                className="relative bg-muted/30 rounded-lg border-2 border-dashed border-muted-foreground/20"
+                style={{ minHeight: containerHeight }}
               >
-                <SortableContext 
-                  items={studentOrder}
-                  strategy={rectSortingStrategy}
-                >
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4 sm:gap-5 lg:gap-6">
-                    {orderedStudents.map((student) => (
-                      <SortableStudent
-                        key={student.id}
-                        student={student}
-                        isArrangeMode={true}
-                        onTap={handleStudentTap}
-                        getShortName={getShortName}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
+                {students.map((student) => {
+                  const position = studentPositions.get(student.id) || { x: 20, y: 20 };
+                  return (
+                    <DraggableStudent
+                      key={student.id}
+                      student={student}
+                      position={position}
+                      isArrangeMode={true}
+                      onPositionChange={handlePositionChange}
+                      onTap={handleStudentTap}
+                      getShortName={getShortName}
+                      containerRef={arrangeContainerRef}
+                    />
+                  );
+                })}
+              </div>
             ) : activeTab === 'attendance' ? (
-              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-2 sm:gap-3">
-                {orderedStudents.map((student) => (
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4">
+                {students.map((student) => (
                   <AttendanceStudent
                     key={student.id}
                     student={student}
@@ -773,15 +843,15 @@ export default function ClassroomView() {
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-2 sm:gap-3">
-                {orderedStudents.map((student) => {
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4">
+                {students.map((student) => {
                   const hasNotes = studentsWithNotes.has(student.id);
                   const notesCount = studentsWithNotes.get(student.id) || 0;
                   
                   return (
                     <div
                       key={student.id}
-                      className="relative flex flex-col items-center p-2 bg-card rounded-xl border-2 border-border/50 shadow-sm cursor-pointer transition-all hover:scale-105 hover:border-primary/50 active:scale-95"
+                      className="relative flex flex-col items-center p-3 bg-card rounded-xl border-2 border-border/50 shadow-sm cursor-pointer transition-all hover:scale-105 hover:border-primary/50 active:scale-95"
                       onClick={() => handleStudentTap({
                         id: student.id,
                         name: student.name,
@@ -822,7 +892,7 @@ export default function ClassroomView() {
                         )}
                       </div>
 
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-1 mt-1">
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-2 mt-1">
                         {student.avatar_url ? (
                           <img
                             src={student.avatar_url}
@@ -830,10 +900,10 @@ export default function ClassroomView() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <User className="h-5 w-5 text-primary" />
+                          <User className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
                         )}
                       </div>
-                      <p className="text-xs text-center font-medium truncate w-full leading-tight">
+                      <p className="text-sm text-center font-medium truncate w-full leading-tight">
                         {getShortName(student.name)}
                       </p>
                     </div>
@@ -907,18 +977,16 @@ export default function ClassroomView() {
                 placeholder="اكتب الملاحظة هنا..."
                 value={noteDescription}
                 onChange={(e) => setNoteDescription(e.target.value)}
-                rows={3}
+                className="min-h-[100px]"
               />
             </div>
 
             <Button 
-              onClick={saveNote} 
-              className="w-full"
+              className="w-full" 
+              onClick={saveNote}
               disabled={saving || !noteDescription.trim()}
             >
-              {saving ? (
-                <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-              ) : null}
+              {saving ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : null}
               حفظ الملاحظة
             </Button>
           </div>
@@ -927,28 +995,16 @@ export default function ClassroomView() {
 
       {/* Archive Confirmation Dialog */}
       <AlertDialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
-        <AlertDialogContent className="max-w-[95vw] sm:max-w-md">
+        <AlertDialogContent dir="rtl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Archive className="h-5 w-5 text-amber-500" />
-              أرشفة الصف
-            </AlertDialogTitle>
+            <AlertDialogTitle>أرشفة الصف</AlertDialogTitle>
             <AlertDialogDescription>
-              هل أنت متأكد من أرشفة هذا الصف؟
-              <ul className="list-disc list-inside mt-2 space-y-1 text-muted-foreground text-sm">
-                <li>سيتم إخفاء الصف من قائمة صفوفك</li>
-                <li>جميع البيانات ستبقى محفوظة</li>
-                <li>يمكن للمشرف استعادة الصف لاحقاً</li>
-              </ul>
+              هل أنت متأكد من أرشفة هذا الصف؟ سيتم نقله إلى قسم الصفوف المؤرشفة ولن يظهر في القائمة الرئيسية.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-            <AlertDialogCancel className="w-full sm:w-auto">إلغاء</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleArchiveClassroom}
-              className="w-full sm:w-auto bg-amber-500 text-white hover:bg-amber-600"
-            >
-              <Archive className="h-4 w-4 ml-1" />
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction onClick={handleArchiveClassroom} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               أرشفة
             </AlertDialogAction>
           </AlertDialogFooter>
