@@ -20,6 +20,7 @@ import CurriculumTreePage from "./pages/admin/CurriculumTreePage";
 import ArchivedClassroomsPage from "./pages/admin/ArchivedClassroomsPage";
 import UsersManagementPage from "./pages/admin/UsersManagementPage";
 import SubscriptionsPage from "./pages/admin/SubscriptionsPage";
+import SubscribersPage from "./pages/admin/SubscribersPage";
 
 // Teacher Pages
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
@@ -27,6 +28,7 @@ import TeacherTemplates from "./pages/teacher/TeacherTemplates";
 import TeacherSubscription from "./pages/teacher/TeacherSubscription";
 import SubscriptionSuccess from "./pages/teacher/SubscriptionSuccess";
 import SubscriptionError from "./pages/teacher/SubscriptionError";
+import PaymentHistory from "./pages/teacher/PaymentHistory";
 import Classrooms from "./pages/Classrooms";
 import NewClassroom from "./pages/NewClassroom";
 import EditClassroom from "./pages/EditClassroom";
@@ -84,6 +86,7 @@ const App = () => (
           <Route path="/admin/archived-classrooms" element={<ProtectedRoute><ArchivedClassroomsPage /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute><AdminSettingsPage /></ProtectedRoute>} />
           <Route path="/admin/subscriptions" element={<ProtectedRoute><SubscriptionsPage /></ProtectedRoute>} />
+          <Route path="/admin/subscribers" element={<ProtectedRoute><SubscribersPage /></ProtectedRoute>} />
 
           {/* Teacher Routes */}
           <Route path="/teacher" element={<ProtectedRoute><TeacherDashboard /></ProtectedRoute>} />
@@ -100,6 +103,7 @@ const App = () => (
           <Route path="/teacher/subscription" element={<ProtectedRoute><TeacherSubscription /></ProtectedRoute>} />
           <Route path="/teacher/subscription/success" element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>} />
           <Route path="/teacher/subscription/error" element={<ProtectedRoute><SubscriptionError /></ProtectedRoute>} />
+          <Route path="/teacher/payments" element={<ProtectedRoute><PaymentHistory /></ProtectedRoute>} />
           <Route path="/teacher/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
           <Route path="/teacher/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
