@@ -296,28 +296,52 @@ function StructureEditor({
             {structure.groups.map((group) => (
               <Card key={group.id} className="border-r-4" style={{ borderRightColor: group.color }}>
                 <CardHeader className="py-3 px-4">
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={group.name_ar}
-                      onChange={(e) => updateGroup(group.id, { name_ar: e.target.value })}
-                      className="h-8 flex-1"
-                      placeholder="اسم المجموعة"
-                    />
-                    <Input
-                      type="color"
-                      value={group.color}
-                      onChange={(e) => updateGroup(group.id, { color: e.target.value })}
-                      className="h-8 w-12 p-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive"
-                      onClick={() => deleteGroup(group.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={group.name_ar}
+                        onChange={(e) => updateGroup(group.id, { name_ar: e.target.value })}
+                        className="h-8 flex-1"
+                        placeholder="اسم المجموعة"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive"
+                        onClick={() => deleteGroup(group.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    {/* Color Selection */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs text-muted-foreground">اللون:</span>
+                      {GROUP_COLORS.map((colorOption) => (
+                        <button
+                          key={colorOption.id}
+                          type="button"
+                          className={`w-6 h-6 rounded-full border-2 transition-all ${
+                            group.color === colorOption.color 
+                              ? 'border-foreground scale-110 ring-2 ring-offset-2 ring-primary' 
+                              : 'border-transparent hover:scale-105'
+                          }`}
+                          style={{ backgroundColor: colorOption.color }}
+                          onClick={() => updateGroup(group.id, { color: colorOption.color })}
+                          title={colorOption.name}
+                        />
+                      ))}
+                      {/* Custom color picker */}
+                      <div className="relative">
+                        <input
+                          type="color"
+                          value={GROUP_COLORS.some(c => c.color === group.color) ? '#888888' : group.color}
+                          onChange={(e) => updateGroup(group.id, { color: e.target.value })}
+                          className="w-6 h-6 rounded-full cursor-pointer border-2 border-dashed border-muted-foreground/50"
+                          title="لون مخصص"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="py-2 px-4">
