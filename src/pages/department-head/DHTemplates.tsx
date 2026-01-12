@@ -21,8 +21,9 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Plus, Loader2, Edit, Trash2, Copy, FileText, Calculator, Sigma, Share2, Link2, Link2Off, Check } from 'lucide-react';
+import { Plus, Loader2, Edit, Trash2, Copy, FileText, Calculator, Sigma, Share2, Link2, Link2Off, Check, Eye, User } from 'lucide-react';
 import { GradingStructureData, GradingGroup, GradingColumn } from '@/hooks/useGradingStructures';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 // ألوان المجموعات - باستيل
 const GROUP_COLORS = [
@@ -457,6 +458,225 @@ function StructureEditor({
   );
 }
 
+// Demo Student Data for Preview
+const DEMO_STUDENT = {
+  id: 'demo-student',
+  name: 'طالب تجريبي',
+  student_id: '0000'
+};
+
+// Template Preview Component with Demo Student
+function TemplatePreview({ structure }: { structure: GradingStructureData }) {
+  const [demoGrades, setDemoGrades] = useState<Record<string, number>>({});
+
+  // Calculate column value based on type
+  const calculateColumnValue = (column: GradingColumn, groupId: string): number | null => {
+    if (column.type === 'score') {
+      return demoGrades[column.id] ?? null;
+    }
+    
+    if (column.type === 'internal_sum' && column.internalSourceColumns) {
+      const group = structure.groups.find(g => g.id === groupId);
+      if (!group) return null;
+      
+      let sum = 0;
+      let hasValue = false;
+      for (const sourceId of column.internalSourceColumns) {
+        const sourceCol = group.columns.find(c => c.id === sourceId);
+        if (sourceCol) {
+          const val = calculateColumnValue(sourceCol, groupId);
+          if (val !== null) {
+            sum += val;
+            hasValue = true;
+          }
+        }
+      }
+      return hasValue ? sum : null;
+    }
+    
+    if (column.type === 'external_sum' && column.externalSourceColumns) {
+      let sum = 0;
+      let hasValue = false;
+      for (const sourceKey of column.externalSourceColumns) {
+        const [srcGroupId, srcColId] = sourceKey.split(':');
+        const srcGroup = structure.groups.find(g => g.id === srcGroupId);
+        if (srcGroup) {
+          const srcCol = srcGroup.columns.find(c => c.id === srcColId);
+          if (srcCol) {
+            const val = calculateColumnValue(srcCol, srcGroupId);
+            if (val !== null) {
+              sum += val;
+              hasValue = true;
+            }
+          }
+        }
+      }
+      return hasValue ? sum : null;
+    }
+    
+    return null;
+  };
+
+  // Calculate max score for a column
+  const calculateMaxScore = (column: GradingColumn, groupId: string): number => {
+    if (column.type === 'score') {
+      return column.max_score || 0;
+    }
+    
+    if (column.type === 'internal_sum' && column.internalSourceColumns) {
+      const group = structure.groups.find(g => g.id === groupId);
+      if (!group) return 0;
+      
+      return column.internalSourceColumns.reduce((sum, sourceId) => {
+        const sourceCol = group.columns.find(c => c.id === sourceId);
+        return sum + (sourceCol ? calculateMaxScore(sourceCol, groupId) : 0);
+      }, 0);
+    }
+    
+    if (column.type === 'external_sum' && column.externalSourceColumns) {
+      return column.externalSourceColumns.reduce((sum, sourceKey) => {
+        const [srcGroupId, srcColId] = sourceKey.split(':');
+        const srcGroup = structure.groups.find(g => g.id === srcGroupId);
+        if (srcGroup) {
+          const srcCol = srcGroup.columns.find(c => c.id === srcColId);
+          if (srcCol) {
+            return sum + calculateMaxScore(srcCol, srcGroupId);
+          }
+        }
+        return sum;
+      }, 0);
+    }
+    
+    return 0;
+  };
+
+  const handleGradeChange = (columnId: string, value: string) => {
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue) && numValue >= 0) {
+      setDemoGrades(prev => ({ ...prev, [columnId]: numValue }));
+    } else if (value === '') {
+      setDemoGrades(prev => {
+        const newGrades = { ...prev };
+        delete newGrades[columnId];
+        return newGrades;
+      });
+    }
+  };
+
+  // Calculate grand total
+  const calculateGrandTotal = () => {
+    let total = 0;
+    let maxTotal = 0;
+    
+    for (const group of structure.groups) {
+      for (const col of group.columns) {
+        if (col.type === 'score') {
+          const val = demoGrades[col.id];
+          if (val !== undefined) total += val;
+          maxTotal += col.max_score || 0;
+        }
+      }
+    }
+    
+    return { total, maxTotal };
+  };
+
+  const { total, maxTotal } = calculateGrandTotal();
+
+  return (
+    <div className="space-y-3 border-t pt-4">
+      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+        <Eye className="h-4 w-4" />
+        معاينة القالب (طالب تجريبي)
+      </div>
+      
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="sticky right-0 bg-background z-10 min-w-[120px]">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      الطالب
+                    </div>
+                  </TableHead>
+                  {structure.groups.map(group => (
+                    group.columns.map(col => (
+                      <TableHead 
+                        key={col.id} 
+                        className="text-center min-w-[80px]"
+                        style={{ backgroundColor: group.color + '40' }}
+                      >
+                        <div className="text-xs">
+                          <div className="font-medium">{col.name_ar}</div>
+                          <div className="text-muted-foreground">
+                            ({calculateMaxScore(col, group.id)})
+                          </div>
+                        </div>
+                      </TableHead>
+                    ))
+                  ))}
+                  <TableHead className="text-center min-w-[80px] bg-primary/10">
+                    <div className="text-xs">
+                      <div className="font-medium">المجموع</div>
+                      <div className="text-muted-foreground">({maxTotal})</div>
+                    </div>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  <TableCell className="sticky right-0 bg-background z-10 font-medium">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <User className="h-4 w-4 text-primary" />
+                      </div>
+                      {DEMO_STUDENT.name}
+                    </div>
+                  </TableCell>
+                  {structure.groups.map(group => (
+                    group.columns.map(col => (
+                      <TableCell key={col.id} className="text-center p-1">
+                        {col.type === 'score' ? (
+                          <Input
+                            type="number"
+                            min="0"
+                            max={col.max_score}
+                            step="0.5"
+                            value={demoGrades[col.id] ?? ''}
+                            onChange={(e) => handleGradeChange(col.id, e.target.value)}
+                            className="h-8 w-16 text-center mx-auto text-sm"
+                            placeholder="-"
+                          />
+                        ) : (
+                          <span className="font-medium text-primary">
+                            {calculateColumnValue(col, group.id) ?? '-'}
+                          </span>
+                        )}
+                      </TableCell>
+                    ))
+                  ))}
+                  <TableCell className="text-center bg-primary/5">
+                    <span className="font-bold text-primary text-lg">
+                      {total > 0 ? total : '-'}
+                    </span>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <p className="text-xs text-muted-foreground text-center">
+        جرب إدخال درجات للطالب التجريبي لمعاينة كيف سيعمل القالب
+      </p>
+    </div>
+  );
+}
+
 function TemplatesContent() {
   const { data: templates = [], isLoading } = useTeacherTemplates();
   const { data: sharedTemplates = [] } = useSharedTemplates();
@@ -748,7 +968,7 @@ function TemplatesContent() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingTemplate ? 'تعديل القالب' : 'إنشاء قالب جديد'}
@@ -782,6 +1002,11 @@ function TemplatesContent() {
               structure={formData.structure}
               onChange={(structure) => setFormData({ ...formData, structure })}
             />
+
+            {/* Template Preview with Demo Student */}
+            {formData.structure.groups && formData.structure.groups.length > 0 && (
+              <TemplatePreview structure={formData.structure} />
+            )}
           </div>
           
           <DialogFooter>
