@@ -760,8 +760,8 @@ export default function Grades() {
     toast.success(`تم حفظ درجات ${gradeData.length} طالب`);
   }, [grades, bulkEntryColumn, selectedClassroom, createGrade, updateGrade]);
 
-  // حفظ الدرجة - محسّن للسرعة على الهاتف
-  const handleSaveGrade = useCallback(() => {
+  // حفظ الدرجة والانتقال للطالب التالي
+  const handleSaveGrade = useCallback((moveToNext = false) => {
     if (!selectedCell || !gradeValue) return;
     
     const score = parseFloat(gradeValue);
@@ -778,10 +778,7 @@ export default function Grades() {
       return;
     }
     
-    // إغلاق الحوار فوراً لتجربة سريعة
-    setIsDialogOpen(false);
-    
-    // حفظ البيانات في الخلفية
+    // حفظ البيانات
     if (selectedCell.week !== undefined) {
       const existingGrade = getGradeForWeek(selectedCell.studentId, selectedCell.week);
       
@@ -827,9 +824,81 @@ export default function Grades() {
       }
     }
     
-    setSelectedCell(null);
-    setGradeValue('');
-  }, [selectedCell, gradeValue, gradeType, selectedClassroom, grades, getGradeForWeek, createGrade, updateGrade]);
+    // الانتقال للطالب التالي أو إغلاق الحوار
+    if (moveToNext) {
+      const currentIndex = students.findIndex(s => s.id === selectedCell.studentId);
+      if (currentIndex < students.length - 1) {
+        const nextStudent = students[currentIndex + 1];
+        const existingNextGrade = selectedCell.week !== undefined 
+          ? getGradeForWeek(nextStudent.id, selectedCell.week)
+          : grades.find(g => g.student_id === nextStudent.id && g.title === selectedCell.columnId);
+        
+        setSelectedCell({
+          ...selectedCell,
+          studentId: nextStudent.id,
+        });
+        setGradeValue(existingNextGrade ? String(existingNextGrade.score) : '');
+      } else {
+        // آخر طالب - إغلاق الحوار
+        setIsDialogOpen(false);
+        setSelectedCell(null);
+        setGradeValue('');
+      }
+    } else {
+      setIsDialogOpen(false);
+      setSelectedCell(null);
+      setGradeValue('');
+    }
+  }, [selectedCell, gradeValue, gradeType, selectedClassroom, grades, students, getGradeForWeek, createGrade, updateGrade]);
+
+  // الانتقال للطالب التالي بدون حفظ
+  const goToNextStudent = useCallback(() => {
+    if (!selectedCell) return;
+    const currentIndex = students.findIndex(s => s.id === selectedCell.studentId);
+    if (currentIndex < students.length - 1) {
+      const nextStudent = students[currentIndex + 1];
+      const existingGrade = selectedCell.week !== undefined 
+        ? getGradeForWeek(nextStudent.id, selectedCell.week)
+        : grades.find(g => g.student_id === nextStudent.id && g.title === selectedCell.columnId);
+      
+      setSelectedCell({
+        ...selectedCell,
+        studentId: nextStudent.id,
+      });
+      setGradeValue(existingGrade ? String(existingGrade.score) : '');
+    }
+  }, [selectedCell, students, grades, getGradeForWeek]);
+
+  // الانتقال للطالب السابق
+  const goToPrevStudent = useCallback(() => {
+    if (!selectedCell) return;
+    const currentIndex = students.findIndex(s => s.id === selectedCell.studentId);
+    if (currentIndex > 0) {
+      const prevStudent = students[currentIndex - 1];
+      const existingGrade = selectedCell.week !== undefined 
+        ? getGradeForWeek(prevStudent.id, selectedCell.week)
+        : grades.find(g => g.student_id === prevStudent.id && g.title === selectedCell.columnId);
+      
+      setSelectedCell({
+        ...selectedCell,
+        studentId: prevStudent.id,
+      });
+      setGradeValue(existingGrade ? String(existingGrade.score) : '');
+    }
+  }, [selectedCell, students, grades, getGradeForWeek]);
+
+  // الحصول على ترتيب الطالب الحالي
+  const getCurrentStudentIndex = useCallback(() => {
+    if (!selectedCell) return -1;
+    return students.findIndex(s => s.id === selectedCell.studentId);
+  }, [selectedCell, students]);
+
+  // الحصول على اسم الطالب الحالي
+  const getCurrentStudentName = useCallback(() => {
+    if (!selectedCell) return '';
+    const student = students.find(s => s.id === selectedCell.studentId);
+    return student?.name || '';
+  }, [selectedCell, students]);
 
   // التنقل بين الأسابيع
   const goToPreviousWeeks = () => {
@@ -1052,14 +1121,24 @@ export default function Grades() {
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen} modal>
           <DialogContent className="sm:max-w-sm" dir="rtl">
             <DialogHeader>
-              <DialogTitle>
-                {selectedCell?.week 
-                  ? (getGradeForWeek(selectedCell.studentId, selectedCell.week) ? 'تعديل الدرجة' : 'إضافة درجة')
-                  : (grades.find(g => g.student_id === selectedCell?.studentId && g.title === selectedCell?.columnId) ? 'تعديل الدرجة' : 'إضافة درجة')
-                }
+              <DialogTitle className="flex items-center justify-between">
+                <span>
+                  {selectedCell?.week 
+                    ? (getGradeForWeek(selectedCell.studentId, selectedCell.week) ? 'تعديل الدرجة' : 'إضافة درجة')
+                    : (grades.find(g => g.student_id === selectedCell?.studentId && g.title === selectedCell?.columnId) ? 'تعديل الدرجة' : 'إضافة درجة')
+                  }
+                </span>
+                <Badge variant="secondary">
+                  {getCurrentStudentIndex() + 1} / {students.length}
+                </Badge>
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-4">
+              {/* اسم الطالب */}
+              <div className="text-center p-2 bg-muted rounded-lg">
+                <span className="font-medium">{getCurrentStudentName()}</span>
+              </div>
+              
               {selectedCell?.week !== undefined && (
                 <div className="space-y-2">
                   <Label>نوع التقييم</Label>
@@ -1115,16 +1194,44 @@ export default function Grades() {
                 ))}
               </div>
               
-              <Button
-                className="w-full gradient-hero h-12 text-lg"
-                onClick={handleSaveGrade}
-                disabled={createGrade.isPending || updateGrade.isPending || !gradeValue}
+              {/* أزرار التنقل والحفظ */}
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline"
+                  onClick={goToPrevStudent}
+                  disabled={getCurrentStudentIndex() <= 0}
+                  className="flex-1"
+                >
+                  السابق
+                </Button>
+                <Button
+                  className="flex-[2] gradient-hero"
+                  onClick={() => handleSaveGrade(true)}
+                  disabled={createGrade.isPending || updateGrade.isPending || !gradeValue}
+                >
+                  {(createGrade.isPending || updateGrade.isPending) ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    'حفظ والتالي'
+                  )}
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={goToNextStudent}
+                  disabled={getCurrentStudentIndex() >= students.length - 1}
+                  className="flex-1"
+                >
+                  التالي
+                </Button>
+              </div>
+              
+              {/* زر الإغلاق */}
+              <Button 
+                variant="ghost"
+                onClick={() => setIsDialogOpen(false)}
+                className="w-full"
               >
-                {(createGrade.isPending || updateGrade.isPending) ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  'حفظ'
-                )}
+                إغلاق
               </Button>
             </div>
           </DialogContent>
