@@ -164,6 +164,7 @@ export type Database = {
           schedule: string | null
           subject: string
           subject_id: string | null
+          teacher_template_id: string | null
           updated_at: string
           user_id: string
         }
@@ -181,6 +182,7 @@ export type Database = {
           schedule?: string | null
           subject: string
           subject_id?: string | null
+          teacher_template_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -198,6 +200,7 @@ export type Database = {
           schedule?: string | null
           subject?: string
           subject_id?: string | null
+          teacher_template_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -221,6 +224,13 @@ export type Database = {
             columns: ["subject_id"]
             isOneToOne: false
             referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classrooms_teacher_template_id_fkey"
+            columns: ["teacher_template_id"]
+            isOneToOne: false
+            referencedRelation: "teacher_grading_templates"
             referencedColumns: ["id"]
           },
         ]
