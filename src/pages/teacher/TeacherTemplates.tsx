@@ -10,11 +10,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Plus, Loader2, Edit, Trash2, Copy, FileText, LayoutGrid } from 'lucide-react';
+import { Plus, Loader2, Edit, Trash2, Copy, FileText, LayoutGrid, Calculator, Sigma, ExternalLink } from 'lucide-react';
 import { GradingStructureData, GradingGroup, GradingColumn } from '@/hooks/useGradingStructures';
 
-// Simple structure editor component
+// ألوان المجموعات
+const GROUP_COLORS = [
+  { id: 'blue', color: '#3b82f6', name: 'أزرق' },
+  { id: 'green', color: '#22c55e', name: 'أخضر' },
+  { id: 'yellow', color: '#eab308', name: 'أصفر' },
+  { id: 'red', color: '#ef4444', name: 'أحمر' },
+  { id: 'purple', color: '#a855f7', name: 'بنفسجي' },
+  { id: 'orange', color: '#f97316', name: 'برتقالي' },
+  { id: 'pink', color: '#ec4899', name: 'وردي' },
+  { id: 'cyan', color: '#06b6d4', name: 'سماوي' },
+];
+
+// Structure editor component with advanced options
 function StructureEditor({ 
   structure, 
   onChange 
@@ -22,11 +35,21 @@ function StructureEditor({
   structure: GradingStructureData; 
   onChange: (structure: GradingStructureData) => void;
 }) {
+  const [externalSumDialogOpen, setExternalSumDialogOpen] = useState(false);
+  const [groupSumDialogOpen, setGroupSumDialogOpen] = useState(false);
+  const [grandTotalDialogOpen, setGrandTotalDialogOpen] = useState(false);
+  const [currentGroupId, setCurrentGroupId] = useState<string | null>(null);
+  const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  const [columnName, setColumnName] = useState('');
+
   const addGroup = () => {
+    const usedColors = structure.groups?.map(g => g.color) || [];
+    const availableColor = GROUP_COLORS.find(c => !usedColors.includes(c.color))?.color || '#3b82f6';
+    
     const newGroup: GradingGroup = {
       id: `group_${Date.now()}`,
       name_ar: `مجموعة ${(structure.groups?.length || 0) + 1}`,
-      color: '#3b82f6',
+      color: availableColor,
       columns: []
     };
     onChange({
@@ -83,6 +106,176 @@ function StructureEditor({
     });
   };
 
+  // Open external sum dialog
+  const openExternalSumDialog = (groupId: string) => {
+    setCurrentGroupId(groupId);
+    setSelectedSources([]);
+    setColumnName('مجموع خارجي');
+    setExternalSumDialogOpen(true);
+  };
+
+  // Open group sum dialog
+  const openGroupSumDialog = (groupId: string) => {
+    setCurrentGroupId(groupId);
+    setSelectedSources([]);
+    setColumnName('مجموع المجموعات');
+    setGroupSumDialogOpen(true);
+  };
+
+  // Open grand total dialog
+  const openGrandTotalDialog = (groupId: string) => {
+    setCurrentGroupId(groupId);
+    setSelectedSources([]);
+    setColumnName('المجموع الكلي');
+    setGrandTotalDialogOpen(true);
+  };
+
+  // Add external sum column
+  const addExternalSumColumn = () => {
+    if (!currentGroupId || selectedSources.length === 0) return;
+
+    const newColumn: GradingColumn = {
+      id: `col_${Date.now()}`,
+      name_ar: columnName || 'مجموع خارجي',
+      type: 'external_sum',
+      max_score: 0,
+      externalSourceColumns: selectedSources
+    };
+
+    const group = structure.groups.find(g => g.id === currentGroupId);
+    if (group) {
+      updateGroup(currentGroupId, {
+        columns: [...group.columns, newColumn]
+      });
+    }
+    setExternalSumDialogOpen(false);
+  };
+
+  // Add group sum column
+  const addGroupSumColumn = () => {
+    if (!currentGroupId || selectedSources.length === 0) return;
+
+    const newColumn: GradingColumn = {
+      id: `col_${Date.now()}`,
+      name_ar: columnName || 'مجموع المجموعات',
+      type: 'group_sum',
+      max_score: 0,
+      sourceGroupIds: selectedSources
+    };
+
+    const group = structure.groups.find(g => g.id === currentGroupId);
+    if (group) {
+      updateGroup(currentGroupId, {
+        columns: [...group.columns, newColumn]
+      });
+    }
+    setGroupSumDialogOpen(false);
+  };
+
+  // Add grand total column
+  const addGrandTotalColumn = () => {
+    if (!currentGroupId || selectedSources.length === 0) return;
+
+    const newColumn: GradingColumn = {
+      id: `col_${Date.now()}`,
+      name_ar: columnName || 'المجموع الكلي',
+      type: 'grand_total',
+      max_score: 0,
+      sourceGroupIds: selectedSources
+    };
+
+    const group = structure.groups.find(g => g.id === currentGroupId);
+    if (group) {
+      updateGroup(currentGroupId, {
+        columns: [...group.columns, newColumn]
+      });
+    }
+    setGrandTotalDialogOpen(false);
+  };
+
+  // Get all score columns from other groups
+  const getExternalScoreColumns = (currentGroupId: string) => {
+    return structure.groups
+      .filter(g => g.id !== currentGroupId)
+      .flatMap(g => g.columns
+        .filter(c => c.type === 'score')
+        .map(c => ({
+          key: `${g.id}:${c.id}`,
+          groupName: g.name_ar,
+          columnName: c.name_ar,
+          groupColor: g.color
+        }))
+      );
+  };
+
+  // Get all total columns from all groups
+  const getTotalColumns = () => {
+    return structure.groups.flatMap(g => 
+      g.columns
+        .filter(c => c.type === 'total' || c.type === 'group_sum' || c.type === 'external_sum')
+        .map(c => ({
+          key: `${g.id}:${c.id}`,
+          groupName: g.name_ar,
+          columnName: c.name_ar,
+          groupColor: g.color
+        }))
+    );
+  };
+
+  // Calculate total score for a column
+  const calculateColumnTotal = (column: GradingColumn) => {
+    if (column.type === 'external_sum' && column.externalSourceColumns) {
+      let total = 0;
+      column.externalSourceColumns.forEach(key => {
+        const [grpId, colId] = key.split(':');
+        const group = structure.groups.find(g => g.id === grpId);
+        const col = group?.columns.find(c => c.id === colId);
+        if (col && col.type === 'score') {
+          total += col.max_score;
+        }
+      });
+      return total;
+    }
+    if ((column.type === 'group_sum' || column.type === 'grand_total') && column.sourceGroupIds) {
+      let total = 0;
+      column.sourceGroupIds.forEach(key => {
+        if (key.includes(':')) {
+          const [grpId, colId] = key.split(':');
+          const group = structure.groups.find(g => g.id === grpId);
+          const col = group?.columns.find(c => c.id === colId);
+          if (col) {
+            total += col.max_score;
+          }
+        }
+      });
+      return total;
+    }
+    return column.max_score;
+  };
+
+  // Get column type label
+  const getColumnTypeLabel = (type: string) => {
+    switch (type) {
+      case 'score': return 'درجة';
+      case 'total': return 'مجموع';
+      case 'external_sum': return 'مجموع خارجي';
+      case 'group_sum': return 'مجموع مجموعات';
+      case 'grand_total': return 'مجموع كلي';
+      default: return type;
+    }
+  };
+
+  const getColumnTypeBadgeVariant = (type: string) => {
+    switch (type) {
+      case 'score': return 'secondary';
+      case 'total': return 'default';
+      case 'external_sum': return 'outline';
+      case 'group_sum': return 'outline';
+      case 'grand_total': return 'destructive';
+      default: return 'secondary';
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -93,14 +286,14 @@ function StructureEditor({
         </Button>
       </div>
 
-      <ScrollArea className="h-[300px] border rounded-lg p-3">
+      <ScrollArea className="h-[400px] border rounded-lg p-3">
         {(!structure.groups || structure.groups.length === 0) ? (
           <div className="text-center text-muted-foreground py-8">
             لا توجد مجموعات. اضغط على "إضافة مجموعة" للبدء.
           </div>
         ) : (
           <div className="space-y-4">
-            {structure.groups.map((group, groupIndex) => (
+            {structure.groups.map((group) => (
               <Card key={group.id} className="border-r-4" style={{ borderRightColor: group.color }}>
                 <CardHeader className="py-3 px-4">
                   <div className="flex items-center gap-2">
@@ -129,7 +322,7 @@ function StructureEditor({
                 </CardHeader>
                 <CardContent className="py-2 px-4">
                   <div className="space-y-2">
-                    {group.columns.map((column, colIndex) => (
+                    {group.columns.map((column) => (
                       <div key={column.id} className="flex items-center gap-2 bg-muted/50 rounded p-2">
                         <Input
                           value={column.name_ar}
@@ -137,10 +330,13 @@ function StructureEditor({
                           className="h-7 flex-1 text-sm"
                           placeholder="اسم العمود"
                         />
-                        <Badge variant={column.type === 'score' ? 'secondary' : 'default'} className="text-xs">
-                          {column.type === 'score' ? 'درجة' : 'مجموع'}
+                        <Badge 
+                          variant={getColumnTypeBadgeVariant(column.type) as any} 
+                          className={`text-xs ${column.type === 'external_sum' ? 'border-green-500 text-green-600' : column.type === 'group_sum' ? 'border-amber-500 text-amber-600' : ''}`}
+                        >
+                          {getColumnTypeLabel(column.type)}
                         </Badge>
-                        {column.type === 'score' && (
+                        {column.type === 'score' ? (
                           <Input
                             type="number"
                             value={column.max_score}
@@ -148,6 +344,10 @@ function StructureEditor({
                             className="h-7 w-16 text-sm"
                             min={0}
                           />
+                        ) : (
+                          <span className="text-sm text-muted-foreground w-16 text-center">
+                            {calculateColumnTotal(column)}
+                          </span>
                         )}
                         <Button
                           type="button"
@@ -160,7 +360,7 @@ function StructureEditor({
                         </Button>
                       </div>
                     ))}
-                    <div className="flex gap-2 pt-2">
+                    <div className="flex gap-2 pt-2 flex-wrap">
                       <Button
                         type="button"
                         variant="outline"
@@ -178,8 +378,38 @@ function StructureEditor({
                         className="h-7 text-xs"
                         onClick={() => addColumn(group.id, 'total')}
                       >
-                        <Plus className="h-3 w-3 ml-1" />
+                        <Calculator className="h-3 w-3 ml-1" />
                         مجموع
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs border-green-500 text-green-600 hover:bg-green-50"
+                        onClick={() => openExternalSumDialog(group.id)}
+                      >
+                        <ExternalLink className="h-3 w-3 ml-1" />
+                        مجموع خارجي
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs border-amber-500 text-amber-600 hover:bg-amber-50"
+                        onClick={() => openGroupSumDialog(group.id)}
+                      >
+                        <Sigma className="h-3 w-3 ml-1" />
+                        مجموع مجموعات
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs border-primary text-primary hover:bg-primary/10"
+                        onClick={() => openGrandTotalDialog(group.id)}
+                      >
+                        <Sigma className="h-3 w-3 ml-1" />
+                        مجموع كلي
                       </Button>
                     </div>
                   </div>
@@ -189,6 +419,144 @@ function StructureEditor({
           </div>
         )}
       </ScrollArea>
+
+      {/* External Sum Dialog */}
+      <Dialog open={externalSumDialogOpen} onOpenChange={setExternalSumDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>إضافة مجموع درجات خارجي</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>اسم العمود</Label>
+              <Input 
+                value={columnName} 
+                onChange={(e) => setColumnName(e.target.value)}
+                placeholder="مجموع خارجي"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>اختر الدرجات من المجموعات الأخرى</Label>
+              <div className="max-h-48 overflow-y-auto space-y-2 border rounded p-2">
+                {currentGroupId && getExternalScoreColumns(currentGroupId).map((col) => (
+                  <div key={col.key} className="flex items-center gap-2">
+                    <Checkbox 
+                      checked={selectedSources.includes(col.key)}
+                      onCheckedChange={(checked) => {
+                        setSelectedSources(prev => 
+                          checked 
+                            ? [...prev, col.key]
+                            : prev.filter(k => k !== col.key)
+                        );
+                      }}
+                    />
+                    <Badge variant="outline" style={{ borderColor: col.groupColor }}>
+                      {col.groupName}
+                    </Badge>
+                    <span className="text-sm">{col.columnName}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExternalSumDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={addExternalSumColumn} disabled={selectedSources.length === 0}>إضافة</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Group Sum Dialog */}
+      <Dialog open={groupSumDialogOpen} onOpenChange={setGroupSumDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>إضافة مجموع من مجموعات سابقة</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>اسم العمود</Label>
+              <Input 
+                value={columnName} 
+                onChange={(e) => setColumnName(e.target.value)}
+                placeholder="مجموع المجموعات"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>اختر أعمدة المجاميع</Label>
+              <div className="max-h-48 overflow-y-auto space-y-2 border rounded p-2">
+                {getTotalColumns().map((col) => (
+                  <div key={col.key} className="flex items-center gap-2">
+                    <Checkbox 
+                      checked={selectedSources.includes(col.key)}
+                      onCheckedChange={(checked) => {
+                        setSelectedSources(prev => 
+                          checked 
+                            ? [...prev, col.key]
+                            : prev.filter(k => k !== col.key)
+                        );
+                      }}
+                    />
+                    <Badge variant="outline" style={{ borderColor: col.groupColor }}>
+                      {col.groupName}
+                    </Badge>
+                    <span className="text-sm">{col.columnName}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGroupSumDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={addGroupSumColumn} disabled={selectedSources.length === 0}>إضافة</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Grand Total Dialog */}
+      <Dialog open={grandTotalDialogOpen} onOpenChange={setGrandTotalDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>إضافة المجموع الكلي</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>اسم العمود</Label>
+              <Input 
+                value={columnName} 
+                onChange={(e) => setColumnName(e.target.value)}
+                placeholder="المجموع الكلي"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>اختر أعمدة المجاميع للجمع</Label>
+              <div className="max-h-48 overflow-y-auto space-y-2 border rounded p-2">
+                {getTotalColumns().map((col) => (
+                  <div key={col.key} className="flex items-center gap-2">
+                    <Checkbox 
+                      checked={selectedSources.includes(col.key)}
+                      onCheckedChange={(checked) => {
+                        setSelectedSources(prev => 
+                          checked 
+                            ? [...prev, col.key]
+                            : prev.filter(k => k !== col.key)
+                        );
+                      }}
+                    />
+                    <Badge variant="outline" style={{ borderColor: col.groupColor }}>
+                      {col.groupName}
+                    </Badge>
+                    <span className="text-sm">{col.columnName}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGrandTotalDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={addGrandTotalColumn} disabled={selectedSources.length === 0}>إضافة</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
