@@ -25,16 +25,16 @@ import { toast } from 'sonner';
 import { Plus, Loader2, Edit, Trash2, Copy, FileText, LayoutGrid, Calculator, Sigma, ExternalLink, Share2, Download, Link2, Link2Off } from 'lucide-react';
 import { GradingStructureData, GradingGroup, GradingColumn } from '@/hooks/useGradingStructures';
 
-// ألوان المجموعات
+// ألوان المجموعات - باستيل
 const GROUP_COLORS = [
-  { id: 'blue', color: '#3b82f6', name: 'أزرق' },
-  { id: 'green', color: '#22c55e', name: 'أخضر' },
-  { id: 'yellow', color: '#eab308', name: 'أصفر' },
-  { id: 'red', color: '#ef4444', name: 'أحمر' },
-  { id: 'purple', color: '#a855f7', name: 'بنفسجي' },
-  { id: 'orange', color: '#f97316', name: 'برتقالي' },
-  { id: 'pink', color: '#ec4899', name: 'وردي' },
-  { id: 'cyan', color: '#06b6d4', name: 'سماوي' },
+  { id: 'blue', color: '#bfdbfe', name: 'أزرق فاتح' },
+  { id: 'green', color: '#bbf7d0', name: 'أخضر فاتح' },
+  { id: 'yellow', color: '#fef08a', name: 'أصفر فاتح' },
+  { id: 'pink', color: '#fbcfe8', name: 'وردي فاتح' },
+  { id: 'purple', color: '#ddd6fe', name: 'بنفسجي فاتح' },
+  { id: 'orange', color: '#fed7aa', name: 'برتقالي فاتح' },
+  { id: 'cyan', color: '#a5f3fc', name: 'سماوي فاتح' },
+  { id: 'rose', color: '#fecdd3', name: 'وردي داكن' },
 ];
 
 // Structure editor component with advanced options
