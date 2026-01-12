@@ -10,14 +10,18 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { User, School, Mail, Users, Loader2, Save, GraduationCap, Phone, BookOpen } from 'lucide-react';
+import { User, School, Mail, Users, Loader2, Save, GraduationCap, Phone, BookOpen, Volume2, Vibrate } from 'lucide-react';
 import { InviteDepartmentHead } from '@/components/teacher/InviteDepartmentHead';
+import { getHapticEnabled, setHapticEnabled } from '@/hooks/useHapticFeedback';
+
 export default function Settings() {
   const { profile, isLoading, refetch } = useProfile();
   const { data: educationLevels } = useEducationLevels();
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
+  const [hapticEnabled, setHapticEnabledState] = useState(getHapticEnabled());
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
@@ -26,6 +30,13 @@ export default function Settings() {
     principal_name: '',
     department_head_name: '',
   });
+
+  // Toggle haptic feedback
+  const handleHapticToggle = (enabled: boolean) => {
+    setHapticEnabled(enabled);
+    setHapticEnabledState(enabled);
+    toast.success(enabled ? 'تم تفعيل الاهتزاز والصوت' : 'تم إيقاف الاهتزاز والصوت');
+  };
 
   // Get education level name
   const educationLevelName = educationLevels?.find(l => l.id === profile?.education_level_id)?.name_ar;
@@ -224,6 +235,36 @@ export default function Settings() {
                     className="pr-10"
                   />
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* App Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Volume2 className="h-5 w-5" />
+                إعدادات التطبيق
+              </CardTitle>
+              <CardDescription>
+                تخصيص سلوك التطبيق
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <Vibrate className="h-4 w-4 text-muted-foreground" />
+                    <Label>الاهتزاز والصوت عند إدخال الدرجات</Label>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    تشغيل اهتزاز وصوت عند حفظ الدرجة بنجاح
+                  </p>
+                </div>
+                <Switch
+                  checked={hapticEnabled}
+                  onCheckedChange={handleHapticToggle}
+                />
               </div>
             </CardContent>
           </Card>
