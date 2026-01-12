@@ -44,6 +44,7 @@ import DHClassrooms from "./pages/department-head/DHClassrooms";
 import DHClassroomView from "./pages/department-head/DHClassroomView";
 import DHStudents from "./pages/department-head/DHStudents";
 import DHGrades from "./pages/department-head/DHGrades";
+import DHInvitations from "./pages/department-head/DHInvitations";
 
 const queryClient = new QueryClient();
 
@@ -95,6 +96,7 @@ const App = () => (
 
           {/* Department Head Routes */}
           <Route path="/department-head" element={<ProtectedRoute><DHDashboardNew /></ProtectedRoute>} />
+          <Route path="/department-head/invitations" element={<ProtectedRoute><DHInvitations /></ProtectedRoute>} />
           <Route path="/department-head/classrooms" element={<ProtectedRoute><DHClassrooms /></ProtectedRoute>} />
           <Route path="/department-head/classrooms/:classroomId" element={<ProtectedRoute><DHClassroomView /></ProtectedRoute>} />
           <Route path="/department-head/students" element={<ProtectedRoute><DHStudents /></ProtectedRoute>} />
