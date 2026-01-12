@@ -12,6 +12,7 @@ import {
   TeacherTemplate 
 } from '@/hooks/useTeacherTemplates';
 import { useTemplatesInUse } from '@/hooks/useClassrooms';
+import { useAllowEditLinkedTemplates } from '@/hooks/useSystemSettings';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -822,6 +823,7 @@ export default function TeacherTemplates() {
   const { data: templates = [], isLoading } = useTeacherTemplates();
   const { data: sharedTemplates = [] } = useSharedTemplates();
   const { data: templatesInUse = {} } = useTemplatesInUse();
+  const { allowEdit: allowEditLinkedTemplates, isLoading: settingsLoading } = useAllowEditLinkedTemplates();
   const createTemplate = useCreateTeacherTemplate();
   const updateTemplate = useUpdateTeacherTemplate();
   const deleteTemplate = useDeleteTeacherTemplate();
@@ -848,8 +850,10 @@ export default function TeacherTemplates() {
     structure: { groups: [], settings: { showGrandTotal: false, showPercentage: false, passingScore: 50 } } as GradingStructureData
   });
 
-  // Check if template is in use
+  // Check if template is in use (only matters if admin disabled editing linked templates)
   const isTemplateInUse = (templateId: string) => {
+    // If admin allows editing linked templates, never block
+    if (allowEditLinkedTemplates) return false;
     return templatesInUse[templateId] && templatesInUse[templateId].length > 0;
   };
 

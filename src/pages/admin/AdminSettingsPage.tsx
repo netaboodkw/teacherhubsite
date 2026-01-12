@@ -7,11 +7,15 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Shield, Database, Bell, Loader2, Save, CheckCircle } from 'lucide-react';
+import { Settings, Shield, Database, Bell, Loader2, Save, CheckCircle, LayoutGrid } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSystemSettings, useUpdateSystemSetting } from '@/hooks/useSystemSettings';
 
 export default function AdminSettingsPage() {
   const [saving, setSaving] = useState(false);
+  const { data: systemSettings, isLoading: settingsLoading } = useSystemSettings();
+  const updateSystemSetting = useUpdateSystemSetting();
+  
   const [settings, setSettings] = useState({
     appName: 'TeacherHub',
     allowRegistration: true,
@@ -22,12 +26,33 @@ export default function AdminSettingsPage() {
     maintenanceMode: false,
   });
 
+  // Template settings from database
+  const [allowEditLinkedTemplates, setAllowEditLinkedTemplates] = useState(true);
+
+  // Load settings from database
+  useEffect(() => {
+    if (systemSettings) {
+      const templateSetting = systemSettings.find(s => s.key === 'allow_edit_linked_templates');
+      if (templateSetting) {
+        const value = templateSetting.value;
+        setAllowEditLinkedTemplates(value === true || value === 'true');
+      }
+    }
+  }, [systemSettings]);
+
   const handleSave = async () => {
     setSaving(true);
-    // Simulate save
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      // Save template setting to database
+      await updateSystemSetting.mutateAsync({
+        key: 'allow_edit_linked_templates',
+        value: allowEditLinkedTemplates
+      });
+      toast.success('تم حفظ الإعدادات بنجاح');
+    } catch (error) {
+      toast.error('فشل في حفظ الإعدادات');
+    }
     setSaving(false);
-    toast.success('تم حفظ الإعدادات بنجاح');
   };
 
   return (
@@ -127,6 +152,38 @@ export default function AdminSettingsPage() {
                   />
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Template Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <LayoutGrid className="h-5 w-5" />
+                إعدادات القوالب
+              </CardTitle>
+              <CardDescription>التحكم في سلوك قوالب الدرجات</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>السماح بتعديل القوالب المرتبطة</Label>
+                  <p className="text-sm text-muted-foreground">
+                    عند التفعيل، يمكن للمعلمين تعديل أو حذف القوالب حتى لو كانت مرتبطة بصفوف دراسية
+                  </p>
+                </div>
+                <Switch
+                  checked={allowEditLinkedTemplates}
+                  onCheckedChange={setAllowEditLinkedTemplates}
+                />
+              </div>
+              {!allowEditLinkedTemplates && (
+                <div className="p-3 bg-warning/10 border border-warning/30 rounded-lg">
+                  <p className="text-sm text-warning">
+                    ⚠️ عند إيقاف هذا الخيار، لن يتمكن المعلمون من تعديل أو حذف القوالب المرتبطة بصفوف نشطة
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
