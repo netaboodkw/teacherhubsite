@@ -13,6 +13,7 @@ export interface TeacherTemplate {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  is_default?: boolean; // Flag for admin templates
 }
 
 export interface SharedTemplate {
@@ -52,11 +53,66 @@ export function useTeacherTemplates() {
       
       return (data || []).map(item => ({
         ...item,
-        structure: item.structure as unknown as GradingStructureData
+        structure: item.structure as unknown as GradingStructureData,
+        is_default: false,
       })) as TeacherTemplate[];
     },
     enabled: !!user?.id,
   });
+}
+
+// Fetch admin default templates from grading_templates table
+export function useAdminDefaultTemplates() {
+  return useQuery({
+    queryKey: ['admin-default-templates'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('grading_templates')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      // Parse the description field which contains the JSON structure
+      return (data || []).map(item => {
+        let structure: GradingStructureData = { groups: [], settings: { showPercentage: true, passingScore: 50, showGrandTotal: true } };
+        try {
+          if (item.description) {
+            structure = JSON.parse(item.description);
+          }
+        } catch {
+          // Keep default structure if parsing fails
+        }
+        
+        return {
+          id: `admin_${item.id}`, // Prefix to distinguish from teacher templates
+          user_id: 'admin',
+          name: item.name,
+          name_ar: item.name_ar,
+          description: null,
+          structure,
+          is_active: item.is_active,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          is_default: true,
+        } as TeacherTemplate;
+      });
+    },
+  });
+}
+
+// Combined hook that returns both teacher templates and admin default templates
+export function useAllAvailableTemplates() {
+  const { data: teacherTemplates = [], isLoading: teacherLoading } = useTeacherTemplates();
+  const { data: adminTemplates = [], isLoading: adminLoading } = useAdminDefaultTemplates();
+
+  return {
+    data: [...teacherTemplates, ...adminTemplates],
+    teacherTemplates,
+    adminTemplates,
+    isLoading: teacherLoading || adminLoading,
+  };
 }
 
 export function useSharedTemplates() {
