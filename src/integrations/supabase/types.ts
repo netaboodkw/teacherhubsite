@@ -633,6 +633,44 @@ export type Database = {
           },
         ]
       }
+      shared_templates: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          share_code: string
+          template_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          share_code: string
+          template_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          share_code?: string
+          template_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_templates_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "teacher_grading_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_positions: {
         Row: {
           classroom_id: string

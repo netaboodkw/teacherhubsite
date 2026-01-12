@@ -95,17 +95,20 @@ function SortableStudent({ student, isArrangeMode, onTap, getShortName }: Sortab
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 50 : 1,
+    transition: transition || 'transform 200ms ease',
+    opacity: isDragging ? 0.7 : 1,
+    zIndex: isDragging ? 100 : 1,
+    cursor: isArrangeMode ? (isDragging ? 'grabbing' : 'grab') : 'pointer',
   };
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`relative flex flex-col items-center p-3 bg-card rounded-xl border-2 shadow-sm transition-all min-h-[80px] ${
-        isDragging ? 'border-primary shadow-lg scale-105' : 'border-border/50 hover:border-primary/30'
+      className={`relative flex flex-col items-center p-3 bg-card rounded-xl border-2 shadow-sm min-h-[90px] select-none ${
+        isDragging 
+          ? 'border-primary shadow-xl scale-110 ring-2 ring-primary/30' 
+          : 'border-border/50 hover:border-primary/30 hover:shadow-md'
       }`}
       onClick={() => !isArrangeMode && onTap(student)}
     >
@@ -113,12 +116,12 @@ function SortableStudent({ student, isArrangeMode, onTap, getShortName }: Sortab
         <div 
           {...attributes} 
           {...listeners}
-          className="absolute -top-2 -right-2 p-1.5 bg-primary text-primary-foreground rounded-full cursor-grab active:cursor-grabbing touch-none z-10 shadow-md"
+          className="absolute -top-2 -right-2 p-2 bg-primary text-primary-foreground rounded-full cursor-grab active:cursor-grabbing touch-none z-10 shadow-lg hover:scale-110 transition-transform"
         >
           <GripVertical className="h-4 w-4" />
         </div>
       )}
-      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-1">
+      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-2">
         {student.avatar_url ? (
           <img
             src={student.avatar_url}
@@ -127,10 +130,10 @@ function SortableStudent({ student, isArrangeMode, onTap, getShortName }: Sortab
             draggable={false}
           />
         ) : (
-          <User className="h-5 w-5 text-primary" />
+          <User className="h-6 w-6 text-primary" />
         )}
       </div>
-      <p className="text-xs text-center font-medium truncate w-full leading-tight">
+      <p className="text-xs text-center font-medium truncate w-full leading-tight px-1">
         {getShortName(student.name)}
       </p>
     </div>
@@ -742,7 +745,7 @@ export default function ClassroomView() {
                   items={studentOrder}
                   strategy={rectSortingStrategy}
                 >
-                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-3 sm:gap-4">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4 sm:gap-5 lg:gap-6">
                     {orderedStudents.map((student) => (
                       <SortableStudent
                         key={student.id}
