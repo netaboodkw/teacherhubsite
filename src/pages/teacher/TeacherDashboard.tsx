@@ -1,14 +1,34 @@
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useClassrooms } from '@/hooks/useClassrooms';
-import { useStudents } from '@/hooks/useStudents';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GraduationCap, Users, ClipboardCheck, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ClassroomCard } from '@/components/dashboard/ClassroomCard';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function TeacherDashboard() {
   const { data: classrooms, isLoading: classroomsLoading } = useClassrooms();
-  const { data: allStudents } = useStudents();
+  
+  // Get student count directly from active classrooms instead of fetching all students
+  const classroomIds = useMemo(() => classrooms?.map(c => c.id) || [], [classrooms]);
+  
+  const { data: studentCount } = useQuery({
+    queryKey: ['students-count', classroomIds],
+    queryFn: async () => {
+      if (classroomIds.length === 0) return 0;
+      
+      const { count, error } = await supabase
+        .from('students')
+        .select('*', { count: 'exact', head: true })
+        .in('classroom_id', classroomIds);
+      
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: classroomIds.length > 0,
+  });
 
   const stats = [
     {
@@ -21,7 +41,7 @@ export default function TeacherDashboard() {
     },
     {
       title: 'الطلاب',
-      value: allStudents?.length || 0,
+      value: studentCount ?? 0,
       icon: Users,
       href: '/teacher/students',
       color: 'text-blue-500',
