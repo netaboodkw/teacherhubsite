@@ -27,6 +27,7 @@ import ArchivedClassroomsPage from "./pages/admin/ArchivedClassroomsPage";
 
 // Teacher Pages
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
+import TeacherTemplates from "./pages/teacher/TeacherTemplates";
 import Classrooms from "./pages/Classrooms";
 import NewClassroom from "./pages/NewClassroom";
 import EditClassroom from "./pages/EditClassroom";
@@ -88,6 +89,7 @@ const App = () => (
           <Route path="/teacher/students/new" element={<ProtectedRoute><NewStudent /></ProtectedRoute>} />
           <Route path="/teacher/attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
           <Route path="/teacher/grades" element={<ProtectedRoute><Grades /></ProtectedRoute>} />
+          <Route path="/teacher/templates" element={<ProtectedRoute><TeacherTemplates /></ProtectedRoute>} />
           <Route path="/teacher/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
           <Route path="/teacher/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 

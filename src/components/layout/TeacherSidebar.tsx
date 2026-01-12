@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  LayoutGrid,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -29,6 +30,7 @@ const navItems = [
   { href: '/teacher/students', icon: Users, label: 'الطلاب' },
   { href: '/teacher/attendance', icon: ClipboardCheck, label: 'الحضور' },
   { href: '/teacher/grades', icon: BookOpen, label: 'الدرجات' },
+  { href: '/teacher/templates', icon: LayoutGrid, label: 'قوالب الدرجات' },
   { href: '/teacher/reports', icon: BarChart3, label: 'التقارير' },
 ];
 
