@@ -104,7 +104,7 @@ function SortableStudent({ student, isArrangeMode, onTap, getShortName }: Sortab
     <div
       ref={setNodeRef}
       style={style}
-      className={`relative flex flex-col items-center p-2 bg-card rounded-xl border-2 shadow-sm transition-all ${
+      className={`relative flex flex-col items-center p-3 bg-card rounded-xl border-2 shadow-sm transition-all min-h-[80px] ${
         isDragging ? 'border-primary shadow-lg scale-105' : 'border-border/50 hover:border-primary/30'
       }`}
       onClick={() => !isArrangeMode && onTap(student)}
@@ -113,9 +113,9 @@ function SortableStudent({ student, isArrangeMode, onTap, getShortName }: Sortab
         <div 
           {...attributes} 
           {...listeners}
-          className="absolute -top-1 -right-1 p-1 bg-primary text-primary-foreground rounded-full cursor-grab active:cursor-grabbing touch-none z-10"
+          className="absolute -top-2 -right-2 p-1.5 bg-primary text-primary-foreground rounded-full cursor-grab active:cursor-grabbing touch-none z-10 shadow-md"
         >
-          <GripVertical className="h-3 w-3" />
+          <GripVertical className="h-4 w-4" />
         </div>
       )}
       <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-1">
@@ -742,7 +742,7 @@ export default function ClassroomView() {
                   items={studentOrder}
                   strategy={rectSortingStrategy}
                 >
-                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-2 sm:gap-3">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-3 sm:gap-4">
                     {orderedStudents.map((student) => (
                       <SortableStudent
                         key={student.id}
