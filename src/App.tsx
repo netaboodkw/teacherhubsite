@@ -14,14 +14,8 @@ import NotFound from "./pages/NotFound";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import EducationLevelsPage from "./pages/admin/EducationLevelsPage";
-import GradeLevelsPage from "./pages/admin/GradeLevelsPage";
-import SubjectsPage from "./pages/admin/SubjectsPage";
-import GradingSystemPage from "./pages/admin/GradingSystemPage";
 import TeachersPage from "./pages/admin/TeachersPage";
 import AdminSettingsPage from "./pages/admin/AdminSettingsPage";
-import SubjectGradingSetup from "./pages/SubjectGradingSetup";
-import GradingMatrixPage from "./pages/admin/GradingMatrixPage";
 import CurriculumTreePage from "./pages/admin/CurriculumTreePage";
 import ArchivedClassroomsPage from "./pages/admin/ArchivedClassroomsPage";
 
@@ -71,14 +65,8 @@ const App = () => (
 
           {/* Admin Routes */}
           <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/admin/education-levels" element={<ProtectedRoute><EducationLevelsPage /></ProtectedRoute>} />
-          <Route path="/admin/grade-levels" element={<ProtectedRoute><GradeLevelsPage /></ProtectedRoute>} />
-          <Route path="/admin/subjects" element={<ProtectedRoute><SubjectsPage /></ProtectedRoute>} />
-          <Route path="/admin/grading-system" element={<ProtectedRoute><GradingSystemPage /></ProtectedRoute>} />
-          <Route path="/admin/teachers" element={<ProtectedRoute><TeachersPage /></ProtectedRoute>} />
-          <Route path="/admin/subject-grading" element={<ProtectedRoute><SubjectGradingSetup /></ProtectedRoute>} />
-          <Route path="/admin/grading-matrix" element={<ProtectedRoute><GradingMatrixPage /></ProtectedRoute>} />
           <Route path="/admin/curriculum-tree" element={<ProtectedRoute><CurriculumTreePage /></ProtectedRoute>} />
+          <Route path="/admin/teachers" element={<ProtectedRoute><TeachersPage /></ProtectedRoute>} />
           <Route path="/admin/archived-classrooms" element={<ProtectedRoute><ArchivedClassroomsPage /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute><AdminSettingsPage /></ProtectedRoute>} />
 

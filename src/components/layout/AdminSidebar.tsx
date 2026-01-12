@@ -29,9 +29,7 @@ interface AdminSidebarProps {
 
 const navItems = [
   { href: '/admin', icon: LayoutDashboard, label: 'الرئيسية' },
-  { href: '/admin/curriculum-tree', icon: TreePine, label: 'شجرة المناهج' },
-  { href: '/admin/grading-system', icon: FileText, label: 'قوالب الدرجات' },
-  { href: '/admin/grading-matrix', icon: Grid3X3, label: 'مصفوفة التطبيق' },
+  { href: '/admin/curriculum-tree', icon: TreePine, label: 'المراحل والصفوف' },
   { href: '/admin/teachers', icon: Users, label: 'المعلمون' },
   { href: '/admin/archived-classrooms', icon: Archive, label: 'الصفوف المؤرشفة' },
 ];

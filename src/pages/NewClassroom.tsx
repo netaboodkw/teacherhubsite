@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useCreateClassroom } from '@/hooks/useClassrooms';
 import { useGradeLevels } from '@/hooks/useGradeLevels';
-import { useSubjects } from '@/hooks/useSubjects';
 import { useProfile } from '@/hooks/useProfile';
 import { useEducationLevels } from '@/hooks/useEducationLevels';
 import { useTeacherTemplates } from '@/hooks/useTeacherTemplates';
@@ -36,16 +35,13 @@ export default function NewClassroom() {
   const teacherEducationLevel = educationLevels?.find(l => l.id === teacherEducationLevelId);
   
   const { data: gradeLevels, isLoading: gradeLevelsLoading } = useGradeLevels(teacherEducationLevelId || undefined);
-  const [selectedGradeLevelId, setSelectedGradeLevelId] = useState('');
-  const { data: subjects, isLoading: subjectsLoading } = useSubjects(teacherEducationLevelId || undefined, selectedGradeLevelId || undefined);
   
   const [formData, setFormData] = useState({
-    name: '',
-    subject: '',
+    sectionName: '', // e.g. "أول", "ثاني", "أ", "ب"
+    subject: '', // e.g. "رياضيات", "علوم"
     schedule: '',
     color: 'bg-primary',
     education_level_id: '',
-    subject_id: '',
     grade_level_id: '',
     teacher_template_id: '',
   });
@@ -58,31 +54,42 @@ export default function NewClassroom() {
     }
   }, [teacherEducationLevelId]);
 
-  // Reset subject when grade level changes
-  useEffect(() => {
-    setFormData(prev => ({ ...prev, subject_id: '', subject: '' }));
-  }, [selectedGradeLevelId]);
-
-  // Update subject name when subject is selected
-  useEffect(() => {
-    if (formData.subject_id && subjects) {
-      const selectedSubject = subjects.find(s => s.id === formData.subject_id);
-      if (selectedSubject) {
-        setFormData(prev => ({ ...prev, subject: selectedSubject.name_ar }));
-      }
+  // Generate classroom name from selected values
+  const generateClassroomName = () => {
+    const gradeLevel = gradeLevels?.find(g => g.id === formData.grade_level_id);
+    const gradeName = gradeLevel?.name_ar || '';
+    const sectionName = formData.sectionName.trim();
+    const subjectName = formData.subject.trim();
+    
+    if (!gradeName) return '';
+    
+    let name = gradeName;
+    if (sectionName) {
+      name += ` - ${sectionName}`;
     }
-  }, [formData.subject_id, subjects]);
+    if (subjectName) {
+      name += ` (${subjectName})`;
+    }
+    return name;
+  };
+
+  const classroomName = generateClassroomName();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.grade_level_id) {
+      return;
+    }
+    
     await createClassroom.mutateAsync({
-      name: formData.name,
+      name: classroomName || 'فصل جديد',
       subject: formData.subject || 'مادة غير محددة',
       schedule: formData.schedule,
       color: formData.color,
       class_schedule: classSchedule,
       education_level_id: formData.education_level_id || null,
-      subject_id: formData.subject_id || null,
+      subject_id: null, // No longer using subject_id
       grade_level_id: formData.grade_level_id || null,
       teacher_template_id: formData.teacher_template_id || null,
     });
@@ -140,13 +147,10 @@ export default function NewClassroom() {
 
             {/* Grade Level */}
             <div className="space-y-2">
-              <Label>الصف الدراسي</Label>
+              <Label>الصف الدراسي <span className="text-destructive">*</span></Label>
               <Select 
                 value={formData.grade_level_id} 
-                onValueChange={(value) => {
-                  setFormData(prev => ({ ...prev, grade_level_id: value, subject_id: '', subject: '' }));
-                  setSelectedGradeLevelId(value);
-                }}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, grade_level_id: value }))}
                 disabled={!teacherEducationLevelId}
               >
                 <SelectTrigger>
@@ -154,7 +158,7 @@ export default function NewClassroom() {
                     !teacherEducationLevelId ? "يجب تحديد المرحلة أولاً" : 
                     gradeLevelsLoading ? "جاري التحميل..." : 
                     gradeLevels?.length === 0 ? "لا توجد صفوف" :
-                    "اختر الصف"
+                    "اختر الصف (مثال: سادس)"
                   } />
                 </SelectTrigger>
                 <SelectContent>
@@ -167,42 +171,38 @@ export default function NewClassroom() {
               </Select>
             </div>
 
-            {/* Subject */}
+            {/* Section Name */}
             <div className="space-y-2">
-              <Label>المادة الدراسية</Label>
-              <Select 
-                value={formData.subject_id} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, subject_id: value }))}
-                disabled={!formData.grade_level_id}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={
-                    !formData.grade_level_id ? "اختر الصف أولاً" : 
-                    subjectsLoading ? "جاري التحميل..." : 
-                    subjects?.length === 0 ? "لا توجد مواد" :
-                    "اختر المادة"
-                  } />
-                </SelectTrigger>
-                <SelectContent>
-                  {subjects?.map((subject) => (
-                    <SelectItem key={subject.id} value={subject.id}>
-                      {subject.name_ar}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="sectionName">اسم الفصل / الشعبة</Label>
+              <Input
+                id="sectionName"
+                placeholder="مثال: أول، ثاني، أ، ب"
+                value={formData.sectionName}
+                onChange={(e) => setFormData({ ...formData, sectionName: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                اختياري - يمكنك إضافة رقم أو حرف للتمييز بين الفصول
+              </p>
             </div>
 
+            {/* Subject Name */}
             <div className="space-y-2">
-              <Label htmlFor="name">اسم الفصل</Label>
+              <Label htmlFor="subject">المادة الدراسية</Label>
               <Input
-                id="name"
-                placeholder="مثال: الصف الأول - أ"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
+                id="subject"
+                placeholder="مثال: رياضيات، علوم، لغة عربية"
+                value={formData.subject}
+                onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
               />
             </div>
+
+            {/* Preview of classroom name */}
+            {classroomName && (
+              <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                <Label className="text-sm text-muted-foreground">اسم الفصل سيكون:</Label>
+                <p className="text-lg font-bold text-primary mt-1">{classroomName}</p>
+              </div>
+            )}
 
             {/* Schedule Editor */}
             <ClassScheduleEditor
@@ -227,7 +227,7 @@ export default function NewClassroom() {
                 <Alert>
                   <LayoutGrid className="h-4 w-4" />
                   <AlertDescription>
-                    لا توجد قوالب خاصة. سيتم استخدام القالب الافتراضي من النظام (إن وجد).{' '}
+                    لا توجد قوالب خاصة بك.{' '}
                     <Link to="/teacher/templates" className="text-primary hover:underline">
                       إنشاء قالب جديد
                     </Link>
@@ -240,10 +240,10 @@ export default function NewClassroom() {
                 >
                   <SelectTrigger>
                     <LayoutGrid className="h-4 w-4 text-muted-foreground ml-2" />
-                    <SelectValue placeholder="استخدام القالب الافتراضي من النظام" />
+                    <SelectValue placeholder="بدون قالب" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">استخدام القالب الافتراضي من النظام</SelectItem>
+                    <SelectItem value="none">بدون قالب</SelectItem>
                     {teacherTemplates.map((template) => (
                       <SelectItem key={template.id} value={template.id}>
                         {template.name_ar}
@@ -253,7 +253,7 @@ export default function NewClassroom() {
                 </Select>
               )}
               <p className="text-xs text-muted-foreground">
-                يمكنك اختيار قالب درجات خاص بك أو استخدام القالب الافتراضي المحدد من المشرف
+                يمكنك اختيار قالب درجات خاص بك لهذا الفصل
               </p>
             </div>
 
@@ -280,7 +280,7 @@ export default function NewClassroom() {
               <Button 
                 type="submit" 
                 className="flex-1 gradient-hero"
-                disabled={createClassroom.isPending || !teacherEducationLevelId}
+                disabled={createClassroom.isPending || !teacherEducationLevelId || !formData.grade_level_id}
               >
                 {createClassroom.isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
