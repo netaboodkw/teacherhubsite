@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { 
   Users, User, LogOut, Check, X, Loader2, 
-  School, BookOpen, Clock, CheckCircle, XCircle, Mail
+  School, BookOpen, Clock, CheckCircle, XCircle, Mail, BarChart3
 } from 'lucide-react';
 
 export default function DepartmentHeadDashboard() {
@@ -68,10 +68,16 @@ export default function DepartmentHeadDashboard() {
             </div>
           </div>
           
-          <Button variant="outline" size="sm" onClick={handleLogout}>
-            <LogOut className="h-4 w-4 ml-2" />
-            تسجيل الخروج
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate('/department-head/reports')}>
+              <BarChart3 className="h-4 w-4 ml-2" />
+              التقارير
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 ml-2" />
+              تسجيل الخروج
+            </Button>
+          </div>
         </div>
       </header>
 
