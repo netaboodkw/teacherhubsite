@@ -1,380 +1,418 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { useEducationLevels } from '@/hooks/useEducationLevels';
+import { useSubjects } from '@/hooks/useSubjects';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { useAuth } from '@/hooks/useAuth';
-import { Phone, ArrowLeft, Loader2, GraduationCap, Timer } from 'lucide-react';
+import { Loader2, ArrowLeft, Mail, Lock, User, Building2, BookOpen, GraduationCap, Eye, EyeOff } from 'lucide-react';
 import heroBg from '@/assets/hero-bg.jpg';
-import { supabase } from '@/integrations/supabase/client';
-
-const KUWAIT_PHONE_REGEX = /^[569]\d{7}$/;
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const RESEND_COOLDOWN = 60; // seconds
 
 export default function TeacherAuth() {
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [isNewUser, setIsNewUser] = useState(false);
-  const [resendLoading, setResendLoading] = useState(false);
-  const [countdown, setCountdown] = useState(0);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
   const { signIn, signUp } = useAuth();
+  const { data: educationLevels = [] } = useEducationLevels();
+  const { data: subjects = [] } = useSubjects();
+  
+  // Login state
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  
+  // Register state
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [schoolName, setSchoolName] = useState('');
+  const [educationLevelId, setEducationLevelId] = useState('');
+  const [subjectId, setSubjectId] = useState('');
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // Filter subjects by education level
+  const filteredSubjects = educationLevelId 
+    ? subjects.filter(s => s.education_level_id === educationLevelId)
+    : subjects;
 
-  // Countdown timer effect
-  useEffect(() => {
-    if (countdown > 0) {
-      timerRef.current = setTimeout(() => {
-        setCountdown(countdown - 1);
-      }, 1000);
-    }
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-    };
-  }, [countdown]);
-
-  // Start countdown when entering OTP step
-  useEffect(() => {
-    if (step === 'otp') {
-      setCountdown(RESEND_COOLDOWN);
-    } else {
-      setCountdown(0);
-    }
-  }, [step]);
-
-  const validateKuwaitiPhone = (phoneNumber: string): boolean => {
-    return KUWAIT_PHONE_REGEX.test(phoneNumber);
-  };
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 8);
-    setPhone(value);
-  };
-
-  const sendOTP = async (phoneNumber: string): Promise<boolean> => {
-    try {
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/send-otp`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ phone: phoneNumber, action: 'send' }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        toast.error(data.error || 'فشل في إرسال رمز التحقق');
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      console.error('Error sending OTP:', error);
-      toast.error('حدث خطأ أثناء إرسال رمز التحقق');
-      return false;
-    }
-  };
-
-  const verifyOTP = async (phoneNumber: string, otpCode: string): Promise<boolean> => {
-    try {
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/send-otp`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ phone: phoneNumber, action: 'verify', otp: otpCode }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        toast.error(data.error || 'فشل في التحقق');
-        return false;
-      }
-
-      return data.verified === true;
-    } catch (error) {
-      console.error('Error verifying OTP:', error);
-      toast.error('حدث خطأ أثناء التحقق');
-      return false;
-    }
-  };
-
-  const handleSendOTP = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateKuwaitiPhone(phone)) {
-      toast.error('يرجى إدخال رقم هاتف كويتي صحيح (8 أرقام يبدأ بـ 5 أو 6 أو 9)');
+    if (!loginEmail.trim() || !loginPassword) {
+      toast.error('يرجى إدخال البريد الإلكتروني وكلمة المرور');
       return;
     }
-
-    setLoading(true);
     
+    setLoginLoading(true);
     try {
-      const emailFromPhone = `${phone}@phone.teacherhub.app`;
-      const passwordFromPhone = `phone_${phone}_secure_2024`;
+      const { error } = await signIn(loginEmail.trim(), loginPassword);
       
-      // Check if user exists (without logging in)
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: emailFromPhone,
-        password: passwordFromPhone,
-      });
-      
-      // Sign out immediately - we just wanted to check if user exists
-      await supabase.auth.signOut();
-      
-      if (!signInError) {
-        // Existing user - will need to verify OTP then sign in
-        setIsNewUser(false);
-      } else {
-        // New user
-        setIsNewUser(true);
-      }
-      
-      // Always send OTP regardless of user existence
-      const otpSent = await sendOTP(phone);
-      
-      if (otpSent) {
-        toast.success(`تم إرسال رمز التحقق إلى ${phone}`);
-        setStep('otp');
-      }
-    } catch (error) {
-      console.error('Error in handleSendOTP:', error);
-      toast.error('حدث خطأ، يرجى المحاولة مرة أخرى');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResendOTP = async () => {
-    if (countdown > 0) return;
-    
-    setResendLoading(true);
-    const otpSent = await sendOTP(phone);
-    if (otpSent) {
-      toast.success('تم إعادة إرسال رمز التحقق');
-      setCountdown(RESEND_COOLDOWN);
-    }
-    setResendLoading(false);
-  };
-
-  const handleVerifyOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (otp.length !== 6) {
-      toast.error('يرجى إدخال رمز التحقق كاملاً');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // Verify OTP with Twilio
-      const isVerified = await verifyOTP(phone, otp);
-      
-      if (!isVerified) {
-        setLoading(false);
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          toast.error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+        } else {
+          toast.error(error.message);
+        }
         return;
       }
-
-      const emailFromPhone = `${phone}@phone.teacherhub.app`;
-      const passwordFromPhone = `phone_${phone}_secure_2024`;
-
-      if (isNewUser) {
-        // New user - sign up
-        const { error: signUpError } = await signUp(emailFromPhone, passwordFromPhone, phone);
-        
-        if (signUpError) {
-          if (signUpError.message.includes('already registered')) {
-            // User already exists, try to sign in
-            const { error: signInError } = await signIn(emailFromPhone, passwordFromPhone);
-            if (signInError) throw signInError;
-            toast.success('مرحباً بعودتك!');
-            navigate('/teacher');
-            return;
-          }
-          throw signUpError;
-        }
-        
-        toast.success('تم إنشاء حسابك بنجاح');
-        navigate('/complete-profile');
-      } else {
-        // Existing user - sign in
-        const { error: signInError } = await signIn(emailFromPhone, passwordFromPhone);
-        if (signInError) throw signInError;
-        
-        // Check if profile is complete
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_profile_complete')
-          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-          .single();
-        
-        if (profile?.is_profile_complete) {
-          toast.success('مرحباً بعودتك!');
-          navigate('/teacher');
-        } else {
-          navigate('/complete-profile');
-        }
-      }
+      
+      toast.success('تم تسجيل الدخول بنجاح');
+      navigate('/teacher');
     } catch (error: any) {
-      toast.error(error.message || 'حدث خطأ أثناء التحقق');
+      toast.error(error.message || 'حدث خطأ أثناء تسجيل الدخول');
     } finally {
-      setLoading(false);
+      setLoginLoading(false);
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validation
+    if (!fullName.trim()) {
+      toast.error('يرجى إدخال الاسم الكامل');
+      return;
+    }
+    
+    if (!email.trim()) {
+      toast.error('يرجى إدخال البريد الإلكتروني');
+      return;
+    }
+    
+    if (!password) {
+      toast.error('يرجى إدخال كلمة المرور');
+      return;
+    }
+    
+    if (password.length < 6) {
+      toast.error('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      toast.error('كلمة المرور غير متطابقة');
+      return;
+    }
+    
+    if (!educationLevelId) {
+      toast.error('يرجى اختيار المرحلة الدراسية');
+      return;
+    }
+    
+    setRegisterLoading(true);
+    try {
+      // Sign up user
+      const { data, error: signUpError } = await signUp(email.trim(), password, fullName.trim());
+      
+      if (signUpError) {
+        if (signUpError.message.includes('already registered')) {
+          toast.error('هذا البريد الإلكتروني مسجل بالفعل');
+        } else {
+          toast.error(signUpError.message);
+        }
+        return;
+      }
+      
+      if (!data.user) {
+        toast.error('حدث خطأ أثناء إنشاء الحساب');
+        return;
+      }
+      
+      // Wait a moment for the trigger to create profile, then update it
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Update profile with additional info
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          school_name: schoolName.trim() || null,
+          education_level_id: educationLevelId,
+          subject_id: subjectId || null,
+          is_profile_complete: true,
+        })
+        .eq('user_id', data.user.id);
+      
+      if (profileError) {
+        console.error('Profile update error:', profileError);
+        // Don't fail registration if profile update fails
+      }
+      
+      toast.success('تم إنشاء الحساب بنجاح');
+      navigate('/teacher');
+    } catch (error: any) {
+      toast.error(error.message || 'حدث خطأ أثناء التسجيل');
+    } finally {
+      setRegisterLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen flex" dir="rtl">
-      <div className="flex-1 flex items-center justify-center p-8 bg-background">
-        <Card className="w-full max-w-md border-0 shadow-none">
-          <CardHeader className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl gradient-hero mb-4 mx-auto">
-              <GraduationCap className="w-8 h-8 text-primary-foreground" />
-            </div>
-            <CardTitle className="text-2xl font-bold">TeacherHub</CardTitle>
-            <CardDescription>
-              {step === 'phone' ? 'أدخل رقم هاتفك للمتابعة' : 'أدخل رمز التحقق المرسل إليك'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {step === 'phone' ? (
-              <form onSubmit={handleSendOTP} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="phone">رقم الهاتف</Label>
-                  <div className="relative">
-                    <Phone className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="9xxxxxxx"
-                      value={phone}
-                      onChange={handlePhoneChange}
-                      className="pr-10"
-                      dir="ltr"
-                      maxLength={8}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    رقم هاتف كويتي من 8 أرقام (يبدأ بـ 5 أو 6 أو 9)
-                  </p>
-                </div>
-                <Button type="submit" className="w-full gradient-hero h-12" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                      جاري الإرسال...
-                    </>
-                  ) : (
-                    'متابعة'
-                  )}
-                </Button>
-              </form>
-            ) : (
-              <form onSubmit={handleVerifyOTP} className="space-y-6">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="mb-4"
-                  onClick={() => {
-                    setStep('phone');
-                    setOtp('');
-                  }}
-                >
-                  <ArrowLeft className="ml-2 h-4 w-4" />
-                  تغيير رقم الهاتف
-                </Button>
+      {/* Left Side - Form */}
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-8 bg-background">
+        <div className="w-full max-w-md">
+          <Link 
+            to="/" 
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            العودة للرئيسية
+          </Link>
+          
+          <Card className="border-0 shadow-lg">
+            <CardHeader className="space-y-1 pb-4">
+              <CardTitle className="text-2xl font-bold text-center">
+                مرحباً بك 👋
+              </CardTitle>
+              <CardDescription className="text-center">
+                سجّل دخولك أو أنشئ حساباً جديداً
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent>
+              <Tabs defaultValue="login" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsTrigger value="login">تسجيل الدخول</TabsTrigger>
+                  <TabsTrigger value="register">حساب جديد</TabsTrigger>
+                </TabsList>
                 
-                <div className="space-y-2">
-                  <Label>رمز التحقق</Label>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    تم إرسال الرمز إلى {phone}
-                  </p>
-                  <div className="flex justify-center" dir="ltr">
-                    <InputOTP
-                      maxLength={6}
-                      value={otp}
-                      onChange={(value) => setOtp(value)}
-                    >
-                      <InputOTPGroup>
-                        <InputOTPSlot index={0} />
-                        <InputOTPSlot index={1} />
-                        <InputOTPSlot index={2} />
-                        <InputOTPSlot index={3} />
-                        <InputOTPSlot index={4} />
-                        <InputOTPSlot index={5} />
-                      </InputOTPGroup>
-                    </InputOTP>
-                  </div>
-                </div>
-                
-                <Button type="submit" className="w-full gradient-hero h-12" disabled={loading || otp.length !== 6}>
-                  {loading ? (
-                    <>
-                      <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                      جاري التحقق...
-                    </>
-                  ) : (
-                    'تحقق'
-                  )}
-                </Button>
-                
-                <div className="text-center space-y-2">
-                  {countdown > 0 ? (
-                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                      <Timer className="h-4 w-4" />
-                      <span>إعادة الإرسال بعد {countdown} ثانية</span>
+                {/* Login Tab */}
+                <TabsContent value="login">
+                  <form onSubmit={handleLogin} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="login-email">البريد الإلكتروني</Label>
+                      <div className="relative">
+                        <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="login-email"
+                          type="email"
+                          placeholder="example@email.com"
+                          value={loginEmail}
+                          onChange={(e) => setLoginEmail(e.target.value)}
+                          className="pr-10"
+                          dir="ltr"
+                        />
+                      </div>
                     </div>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="link"
-                      onClick={handleResendOTP}
-                      disabled={resendLoading}
-                      className="text-sm"
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="login-password">كلمة المرور</Label>
+                      <div className="relative">
+                        <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="login-password"
+                          type={showLoginPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          value={loginPassword}
+                          onChange={(e) => setLoginPassword(e.target.value)}
+                          className="pr-10 pl-10"
+                          dir="ltr"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowLoginPassword(!showLoginPassword)}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      type="submit" 
+                      className="w-full gradient-hero h-11"
+                      disabled={loginLoading}
                     >
-                      {resendLoading ? (
-                        <>
-                          <Loader2 className="ml-2 h-3 w-3 animate-spin" />
-                          جاري الإرسال...
-                        </>
+                      {loginLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        'إعادة إرسال رمز التحقق'
+                        'تسجيل الدخول'
                       )}
                     </Button>
-                  )}
-                </div>
-              </form>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div 
-        className="hidden lg:flex flex-1 items-center justify-center p-12 relative overflow-hidden"
-        style={{
-          backgroundImage: `url(${heroBg})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/80 to-secondary/80" />
-        <div className="relative z-10 text-center max-w-lg">
-          <h2 className="text-4xl font-bold text-primary-foreground mb-4">
-            إدارة صفوفك بسهولة
-          </h2>
-          <p className="text-lg text-primary-foreground/90">
-            تتبع الحضور، الدرجات، والسلوك من مكان واحد. صُمم خصيصًا للمعلمين لتوفير الوقت والجهد.
+                  </form>
+                </TabsContent>
+                
+                {/* Register Tab */}
+                <TabsContent value="register">
+                  <form onSubmit={handleRegister} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="fullName">الاسم الكامل *</Label>
+                      <div className="relative">
+                        <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="fullName"
+                          type="text"
+                          placeholder="أحمد محمد"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          className="pr-10"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="email">البريد الإلكتروني *</Label>
+                      <div className="relative">
+                        <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="example@email.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="pr-10"
+                          dir="ltr"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="password">كلمة المرور *</Label>
+                        <div className="relative">
+                          <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="pr-10 pl-8"
+                            dir="ltr"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showPassword ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="confirmPassword">تأكيد كلمة المرور *</Label>
+                        <div className="relative">
+                          <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="confirmPassword"
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder="••••••"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            className="pr-10 pl-8"
+                            dir="ltr"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showConfirmPassword ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="educationLevel">المرحلة الدراسية *</Label>
+                      <Select value={educationLevelId} onValueChange={setEducationLevelId}>
+                        <SelectTrigger id="educationLevel">
+                          <GraduationCap className="h-4 w-4 text-muted-foreground ml-2" />
+                          <SelectValue placeholder="اختر المرحلة" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {educationLevels.map(level => (
+                            <SelectItem key={level.id} value={level.id}>
+                              {level.name_ar}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="subject">المادة (اختياري)</Label>
+                      <Select value={subjectId} onValueChange={setSubjectId}>
+                        <SelectTrigger id="subject">
+                          <BookOpen className="h-4 w-4 text-muted-foreground ml-2" />
+                          <SelectValue placeholder="اختر المادة" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filteredSubjects.map(subject => (
+                            <SelectItem key={subject.id} value={subject.id}>
+                              {subject.name_ar}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="schoolName">اسم المدرسة (اختياري)</Label>
+                      <div className="relative">
+                        <Building2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="schoolName"
+                          type="text"
+                          placeholder="مدرسة الكويت الثانوية"
+                          value={schoolName}
+                          onChange={(e) => setSchoolName(e.target.value)}
+                          className="pr-10"
+                        />
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      type="submit" 
+                      className="w-full gradient-hero h-11"
+                      disabled={registerLoading}
+                    >
+                      {registerLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        'إنشاء الحساب'
+                      )}
+                    </Button>
+                  </form>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+          
+          <p className="text-center text-sm text-muted-foreground mt-6">
+            للدخول كمشرف؟{' '}
+            <Link to="/auth/admin" className="text-primary hover:underline">
+              صفحة المشرف
+            </Link>
           </p>
+        </div>
+      </div>
+      
+      {/* Right Side - Image (hidden on mobile) */}
+      <div className="hidden lg:flex lg:flex-1 relative overflow-hidden">
+        <img
+          src={heroBg}
+          alt="Teacher"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-l from-primary/80 to-primary/60 flex items-center justify-center p-12">
+          <div className="text-center text-primary-foreground max-w-lg">
+            <h2 className="text-3xl font-bold mb-4">
+              منصة المعلم الذكية
+            </h2>
+            <p className="text-lg opacity-90">
+              أدر صفوفك وتابع درجات طلابك وسجّل الحضور بسهولة ويسر
+            </p>
+          </div>
         </div>
       </div>
     </div>

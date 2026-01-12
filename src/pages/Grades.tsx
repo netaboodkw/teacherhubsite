@@ -7,12 +7,13 @@ import { useBehaviorNotes } from '@/hooks/useBehaviorNotes';
 import { useClassroomGradingStructure, GradingStructureData, GradingColumn, GradingGroup } from '@/hooks/useGradingStructures';
 import { useProfile } from '@/hooks/useProfile';
 import { PrintableGradesTable } from '@/components/grades/PrintableGradesTable';
+import { BulkGradeEntry } from '@/components/grades/BulkGradeEntry';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronRight, ChevronLeft, Plus, Loader2, Table, Settings, ChevronDown, ChevronUp, Printer, MessageSquare, Calendar, Clock, X } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Plus, Loader2, Table, Settings, ChevronDown, ChevronUp, Printer, MessageSquare, Calendar, Clock, X, Users } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -563,16 +564,16 @@ function StructuredGradingView({
                                   : undefined 
                               }}
                             >
-                              {isEditable ? (
+                            {isEditable ? (
                                 <button
                                   onClick={() => onCellClick(student.id, column.id, group.id, column.max_score)}
-                                  className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center mx-auto transition-all active:scale-95 ${
+                                  className={`w-11 h-11 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center mx-auto transition-all active:scale-95 touch-manipulation ${
                                     value > 0
-                                      ? 'bg-primary/20 text-primary font-bold'
+                                      ? 'bg-primary/20 text-primary font-bold text-sm'
                                       : 'bg-muted/50 active:bg-muted text-muted-foreground'
                                   }`}
                                 >
-                                  {value > 0 ? value : <Plus className="w-3 h-3 sm:w-4 sm:h-4" />}
+                                  {value > 0 ? value : <Plus className="w-4 h-4" />}
                                 </button>
                               ) : (
                                 <span className={column.type === 'grand_total' || column.type === 'group_sum' || column.type === 'external_sum' ? 'text-primary' : ''}>
@@ -618,6 +619,10 @@ export default function Grades() {
   // Student details dialog state
   const [studentDialogOpen, setStudentDialogOpen] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  
+  // Bulk entry state
+  const [bulkEntryOpen, setBulkEntryOpen] = useState(false);
+  const [bulkEntryColumn, setBulkEntryColumn] = useState<{ id: string; name: string; maxScore: number } | null>(null);
   
   // Print settings
   const [useNormalFont, setUseNormalFont] = useState(false);
@@ -692,13 +697,48 @@ export default function Grades() {
   };
 
   // فتح نافذة إضافة/تعديل درجة (للعرض المتقدم)
-  const openStructuredGradeDialog = (studentId: string, columnId: string, groupId: string, maxScore: number) => {
+  const openStructuredGradeDialog = useCallback((studentId: string, columnId: string, groupId: string, maxScore: number) => {
     const existingGrade = grades.find(g => g.student_id === studentId && g.title === columnId);
     setSelectedCell({ studentId, columnId, groupId, maxScore });
     setGradeValue(existingGrade ? String(existingGrade.score) : '');
     setGradeType('participation');
     setIsDialogOpen(true);
-  };
+  }, [grades]);
+  
+  // Open bulk entry dialog
+  const openBulkEntry = useCallback((columnId: string, columnName: string, maxScore: number) => {
+    setBulkEntryColumn({ id: columnId, name: columnName, maxScore });
+    setBulkEntryOpen(true);
+  }, []);
+  
+  // Handle bulk save
+  const handleBulkSave = useCallback(async (gradeData: { studentId: string; score: number }[]) => {
+    for (const { studentId, score } of gradeData) {
+      const existingGrade = grades.find(g => 
+        g.student_id === studentId && 
+        g.title === bulkEntryColumn?.id
+      );
+      
+      if (existingGrade) {
+        await updateGrade.mutateAsync({
+          id: existingGrade.id,
+          score: score,
+          type: 'participation',
+        });
+      } else {
+        await createGrade.mutateAsync({
+          student_id: studentId,
+          classroom_id: selectedClassroom,
+          type: 'participation',
+          title: bulkEntryColumn?.id || '',
+          score: score,
+          max_score: bulkEntryColumn?.maxScore || 10,
+          week_number: 1,
+        });
+      }
+    }
+    toast.success(`تم حفظ درجات ${gradeData.length} طالب`);
+  }, [grades, bulkEntryColumn, selectedClassroom, createGrade, updateGrade]);
 
   // حفظ الدرجة - محسّن للسرعة على الهاتف
   const handleSaveGrade = useCallback(() => {
@@ -1109,6 +1149,18 @@ export default function Grades() {
             )}
           </DialogContent>
         </Dialog>
+        
+        {/* Bulk Grade Entry Dialog */}
+        {bulkEntryColumn && (
+          <BulkGradeEntry
+            open={bulkEntryOpen}
+            onOpenChange={setBulkEntryOpen}
+            students={students}
+            columnName={bulkEntryColumn.name}
+            maxScore={bulkEntryColumn.maxScore}
+            onSave={handleBulkSave}
+          />
+        )}
       </div>
       
       {/* Printable Table - Outside the hidden div, shown only when printing */}
