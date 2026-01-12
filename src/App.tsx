@@ -39,6 +39,11 @@ import Settings from "./pages/Settings";
 import DepartmentHeadDashboard from "./pages/department-head/DepartmentHeadDashboard";
 import DepartmentHeadReports from "./pages/department-head/DepartmentHeadReports";
 import TeacherDetailsView from "./pages/department-head/TeacherDetailsView";
+import DHDashboardNew from "./pages/department-head/DHDashboardNew";
+import DHClassrooms from "./pages/department-head/DHClassrooms";
+import DHClassroomView from "./pages/department-head/DHClassroomView";
+import DHStudents from "./pages/department-head/DHStudents";
+import DHGrades from "./pages/department-head/DHGrades";
 
 const queryClient = new QueryClient();
 
@@ -89,8 +94,13 @@ const App = () => (
           <Route path="/teacher/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
           {/* Department Head Routes */}
-          <Route path="/department-head" element={<ProtectedRoute><DepartmentHeadDashboard /></ProtectedRoute>} />
+          <Route path="/department-head" element={<ProtectedRoute><DHDashboardNew /></ProtectedRoute>} />
+          <Route path="/department-head/classrooms" element={<ProtectedRoute><DHClassrooms /></ProtectedRoute>} />
+          <Route path="/department-head/classrooms/:classroomId" element={<ProtectedRoute><DHClassroomView /></ProtectedRoute>} />
+          <Route path="/department-head/students" element={<ProtectedRoute><DHStudents /></ProtectedRoute>} />
+          <Route path="/department-head/grades" element={<ProtectedRoute><DHGrades /></ProtectedRoute>} />
           <Route path="/department-head/reports" element={<ProtectedRoute><DepartmentHeadReports /></ProtectedRoute>} />
+          <Route path="/department-head/old" element={<ProtectedRoute><DepartmentHeadDashboard /></ProtectedRoute>} />
           <Route path="/department-head/teacher/:teacherId" element={<ProtectedRoute><TeacherDetailsView /></ProtectedRoute>} />
 
           <Route path="*" element={<NotFound />} />
