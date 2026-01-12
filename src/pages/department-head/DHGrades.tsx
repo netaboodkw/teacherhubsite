@@ -61,7 +61,7 @@ function GradesContent() {
         column.sourceGroupIds.forEach((key: string) => {
           if (key.includes(':')) {
             const [grpId, colId] = key.split(':');
-            const grp = gradingStructure?.groups.find((g: any) => g.id === grpId);
+            const grp = gradingStructure?.structure?.groups?.find((g: any) => g.id === grpId);
             const col = grp?.columns.find((c: any) => c.id === colId);
             if (col && grp) total += calculateColumnValue(studentId, col, grp);
           }
@@ -70,7 +70,7 @@ function GradesContent() {
       if (column.externalSourceColumns) {
         column.externalSourceColumns.forEach((key: string) => {
           const [grpId, colId] = key.split(':');
-          const grp = gradingStructure?.groups.find((g: any) => g.id === grpId);
+          const grp = gradingStructure?.structure?.groups?.find((g: any) => g.id === grpId);
           const col = grp?.columns.find((c: any) => c.id === colId);
           if (col && grp) total += calculateColumnValue(studentId, col, grp);
         });
@@ -103,7 +103,7 @@ function GradesContent() {
 
   const calculateStudentTotal = (studentId: string) => {
     if (!gradingStructure) return 0;
-    return gradingStructure.groups.reduce((sum: number, group: any) => {
+    return (gradingStructure.structure?.groups || []).reduce((sum: number, group: any) => {
       return sum + group.columns.filter((c: any) => c.type === 'score').reduce((s: number, col: any) => {
         const grade = grades.find((g: any) => g.student_id === studentId && g.title === col.id);
         return s + (grade?.score || 0);
@@ -113,7 +113,7 @@ function GradesContent() {
 
   const calculateTotalMaxScore = () => {
     if (!gradingStructure) return 100;
-    return gradingStructure.groups.reduce((sum: number, group: any) => {
+    return (gradingStructure.structure?.groups || []).reduce((sum: number, group: any) => {
       return sum + group.columns.filter((c: any) => c.type === 'score').reduce((s: number, c: any) => s + c.max_score, 0);
     }, 0);
   };
@@ -160,7 +160,7 @@ function GradesContent() {
                 <thead>
                   <tr>
                     <th className="border p-3 bg-muted text-right min-w-[180px]" rowSpan={2}>اسم الطالب</th>
-                    {gradingStructure.groups.map((group: any) => {
+                    {(gradingStructure.structure?.groups || []).map((group: any) => {
                       const isCollapsed = collapsedGroups.has(group.id);
                       return (
                         <th key={group.id} colSpan={isCollapsed ? 1 : group.columns.length}
@@ -180,7 +180,7 @@ function GradesContent() {
                     </th>
                   </tr>
                   <tr>
-                    {gradingStructure.groups.map((group: any) => {
+                    {(gradingStructure.structure?.groups || []).map((group: any) => {
                       const isCollapsed = collapsedGroups.has(group.id);
                       if (isCollapsed) {
                         return <th key={`${group.id}-collapsed`} className="border p-2 text-center text-xs" style={{ backgroundColor: `${group.color}50` }}>
@@ -212,7 +212,7 @@ function GradesContent() {
                             <span className="font-medium text-sm">{student.name}</span>
                           </div>
                         </td>
-                        {gradingStructure.groups.map((group: any) => {
+                        {(gradingStructure.structure?.groups || []).map((group: any) => {
                           const isCollapsed = collapsedGroups.has(group.id);
                           if (isCollapsed) {
                             const groupTotal = calculateGroupTotal(student.id, group);
