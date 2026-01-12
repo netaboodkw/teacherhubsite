@@ -12,6 +12,7 @@ import {
   ChevronRight,
   LogOut,
   Eye,
+  Mail,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -25,6 +26,7 @@ interface DepartmentHeadSidebarProps {
 
 const navItems = [
   { href: '/department-head', icon: LayoutDashboard, label: 'لوحة التحكم' },
+  { href: '/department-head/invitations', icon: Mail, label: 'الدعوات' },
   { href: '/department-head/classrooms', icon: GraduationCap, label: 'الفصول' },
   { href: '/department-head/students', icon: Users, label: 'الطلاب' },
   { href: '/department-head/attendance', icon: ClipboardCheck, label: 'الحضور' },

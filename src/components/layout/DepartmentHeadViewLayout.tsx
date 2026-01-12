@@ -10,9 +10,10 @@ import { Card, CardContent } from '@/components/ui/card';
 interface DepartmentHeadViewLayoutProps {
   children: ReactNode;
   requireTeacher?: boolean;
+  showTeacherSelector?: boolean;
 }
 
-function LayoutContent({ children, requireTeacher = true }: DepartmentHeadViewLayoutProps) {
+function LayoutContent({ children, requireTeacher = true, showTeacherSelector = true }: DepartmentHeadViewLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { data: profile, isLoading } = useDepartmentHeadProfile();
   const { selectedTeacherId } = useDepartmentHeadContext();
@@ -33,7 +34,7 @@ function LayoutContent({ children, requireTeacher = true }: DepartmentHeadViewLa
     <div className="min-h-screen bg-background flex" dir="rtl">
       <DepartmentHeadSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 flex flex-col min-h-screen">
-        <DepartmentHeadHeader onMenuClick={() => setSidebarOpen(true)} />
+        <DepartmentHeadHeader onMenuClick={() => setSidebarOpen(true)} showTeacherSelector={showTeacherSelector} />
         <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
           {requireTeacher && !selectedTeacherId ? (
             <Card>
