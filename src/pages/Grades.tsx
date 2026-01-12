@@ -949,6 +949,17 @@ export default function Grades() {
             </Select>
             {hasStructure && students.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
+                {/* زر الطباعة - يظهر دائماً */}
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handlePrint}
+                  className="print:hidden"
+                >
+                  <Printer className="h-4 w-4 ml-1" />
+                  <span className="hidden sm:inline">طباعة</span>
+                </Button>
+                
                 {!isMobile && (
                   <Button 
                     variant={forceMobileView ? "default" : "outline"}
@@ -961,26 +972,15 @@ export default function Grades() {
                   </Button>
                 )}
                 {!isMobile && !forceMobileView && (
-                  <>
-                    <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={useNormalFont}
-                        onChange={(e) => setUseNormalFont(e.target.checked)}
-                        className="rounded border-input"
-                      />
-                      خط عادي
-                    </label>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={handlePrint}
-                      className="print:hidden"
-                    >
-                      <Printer className="h-4 w-4 ml-2" />
-                      طباعة
-                    </Button>
-                  </>
+                  <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={useNormalFont}
+                      onChange={(e) => setUseNormalFont(e.target.checked)}
+                      className="rounded border-input"
+                    />
+                    خط عادي
+                  </label>
                 )}
               </div>
             )}

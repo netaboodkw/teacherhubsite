@@ -618,7 +618,7 @@ export default function TeacherTemplates() {
   const [formData, setFormData] = useState({
     name_ar: '',
     description: '',
-    structure: { groups: [], settings: { showGrandTotal: true, showPercentage: false, passingScore: 50 } } as GradingStructureData
+    structure: { groups: [], settings: { showGrandTotal: false, showPercentage: false, passingScore: 50 } } as GradingStructureData
   });
 
   // Get share info for a template
@@ -631,7 +631,7 @@ export default function TeacherTemplates() {
     setFormData({
       name_ar: '',
       description: '',
-      structure: { groups: [], settings: { showGrandTotal: true, showPercentage: false, passingScore: 50 } }
+      structure: { groups: [], settings: { showGrandTotal: false, showPercentage: false, passingScore: 50 } }
     });
     setDialogOpen(true);
   };
@@ -641,7 +641,7 @@ export default function TeacherTemplates() {
     setFormData({
       name_ar: template.name_ar,
       description: template.description || '',
-      structure: template.structure || { groups: [], settings: { showGrandTotal: true, showPercentage: false, passingScore: 50 } }
+      structure: template.structure || { groups: [], settings: { showGrandTotal: false, showPercentage: false, passingScore: 50 } }
     });
     setDialogOpen(true);
   };
@@ -928,6 +928,35 @@ export default function TeacherTemplates() {
                 placeholder="وصف مختصر للقالب"
                 rows={2}
               />
+            </div>
+
+            {/* إعدادات القالب */}
+            <div className="space-y-3 border rounded-lg p-4 bg-muted/30">
+              <Label className="text-sm font-medium">إعدادات العرض</Label>
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id="showGrandTotal"
+                  checked={formData.structure.settings?.showGrandTotal ?? false}
+                  onCheckedChange={(checked) => 
+                    setFormData({
+                      ...formData,
+                      structure: {
+                        ...formData.structure,
+                        settings: {
+                          ...formData.structure.settings,
+                          showGrandTotal: !!checked
+                        }
+                      }
+                    })
+                  }
+                />
+                <Label htmlFor="showGrandTotal" className="text-sm cursor-pointer">
+                  إظهار عمود المجموع الكلي التلقائي
+                </Label>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                يمكنك إضافة عمود مجموع كلي يدوياً بدلاً من ذلك للتحكم الكامل
+              </p>
             </div>
 
             <StructureEditor

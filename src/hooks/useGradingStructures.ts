@@ -120,7 +120,7 @@ export function useClassroomGradingStructure(classroom?: {
             .single();
           
           if (!adminError && adminTemplateData) {
-            let structure: GradingStructureData = { groups: [], settings: { showPercentage: true, passingScore: 50, showGrandTotal: true } };
+            let structure: GradingStructureData = { groups: [], settings: { showPercentage: true, passingScore: 50, showGrandTotal: false } };
             try {
               if (adminTemplateData.description) {
                 structure = JSON.parse(adminTemplateData.description);
