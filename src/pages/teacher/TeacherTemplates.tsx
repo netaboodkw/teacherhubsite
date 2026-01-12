@@ -11,6 +11,7 @@ import {
   useImportTemplate,
   TeacherTemplate 
 } from '@/hooks/useTeacherTemplates';
+import { useTemplatesInUse } from '@/hooks/useClassrooms';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,8 +22,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-import { Plus, Loader2, Edit, Trash2, Copy, FileText, LayoutGrid, Calculator, Sigma, ExternalLink, Share2, Download, Link2, Link2Off } from 'lucide-react';
+import { Plus, Loader2, Edit, Trash2, Copy, FileText, LayoutGrid, Calculator, Sigma, ExternalLink, Share2, Download, Link2, Link2Off, Lock, AlertTriangle } from 'lucide-react';
 import { GradingStructureData, GradingGroup, GradingColumn } from '@/hooks/useGradingStructures';
 
 // ألوان المجموعات - باستيل
@@ -598,6 +600,7 @@ function StructureEditor({
 export default function TeacherTemplates() {
   const { data: templates = [], isLoading } = useTeacherTemplates();
   const { data: sharedTemplates = [] } = useSharedTemplates();
+  const { data: templatesInUse = {} } = useTemplatesInUse();
   const createTemplate = useCreateTeacherTemplate();
   const updateTemplate = useUpdateTeacherTemplate();
   const deleteTemplate = useDeleteTeacherTemplate();
@@ -609,6 +612,8 @@ export default function TeacherTemplates() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [protectedWarningOpen, setProtectedWarningOpen] = useState(false);
+  const [protectedTemplateInfo, setProtectedTemplateInfo] = useState<{ template: TeacherTemplate; action: 'edit' | 'delete' } | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<TeacherTemplate | null>(null);
   const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
   const [shareCode, setShareCode] = useState('');
@@ -620,6 +625,16 @@ export default function TeacherTemplates() {
     description: '',
     structure: { groups: [], settings: { showGrandTotal: false, showPercentage: false, passingScore: 50 } } as GradingStructureData
   });
+
+  // Check if template is in use
+  const isTemplateInUse = (templateId: string) => {
+    return templatesInUse[templateId] && templatesInUse[templateId].length > 0;
+  };
+
+  // Get classrooms using template
+  const getClassroomsUsingTemplate = (templateId: string) => {
+    return templatesInUse[templateId] || [];
+  };
 
   // Get share info for a template
   const getShareInfo = (templateId: string) => {
@@ -637,6 +652,13 @@ export default function TeacherTemplates() {
   };
 
   const openEditDialog = (template: TeacherTemplate) => {
+    // Check if template is in use
+    if (isTemplateInUse(template.id)) {
+      setProtectedTemplateInfo({ template, action: 'edit' });
+      setProtectedWarningOpen(true);
+      return;
+    }
+    
     setEditingTemplate(template);
     setFormData({
       name_ar: template.name_ar,
@@ -644,6 +666,36 @@ export default function TeacherTemplates() {
       structure: template.structure || { groups: [], settings: { showGrandTotal: false, showPercentage: false, passingScore: 50 } }
     });
     setDialogOpen(true);
+  };
+
+  const handleDeleteClick = (template: TeacherTemplate) => {
+    // Check if template is in use
+    if (isTemplateInUse(template.id)) {
+      setProtectedTemplateInfo({ template, action: 'delete' });
+      setProtectedWarningOpen(true);
+      return;
+    }
+    
+    setTemplateToDelete(template.id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDuplicateForEdit = async () => {
+    if (!protectedTemplateInfo) return;
+    
+    try {
+      await createTemplate.mutateAsync({
+        name: `${protectedTemplateInfo.template.name} (نسخة للتعديل)`,
+        name_ar: `${protectedTemplateInfo.template.name_ar} (نسخة للتعديل)`,
+        description: protectedTemplateInfo.template.description || undefined,
+        structure: protectedTemplateInfo.template.structure
+      });
+      toast.success('تم إنشاء نسخة من القالب، يمكنك تعديلها الآن');
+      setProtectedWarningOpen(false);
+      setProtectedTemplateInfo(null);
+    } catch (error: any) {
+      toast.error('فشل في نسخ القالب');
+    }
   };
 
   const handleDuplicate = async (template: TeacherTemplate) => {
@@ -799,15 +851,38 @@ export default function TeacherTemplates() {
           </Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {templates.map((template) => (
-              <Card key={template.id} className="hover:shadow-md transition-shadow">
+            {templates.map((template) => {
+              const inUse = isTemplateInUse(template.id);
+              const classroomsUsing = getClassroomsUsingTemplate(template.id);
+              
+              return (
+              <Card key={template.id} className={`hover:shadow-md transition-shadow ${inUse ? 'border-amber-300 bg-amber-50/30' : ''}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{template.name_ar}</CardTitle>
-                      {template.description && (
-                        <CardDescription className="mt-1">{template.description}</CardDescription>
+                    <div className="flex items-start gap-2">
+                      {inUse && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Lock className="h-4 w-4 text-amber-600 mt-1" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>هذا القالب مستخدم في فصول ولا يمكن تعديله أو حذفه مباشرة</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       )}
+                      <div>
+                        <CardTitle className="text-lg">{template.name_ar}</CardTitle>
+                        {template.description && (
+                          <CardDescription className="mt-1">{template.description}</CardDescription>
+                        )}
+                        {inUse && (
+                          <p className="text-xs text-amber-600 mt-1">
+                            مستخدم في: {classroomsUsing.slice(0, 2).join('، ')}{classroomsUsing.length > 2 ? ` و${classroomsUsing.length - 2} آخرين` : ''}
+                          </p>
+                        )}
+                      </div>
                     </div>
                     <Badge variant="secondary">
                       {calculateTotalScore(template.structure)} درجة
@@ -842,15 +917,26 @@ export default function TeacherTemplates() {
                     )}
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => openEditDialog(template)}
-                    >
-                      <Edit className="h-4 w-4 ml-1" />
-                      تعديل
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={`flex-1 ${inUse ? 'opacity-60' : ''}`}
+                            onClick={() => openEditDialog(template)}
+                          >
+                            {inUse ? <Lock className="h-4 w-4 ml-1" /> : <Edit className="h-4 w-4 ml-1" />}
+                            تعديل
+                          </Button>
+                        </TooltipTrigger>
+                        {inUse && (
+                          <TooltipContent>
+                            <p>القالب محمي - انقر لنسخه للتعديل</p>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
                     {getShareInfo(template.id) ? (
                       <Button
                         variant="outline"
@@ -879,22 +965,31 @@ export default function TeacherTemplates() {
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => {
-                        setTemplateToDelete(template.id);
-                        setDeleteDialogOpen(true);
-                      }}
-                      title="حذف"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={`text-destructive hover:text-destructive ${inUse ? 'opacity-60' : ''}`}
+                            onClick={() => handleDeleteClick(template)}
+                            title="حذف"
+                          >
+                            {inUse ? <Lock className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
+                          </Button>
+                        </TooltipTrigger>
+                        {inUse && (
+                          <TooltipContent>
+                            <p>لا يمكن حذف قالب مستخدم في فصول</p>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -1002,6 +1097,55 @@ export default function TeacherTemplates() {
             >
               حذف
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Protected Template Warning Dialog */}
+      <AlertDialog open={protectedWarningOpen} onOpenChange={setProtectedWarningOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-amber-600">
+              <AlertTriangle className="h-5 w-5" />
+              القالب محمي
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>
+                هذا القالب مطبق على الفصول التالية:
+              </p>
+              <div className="bg-muted p-3 rounded-lg">
+                <ul className="list-disc list-inside text-sm space-y-1">
+                  {protectedTemplateInfo && getClassroomsUsingTemplate(protectedTemplateInfo.template.id).map((name, i) => (
+                    <li key={i}>{name}</li>
+                  ))}
+                </ul>
+              </div>
+              <p>
+                <strong>لحماية درجات الطلاب</strong>، لا يمكن {protectedTemplateInfo?.action === 'edit' ? 'تعديل' : 'حذف'} هذا القالب مباشرة.
+              </p>
+              {protectedTemplateInfo?.action === 'edit' && (
+                <p className="text-primary">
+                  يمكنك إنشاء نسخة من القالب والتعديل عليها بدلاً من ذلك.
+                </p>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setProtectedWarningOpen(false);
+              setProtectedTemplateInfo(null);
+            }}>
+              إغلاق
+            </AlertDialogCancel>
+            {protectedTemplateInfo?.action === 'edit' && (
+              <AlertDialogAction
+                onClick={handleDuplicateForEdit}
+                className="bg-primary"
+              >
+                <Copy className="h-4 w-4 ml-2" />
+                إنشاء نسخة للتعديل
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
