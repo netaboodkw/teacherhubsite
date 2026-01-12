@@ -15,6 +15,26 @@ export interface TeacherTemplate {
   updated_at: string;
 }
 
+export interface SharedTemplate {
+  id: string;
+  template_id: string;
+  user_id: string;
+  share_code: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Generate a random 6-character share code
+function generateShareCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excluding similar chars like 0/O, 1/I
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
 export function useTeacherTemplates() {
   const { user } = useAuth();
 
@@ -35,6 +55,27 @@ export function useTeacherTemplates() {
         ...item,
         structure: item.structure as unknown as GradingStructureData
       })) as TeacherTemplate[];
+    },
+    enabled: !!user?.id,
+  });
+}
+
+export function useSharedTemplates() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['shared-templates', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('shared_templates')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as SharedTemplate[];
     },
     enabled: !!user?.id,
   });
@@ -120,6 +161,133 @@ export function useDeleteTeacherTemplate() {
         .eq('id', id);
 
       if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teacher-templates'] });
+    },
+  });
+}
+
+// Share a template (generate code)
+export function useShareTemplate() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (templateId: string) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      // Check if already shared
+      const { data: existing } = await supabase
+        .from('shared_templates')
+        .select('*')
+        .eq('template_id', templateId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (existing) {
+        // Reactivate if exists
+        if (!existing.is_active) {
+          const { data, error } = await supabase
+            .from('shared_templates')
+            .update({ is_active: true })
+            .eq('id', existing.id)
+            .select()
+            .single();
+          if (error) throw error;
+          return data as SharedTemplate;
+        }
+        return existing as SharedTemplate;
+      }
+
+      // Create new share
+      const shareCode = generateShareCode();
+      const { data, error } = await supabase
+        .from('shared_templates')
+        .insert({
+          template_id: templateId,
+          user_id: user.id,
+          share_code: shareCode,
+          is_active: true,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as SharedTemplate;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['shared-templates'] });
+    },
+  });
+}
+
+// Stop sharing a template
+export function useUnshareTemplate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (templateId: string) => {
+      const { error } = await supabase
+        .from('shared_templates')
+        .update({ is_active: false })
+        .eq('template_id', templateId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['shared-templates'] });
+    },
+  });
+}
+
+// Import a template by code
+export function useImportTemplate() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (shareCode: string) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      // Find shared template by code
+      const { data: shared, error: sharedError } = await supabase
+        .from('shared_templates')
+        .select('*')
+        .eq('share_code', shareCode.toUpperCase())
+        .eq('is_active', true)
+        .single();
+
+      if (sharedError || !shared) {
+        throw new Error('رمز القالب غير صالح أو غير متاح');
+      }
+
+      // Get original template
+      const { data: originalTemplate, error: templateError } = await supabase
+        .from('teacher_grading_templates')
+        .select('*')
+        .eq('id', shared.template_id)
+        .single();
+
+      if (templateError || !originalTemplate) {
+        throw new Error('القالب الأصلي غير موجود');
+      }
+
+      // Create copy for the importing user
+      const { data, error } = await supabase
+        .from('teacher_grading_templates')
+        .insert({
+          user_id: user.id,
+          name: originalTemplate.name,
+          name_ar: `${originalTemplate.name_ar} (مستورد)`,
+          description: originalTemplate.description,
+          structure: originalTemplate.structure,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teacher-templates'] });

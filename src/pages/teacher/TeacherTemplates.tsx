@@ -1,18 +1,28 @@
 import { useState } from 'react';
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
-import { useTeacherTemplates, useCreateTeacherTemplate, useUpdateTeacherTemplate, useDeleteTeacherTemplate, TeacherTemplate } from '@/hooks/useTeacherTemplates';
+import { 
+  useTeacherTemplates, 
+  useCreateTeacherTemplate, 
+  useUpdateTeacherTemplate, 
+  useDeleteTeacherTemplate, 
+  useSharedTemplates,
+  useShareTemplate,
+  useUnshareTemplate,
+  useImportTemplate,
+  TeacherTemplate 
+} from '@/hooks/useTeacherTemplates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Plus, Loader2, Edit, Trash2, Copy, FileText, LayoutGrid, Calculator, Sigma, ExternalLink } from 'lucide-react';
+import { Plus, Loader2, Edit, Trash2, Copy, FileText, LayoutGrid, Calculator, Sigma, ExternalLink, Share2, Download, Link2, Link2Off } from 'lucide-react';
 import { GradingStructureData, GradingGroup, GradingColumn } from '@/hooks/useGradingStructures';
 
 // ألوان المجموعات
@@ -587,20 +597,34 @@ function StructureEditor({
 
 export default function TeacherTemplates() {
   const { data: templates = [], isLoading } = useTeacherTemplates();
+  const { data: sharedTemplates = [] } = useSharedTemplates();
   const createTemplate = useCreateTeacherTemplate();
   const updateTemplate = useUpdateTeacherTemplate();
   const deleteTemplate = useDeleteTeacherTemplate();
+  const shareTemplate = useShareTemplate();
+  const unshareTemplate = useUnshareTemplate();
+  const importTemplate = useImportTemplate();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<TeacherTemplate | null>(null);
   const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
+  const [shareCode, setShareCode] = useState('');
+  const [importCode, setImportCode] = useState('');
+  const [currentShareTemplate, setCurrentShareTemplate] = useState<TeacherTemplate | null>(null);
 
   const [formData, setFormData] = useState({
     name_ar: '',
     description: '',
     structure: { groups: [], settings: { showGrandTotal: true, showPercentage: false, passingScore: 50 } } as GradingStructureData
   });
+
+  // Get share info for a template
+  const getShareInfo = (templateId: string) => {
+    return sharedTemplates.find(s => s.template_id === templateId && s.is_active);
+  };
 
   const openCreateDialog = () => {
     setEditingTemplate(null);
@@ -680,6 +704,46 @@ export default function TeacherTemplates() {
     }
   };
 
+  const handleShare = async (template: TeacherTemplate) => {
+    try {
+      const shared = await shareTemplate.mutateAsync(template.id);
+      setShareCode(shared.share_code);
+      setCurrentShareTemplate(template);
+      setShareDialogOpen(true);
+    } catch (error: any) {
+      toast.error('فشل في مشاركة القالب');
+    }
+  };
+
+  const handleUnshare = async (templateId: string) => {
+    try {
+      await unshareTemplate.mutateAsync(templateId);
+      toast.success('تم إيقاف مشاركة القالب');
+    } catch (error: any) {
+      toast.error('فشل في إيقاف المشاركة');
+    }
+  };
+
+  const handleImport = async () => {
+    if (!importCode.trim()) {
+      toast.error('يرجى إدخال رمز القالب');
+      return;
+    }
+    try {
+      await importTemplate.mutateAsync(importCode.trim());
+      toast.success('تم استيراد القالب بنجاح');
+      setImportDialogOpen(false);
+      setImportCode('');
+    } catch (error: any) {
+      toast.error(error.message || 'فشل في استيراد القالب');
+    }
+  };
+
+  const copyShareCode = () => {
+    navigator.clipboard.writeText(shareCode);
+    toast.success('تم نسخ الرمز');
+  };
+
   const calculateTotalScore = (structure: GradingStructureData) => {
     if (!structure.groups) return 0;
     return structure.groups.reduce((sum, group) => {
@@ -702,15 +766,21 @@ export default function TeacherTemplates() {
   return (
     <TeacherLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold">قوالب الدرجات</h1>
             <p className="text-muted-foreground">أنشئ قوالب درجات خاصة بك وطبقها على فصولك</p>
           </div>
-          <Button onClick={openCreateDialog}>
-            <Plus className="h-4 w-4 ml-2" />
-            قالب جديد
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+              <Download className="h-4 w-4 ml-2" />
+              استيراد قالب
+            </Button>
+            <Button onClick={openCreateDialog}>
+              <Plus className="h-4 w-4 ml-2" />
+              قالب جديد
+            </Button>
+          </div>
         </div>
 
         {templates.length === 0 ? (
@@ -745,6 +815,15 @@ export default function TeacherTemplates() {
                   </div>
                 </CardHeader>
                 <CardContent>
+                  {/* Share Status Badge */}
+                  {getShareInfo(template.id) && (
+                    <div className="mb-3 flex items-center gap-2 p-2 bg-primary/5 rounded-lg border border-primary/20">
+                      <Link2 className="h-4 w-4 text-primary" />
+                      <span className="text-xs text-primary font-mono font-bold">{getShareInfo(template.id)?.share_code}</span>
+                      <span className="text-xs text-muted-foreground">مشارك</span>
+                    </div>
+                  )}
+                  
                   <div className="flex flex-wrap gap-1 mb-4">
                     {template.structure.groups?.slice(0, 4).map((group) => (
                       <Badge
@@ -762,7 +841,7 @@ export default function TeacherTemplates() {
                       </Badge>
                     )}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <Button
                       variant="outline"
                       size="sm"
@@ -772,10 +851,31 @@ export default function TeacherTemplates() {
                       <Edit className="h-4 w-4 ml-1" />
                       تعديل
                     </Button>
+                    {getShareInfo(template.id) ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-amber-600 hover:text-amber-700"
+                        onClick={() => handleUnshare(template.id)}
+                        title="إيقاف المشاركة"
+                      >
+                        <Link2Off className="h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleShare(template)}
+                        title="مشاركة القالب"
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleDuplicate(template)}
+                      title="نسخ"
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -787,6 +887,7 @@ export default function TeacherTemplates() {
                         setTemplateToDelete(template.id);
                         setDeleteDialogOpen(true);
                       }}
+                      title="حذف"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -875,6 +976,75 @@ export default function TeacherTemplates() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Import Dialog */}
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>استيراد قالب</DialogTitle>
+            <DialogDescription>
+              أدخل رمز القالب الذي حصلت عليه من معلم آخر
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="importCode">رمز القالب</Label>
+            <Input
+              id="importCode"
+              value={importCode}
+              onChange={(e) => setImportCode(e.target.value.toUpperCase())}
+              placeholder="مثال: ABC123"
+              className="mt-2 text-center font-mono text-lg tracking-widest"
+              maxLength={6}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
+              إلغاء
+            </Button>
+            <Button onClick={handleImport} disabled={importTemplate.isPending}>
+              {importTemplate.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <Download className="h-4 w-4 ml-2" />
+                  استيراد
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share Code Dialog */}
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>مشاركة القالب</DialogTitle>
+            <DialogDescription>
+              شارك هذا الرمز مع معلم آخر ليستورد القالب "{currentShareTemplate?.name_ar}"
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-6 flex flex-col items-center gap-4">
+            <div className="bg-muted p-4 rounded-xl border-2 border-dashed border-primary/30">
+              <span className="font-mono text-3xl font-bold tracking-[0.3em] text-primary">
+                {shareCode}
+              </span>
+            </div>
+            <Button variant="outline" onClick={copyShareCode} className="w-full">
+              <Copy className="h-4 w-4 ml-2" />
+              نسخ الرمز
+            </Button>
+            <p className="text-xs text-muted-foreground text-center">
+              يمكنك إيقاف المشاركة في أي وقت من صفحة القوالب
+            </p>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShareDialogOpen(false)}>
+              تم
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </TeacherLayout>
   );
 }
