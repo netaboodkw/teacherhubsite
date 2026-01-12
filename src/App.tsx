@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Landing from "./pages/Landing";
 import TeacherAuth from "./pages/auth/TeacherAuth";
 import AdminAuth from "./pages/auth/AdminAuth";
+import DepartmentHeadAuth from "./pages/auth/DepartmentHeadAuth";
 import NotFound from "./pages/NotFound";
 
 // Admin Pages
@@ -39,6 +40,10 @@ import Grades from "./pages/Grades";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 
+// Department Head Pages
+import DepartmentHeadDashboard from "./pages/department-head/DepartmentHeadDashboard";
+import TeacherDetailsView from "./pages/department-head/TeacherDetailsView";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -52,6 +57,7 @@ const App = () => (
           <Route path="/" element={<Landing />} />
           <Route path="/auth/teacher" element={<TeacherAuth />} />
           <Route path="/auth/admin" element={<AdminAuth />} />
+          <Route path="/auth/department-head" element={<DepartmentHeadAuth />} />
 
           {/* Legacy redirects */}
           <Route path="/auth" element={<Navigate to="/auth/teacher" replace />} />
@@ -90,6 +96,10 @@ const App = () => (
           <Route path="/teacher/templates" element={<ProtectedRoute><TeacherTemplates /></ProtectedRoute>} />
           <Route path="/teacher/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
           <Route path="/teacher/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
+          {/* Department Head Routes */}
+          <Route path="/department-head" element={<ProtectedRoute><DepartmentHeadDashboard /></ProtectedRoute>} />
+          <Route path="/department-head/teacher/:teacherId" element={<ProtectedRoute><TeacherDetailsView /></ProtectedRoute>} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>

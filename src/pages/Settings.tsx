@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { User, School, Mail, Users, Loader2, Save, GraduationCap, Phone, BookOpen } from 'lucide-react';
-
+import { InviteDepartmentHead } from '@/components/teacher/InviteDepartmentHead';
 export default function Settings() {
   const { profile, isLoading, refetch } = useProfile();
   const { data: educationLevels } = useEducationLevels();
@@ -241,6 +241,9 @@ export default function Settings() {
             </Button>
           </div>
         </form>
+
+        {/* Department Head Invitation Section */}
+        <InviteDepartmentHead />
       </div>
     </TeacherLayout>
   );
