@@ -2,19 +2,18 @@ import { useState, useEffect } from 'react';
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useClassroom, useUpdateClassroom } from '@/hooks/useClassrooms';
 import { useGradeLevels } from '@/hooks/useGradeLevels';
-import { useSubjects } from '@/hooks/useSubjects';
 import { useProfile } from '@/hooks/useProfile';
 import { useEducationLevels } from '@/hooks/useEducationLevels';
-import { useAllAvailableTemplates } from '@/hooks/useTeacherTemplates';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useTeacherTemplates } from '@/hooks/useTeacherTemplates';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ClassScheduleEditor, ClassSchedule } from '@/components/classrooms/ClassScheduleEditor';
-import { ArrowRight, GraduationCap, Loader2, Settings, Table, Shield } from 'lucide-react';
+import { ArrowRight, GraduationCap, Loader2, Settings, LayoutGrid, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const colorOptions = [
   { value: 'bg-primary', label: 'أزرق' },
@@ -31,14 +30,12 @@ export default function EditClassroom() {
   const navigate = useNavigate();
   const { profile, isLoading: profileLoading } = useProfile();
   const { data: educationLevels } = useEducationLevels();
-  const { teacherTemplates = [], adminTemplates = [], isLoading: templatesLoading } = useAllAvailableTemplates();
+  const { data: teacherTemplates = [] } = useTeacherTemplates();
   
   const teacherEducationLevelId = profile?.education_level_id || '';
   const teacherEducationLevel = educationLevels?.find(l => l.id === teacherEducationLevelId);
   
   const { data: gradeLevels, isLoading: gradeLevelsLoading } = useGradeLevels(teacherEducationLevelId || undefined);
-  const [selectedGradeLevelId, setSelectedGradeLevelId] = useState('');
-  const { data: subjects, isLoading: subjectsLoading } = useSubjects(teacherEducationLevelId || undefined, selectedGradeLevelId || undefined);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -46,7 +43,6 @@ export default function EditClassroom() {
     schedule: '',
     color: 'bg-primary',
     education_level_id: '',
-    subject_id: '',
     grade_level_id: '',
     teacher_template_id: '',
   });
@@ -62,25 +58,13 @@ export default function EditClassroom() {
         schedule: classroom.schedule || '',
         color: classroom.color || 'bg-primary',
         education_level_id: classroom.education_level_id || teacherEducationLevelId,
-        subject_id: classroom.subject_id || '',
         grade_level_id: classroom.grade_level_id || '',
         teacher_template_id: classroom.teacher_template_id || '',
       });
       setClassSchedule(classroom.class_schedule || {});
-      setSelectedGradeLevelId(classroom.grade_level_id || '');
       setInitialized(true);
     }
   }, [classroom, teacherEducationLevelId, initialized]);
-
-  // Update subject name when subject is selected
-  useEffect(() => {
-    if (formData.subject_id && subjects) {
-      const selectedSubject = subjects.find(s => s.id === formData.subject_id);
-      if (selectedSubject) {
-        setFormData(prev => ({ ...prev, subject: selectedSubject.name_ar }));
-      }
-    }
-  }, [formData.subject_id, subjects]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,12 +73,12 @@ export default function EditClassroom() {
     await updateClassroom.mutateAsync({
       id: classroomId,
       name: formData.name,
-      subject: formData.subject,
+      subject: formData.subject || 'مادة غير محددة',
       schedule: formData.schedule,
       color: formData.color,
       class_schedule: classSchedule,
       education_level_id: formData.education_level_id || null,
-      subject_id: formData.subject_id || null,
+      subject_id: null, // No longer using subject_id
       grade_level_id: formData.grade_level_id || null,
       teacher_template_id: formData.teacher_template_id || null,
     });
@@ -162,10 +146,7 @@ export default function EditClassroom() {
               <Label>الصف الدراسي</Label>
               <Select 
                 value={formData.grade_level_id} 
-                onValueChange={(value) => {
-                  setFormData(prev => ({ ...prev, grade_level_id: value, subject_id: '', subject: '' }));
-                  setSelectedGradeLevelId(value);
-                }}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, grade_level_id: value }))}
                 disabled={!teacherEducationLevelId}
               >
                 <SelectTrigger>
@@ -185,112 +166,70 @@ export default function EditClassroom() {
               </Select>
             </div>
 
-            {/* Subject */}
-            <div className="space-y-2">
-              <Label>المادة الدراسية</Label>
-              <Select 
-                value={formData.subject_id} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, subject_id: value }))}
-                disabled={!formData.grade_level_id}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={
-                    !formData.grade_level_id ? "اختر الصف أولاً" : 
-                    subjectsLoading ? "جاري التحميل..." : 
-                    subjects?.length === 0 ? "لا توجد مواد" :
-                    "اختر المادة"
-                  } />
-                </SelectTrigger>
-                <SelectContent>
-                  {subjects?.map((subject) => (
-                    <SelectItem key={subject.id} value={subject.id}>
-                      {subject.name_ar}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
+            {/* Classroom Name */}
             <div className="space-y-2">
               <Label htmlFor="name">اسم الفصل</Label>
               <Input
                 id="name"
-                placeholder="مثال: الصف الأول - أ"
+                placeholder="مثال: سادس - أول (رياضيات)"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
               />
             </div>
 
-            {/* Grading Template */}
+            {/* Subject Name */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Table className="h-4 w-4" />
-                قالب الدرجات
-              </Label>
-              <Select 
-                value={formData.teacher_template_id} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, teacher_template_id: value }))}
-                disabled={templatesLoading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={
-                    templatesLoading ? "جاري التحميل..." :
-                    (teacherTemplates.length === 0 && adminTemplates.length === 0)
-                      ? "لا توجد قوالب متاحة" 
-                      : "اختر قالب الدرجات"
-                  } />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">بدون قالب</SelectItem>
-                  
-                  {/* Teacher's own templates */}
-                  {teacherTemplates.filter(t => t.is_active).length > 0 && (
-                    <>
-                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                        قوالبي الخاصة
-                      </div>
-                      {teacherTemplates.filter(t => t.is_active).map((template) => (
-                        <SelectItem key={template.id} value={template.id}>
-                          <div className="flex items-center gap-2">
-                            <span>{template.name_ar}</span>
-                            <Badge variant="secondary" className="text-xs">
-                              {template.structure?.groups?.length || 0} مجموعات
-                            </Badge>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </>
-                  )}
-                  
-                  {/* Admin default templates */}
-                  {adminTemplates.length > 0 && (
-                    <>
-                      {teacherTemplates.filter(t => t.is_active).length > 0 && (
-                        <Separator className="my-1" />
-                      )}
-                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                        <Shield className="h-3 w-3" />
-                        القوالب الافتراضية
-                      </div>
-                      {adminTemplates.map((template) => (
-                        <SelectItem key={template.id} value={template.id}>
-                          <div className="flex items-center gap-2">
-                            <span>{template.name_ar}</span>
-                            <Badge variant="outline" className="text-xs">
-                              افتراضي
-                            </Badge>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </>
-                  )}
-                </SelectContent>
-              </Select>
-              {teacherTemplates.length === 0 && adminTemplates.length === 0 && (
-                <p className="text-xs text-muted-foreground">
-                  يمكنك إنشاء قوالب الدرجات من صفحة "قوالب الدرجات" في القائمة الجانبية
-                </p>
+              <Label htmlFor="subject">المادة الدراسية</Label>
+              <Input
+                id="subject"
+                placeholder="مثال: رياضيات، علوم، لغة عربية"
+                value={formData.subject}
+                onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+              />
+            </div>
+
+            {/* Teacher Template Selection */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>قالب الدرجات (اختياري)</Label>
+                <Link 
+                  to="/teacher/templates" 
+                  className="text-xs text-primary hover:underline flex items-center gap-1"
+                >
+                  <Plus className="h-3 w-3" />
+                  إنشاء قالب
+                </Link>
+              </div>
+              
+              {teacherTemplates.length === 0 ? (
+                <Alert>
+                  <LayoutGrid className="h-4 w-4" />
+                  <AlertDescription>
+                    لا توجد قوالب خاصة بك.{' '}
+                    <Link to="/teacher/templates" className="text-primary hover:underline">
+                      إنشاء قالب جديد
+                    </Link>
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <Select 
+                  value={formData.teacher_template_id} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, teacher_template_id: value === 'none' ? '' : value }))}
+                >
+                  <SelectTrigger>
+                    <LayoutGrid className="h-4 w-4 text-muted-foreground ml-2" />
+                    <SelectValue placeholder="بدون قالب" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">بدون قالب</SelectItem>
+                    {teacherTemplates.filter(t => t.is_active).map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.name_ar}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
             </div>
 
