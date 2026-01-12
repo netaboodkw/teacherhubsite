@@ -294,17 +294,17 @@ function SortableGroup({
                   onUpdate={(updates) => onUpdateColumn(column.id, updates)}
                   onDelete={() => onDeleteColumn(column.id)}
                   onEditSum={() => {
-                    if (column.type === 'internal_sum' && column.internalSourceColumns) {
+                    if (column.type === 'internal_sum') {
                       openInternalSumDialog({
                         columnId: column.id,
                         name: column.name_ar,
-                        sources: column.internalSourceColumns
+                        sources: column.internalSourceColumns || []
                       });
-                    } else if (column.type === 'external_sum' && column.externalSourceColumns) {
+                    } else if (column.type === 'external_sum') {
                       openExternalSumDialog({
                         columnId: column.id,
                         name: column.name_ar,
-                        sources: column.externalSourceColumns
+                        sources: column.externalSourceColumns || []
                       });
                     }
                   }}
