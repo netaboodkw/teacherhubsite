@@ -101,25 +101,37 @@ Deno.serve(async (req) => {
       .delete()
       .eq('user_id', teacherUserId);
 
-    // 6. Delete teacher grading templates
+    // 6. Delete shared templates first (references teacher_grading_templates)
+    await supabaseAdmin
+      .from('shared_templates')
+      .delete()
+      .eq('user_id', teacherUserId);
+
+    // 7. Delete teacher grading templates
     await supabaseAdmin
       .from('teacher_grading_templates')
       .delete()
       .eq('user_id', teacherUserId);
 
-    // 7. Delete classrooms
+    // 8. Delete teacher department head invitations
+    await supabaseAdmin
+      .from('teacher_department_head_invitations')
+      .delete()
+      .eq('teacher_id', teacherUserId);
+
+    // 9. Delete classrooms
     await supabaseAdmin
       .from('classrooms')
       .delete()
       .eq('user_id', teacherUserId);
 
-    // 8. Delete profile
+    // 10. Delete profile
     await supabaseAdmin
       .from('profiles')
       .delete()
       .eq('user_id', teacherUserId);
 
-    // 9. Delete user roles
+    // 11. Delete user roles
     await supabaseAdmin
       .from('user_roles')
       .delete()

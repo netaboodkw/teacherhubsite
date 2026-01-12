@@ -11,10 +11,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Loader2, Users, Edit, Phone, School, GraduationCap, Mail, User, Search, 
-  Eye, Building2, Shield, BookOpen, Calendar, FileText, CheckCircle, XCircle
+  Eye, Building2, Shield, BookOpen, Calendar, FileText, CheckCircle, XCircle,
+  Trash2, AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useTeachers, Teacher } from '@/hooks/useTeachers';
+import { useTeachers, Teacher, useDeleteTeacher } from '@/hooks/useTeachers';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useEducationLevels } from '@/hooks/useEducationLevels';
 import { useSubjects } from '@/hooks/useSubjects';
 import { supabase } from '@/integrations/supabase/client';
@@ -121,6 +123,7 @@ export default function UsersManagementPage() {
   const { data: admins, isLoading: adminsLoading } = useAllAdmins();
   const { data: educationLevels } = useEducationLevels();
   const { data: subjects } = useSubjects();
+  const deleteTeacher = useDeleteTeacher();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('teachers');
@@ -143,6 +146,10 @@ export default function UsersManagementPage() {
     principal_name: '',
   });
   const [saving, setSaving] = useState(false);
+  
+  // Delete dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [teacherToDelete, setTeacherToDelete] = useState<Teacher | null>(null);
 
   // Filter functions
   const filteredTeachers = teachers?.filter(t => 
@@ -225,6 +232,25 @@ export default function UsersManagementPage() {
       toast.error('فشل في التحديث: ' + error.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Open delete confirmation
+  const openDeleteDialog = (teacher: Teacher) => {
+    setTeacherToDelete(teacher);
+    setDeleteDialogOpen(true);
+  };
+
+  // Confirm delete
+  const handleDeleteTeacher = async () => {
+    if (!teacherToDelete) return;
+    
+    try {
+      await deleteTeacher.mutateAsync(teacherToDelete.user_id);
+      setDeleteDialogOpen(false);
+      setTeacherToDelete(null);
+    } catch (error) {
+      // Error is handled in the mutation
     }
   };
 
@@ -401,6 +427,14 @@ export default function UsersManagementPage() {
                           >
                             <Edit className="h-4 w-4 ml-1" />
                             تعديل
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm" 
+                            onClick={() => openDeleteDialog(teacher)}
+                          >
+                            <Trash2 className="h-4 w-4 ml-1" />
+                            حذف
                           </Button>
                         </div>
                       </div>
@@ -843,6 +877,53 @@ export default function UsersManagementPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent dir="rtl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+                تأكيد حذف المعلم
+              </AlertDialogTitle>
+              <AlertDialogDescription className="space-y-2">
+                <p>
+                  هل أنت متأكد من حذف المعلم <strong>{teacherToDelete?.full_name}</strong>؟
+                </p>
+                <p className="text-destructive font-medium">
+                  سيتم حذف جميع البيانات المرتبطة بهذا المعلم بشكل نهائي:
+                </p>
+                <ul className="list-disc list-inside text-sm text-muted-foreground">
+                  <li>الملف الشخصي</li>
+                  <li>جميع الفصول الدراسية</li>
+                  <li>جميع الطلاب وبياناتهم</li>
+                  <li>جميع الدرجات والتقييمات</li>
+                  <li>سجلات الحضور والغياب</li>
+                  <li>الملاحظات السلوكية</li>
+                  <li>قوالب التقييم</li>
+                </ul>
+                <p className="text-destructive text-sm font-bold">
+                  هذا الإجراء لا يمكن التراجع عنه!
+                </p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="gap-2">
+              <AlertDialogCancel>إلغاء</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleDeleteTeacher}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={deleteTeacher.isPending}
+              >
+                {deleteTeacher.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                ) : (
+                  <Trash2 className="h-4 w-4 ml-2" />
+                )}
+                حذف نهائي
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AdminLayout>
   );
