@@ -5,7 +5,6 @@ import {
   LayoutDashboard,
   GraduationCap,
   Users,
-  ClipboardCheck,
   BookOpen,
   BarChart3,
   ChevronLeft,
@@ -29,7 +28,6 @@ const navItems = [
   { href: '/department-head/invitations', icon: Mail, label: 'الدعوات' },
   { href: '/department-head/classrooms', icon: GraduationCap, label: 'الفصول' },
   { href: '/department-head/students', icon: Users, label: 'الطلاب' },
-  { href: '/department-head/attendance', icon: ClipboardCheck, label: 'الحضور' },
   { href: '/department-head/grades', icon: BookOpen, label: 'الدرجات' },
   { href: '/department-head/reports', icon: BarChart3, label: 'التقارير' },
 ];
