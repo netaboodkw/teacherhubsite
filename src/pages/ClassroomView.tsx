@@ -843,14 +843,23 @@ export default function ClassroomView() {
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4">
+              <div 
+                className="relative bg-muted/30 rounded-lg"
+                style={{ minHeight: containerHeight }}
+              >
                 {students.map((student) => {
                   const hasNotes = studentsWithNotes.has(student.id);
                   const notesCount = studentsWithNotes.get(student.id) || 0;
+                  const position = studentPositions.get(student.id) || { x: 20, y: 20 };
                   
                   return (
                     <div
                       key={student.id}
+                      style={{
+                        position: 'absolute',
+                        left: position.x,
+                        top: position.y,
+                      }}
                       className="relative flex flex-col items-center p-3 bg-card rounded-xl border-2 border-border/50 shadow-sm cursor-pointer transition-all hover:scale-105 hover:border-primary/50 active:scale-95"
                       onClick={() => handleStudentTap({
                         id: student.id,
@@ -892,7 +901,7 @@ export default function ClassroomView() {
                         )}
                       </div>
 
-                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-2 mt-1">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-2 mt-1">
                         {student.avatar_url ? (
                           <img
                             src={student.avatar_url}
@@ -900,10 +909,10 @@ export default function ClassroomView() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <User className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
+                          <User className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
                         )}
                       </div>
-                      <p className="text-sm text-center font-medium truncate w-full leading-tight">
+                      <p className="text-sm text-center font-medium truncate w-full leading-tight max-w-[90px]">
                         {getShortName(student.name)}
                       </p>
                     </div>
