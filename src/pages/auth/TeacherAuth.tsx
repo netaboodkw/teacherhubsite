@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useEducationLevels } from '@/hooks/useEducationLevels';
-import { useSubjects } from '@/hooks/useSubjects';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,14 +10,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Loader2, ArrowLeft, Mail, Lock, User, Building2, BookOpen, GraduationCap, Eye, EyeOff } from 'lucide-react';
+import { Loader2, ArrowLeft, Mail, Lock, User, Building2, BookOpen, GraduationCap, Eye, EyeOff, Phone } from 'lucide-react';
 import heroBg from '@/assets/hero-bg.jpg';
 
 export default function TeacherAuth() {
   const navigate = useNavigate();
   const { signIn, signUp } = useAuth();
   const { data: educationLevels = [] } = useEducationLevels();
-  const { data: subjects = [] } = useSubjects();
   
   // Login state
   const [loginEmail, setLoginEmail] = useState('');
@@ -33,15 +31,11 @@ export default function TeacherAuth() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [schoolName, setSchoolName] = useState('');
   const [educationLevelId, setEducationLevelId] = useState('');
-  const [subjectId, setSubjectId] = useState('');
+  const [subject, setSubject] = useState('');
+  const [phone, setPhone] = useState('');
   const [registerLoading, setRegisterLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
-  // Filter subjects by education level
-  const filteredSubjects = educationLevelId 
-    ? subjects.filter(s => s.education_level_id === educationLevelId)
-    : subjects;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,7 +129,8 @@ export default function TeacherAuth() {
         .update({
           school_name: schoolName.trim() || null,
           education_level_id: educationLevelId,
-          subject_id: subjectId || null,
+          subject: subject.trim() || null,
+          phone: phone.trim() || null,
           is_profile_complete: true,
         })
         .eq('user_id', data.user.id);
@@ -341,19 +336,33 @@ export default function TeacherAuth() {
                     
                     <div className="space-y-2">
                       <Label htmlFor="subject">المادة (اختياري)</Label>
-                      <Select value={subjectId} onValueChange={setSubjectId}>
-                        <SelectTrigger id="subject">
-                          <BookOpen className="h-4 w-4 text-muted-foreground ml-2" />
-                          <SelectValue placeholder="اختر المادة" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {filteredSubjects.map(subject => (
-                            <SelectItem key={subject.id} value={subject.id}>
-                              {subject.name_ar}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="relative">
+                        <BookOpen className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="subject"
+                          type="text"
+                          placeholder="الرياضيات، اللغة العربية..."
+                          value={subject}
+                          onChange={(e) => setSubject(e.target.value)}
+                          className="pr-10"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">رقم الهاتف (اختياري)</Label>
+                      <div className="relative">
+                        <Phone className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="phone"
+                          type="tel"
+                          placeholder="0512345678"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          className="pr-10"
+                          dir="ltr"
+                        />
+                      </div>
                     </div>
                     
                     <div className="space-y-2">

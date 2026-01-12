@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { User, School, Mail, Users, Loader2, Save, GraduationCap } from 'lucide-react';
+import { User, School, Mail, Users, Loader2, Save, GraduationCap, Phone, BookOpen } from 'lucide-react';
 
 export default function Settings() {
   const { profile, isLoading, refetch } = useProfile();
@@ -20,6 +20,8 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
+    phone: '',
+    subject: '',
     school_name: '',
     principal_name: '',
     department_head_name: '',
@@ -32,6 +34,8 @@ export default function Settings() {
     if (profile) {
       setFormData({
         full_name: profile.full_name || '',
+        phone: profile.phone || '',
+        subject: profile.subject || '',
         school_name: profile.school_name || '',
         principal_name: profile.principal_name || '',
         department_head_name: profile.department_head_name || '',
@@ -49,9 +53,11 @@ export default function Settings() {
         .from('profiles')
         .update({
           full_name: formData.full_name,
-          school_name: formData.school_name,
-          principal_name: formData.principal_name,
-          department_head_name: formData.department_head_name,
+          phone: formData.phone || null,
+          subject: formData.subject || null,
+          school_name: formData.school_name || null,
+          principal_name: formData.principal_name || null,
+          department_head_name: formData.department_head_name || null,
         })
         .eq('user_id', user.id);
 
@@ -121,6 +127,36 @@ export default function Settings() {
                 <p className="text-xs text-muted-foreground">
                   لا يمكن تغيير البريد الإلكتروني
                 </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">رقم الهاتف</Label>
+                <div className="relative">
+                  <Phone className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    placeholder="0512345678"
+                    className="pr-10"
+                    dir="ltr"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="subject">المادة</Label>
+                <div className="relative">
+                  <BookOpen className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="subject"
+                    value={formData.subject}
+                    onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
+                    placeholder="الرياضيات، اللغة العربية..."
+                    className="pr-10"
+                  />
+                </div>
               </div>
 
               {/* Education Level - Read Only */}
