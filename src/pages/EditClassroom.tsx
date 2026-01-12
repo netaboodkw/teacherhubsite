@@ -15,12 +15,15 @@ import { ArrowRight, GraduationCap, Loader2, Settings, LayoutGrid, Plus } from '
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
+// Pastel colors for classroom selection
 const colorOptions = [
-  { value: 'bg-primary', label: 'أزرق' },
-  { value: 'bg-secondary', label: 'أخضر' },
-  { value: 'bg-accent', label: 'بنفسجي' },
-  { value: 'bg-warning', label: 'برتقالي' },
-  { value: 'bg-destructive', label: 'أحمر' },
+  { value: 'bg-blue-200', label: 'أزرق فاتح' },
+  { value: 'bg-green-200', label: 'أخضر فاتح' },
+  { value: 'bg-purple-200', label: 'بنفسجي فاتح' },
+  { value: 'bg-orange-200', label: 'برتقالي فاتح' },
+  { value: 'bg-pink-200', label: 'وردي فاتح' },
+  { value: 'bg-yellow-200', label: 'أصفر فاتح' },
+  { value: 'bg-teal-200', label: 'فيروزي فاتح' },
 ];
 
 export default function EditClassroom() {
@@ -38,10 +41,10 @@ export default function EditClassroom() {
   const { data: gradeLevels, isLoading: gradeLevelsLoading } = useGradeLevels(teacherEducationLevelId || undefined);
   
   const [formData, setFormData] = useState({
-    name: '',
+    sectionName: '', // e.g. "الثالث", "A"
     subject: '',
     schedule: '',
-    color: 'bg-primary',
+    color: 'bg-blue-200',
     education_level_id: '',
     grade_level_id: '',
     teacher_template_id: '',
@@ -49,14 +52,20 @@ export default function EditClassroom() {
   const [classSchedule, setClassSchedule] = useState<ClassSchedule>({});
   const [initialized, setInitialized] = useState(false);
 
+  // Extract section name from classroom name (e.g., "سادس - أول (رياضيات)" -> "أول")
+  const extractSectionName = (name: string) => {
+    const match = name.match(/- (.+?) \(/);
+    return match ? match[1].trim() : '';
+  };
+
   // Initialize form data from classroom
   useEffect(() => {
     if (classroom && !initialized) {
       setFormData({
-        name: classroom.name || '',
+        sectionName: extractSectionName(classroom.name || ''),
         subject: classroom.subject || '',
         schedule: classroom.schedule || '',
-        color: classroom.color || 'bg-primary',
+        color: classroom.color || 'bg-blue-200',
         education_level_id: classroom.education_level_id || teacherEducationLevelId,
         grade_level_id: classroom.grade_level_id || '',
         teacher_template_id: classroom.teacher_template_id || '',
@@ -66,19 +75,40 @@ export default function EditClassroom() {
     }
   }, [classroom, teacherEducationLevelId, initialized]);
 
+  // Generate classroom name from selected values
+  const generateClassroomName = () => {
+    const gradeLevel = gradeLevels?.find(g => g.id === formData.grade_level_id);
+    const gradeName = gradeLevel?.name_ar || '';
+    const sectionName = formData.sectionName.trim();
+    const subjectName = formData.subject.trim();
+    
+    if (!gradeName) return '';
+    
+    let name = gradeName;
+    if (sectionName) {
+      name += ` - ${sectionName}`;
+    }
+    if (subjectName) {
+      name += ` (${subjectName})`;
+    }
+    return name;
+  };
+
+  const classroomName = generateClassroomName();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!classroomId) return;
     
     await updateClassroom.mutateAsync({
       id: classroomId,
-      name: formData.name,
+      name: classroomName || 'فصل جديد',
       subject: formData.subject || 'مادة غير محددة',
       schedule: formData.schedule,
       color: formData.color,
       class_schedule: classSchedule,
       education_level_id: formData.education_level_id || null,
-      subject_id: null, // No longer using subject_id
+      subject_id: null,
       grade_level_id: formData.grade_level_id || null,
       teacher_template_id: formData.teacher_template_id || null,
     });
@@ -166,16 +196,19 @@ export default function EditClassroom() {
               </Select>
             </div>
 
-            {/* Classroom Name */}
+            {/* Section Name */}
             <div className="space-y-2">
-              <Label htmlFor="name">اسم الفصل</Label>
+              <Label htmlFor="sectionName">اسم الشعبة <span className="text-destructive">*</span></Label>
               <Input
-                id="name"
-                placeholder="مثال: سادس - أول (رياضيات)"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
+                id="sectionName"
+                placeholder="مثال: الثالث، A، ب"
+                value={formData.sectionName}
+                onChange={(e) => setFormData({ ...formData, sectionName: e.target.value })}
+                className="text-lg"
               />
+              <p className="text-xs text-muted-foreground">
+                أدخل اسم أو رقم الشعبة للتمييز بين الفصول
+              </p>
             </div>
 
             {/* Subject Name */}
@@ -187,6 +220,29 @@ export default function EditClassroom() {
                 value={formData.subject}
                 onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
               />
+            </div>
+
+            {/* Preview of classroom name */}
+            <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">مثال:</Label>
+                <div className="flex items-center gap-2 mt-1 text-sm flex-wrap">
+                  <span className="text-muted-foreground">الصف:</span>
+                  <Badge variant="outline">الأول</Badge>
+                  <span className="text-muted-foreground">الشعبة:</span>
+                  <Badge variant="outline">الثالث</Badge>
+                  <span className="text-muted-foreground">المادة:</span>
+                  <Badge variant="outline">رياضيات</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">النتيجة: <span className="font-semibold text-foreground">أولى - ثالث (رياضيات)</span></p>
+              </div>
+              
+              <div className="border-t pt-3">
+                <Label className="text-sm text-muted-foreground">اسم الصف الكامل:</Label>
+                <p className="text-xl font-bold text-primary mt-1">
+                  {classroomName || 'اختر الصف والشعبة لمعاينة الاسم'}
+                </p>
+              </div>
             </div>
 
             {/* Teacher Template Selection */}
