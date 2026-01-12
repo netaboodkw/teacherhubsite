@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export interface Teacher {
   id: string;
@@ -26,6 +27,30 @@ export function useTeachers() {
       
       if (error) throw error;
       return data as Teacher[];
+    },
+  });
+}
+
+export function useDeleteTeacher() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (teacherUserId: string) => {
+      const { data, error } = await supabase.functions.invoke('delete-teacher', {
+        body: { teacherUserId },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teachers'] });
+      toast.success('تم حذف المعلم وجميع بياناته بنجاح');
+    },
+    onError: (error: Error) => {
+      toast.error('فشل في حذف المعلم: ' + error.message);
     },
   });
 }
