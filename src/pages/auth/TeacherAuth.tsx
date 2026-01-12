@@ -96,6 +96,11 @@ export default function TeacherAuth() {
       return;
     }
     
+    if (!phone.trim()) {
+      toast.error('يرجى إدخال رقم الهاتف');
+      return;
+    }
+    
     if (!educationLevelId) {
       toast.error('يرجى اختيار المرحلة الدراسية');
       return;
@@ -269,6 +274,22 @@ export default function TeacherAuth() {
                       </div>
                     </div>
                     
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">رقم الهاتف *</Label>
+                      <div className="relative">
+                        <Phone className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="phone"
+                          type="tel"
+                          placeholder="0512345678"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          className="pr-10"
+                          dir="ltr"
+                        />
+                      </div>
+                    </div>
+                    
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label htmlFor="password">كلمة المرور *</Label>
@@ -345,22 +366,6 @@ export default function TeacherAuth() {
                           value={subject}
                           onChange={(e) => setSubject(e.target.value)}
                           className="pr-10"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">رقم الهاتف (اختياري)</Label>
-                      <div className="relative">
-                        <Phone className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="phone"
-                          type="tel"
-                          placeholder="0512345678"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          className="pr-10"
-                          dir="ltr"
                         />
                       </div>
                     </div>
