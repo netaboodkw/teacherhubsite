@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Shield, Database, Bell, Loader2, Save, CheckCircle, LayoutGrid } from 'lucide-react';
+import { Settings, Shield, Database, Bell, Loader2, Save, CheckCircle, LayoutGrid, CreditCard, Key, Eye, EyeOff, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSystemSettings, useUpdateSystemSetting } from '@/hooks/useSystemSettings';
 
@@ -29,6 +29,14 @@ export default function AdminSettingsPage() {
   // Template settings from database
   const [allowEditLinkedTemplates, setAllowEditLinkedTemplates] = useState(true);
 
+  // Payment gateway settings
+  const [paymentSettings, setPaymentSettings] = useState({
+    myfatoorah_api_key: '',
+    myfatoorah_test_mode: true,
+    payment_enabled: false,
+  });
+  const [showApiKey, setShowApiKey] = useState(false);
+
   // Load settings from database
   useEffect(() => {
     if (systemSettings) {
@@ -37,6 +45,17 @@ export default function AdminSettingsPage() {
         const value = templateSetting.value;
         setAllowEditLinkedTemplates(value === true || value === 'true');
       }
+
+      // Load payment settings
+      const myfatoorahKey = systemSettings.find(s => s.key === 'myfatoorah_api_key');
+      const myfatoorahTestMode = systemSettings.find(s => s.key === 'myfatoorah_test_mode');
+      const paymentEnabled = systemSettings.find(s => s.key === 'payment_enabled');
+
+      setPaymentSettings({
+        myfatoorah_api_key: myfatoorahKey?.value as string || '',
+        myfatoorah_test_mode: myfatoorahTestMode?.value === true || myfatoorahTestMode?.value === 'true' || myfatoorahTestMode?.value === undefined,
+        payment_enabled: paymentEnabled?.value === true || paymentEnabled?.value === 'true',
+      });
     }
   }, [systemSettings]);
 
@@ -48,6 +67,21 @@ export default function AdminSettingsPage() {
         key: 'allow_edit_linked_templates',
         value: allowEditLinkedTemplates
       });
+
+      // Save payment settings
+      await updateSystemSetting.mutateAsync({
+        key: 'myfatoorah_api_key',
+        value: paymentSettings.myfatoorah_api_key
+      });
+      await updateSystemSetting.mutateAsync({
+        key: 'myfatoorah_test_mode',
+        value: paymentSettings.myfatoorah_test_mode
+      });
+      await updateSystemSetting.mutateAsync({
+        key: 'payment_enabled',
+        value: paymentSettings.payment_enabled
+      });
+
       toast.success('تم حفظ الإعدادات بنجاح');
     } catch (error) {
       toast.error('فشل في حفظ الإعدادات');
@@ -112,6 +146,96 @@ export default function AdminSettingsPage() {
                   checked={settings.requireEmailVerification}
                   onCheckedChange={(checked) => setSettings(prev => ({ ...prev, requireEmailVerification: checked }))}
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Payment Gateway Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                إعدادات بوابة الدفع (MyFatoorah)
+              </CardTitle>
+              <CardDescription>تكوين بوابة الدفع ماي فاتورة للاشتراكات</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>تفعيل بوابة الدفع</Label>
+                  <p className="text-sm text-muted-foreground">
+                    تفعيل إمكانية الدفع الإلكتروني للاشتراكات
+                  </p>
+                </div>
+                <Switch
+                  checked={paymentSettings.payment_enabled}
+                  onCheckedChange={(checked) => setPaymentSettings(prev => ({ ...prev, payment_enabled: checked }))}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                <Label htmlFor="apiKey" className="flex items-center gap-2">
+                  <Key className="h-4 w-4" />
+                  مفتاح API
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="apiKey"
+                    type={showApiKey ? 'text' : 'password'}
+                    value={paymentSettings.myfatoorah_api_key}
+                    onChange={(e) => setPaymentSettings(prev => ({ ...prev, myfatoorah_api_key: e.target.value }))}
+                    placeholder="أدخل مفتاح API من ماي فاتورة"
+                    className="pl-10"
+                    dir="ltr"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute left-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                    onClick={() => setShowApiKey(!showApiKey)}
+                  >
+                    {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  يمكنك الحصول على مفتاح API من لوحة تحكم ماي فاتورة
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>وضع الاختبار (Test Mode)</Label>
+                  <p className="text-sm text-muted-foreground">
+                    استخدام البيئة التجريبية للاختبار (يجب إيقافه للإنتاج)
+                  </p>
+                </div>
+                <Switch
+                  checked={paymentSettings.myfatoorah_test_mode}
+                  onCheckedChange={(checked) => setPaymentSettings(prev => ({ ...prev, myfatoorah_test_mode: checked }))}
+                />
+              </div>
+
+              {paymentSettings.myfatoorah_test_mode && (
+                <div className="p-3 bg-warning/10 border border-warning/30 rounded-lg">
+                  <p className="text-sm text-warning">
+                    ⚠️ وضع الاختبار مفعّل - لن يتم خصم أي مبالغ حقيقية
+                  </p>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 pt-2">
+                <a 
+                  href="https://portal.myfatoorah.com/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary hover:underline flex items-center gap-1"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  فتح لوحة تحكم ماي فاتورة
+                </a>
               </div>
             </CardContent>
           </Card>
