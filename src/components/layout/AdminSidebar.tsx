@@ -35,8 +35,7 @@ const navItems = [
   { href: '/admin/curriculum-tree', icon: TreePine, label: 'المراحل والصفوف' },
   { href: '/admin/teachers', icon: Users, label: 'المعلمون' },
   { href: '/admin/archived-classrooms', icon: Archive, label: 'الصفوف المؤرشفة' },
-  { href: '/admin/subscriptions', icon: CreditCard, label: 'إعدادات الاشتراكات' },
-  { href: '/admin/subscribers', icon: UsersRound, label: 'المشتركين' },
+  { href: '/admin/subscriptions', icon: CreditCard, label: 'الاشتراكات والمدفوعات' },
 ];
 
 export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
