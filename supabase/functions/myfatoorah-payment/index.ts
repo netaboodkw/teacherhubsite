@@ -35,11 +35,11 @@ serve(async (req) => {
     const { action, ...params } = await req.json();
 
     // Try to get API key from system_settings first, then fall back to environment variable
-    let myfatoorahApiKey = Deno.env.get("MYFATOORAH_API_KEY");
-    let myfatoorahTestMode = false;
+    let myfatoorahApiKey = Deno.env.get("MYFATOORAH_API_KEY") || "";
+    let myfatoorahTestMode = true; // Default to test mode for safety
 
     // Get settings from database
-    const { data: apiKeySetting } = await supabaseClient
+    const { data: apiKeySetting, error: apiKeyError } = await supabaseClient
       .from("system_settings")
       .select("value")
       .eq("key", "myfatoorah_api_key")
@@ -51,12 +51,20 @@ serve(async (req) => {
       .eq("key", "myfatoorah_test_mode")
       .maybeSingle();
 
-    if (apiKeySetting?.value && typeof apiKeySetting.value === 'string' && apiKeySetting.value.trim()) {
-      myfatoorahApiKey = apiKeySetting.value;
+    // Check if API key from database is valid
+    if (apiKeySetting?.value) {
+      const dbApiKey = typeof apiKeySetting.value === 'string' 
+        ? apiKeySetting.value.trim() 
+        : (apiKeySetting.value as any)?.toString?.()?.trim() || "";
+      
+      if (dbApiKey && dbApiKey.length > 10) {
+        myfatoorahApiKey = dbApiKey;
+      }
     }
 
     if (testModeSetting?.value !== undefined) {
-      myfatoorahTestMode = testModeSetting.value === true || testModeSetting.value === 'true';
+      const testModeValue = testModeSetting.value;
+      myfatoorahTestMode = testModeValue === true || testModeValue === 'true' || testModeValue === "true";
     }
 
     // Determine base URL based on test mode
@@ -64,8 +72,15 @@ serve(async (req) => {
       ? "https://apitest.myfatoorah.com" 
       : "https://api.myfatoorah.com";
 
-    if (!myfatoorahApiKey) {
-      throw new Error("MyFatoorah API key not configured");
+    console.log("MyFatoorah Config:", {
+      hasApiKey: !!myfatoorahApiKey,
+      apiKeyLength: myfatoorahApiKey?.length || 0,
+      testMode: myfatoorahTestMode,
+      baseUrl: MYFATOORAH_BASE_URL
+    });
+
+    if (!myfatoorahApiKey || myfatoorahApiKey.length < 10) {
+      throw new Error("مفتاح API لماي فاتورة غير مُعد. الرجاء إعداده من لوحة تحكم الأدمن في الإعدادات");
     }
 
     const MYFATOORAH_API_KEY = myfatoorahApiKey;
@@ -178,7 +193,15 @@ serve(async (req) => {
       const result = await response.json();
 
       if (!result.IsSuccess) {
-        throw new Error(result.Message || "Failed to create invoice");
+        console.error("MyFatoorah Error:", result);
+        const errorMessage = result.Message || result.ValidationErrors?.[0]?.Error || "فشل في إنشاء الفاتورة";
+        
+        // Provide more helpful error messages
+        if (errorMessage.includes("token") || errorMessage.includes("Token") || errorMessage.includes("expired")) {
+          throw new Error("مفتاح API لماي فاتورة غير صالح أو منتهي الصلاحية. الرجاء التحقق من الإعدادات في لوحة تحكم الأدمن");
+        }
+        
+        throw new Error(errorMessage);
       }
 
       // Update payment with invoice ID
