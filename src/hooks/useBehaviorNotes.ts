@@ -51,6 +51,23 @@ export function useAllBehaviorNotes() {
   });
 }
 
+export function useBehaviorNotesByClassroom(classroomId?: string) {
+  return useQuery({
+    queryKey: ['behavior_notes', 'classroom', classroomId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('behavior_notes')
+        .select('*')
+        .eq('classroom_id', classroomId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as BehaviorNote[];
+    },
+    enabled: !!classroomId,
+  });
+}
+
 export function useUpdateBehaviorNote() {
   const queryClient = useQueryClient();
 

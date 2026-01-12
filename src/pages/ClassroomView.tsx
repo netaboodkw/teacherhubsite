@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStudents } from '@/hooks/useStudents';
 import { useClassroom, useArchiveClassroom } from '@/hooks/useClassrooms';
+import { useBehaviorNotesByClassroom } from '@/hooks/useBehaviorNotes';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,7 +34,7 @@ import { toast } from 'sonner';
 import { 
   ArrowRight, User, Plus, Minus, MessageSquare, Save, Loader2, 
   Move, Check, X, Clock, FileText, ClipboardCheck,
-  MoreVertical, Archive, Settings, UserPlus, GripVertical
+  MoreVertical, Archive, Settings, UserPlus, GripVertical, HeartPulse, StickyNote
 } from 'lucide-react';
 import {
   DndContext,
@@ -102,7 +104,7 @@ function SortableStudent({ student, isArrangeMode, onTap, getShortName }: Sortab
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex flex-col items-center p-2 bg-card rounded-xl border-2 shadow-sm transition-all ${
+      className={`relative flex flex-col items-center p-2 bg-card rounded-xl border-2 shadow-sm transition-all ${
         isDragging ? 'border-primary shadow-lg scale-105' : 'border-border/50 hover:border-primary/30'
       }`}
       onClick={() => !isArrangeMode && onTap(student)}
@@ -111,7 +113,7 @@ function SortableStudent({ student, isArrangeMode, onTap, getShortName }: Sortab
         <div 
           {...attributes} 
           {...listeners}
-          className="absolute -top-1 -right-1 p-1 bg-primary text-primary-foreground rounded-full cursor-grab active:cursor-grabbing touch-none"
+          className="absolute -top-1 -right-1 p-1 bg-primary text-primary-foreground rounded-full cursor-grab active:cursor-grabbing touch-none z-10"
         >
           <GripVertical className="h-3 w-3" />
         </div>
@@ -183,6 +185,7 @@ export default function ClassroomView() {
   const { user } = useAuth();
   const { data: classroom, isLoading: loadingClassroom } = useClassroom(classroomId || '');
   const { data: students = [], isLoading: loadingStudents } = useStudents(classroomId);
+  const { data: behaviorNotes = [] } = useBehaviorNotesByClassroom(classroomId);
   const archiveClassroom = useArchiveClassroom();
   
   const [studentOrder, setStudentOrder] = useState<string[]>([]);
@@ -196,6 +199,15 @@ export default function ClassroomView() {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<number>(1);
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+
+  // Create a map of students who have notes
+  const studentsWithNotes = useMemo(() => {
+    const noteMap = new Map<string, number>();
+    behaviorNotes.forEach(note => {
+      noteMap.set(note.student_id, (noteMap.get(note.student_id) || 0) + 1);
+    });
+    return noteMap;
+  }, [behaviorNotes]);
 
   // DnD Kit sensors with touch support
   const sensors = useSensors(
@@ -759,32 +771,71 @@ export default function ClassroomView() {
               </div>
             ) : (
               <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-2 sm:gap-3">
-                {orderedStudents.map((student) => (
-                  <div
-                    key={student.id}
-                    className="flex flex-col items-center p-2 bg-card rounded-xl border-2 border-border/50 shadow-sm cursor-pointer transition-all hover:scale-105 hover:border-primary/50 active:scale-95"
-                    onClick={() => handleStudentTap({
-                      id: student.id,
-                      name: student.name,
-                      avatar_url: student.avatar_url,
-                    })}
-                  >
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-1">
-                      {student.avatar_url ? (
-                        <img
-                          src={student.avatar_url}
-                          alt={student.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <User className="h-5 w-5 text-primary" />
-                      )}
+                {orderedStudents.map((student) => {
+                  const hasNotes = studentsWithNotes.has(student.id);
+                  const notesCount = studentsWithNotes.get(student.id) || 0;
+                  
+                  return (
+                    <div
+                      key={student.id}
+                      className="relative flex flex-col items-center p-2 bg-card rounded-xl border-2 border-border/50 shadow-sm cursor-pointer transition-all hover:scale-105 hover:border-primary/50 active:scale-95"
+                      onClick={() => handleStudentTap({
+                        id: student.id,
+                        name: student.name,
+                        avatar_url: student.avatar_url,
+                      })}
+                    >
+                      {/* Status Icons */}
+                      <div className="absolute -top-1 right-0 flex gap-0.5">
+                        {student.special_needs && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="p-0.5 bg-amber-100 dark:bg-amber-900/50 rounded-full">
+                                <HeartPulse className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>احتياجات خاصة</TooltipContent>
+                          </Tooltip>
+                        )}
+                        {hasNotes && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="p-0.5 bg-blue-100 dark:bg-blue-900/50 rounded-full">
+                                <StickyNote className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>{notesCount} ملاحظة</TooltipContent>
+                          </Tooltip>
+                        )}
+                        {student.notes && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="p-0.5 bg-purple-100 dark:bg-purple-900/50 rounded-full">
+                                <MessageSquare className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-48 text-right">{student.notes}</TooltipContent>
+                          </Tooltip>
+                        )}
+                      </div>
+
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-1 mt-1">
+                        {student.avatar_url ? (
+                          <img
+                            src={student.avatar_url}
+                            alt={student.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User className="h-5 w-5 text-primary" />
+                        )}
+                      </div>
+                      <p className="text-xs text-center font-medium truncate w-full leading-tight">
+                        {getShortName(student.name)}
+                      </p>
                     </div>
-                    <p className="text-xs text-center font-medium truncate w-full leading-tight">
-                      {getShortName(student.name)}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>

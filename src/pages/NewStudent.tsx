@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useCreateStudent } from '@/hooks/useStudents';
 import { useClassrooms } from '@/hooks/useClassrooms';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,10 +12,14 @@ import { Switch } from '@/components/ui/switch';
 import { StudentAvatarUpload } from '@/components/students/StudentAvatarUpload';
 import { ArrowRight, Users, Loader2, HeartPulse } from 'lucide-react';
 import { toast } from 'sonner';
+
 export default function NewStudent() {
   const createStudent = useCreateStudent();
   const { data: classrooms = [] } = useClassrooms();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const preselectedClassroomId = searchParams.get('classroomId');
+
   const [formData, setFormData] = useState({
     name: '',
     student_id: '',
@@ -25,6 +29,23 @@ export default function NewStudent() {
     avatar_url: '',
   });
 
+  // Auto-select classroom if provided in URL
+  useEffect(() => {
+    if (preselectedClassroomId && classrooms.length > 0) {
+      const classroomExists = classrooms.some(c => c.id === preselectedClassroomId);
+      if (classroomExists) {
+        setFormData(prev => ({ ...prev, classroom_id: preselectedClassroomId }));
+      }
+    }
+  }, [preselectedClassroomId, classrooms]);
+
+  // Generate unique student ID
+  const generateStudentId = () => {
+    const timestamp = Date.now().toString(36).toUpperCase();
+    const random = Math.random().toString(36).substring(2, 5).toUpperCase();
+    return `STU-${timestamp}-${random}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -33,18 +54,25 @@ export default function NewStudent() {
       toast.error('يجب إدخال اسم الطالب');
       return;
     }
-    if (!formData.student_id.trim()) {
-      toast.error('يجب إدخال الرقم التعريفي');
-      return;
-    }
     if (!formData.classroom_id) {
       toast.error('يجب اختيار الصف الدراسي');
       return;
     }
     
+    // Generate student_id if not provided
+    const studentData = {
+      ...formData,
+      student_id: formData.student_id.trim() || generateStudentId(),
+    };
+
     try {
-      await createStudent.mutateAsync(formData);
-      navigate('/teacher/students');
+      await createStudent.mutateAsync(studentData);
+      // Navigate back to classroom if came from there, otherwise to students list
+      if (preselectedClassroomId) {
+        navigate(`/teacher/classrooms/${preselectedClassroomId}`);
+      } else {
+        navigate('/teacher/students');
+      }
     } catch (error) {
       // Error handled by hook
     }
@@ -106,14 +134,14 @@ export default function NewStudent() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="student_id">الرقم التعريفي</Label>
+              <Label htmlFor="student_id">الرقم التعريفي (اختياري)</Label>
               <Input
                 id="student_id"
-                placeholder="مثال: STU001"
+                placeholder="سيتم توليده تلقائياً إذا تُرك فارغاً"
                 value={formData.student_id}
                 onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
-                required
               />
+              <p className="text-xs text-muted-foreground">اتركه فارغاً للتوليد التلقائي</p>
             </div>
 
             <div className="space-y-2">
