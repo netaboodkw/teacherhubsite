@@ -125,24 +125,36 @@ export default function TeacherAuth() {
         return;
       }
       
-      // Wait a moment for the trigger to create profile, then update it
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Wait for the trigger to create profile, then update it with retry logic
+      let profileUpdated = false;
+      let retries = 0;
+      const maxRetries = 5;
       
-      // Update profile with additional info
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          school_name: schoolName.trim() || null,
-          education_level_id: educationLevelId,
-          subject: subject.trim() || null,
-          phone: phone.trim() || null,
-          is_profile_complete: true,
-        })
-        .eq('user_id', data.user.id);
+      while (!profileUpdated && retries < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            full_name: fullName.trim(),
+            school_name: schoolName.trim() || null,
+            education_level_id: educationLevelId,
+            subject: subject.trim() || null,
+            phone: phone.trim(),
+            is_profile_complete: true,
+          })
+          .eq('user_id', data.user.id);
+        
+        if (!profileError) {
+          profileUpdated = true;
+        } else {
+          console.error(`Profile update attempt ${retries + 1} failed:`, profileError);
+          retries++;
+        }
+      }
       
-      if (profileError) {
-        console.error('Profile update error:', profileError);
-        // Don't fail registration if profile update fails
+      if (!profileUpdated) {
+        console.error('Failed to update profile after all retries');
       }
       
       toast.success('تم إنشاء الحساب بنجاح');
