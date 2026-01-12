@@ -268,6 +268,51 @@ export type Database = {
         }
         Relationships: []
       }
+      discount_codes: {
+        Row: {
+          code: string
+          created_at: string
+          current_uses: number
+          description: string | null
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          updated_at: string
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          current_uses?: number
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          current_uses?: number
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
       education_levels: {
         Row: {
           created_at: string
@@ -894,6 +939,193 @@ export type Database = {
           },
         ]
       }
+      subscription_courses: {
+        Row: {
+          created_at: string
+          display_order: number
+          end_date: string
+          id: string
+          is_active: boolean
+          name: string
+          name_ar: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          end_date: string
+          id?: string
+          is_active?: boolean
+          name: string
+          name_ar: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          end_date?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          name_ar?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subscription_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscription_packages: {
+        Row: {
+          courses_count: number
+          created_at: string
+          currency: string
+          description: string | null
+          display_order: number
+          id: string
+          is_active: boolean
+          name: string
+          name_ar: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          courses_count?: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          name_ar: string
+          price?: number
+          updated_at?: string
+        }
+        Update: {
+          courses_count?: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          name_ar?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subscription_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          discount_amount: number
+          discount_code_id: string | null
+          id: string
+          invoice_id: string | null
+          original_amount: number
+          package_id: string | null
+          paid_at: string | null
+          payment_method: string | null
+          payment_reference: string | null
+          status: string
+          subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          discount_amount?: number
+          discount_code_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          original_amount: number
+          package_id?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          discount_amount?: number
+          discount_code_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          original_amount?: number
+          package_id?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_payments_discount_code_id_fkey"
+            columns: ["discount_code_id"]
+            isOneToOne: false
+            referencedRelation: "discount_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_payments_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_payments_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "teacher_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_settings: {
         Row: {
           created_at: string
@@ -986,6 +1218,59 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      teacher_subscriptions: {
+        Row: {
+          courses_remaining: number
+          created_at: string
+          id: string
+          is_read_only: boolean
+          package_id: string | null
+          status: string
+          subscription_ends_at: string | null
+          subscription_started_at: string | null
+          trial_ends_at: string | null
+          trial_started_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          courses_remaining?: number
+          created_at?: string
+          id?: string
+          is_read_only?: boolean
+          package_id?: string | null
+          status?: string
+          subscription_ends_at?: string | null
+          subscription_started_at?: string | null
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          courses_remaining?: number
+          created_at?: string
+          id?: string
+          is_read_only?: boolean
+          package_id?: string | null
+          status?: string
+          subscription_ends_at?: string | null
+          subscription_started_at?: string | null
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teacher_subscriptions_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_packages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
