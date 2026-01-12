@@ -53,10 +53,14 @@ export function useUpdateSystemSetting() {
         .eq('key', key)
         .maybeSingle();
 
+      // Store value directly without JSON.stringify for boolean values
+      // The 'value' column is a JSON type, so it can store booleans directly
+      const valueToStore = value;
+
       if (existing) {
         const { data, error } = await supabase
           .from('system_settings')
-          .update({ value: JSON.stringify(value) })
+          .update({ value: valueToStore })
           .eq('key', key)
           .select()
           .single();
@@ -67,7 +71,7 @@ export function useUpdateSystemSetting() {
         // Insert if not exists
         const { data, error } = await supabase
           .from('system_settings')
-          .insert({ key, value: JSON.stringify(value) })
+          .insert({ key, value: valueToStore })
           .select()
           .single();
 
@@ -89,8 +93,18 @@ export function useUpdateSystemSetting() {
 export function useAllowEditLinkedTemplates() {
   const { data: setting, isLoading } = useSystemSetting('allow_edit_linked_templates');
   
-  // Parse the value - it could be stored as string "true" or boolean true
-  const allowEdit = setting?.value === true || setting?.value === 'true';
+  // Parse the value - it could be stored as string "true"/"false" or boolean true/false
+  // Handle all possible formats: boolean, string, or JSON stringified value
+  let allowEdit = false; // Default to false (don't allow editing)
+  
+  if (setting?.value !== undefined && setting?.value !== null) {
+    const value = setting.value;
+    if (typeof value === 'boolean') {
+      allowEdit = value;
+    } else if (typeof value === 'string') {
+      allowEdit = value === 'true';
+    }
+  }
   
   return { allowEdit, isLoading };
 }
