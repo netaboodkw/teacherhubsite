@@ -1138,21 +1138,23 @@ export default function Grades() {
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen} modal>
           <DialogContent className="sm:max-w-sm" dir="rtl">
             <DialogHeader>
-              <DialogTitle className="flex items-center justify-between">
-                <span>
-                  {selectedCell?.week 
-                    ? (getGradeForWeek(selectedCell.studentId, selectedCell.week) ? 'تعديل الدرجة' : 'إضافة درجة')
-                    : (grades.find(g => g.student_id === selectedCell?.studentId && g.title === selectedCell?.columnId) ? 'تعديل الدرجة' : 'إضافة درجة')
-                  }
-                  {getCurrentColumnName() && (
-                    <span className="text-muted-foreground font-normal text-sm mr-2">
-                      ({getCurrentColumnName()})
-                    </span>
-                  )}
-                </span>
-                <Badge variant="secondary">
-                  {getCurrentStudentIndex() + 1} / {students.length}
-                </Badge>
+              <DialogTitle className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span>
+                    {selectedCell?.week 
+                      ? (getGradeForWeek(selectedCell.studentId, selectedCell.week) ? 'تعديل الدرجة' : 'إضافة درجة')
+                      : (grades.find(g => g.student_id === selectedCell?.studentId && g.title === selectedCell?.columnId) ? 'تعديل الدرجة' : 'إضافة درجة')
+                    }
+                  </span>
+                  <Badge variant="secondary">
+                    {getCurrentStudentIndex() + 1} / {students.length}
+                  </Badge>
+                </div>
+                {getCurrentColumnName() && (
+                  <Badge variant="outline" className="w-fit text-base font-semibold">
+                    {getCurrentColumnName()}
+                  </Badge>
+                )}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-4">
