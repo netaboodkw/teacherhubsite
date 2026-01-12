@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useStudent, useUpdateStudent, useDeleteStudent } from '@/hooks/useStudents';
-import { useClassroom } from '@/hooks/useClassrooms';
+import { useClassroom, useClassrooms } from '@/hooks/useClassrooms';
 import { useBehaviorNotes, useUpdateBehaviorNote, useDeleteBehaviorNote } from '@/hooks/useBehaviorNotes';
 import { useGrades } from '@/hooks/useGrades';
 import { useAttendance } from '@/hooks/useAttendance';
@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { StudentAvatarUpload } from '@/components/students/StudentAvatarUpload';
@@ -30,6 +31,7 @@ export default function StudentDetail() {
   const navigate = useNavigate();
   const { data: student, isLoading: loadingStudent } = useStudent(studentId || '');
   const { data: classroom } = useClassroom(student?.classroom_id || '');
+  const { data: classrooms = [] } = useClassrooms();
   const { data: behaviorNotes = [], isLoading: loadingNotes } = useBehaviorNotes(studentId);
   const { data: grades = [] } = useGrades(student?.classroom_id || undefined, studentId);
   const { data: allAttendance = [] } = useAttendance(student?.classroom_id || undefined);
@@ -45,6 +47,7 @@ export default function StudentDetail() {
   const [editMode, setEditMode] = useState(false);
   const [name, setName] = useState('');
   const [studentIdValue, setStudentIdValue] = useState('');
+  const [classroomId, setClassroomId] = useState('');
   const [notes, setNotes] = useState('');
   const [specialNeeds, setSpecialNeeds] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -71,6 +74,7 @@ export default function StudentDetail() {
     if (student) {
       setName(student.name);
       setStudentIdValue(student.student_id);
+      setClassroomId(student.classroom_id);
       setNotes(student.notes || '');
       setSpecialNeeds(student.special_needs || false);
       setAvatarUrl(student.avatar_url);
@@ -86,6 +90,7 @@ export default function StudentDetail() {
         id: studentId,
         name,
         student_id: studentIdValue,
+        classroom_id: classroomId,
         notes: notes || null,
         special_needs: specialNeeds,
         avatar_url: avatarUrl,
@@ -313,6 +318,27 @@ export default function StudentDetail() {
                     />
                   </div>
                 </div>
+
+                {/* Classroom Selection */}
+                <div className="space-y-2">
+                  <Label>الصف الدراسي</Label>
+                  <Select value={classroomId} onValueChange={setClassroomId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر الصف" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {classrooms.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name} - {c.subject}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {classroomId !== student?.classroom_id && (
+                    <p className="text-xs text-amber-600">⚠️ سيتم نقل الطالب إلى الصف الجديد</p>
+                  )}
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="notes">ملاحظات</Label>
                   <Textarea
