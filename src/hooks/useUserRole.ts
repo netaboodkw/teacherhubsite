@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-export type AppRole = 'admin' | 'user';
+export type AppRole = 'admin' | 'user' | 'department_head';
 
 export interface UserRole {
   id: string;
@@ -35,4 +35,32 @@ export function useIsAdmin() {
     isAdmin: role?.role === 'admin',
     isLoading,
   };
+}
+
+export function useIsDepartmentHead() {
+  const { data: role, isLoading } = useUserRole();
+  return {
+    isDepartmentHead: role?.role === 'department_head',
+    isLoading,
+  };
+}
+
+export function useIsTeacher() {
+  const { data: role, isLoading } = useUserRole();
+  return {
+    isTeacher: role?.role === 'user' || !role, // 'user' role or no role means teacher
+    isLoading,
+  };
+}
+
+export function getUserRoleRedirectPath(role: AppRole | null | undefined): string {
+  switch (role) {
+    case 'admin':
+      return '/admin';
+    case 'department_head':
+      return '/department-head';
+    case 'user':
+    default:
+      return '/teacher';
+  }
 }

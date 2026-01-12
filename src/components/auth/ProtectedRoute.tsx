@@ -1,19 +1,20 @@
 import { useAuth } from '@/hooks/useAuth';
-import { useIsAdmin } from '@/hooks/useUserRole';
+import { useUserRole, getUserRoleRedirectPath } from '@/hooks/useUserRole';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requireAdmin?: boolean;
 }
 
-export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
+export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading: authLoading } = useAuth();
-  const { isAdmin, isLoading: roleLoading } = useIsAdmin();
+  const { data: userRole, isLoading: roleLoading } = useUserRole();
   const location = useLocation();
 
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const isDepartmentHeadRoute = location.pathname.startsWith('/department-head');
+  const isTeacherRoute = location.pathname.startsWith('/teacher');
 
   if (authLoading || (user && roleLoading)) {
     return (
@@ -28,18 +29,30 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
 
   if (!user) {
     // Redirect to appropriate auth page based on route
-    const authPath = isAdminRoute ? '/auth/admin' : '/auth/teacher';
-    return <Navigate to={authPath} replace />;
+    if (isAdminRoute) {
+      return <Navigate to="/auth/admin" replace />;
+    }
+    if (isDepartmentHeadRoute) {
+      return <Navigate to="/auth/department-head" replace />;
+    }
+    return <Navigate to="/auth/teacher" replace />;
   }
 
-  // Check admin access for admin routes
-  if (isAdminRoute && !isAdmin) {
-    return <Navigate to="/teacher" replace />;
+  const currentRole = userRole?.role;
+  const correctPath = getUserRoleRedirectPath(currentRole);
+
+  // Strict role enforcement - redirect to correct dashboard if accessing wrong panel
+  if (isAdminRoute && currentRole !== 'admin') {
+    return <Navigate to={correctPath} replace />;
   }
 
-  // Redirect admin to admin dashboard if trying to access teacher routes
-  if (!isAdminRoute && isAdmin && location.pathname.startsWith('/teacher')) {
-    return <Navigate to="/admin" replace />;
+  if (isDepartmentHeadRoute && currentRole !== 'department_head') {
+    return <Navigate to={correctPath} replace />;
+  }
+
+  if (isTeacherRoute && currentRole !== 'user' && currentRole !== null && currentRole !== undefined) {
+    // If user has a role that's not 'user', redirect to their correct dashboard
+    return <Navigate to={correctPath} replace />;
   }
 
   return <>{children}</>;

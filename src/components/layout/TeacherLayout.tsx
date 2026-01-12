@@ -1,6 +1,9 @@
 import { useState, ReactNode } from 'react';
+import { Navigate } from 'react-router-dom';
 import { TeacherSidebar } from './TeacherSidebar';
 import { Header } from './Header';
+import { useUserRole, getUserRoleRedirectPath } from '@/hooks/useUserRole';
+import { Loader2 } from 'lucide-react';
 
 interface TeacherLayoutProps {
   children: ReactNode;
@@ -8,6 +11,22 @@ interface TeacherLayoutProps {
 
 export function TeacherLayout({ children }: TeacherLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { data: userRole, isLoading } = useUserRole();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Only teachers (role 'user' or no role) can access this layout
+  // Redirect admins and department heads to their respective dashboards
+  if (userRole?.role === 'admin' || userRole?.role === 'department_head') {
+    const redirectPath = getUserRoleRedirectPath(userRole.role);
+    return <Navigate to={redirectPath} replace />;
+  }
 
   return (
     <div className="min-h-screen bg-background flex" dir="rtl">
