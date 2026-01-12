@@ -2,7 +2,7 @@ import { useState, ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { AdminSidebar } from './AdminSidebar';
 import { Header } from './Header';
-import { useIsAdmin } from '@/hooks/useUserRole';
+import { useUserRole, getUserRoleRedirectPath } from '@/hooks/useUserRole';
 import { Loader2 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -11,7 +11,7 @@ interface AdminLayoutProps {
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { isAdmin, isLoading } = useIsAdmin();
+  const { data: userRole, isLoading } = useUserRole();
 
   if (isLoading) {
     return (
@@ -21,8 +21,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
-  if (!isAdmin) {
-    return <Navigate to="/teacher" replace />;
+  // Only admin can access this layout
+  if (userRole?.role !== 'admin') {
+    const redirectPath = getUserRoleRedirectPath(userRole?.role);
+    return <Navigate to={redirectPath} replace />;
   }
 
   return (
