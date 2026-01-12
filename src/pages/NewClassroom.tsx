@@ -15,12 +15,15 @@ import { ArrowRight, GraduationCap, Loader2, LayoutGrid, Plus } from 'lucide-rea
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
+// Pastel colors for classroom selection
 const colorOptions = [
-  { value: 'bg-primary', label: 'أزرق' },
-  { value: 'bg-secondary', label: 'أخضر' },
-  { value: 'bg-accent', label: 'بنفسجي' },
-  { value: 'bg-warning', label: 'برتقالي' },
-  { value: 'bg-destructive', label: 'أحمر' },
+  { value: 'bg-blue-200', label: 'أزرق فاتح' },
+  { value: 'bg-green-200', label: 'أخضر فاتح' },
+  { value: 'bg-purple-200', label: 'بنفسجي فاتح' },
+  { value: 'bg-orange-200', label: 'برتقالي فاتح' },
+  { value: 'bg-pink-200', label: 'وردي فاتح' },
+  { value: 'bg-yellow-200', label: 'أصفر فاتح' },
+  { value: 'bg-teal-200', label: 'فيروزي فاتح' },
 ];
 
 export default function NewClassroom() {
@@ -173,15 +176,16 @@ export default function NewClassroom() {
 
             {/* Section Name */}
             <div className="space-y-2">
-              <Label htmlFor="sectionName">اسم الفصل / الشعبة</Label>
+              <Label htmlFor="sectionName">اسم الشعبة <span className="text-destructive">*</span></Label>
               <Input
                 id="sectionName"
-                placeholder="مثال: أول، ثاني، أ، ب"
+                placeholder="مثال: الثالث، A، ب"
                 value={formData.sectionName}
                 onChange={(e) => setFormData({ ...formData, sectionName: e.target.value })}
+                className="text-lg"
               />
               <p className="text-xs text-muted-foreground">
-                اختياري - يمكنك إضافة رقم أو حرف للتمييز بين الفصول
+                أدخل اسم أو رقم الشعبة للتمييز بين الفصول
               </p>
             </div>
 
@@ -197,12 +201,27 @@ export default function NewClassroom() {
             </div>
 
             {/* Preview of classroom name */}
-            {classroomName && (
-              <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                <Label className="text-sm text-muted-foreground">اسم الفصل سيكون:</Label>
-                <p className="text-lg font-bold text-primary mt-1">{classroomName}</p>
+            <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">مثال:</Label>
+                <div className="flex items-center gap-2 mt-1 text-sm">
+                  <span className="text-muted-foreground">الصف:</span>
+                  <Badge variant="outline">الأول</Badge>
+                  <span className="text-muted-foreground">الشعبة:</span>
+                  <Badge variant="outline">الثالث</Badge>
+                  <span className="text-muted-foreground">المادة:</span>
+                  <Badge variant="outline">رياضيات</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">النتيجة: <span className="font-semibold text-foreground">أولى - ثالث (رياضيات)</span></p>
               </div>
-            )}
+              
+              <div className="border-t pt-3">
+                <Label className="text-sm text-muted-foreground">اسم الصف الكامل:</Label>
+                <p className="text-xl font-bold text-primary mt-1">
+                  {classroomName || 'اختر الصف والشعبة لمعاينة الاسم'}
+                </p>
+              </div>
+            </div>
 
             {/* Schedule Editor */}
             <ClassScheduleEditor
