@@ -1,7 +1,37 @@
 import { useCallback } from 'react';
 
+// مفتاح التخزين المحلي
+const HAPTIC_ENABLED_KEY = 'haptic_feedback_enabled';
+
+// التحقق من تفعيل الاهتزاز والصوت
+const isHapticEnabled = (): boolean => {
+  try {
+    const stored = localStorage.getItem(HAPTIC_ENABLED_KEY);
+    // افتراضياً مفعل
+    return stored === null ? true : stored === 'true';
+  } catch {
+    return true;
+  }
+};
+
+// تعيين حالة الاهتزاز والصوت
+export const setHapticEnabled = (enabled: boolean): void => {
+  try {
+    localStorage.setItem(HAPTIC_ENABLED_KEY, String(enabled));
+  } catch {
+    // تجاهل الأخطاء
+  }
+};
+
+// قراءة حالة الاهتزاز والصوت
+export const getHapticEnabled = (): boolean => {
+  return isHapticEnabled();
+};
+
 // صوت نجاح بسيط باستخدام Web Audio API
 const playSuccessSound = () => {
+  if (!isHapticEnabled()) return;
+  
   try {
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
@@ -25,6 +55,8 @@ const playSuccessSound = () => {
 
 // اهتزاز الجهاز
 const vibrate = (pattern: number | number[] = 50) => {
+  if (!isHapticEnabled()) return;
+  
   try {
     if ('vibrate' in navigator) {
       navigator.vibrate(pattern);
