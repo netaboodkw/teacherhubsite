@@ -42,7 +42,7 @@ export function useClassrooms() {
   });
 }
 
-// Hook to check which templates are in use by classrooms
+// Hook to check which templates are in use by active (non-archived) classrooms
 export function useTemplatesInUse() {
   const { user } = useAuth();
   
@@ -55,6 +55,7 @@ export function useTemplatesInUse() {
         .from('classrooms')
         .select('teacher_template_id, name')
         .eq('user_id', user.id)
+        .eq('is_archived', false) // استثناء الصفوف المؤرشفة
         .not('teacher_template_id', 'is', null);
       
       if (error) throw error;
