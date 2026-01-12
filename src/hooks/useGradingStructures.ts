@@ -108,28 +108,64 @@ export function useClassroomGradingStructure(classroom?: {
   return useQuery({
     queryKey: ['classroom_grading_structure', classroom?.education_level_id, classroom?.grade_level_id, classroom?.subject_id, classroom?.teacher_template_id],
     queryFn: async () => {
-      // If there's a teacher template, use it directly
+      // If there's a teacher template, check if it's an admin template or teacher template
       if (classroom?.teacher_template_id) {
-        const { data: templateData, error: templateError } = await supabase
-          .from('teacher_grading_templates')
-          .select('*')
-          .eq('id', classroom.teacher_template_id)
-          .single();
-        
-        if (!templateError && templateData) {
-          return {
-            id: templateData.id,
-            name: templateData.name,
-            name_ar: templateData.name_ar,
-            structure: templateData.structure as unknown as GradingStructureData,
-            subject_id: null,
-            education_level_id: null,
-            grade_level_id: null,
-            template_id: null,
-            is_default: false,
-            created_at: templateData.created_at,
-            updated_at: templateData.updated_at,
-          } as GradingStructure;
+        // Check if it's an admin template (prefixed with admin_)
+        if (classroom.teacher_template_id.startsWith('admin_')) {
+          const adminTemplateId = classroom.teacher_template_id.replace('admin_', '');
+          const { data: adminTemplateData, error: adminError } = await supabase
+            .from('grading_templates')
+            .select('*')
+            .eq('id', adminTemplateId)
+            .single();
+          
+          if (!adminError && adminTemplateData) {
+            let structure: GradingStructureData = { groups: [], settings: { showPercentage: true, passingScore: 50, showGrandTotal: true } };
+            try {
+              if (adminTemplateData.description) {
+                structure = JSON.parse(adminTemplateData.description);
+              }
+            } catch {
+              // Keep default structure if parsing fails
+            }
+            
+            return {
+              id: adminTemplateData.id,
+              name: adminTemplateData.name,
+              name_ar: adminTemplateData.name_ar,
+              structure,
+              subject_id: null,
+              education_level_id: null,
+              grade_level_id: null,
+              template_id: adminTemplateData.id,
+              is_default: true,
+              created_at: adminTemplateData.created_at,
+              updated_at: adminTemplateData.updated_at,
+            } as GradingStructure;
+          }
+        } else {
+          // Regular teacher template
+          const { data: templateData, error: templateError } = await supabase
+            .from('teacher_grading_templates')
+            .select('*')
+            .eq('id', classroom.teacher_template_id)
+            .single();
+          
+          if (!templateError && templateData) {
+            return {
+              id: templateData.id,
+              name: templateData.name,
+              name_ar: templateData.name_ar,
+              structure: templateData.structure as unknown as GradingStructureData,
+              subject_id: null,
+              education_level_id: null,
+              grade_level_id: null,
+              template_id: null,
+              is_default: false,
+              created_at: templateData.created_at,
+              updated_at: templateData.updated_at,
+            } as GradingStructure;
+          }
         }
       }
       
