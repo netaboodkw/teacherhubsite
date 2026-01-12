@@ -25,12 +25,11 @@ export interface SharedTemplate {
   updated_at: string;
 }
 
-// Generate a random 6-character share code
+// Generate a random 6-digit share code
 function generateShareCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excluding similar chars like 0/O, 1/I
   let code = '';
   for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
+    code += Math.floor(Math.random() * 10).toString();
   }
   return code;
 }
@@ -254,7 +253,7 @@ export function useImportTemplate() {
       const { data: shared, error: sharedError } = await supabase
         .from('shared_templates')
         .select('*')
-        .eq('share_code', shareCode.toUpperCase())
+        .eq('share_code', shareCode.trim())
         .eq('is_active', true)
         .single();
 
