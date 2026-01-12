@@ -82,6 +82,11 @@ export default function EditClassroom() {
     const sectionName = formData.sectionName.trim();
     const subjectName = formData.subject.trim();
     
+    // If gradeLevels are still loading, return the original name
+    if (!gradeName && gradeLevelsLoading) {
+      return classroom?.name || '';
+    }
+    
     if (!gradeName) return '';
     
     let name = gradeName;
@@ -95,14 +100,24 @@ export default function EditClassroom() {
   };
 
   const classroomName = generateClassroomName();
+  
+  // Get a valid name for submission (never empty)
+  const getSubmitName = () => {
+    if (classroomName) return classroomName;
+    // Fallback to original classroom name if available
+    if (classroom?.name) return classroom.name;
+    return 'فصل جديد';
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!classroomId) return;
     
+    const submitName = getSubmitName();
+    
     await updateClassroom.mutateAsync({
       id: classroomId,
-      name: classroomName || 'فصل جديد',
+      name: submitName,
       subject: formData.subject || 'مادة غير محددة',
       schedule: formData.schedule,
       color: formData.color,

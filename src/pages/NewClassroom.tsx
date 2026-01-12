@@ -77,22 +77,25 @@ export default function NewClassroom() {
   };
 
   const classroomName = generateClassroomName();
+  
+  // Validate that we have a proper name before allowing submission
+  const canSubmit = !gradeLevelsLoading && formData.grade_level_id && classroomName;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.grade_level_id) {
+    if (!canSubmit) {
       return;
     }
     
     await createClassroom.mutateAsync({
-      name: classroomName || 'فصل جديد',
+      name: classroomName,
       subject: formData.subject || 'مادة غير محددة',
       schedule: formData.schedule,
       color: formData.color,
       class_schedule: classSchedule,
       education_level_id: formData.education_level_id || null,
-      subject_id: null, // No longer using subject_id
+      subject_id: null,
       grade_level_id: formData.grade_level_id || null,
       teacher_template_id: formData.teacher_template_id || null,
     });
