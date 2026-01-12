@@ -211,13 +211,13 @@ export default function TeacherSubscription() {
                   <div className="space-y-1">
                     {hasDiscount && (
                       <p className="text-lg text-muted-foreground line-through">
-                        {pkg.price} {pkg.currency === 'SAR' ? 'ريال' : pkg.currency}
+                        {pkg.price} د.ك
                       </p>
                     )}
                     <p className="text-3xl font-bold text-primary">
-                      {finalPrice.toFixed(0)}
+                      {finalPrice.toFixed(2)}
                       <span className="text-base font-normal text-muted-foreground mr-1">
-                        {pkg.currency === 'SAR' ? 'ريال' : pkg.currency}
+                        د.ك
                       </span>
                     </p>
                   </div>
@@ -297,7 +297,7 @@ export default function TeacherSubscription() {
                     <Check className="h-4 w-4" />
                     تم تطبيق خصم {appliedDiscount.discount_type === 'percentage' 
                       ? `${appliedDiscount.discount_value}%` 
-                      : `${appliedDiscount.discount_value} ريال`}
+                      : `${appliedDiscount.discount_value} د.ك`}
                   </p>
                 )}
               </div>
@@ -318,18 +318,18 @@ export default function TeacherSubscription() {
                   </div>
                   <div className="flex justify-between">
                     <span>السعر الأصلي</span>
-                    <span>{selectedPackage.price} ريال</span>
+                    <span>{selectedPackage.price} د.ك</span>
                   </div>
                   {appliedDiscount && (
                     <div className="flex justify-between text-emerald-600">
                       <span>الخصم</span>
-                      <span>- {(selectedPackage.price - calculateFinalPrice(selectedPackage)).toFixed(0)} ريال</span>
+                      <span>- {(selectedPackage.price - calculateFinalPrice(selectedPackage)).toFixed(2)} د.ك</span>
                     </div>
                   )}
                   <Separator />
                   <div className="flex justify-between text-lg font-bold">
                     <span>الإجمالي</span>
-                    <span className="text-primary">{calculateFinalPrice(selectedPackage).toFixed(0)} ريال</span>
+                    <span className="text-primary">{calculateFinalPrice(selectedPackage).toFixed(2)} د.ك</span>
                   </div>
                 </div>
               </div>

@@ -304,8 +304,8 @@ export default function SubscribersPage() {
                   <DollarSign className="h-5 w-5 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{stats.totalRevenue.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground">إجمالي الإيرادات (ريال)</p>
+                  <p className="text-2xl font-bold">{stats.totalRevenue.toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground">إجمالي الإيرادات (د.ك)</p>
                 </div>
               </div>
             </CardContent>
@@ -465,11 +465,11 @@ export default function SubscribersPage() {
                           <TableCell>{payment.profile?.full_name || 'غير معروف'}</TableCell>
                           <TableCell>{payment.package?.name_ar || '-'}</TableCell>
                           <TableCell className="font-medium">
-                            {payment.amount} {payment.currency === 'SAR' ? 'ريال' : payment.currency}
+                            {payment.amount.toFixed(2)} د.ك
                           </TableCell>
                           <TableCell>
                             {payment.discount_amount > 0 ? (
-                              <span className="text-emerald-600">-{payment.discount_amount} ريال</span>
+                              <span className="text-emerald-600">-{payment.discount_amount.toFixed(2)} د.ك</span>
                             ) : '-'}
                           </TableCell>
                           <TableCell>{getPaymentStatusBadge(payment.status)}</TableCell>

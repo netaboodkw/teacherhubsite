@@ -151,11 +151,11 @@ export default function PaymentHistory() {
                       <div className="text-left">
                         {payment.discount_amount > 0 && (
                           <p className="text-sm text-muted-foreground line-through">
-                            {payment.original_amount} {payment.currency === 'SAR' ? 'ريال' : payment.currency}
+                            {payment.original_amount.toFixed(2)} د.ك
                           </p>
                         )}
                         <p className="text-xl font-bold text-primary">
-                          {payment.amount} {payment.currency === 'SAR' ? 'ريال' : payment.currency}
+                          {payment.amount.toFixed(2)} د.ك
                         </p>
                       </div>
                     </div>

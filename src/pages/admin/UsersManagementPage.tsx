@@ -12,7 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Loader2, Users, Edit, Phone, School, GraduationCap, Mail, User, Search, 
   Eye, Building2, Shield, BookOpen, Calendar, FileText, CheckCircle, XCircle,
-  Trash2, AlertTriangle
+  Trash2, AlertTriangle, CreditCard, Crown, Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTeachers, Teacher, useDeleteTeacher } from '@/hooks/useTeachers';
@@ -21,8 +21,9 @@ import { useEducationLevels } from '@/hooks/useEducationLevels';
 import { useSubjects } from '@/hooks/useSubjects';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Separator } from '@/components/ui/separator';
+import { format, addDays } from 'date-fns';
 
 // Hook to get all department heads
 function useAllDepartmentHeads() {
@@ -84,6 +85,13 @@ function useTeacherFullData(userId: string | null) {
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
+      // Get subscription
+      const { data: subscription } = await supabase
+        .from('teacher_subscriptions')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
       // Get students count
       const classroomIds = classrooms?.map(c => c.id) || [];
       let studentsCount = 0;
@@ -109,6 +117,7 @@ function useTeacherFullData(userId: string | null) {
         profile,
         classrooms: classrooms || [],
         templates: templates || [],
+        subscription,
         studentsCount,
         gradesCount,
       };
@@ -117,7 +126,27 @@ function useTeacherFullData(userId: string | null) {
   });
 }
 
+// Hook to get teacher's subscription
+function useTeacherSubscription(userId: string | null) {
+  return useQuery({
+    queryKey: ['teacher_subscription', userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      const { data, error } = await supabase
+        .from('teacher_subscriptions')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+    enabled: !!userId,
+  });
+}
+
 export default function UsersManagementPage() {
+  const queryClient = useQueryClient();
   const { data: teachers, isLoading: teachersLoading, refetch: refetchTeachers } = useTeachers();
   const { data: departmentHeads, isLoading: dhLoading } = useAllDepartmentHeads();
   const { data: admins, isLoading: adminsLoading } = useAllAdmins();
@@ -131,7 +160,7 @@ export default function UsersManagementPage() {
   // View teacher dialog
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null);
-  const { data: teacherFullData, isLoading: fullDataLoading } = useTeacherFullData(selectedTeacherId);
+  const { data: teacherFullData, isLoading: fullDataLoading, refetch: refetchFullData } = useTeacherFullData(selectedTeacherId);
   
   // Edit dialog
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -150,6 +179,19 @@ export default function UsersManagementPage() {
   // Delete dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [teacherToDelete, setTeacherToDelete] = useState<Teacher | null>(null);
+
+  // Subscription management dialog
+  const [subscriptionDialogOpen, setSubscriptionDialogOpen] = useState(false);
+  const [subscriptionTeacher, setSubscriptionTeacher] = useState<Teacher | null>(null);
+  const { data: subscriptionData, isLoading: subscriptionLoading } = useTeacherSubscription(subscriptionTeacher?.user_id || null);
+  const [subscriptionForm, setSubscriptionForm] = useState({
+    status: 'trial',
+    trial_days: 100,
+    subscription_days: 365,
+    is_read_only: false,
+    courses_remaining: 1,
+  });
+  const [savingSubscription, setSavingSubscription] = useState(false);
 
   // Filter functions
   const filteredTeachers = teachers?.filter(t => 
@@ -262,6 +304,116 @@ export default function UsersManagementPage() {
   const getSubjectName = (id: string | null) => {
     if (!id) return '-';
     return subjects?.find(s => s.id === id)?.name_ar || '-';
+  };
+
+  // Open subscription management dialog
+  const openSubscriptionDialog = (teacher: Teacher) => {
+    setSubscriptionTeacher(teacher);
+    setSubscriptionDialogOpen(true);
+  };
+
+  // Save subscription
+  const handleSaveSubscription = async () => {
+    if (!subscriptionTeacher) return;
+    
+    setSavingSubscription(true);
+    try {
+      const now = new Date();
+      let updateData: any = {
+        status: subscriptionForm.status,
+        is_read_only: subscriptionForm.is_read_only,
+        courses_remaining: subscriptionForm.courses_remaining,
+      };
+
+      if (subscriptionForm.status === 'trial') {
+        updateData.trial_started_at = now.toISOString();
+        updateData.trial_ends_at = addDays(now, subscriptionForm.trial_days).toISOString();
+        updateData.subscription_started_at = null;
+        updateData.subscription_ends_at = null;
+      } else if (subscriptionForm.status === 'active') {
+        updateData.subscription_started_at = now.toISOString();
+        updateData.subscription_ends_at = addDays(now, subscriptionForm.subscription_days).toISOString();
+      }
+
+      // Check if subscription exists
+      const { data: existing } = await supabase
+        .from('teacher_subscriptions')
+        .select('id')
+        .eq('user_id', subscriptionTeacher.user_id)
+        .single();
+
+      if (existing) {
+        const { error } = await supabase
+          .from('teacher_subscriptions')
+          .update(updateData)
+          .eq('user_id', subscriptionTeacher.user_id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('teacher_subscriptions')
+          .insert({
+            user_id: subscriptionTeacher.user_id,
+            ...updateData,
+          });
+        if (error) throw error;
+      }
+
+      toast.success('تم تحديث الاشتراك بنجاح');
+      setSubscriptionDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['teacher_subscription'] });
+      queryClient.invalidateQueries({ queryKey: ['teacher_full_data'] });
+    } catch (error: any) {
+      toast.error('فشل في تحديث الاشتراك: ' + error.message);
+    } finally {
+      setSavingSubscription(false);
+    }
+  };
+
+  // Get subscription status badge
+  const getSubscriptionBadge = (subscription: any) => {
+    if (!subscription) {
+      return (
+        <Badge variant="outline" className="text-xs">
+          <Clock className="h-3 w-3 ml-1" />
+          بدون اشتراك
+        </Badge>
+      );
+    }
+    
+    if (subscription.is_read_only) {
+      return (
+        <Badge variant="destructive" className="text-xs">
+          <XCircle className="h-3 w-3 ml-1" />
+          قراءة فقط
+        </Badge>
+      );
+    }
+    
+    switch (subscription.status) {
+      case 'active':
+        return (
+          <Badge variant="default" className="text-xs bg-emerald-600">
+            <Crown className="h-3 w-3 ml-1" />
+            مشترك
+          </Badge>
+        );
+      case 'trial':
+        return (
+          <Badge variant="secondary" className="text-xs">
+            <Clock className="h-3 w-3 ml-1" />
+            تجريبي
+          </Badge>
+        );
+      case 'expired':
+        return (
+          <Badge variant="destructive" className="text-xs">
+            <AlertTriangle className="h-3 w-3 ml-1" />
+            منتهي
+          </Badge>
+        );
+      default:
+        return <Badge variant="outline" className="text-xs">{subscription.status}</Badge>;
+    }
   };
 
   return (
@@ -400,7 +552,7 @@ export default function UsersManagementPage() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           {teacher.is_profile_complete ? (
                             <Badge variant="outline" className="text-green-600 border-green-300">
                               <CheckCircle className="h-3 w-3 ml-1" />
@@ -427,6 +579,15 @@ export default function UsersManagementPage() {
                           >
                             <Edit className="h-4 w-4 ml-1" />
                             تعديل
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => openSubscriptionDialog(teacher)}
+                            className="border-primary text-primary hover:bg-primary/10"
+                          >
+                            <CreditCard className="h-4 w-4 ml-1" />
+                            الاشتراك
                           </Button>
                           <Button 
                             variant="destructive" 
@@ -924,6 +1085,156 @@ export default function UsersManagementPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Subscription Management Dialog */}
+        <Dialog open={subscriptionDialogOpen} onOpenChange={setSubscriptionDialogOpen}>
+          <DialogContent dir="rtl" className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                إدارة اشتراك المعلم
+              </DialogTitle>
+            </DialogHeader>
+            
+            {subscriptionLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : (
+              <div className="space-y-4 py-4">
+                <div className="p-4 bg-muted rounded-lg">
+                  <h4 className="font-medium mb-2">{subscriptionTeacher?.full_name}</h4>
+                  {subscriptionData ? (
+                    <div className="text-sm space-y-1 text-muted-foreground">
+                      <p>الحالة الحالية: {getSubscriptionBadge(subscriptionData)}</p>
+                      {subscriptionData.status === 'trial' && subscriptionData.trial_ends_at && (
+                        <p>تنتهي الفترة التجريبية: {format(new Date(subscriptionData.trial_ends_at), 'dd/MM/yyyy')}</p>
+                      )}
+                      {subscriptionData.status === 'active' && subscriptionData.subscription_ends_at && (
+                        <p>ينتهي الاشتراك: {format(new Date(subscriptionData.subscription_ends_at), 'dd/MM/yyyy')}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">لا يوجد اشتراك حالي</p>
+                  )}
+                </div>
+
+                <Separator />
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>نوع الاشتراك</Label>
+                    <Select 
+                      value={subscriptionForm.status}
+                      onValueChange={(value) => setSubscriptionForm(prev => ({ ...prev, status: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="trial">
+                          <span className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            فترة تجريبية مجانية
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="active">
+                          <span className="flex items-center gap-2">
+                            <Crown className="h-4 w-4" />
+                            اشتراك مدفوع
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="expired">
+                          <span className="flex items-center gap-2">
+                            <AlertTriangle className="h-4 w-4" />
+                            منتهي
+                          </span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {subscriptionForm.status === 'trial' && (
+                    <div className="space-y-2">
+                      <Label>عدد أيام الفترة التجريبية</Label>
+                      <Input
+                        type="number"
+                        value={subscriptionForm.trial_days}
+                        onChange={(e) => setSubscriptionForm(prev => ({ 
+                          ...prev, 
+                          trial_days: parseInt(e.target.value) || 0 
+                        }))}
+                        min={1}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        سيتم احتساب الفترة من اليوم
+                      </p>
+                    </div>
+                  )}
+
+                  {subscriptionForm.status === 'active' && (
+                    <div className="space-y-2">
+                      <Label>عدد أيام الاشتراك</Label>
+                      <Input
+                        type="number"
+                        value={subscriptionForm.subscription_days}
+                        onChange={(e) => setSubscriptionForm(prev => ({ 
+                          ...prev, 
+                          subscription_days: parseInt(e.target.value) || 0 
+                        }))}
+                        min={1}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        سيتم احتساب الفترة من اليوم
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label>الكورسات المتبقية</Label>
+                    <Input
+                      type="number"
+                      value={subscriptionForm.courses_remaining}
+                      onChange={(e) => setSubscriptionForm(prev => ({ 
+                        ...prev, 
+                        courses_remaining: parseInt(e.target.value) || 0 
+                      }))}
+                      min={0}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-destructive/10 rounded-lg">
+                    <div>
+                      <Label className="text-destructive">وضع القراءة فقط</Label>
+                      <p className="text-xs text-muted-foreground">
+                        عند التفعيل، لن يتمكن المعلم من إضافة أو تعديل البيانات
+                      </p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={subscriptionForm.is_read_only}
+                      onChange={(e) => setSubscriptionForm(prev => ({ 
+                        ...prev, 
+                        is_read_only: e.target.checked 
+                      }))}
+                      className="h-5 w-5"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSubscriptionDialogOpen(false)}>
+                إلغاء
+              </Button>
+              <Button onClick={handleSaveSubscription} disabled={savingSubscription}>
+                {savingSubscription && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
+                حفظ التغييرات
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
