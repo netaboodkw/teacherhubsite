@@ -1,5 +1,5 @@
 import { useAuth } from '@/hooks/useAuth';
-import { useUserRole, getUserRoleRedirectPath } from '@/hooks/useUserRole';
+import { useUserRole } from '@/hooks/useUserRole';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
@@ -39,20 +39,23 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   const currentRole = userRole?.role;
-  const correctPath = getUserRoleRedirectPath(currentRole);
 
-  // Strict role enforcement - redirect to correct dashboard if accessing wrong panel
+  // Strict role enforcement - redirect to login page for that role (not their own dashboard)
+  // This allows users to switch accounts by logging in with a different account
+  
   if (isAdminRoute && currentRole !== 'admin') {
-    return <Navigate to={correctPath} replace />;
+    // Non-admin trying to access admin routes - redirect to admin login
+    return <Navigate to="/auth/admin" replace />;
   }
 
   if (isDepartmentHeadRoute && currentRole !== 'department_head') {
-    return <Navigate to={correctPath} replace />;
+    // Non-department head trying to access department head routes - redirect to department head login
+    return <Navigate to="/auth/department-head" replace />;
   }
 
-  if (isTeacherRoute && currentRole !== 'user' && currentRole !== null && currentRole !== undefined) {
-    // If user has a role that's not 'user', redirect to their correct dashboard
-    return <Navigate to={correctPath} replace />;
+  if (isTeacherRoute && (currentRole === 'admin' || currentRole === 'department_head')) {
+    // Admin or department head trying to access teacher routes - redirect to teacher login
+    return <Navigate to="/auth/teacher" replace />;
   }
 
   return <>{children}</>;

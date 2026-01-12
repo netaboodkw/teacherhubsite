@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
-import { Mail, Lock, Loader2, Shield } from 'lucide-react';
+import { useUserRole } from '@/hooks/useUserRole';
+import { Mail, Lock, Loader2, Shield, LogOut, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function AdminAuth() {
@@ -16,7 +18,16 @@ export default function AdminAuth() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { signIn, signUp } = useAuth();
+  const { user, signIn, signUp, signOut } = useAuth();
+  const { data: userRole } = useUserRole();
+  
+  // Check if user is logged in with a different role
+  const isLoggedInWithDifferentRole = user && userRole && userRole.role !== 'admin';
+
+  const handleSwitchAccount = async () => {
+    await signOut();
+    toast.success('تم تسجيل الخروج، يمكنك الآن تسجيل الدخول كمشرف');
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,6 +35,11 @@ export default function AdminAuth() {
     if (!email || !password) {
       toast.error('يرجى إدخال البريد الإلكتروني وكلمة المرور');
       return;
+    }
+
+    // Sign out current user if logged in with different role
+    if (isLoggedInWithDifferentRole) {
+      await signOut();
     }
 
     setLoading(true);
@@ -140,6 +156,24 @@ export default function AdminAuth() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Alert for logged in users with different role */}
+          {isLoggedInWithDifferentRole && (
+            <Alert className="mb-4 border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800 dark:text-amber-200">
+                أنت مسجل دخول كـ <strong>{userRole?.role === 'user' ? 'معلم' : 'رئيس قسم'}</strong>.
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto mr-1 text-amber-800 dark:text-amber-200 underline"
+                  onClick={handleSwitchAccount}
+                >
+                  <LogOut className="h-3 w-3 ml-1" />
+                  تسجيل الخروج للتبديل
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <form onSubmit={action === 'login' ? handleLogin : handleSignup} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">البريد الإلكتروني</Label>

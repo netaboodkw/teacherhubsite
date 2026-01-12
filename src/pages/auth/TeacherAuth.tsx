@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useEducationLevels } from '@/hooks/useEducationLevels';
+import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,14 +10,19 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { Loader2, ArrowLeft, Mail, Lock, User, Building2, BookOpen, GraduationCap, Eye, EyeOff, Phone } from 'lucide-react';
+import { Loader2, ArrowLeft, Mail, Lock, User, Building2, BookOpen, GraduationCap, Eye, EyeOff, Phone, LogOut, AlertTriangle } from 'lucide-react';
 import heroBg from '@/assets/hero-bg.jpg';
 
 export default function TeacherAuth() {
   const navigate = useNavigate();
-  const { signIn, signUp } = useAuth();
+  const { user, signIn, signUp, signOut } = useAuth();
+  const { data: userRole } = useUserRole();
   const { data: educationLevels = [] } = useEducationLevels();
+  
+  // Check if user is logged in with a different role
+  const isLoggedInWithDifferentRole = user && userRole && userRole.role !== 'user';
   
   // Login state
   const [loginEmail, setLoginEmail] = useState('');
@@ -37,12 +43,22 @@ export default function TeacherAuth() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const handleSwitchAccount = async () => {
+    await signOut();
+    toast.success('تم تسجيل الخروج، يمكنك الآن تسجيل الدخول بحساب معلم');
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!loginEmail.trim() || !loginPassword) {
       toast.error('يرجى إدخال البريد الإلكتروني وكلمة المرور');
       return;
+    }
+    
+    // Sign out current user if logged in with different role
+    if (isLoggedInWithDifferentRole) {
+      await signOut();
     }
     
     setLoginLoading(true);
@@ -190,6 +206,24 @@ export default function TeacherAuth() {
             </CardHeader>
             
             <CardContent>
+              {/* Alert for logged in users with different role */}
+              {isLoggedInWithDifferentRole && (
+                <Alert className="mb-4 border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-amber-800 dark:text-amber-200">
+                    أنت مسجل دخول كـ <strong>{userRole?.role === 'admin' ? 'مشرف' : 'رئيس قسم'}</strong>.
+                    <Button 
+                      variant="link" 
+                      className="p-0 h-auto mr-1 text-amber-800 dark:text-amber-200 underline"
+                      onClick={handleSwitchAccount}
+                    >
+                      <LogOut className="h-3 w-3 ml-1" />
+                      تسجيل الخروج للتبديل
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               <Tabs defaultValue="login" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-6">
                   <TabsTrigger value="login">تسجيل الدخول</TabsTrigger>
