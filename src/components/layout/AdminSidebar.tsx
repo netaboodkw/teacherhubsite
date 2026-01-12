@@ -17,6 +17,7 @@ import {
   TreePine,
   Archive,
   UsersRound,
+  CreditCard,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -34,6 +35,7 @@ const navItems = [
   { href: '/admin/curriculum-tree', icon: TreePine, label: 'المراحل والصفوف' },
   { href: '/admin/teachers', icon: Users, label: 'المعلمون' },
   { href: '/admin/archived-classrooms', icon: Archive, label: 'الصفوف المؤرشفة' },
+  { href: '/admin/subscriptions', icon: CreditCard, label: 'الاشتراكات' },
 ];
 
 export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {

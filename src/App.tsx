@@ -19,6 +19,7 @@ import AdminSettingsPage from "./pages/admin/AdminSettingsPage";
 import CurriculumTreePage from "./pages/admin/CurriculumTreePage";
 import ArchivedClassroomsPage from "./pages/admin/ArchivedClassroomsPage";
 import UsersManagementPage from "./pages/admin/UsersManagementPage";
+import SubscriptionsPage from "./pages/admin/SubscriptionsPage";
 
 // Teacher Pages
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
@@ -79,6 +80,7 @@ const App = () => (
           <Route path="/admin/users" element={<ProtectedRoute><UsersManagementPage /></ProtectedRoute>} />
           <Route path="/admin/archived-classrooms" element={<ProtectedRoute><ArchivedClassroomsPage /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute><AdminSettingsPage /></ProtectedRoute>} />
+          <Route path="/admin/subscriptions" element={<ProtectedRoute><SubscriptionsPage /></ProtectedRoute>} />
 
           {/* Teacher Routes */}
           <Route path="/teacher" element={<ProtectedRoute><TeacherDashboard /></ProtectedRoute>} />
