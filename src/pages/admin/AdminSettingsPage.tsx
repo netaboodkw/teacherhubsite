@@ -203,6 +203,17 @@ export default function AdminSettingsPage() {
                 <p className="text-xs text-muted-foreground">
                   يمكنك الحصول على مفتاح API من لوحة تحكم ماي فاتورة
                 </p>
+                {paymentSettings.myfatoorah_api_key && paymentSettings.myfatoorah_api_key.length > 10 && (
+                  <p className="text-xs text-emerald-600 flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3" />
+                    تم إدخال مفتاح API ({paymentSettings.myfatoorah_api_key.length} حرف)
+                  </p>
+                )}
+                {paymentSettings.myfatoorah_api_key && paymentSettings.myfatoorah_api_key.length <= 10 && (
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    ⚠️ مفتاح API قصير جداً - تأكد من نسخه كاملاً
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center justify-between">
@@ -218,23 +229,32 @@ export default function AdminSettingsPage() {
                 />
               </div>
 
-              {paymentSettings.myfatoorah_test_mode && (
+              {paymentSettings.myfatoorah_test_mode ? (
                 <div className="p-3 bg-warning/10 border border-warning/30 rounded-lg">
                   <p className="text-sm text-warning">
-                    ⚠️ وضع الاختبار مفعّل - لن يتم خصم أي مبالغ حقيقية
+                    ⚠️ وضع الاختبار مفعّل - سيتم استخدام البيئة التجريبية (apitest.myfatoorah.com)
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    للحصول على مفتاح تجريبي: <a href="https://myfatoorah.readme.io/docs/demo-information" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">اضغط هنا</a>
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
+                  <p className="text-sm text-emerald-600">
+                    ✓ وضع الإنتاج - سيتم استخدام البيئة الحقيقية (api.myfatoorah.com)
                   </p>
                 </div>
               )}
 
               <div className="flex items-center gap-2 pt-2">
                 <a 
-                  href="https://portal.myfatoorah.com/" 
+                  href={paymentSettings.myfatoorah_test_mode ? "https://demo.myfatoorah.com/" : "https://portal.myfatoorah.com/"} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-sm text-primary hover:underline flex items-center gap-1"
                 >
                   <ExternalLink className="h-3 w-3" />
-                  فتح لوحة تحكم ماي فاتورة
+                  فتح لوحة تحكم ماي فاتورة {paymentSettings.myfatoorah_test_mode ? "(تجريبي)" : "(الإنتاج)"}
                 </a>
               </div>
             </CardContent>
