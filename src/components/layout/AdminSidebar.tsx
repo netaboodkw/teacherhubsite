@@ -16,6 +16,7 @@ import {
   Grid3X3,
   TreePine,
   Archive,
+  UsersRound,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -29,6 +30,7 @@ interface AdminSidebarProps {
 
 const navItems = [
   { href: '/admin', icon: LayoutDashboard, label: 'الرئيسية' },
+  { href: '/admin/users', icon: UsersRound, label: 'إدارة المستخدمين' },
   { href: '/admin/curriculum-tree', icon: TreePine, label: 'المراحل والصفوف' },
   { href: '/admin/teachers', icon: Users, label: 'المعلمون' },
   { href: '/admin/archived-classrooms', icon: Archive, label: 'الصفوف المؤرشفة' },
