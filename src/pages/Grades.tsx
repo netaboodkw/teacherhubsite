@@ -7,6 +7,7 @@ import { useBehaviorNotes } from '@/hooks/useBehaviorNotes';
 import { useClassroomGradingStructure, GradingStructureData, GradingColumn, GradingGroup } from '@/hooks/useGradingStructures';
 import { useProfile } from '@/hooks/useProfile';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { PrintableGradesTable } from '@/components/grades/PrintableGradesTable';
 import { BulkGradeEntry } from '@/components/grades/BulkGradeEntry';
 import { MobileGradesView } from '@/components/grades/MobileGradesView';
@@ -663,6 +664,7 @@ export default function Grades() {
   const [useNormalFont, setUseNormalFont] = useState(false);
   const [forceMobileView, setForceMobileView] = useState(false);
   const isMobile = useIsMobile();
+  const { successFeedback, errorFeedback } = useHapticFeedback();
   
   // Print ref
   const printRef = useRef<HTMLDivElement>(null);
@@ -787,13 +789,18 @@ export default function Grades() {
     // التحقق من الحد الأقصى
     if (score > maxScore) {
       toast.error(`الدرجة لا يمكن أن تتجاوز ${maxScore}`);
+      errorFeedback();
       return;
     }
     
     if (score < 0) {
       toast.error('الدرجة لا يمكن أن تكون سالبة');
+      errorFeedback();
       return;
     }
+    
+    // تشغيل ردة فعل النجاح (اهتزاز + صوت)
+    successFeedback();
     
     // حفظ البيانات
     if (selectedCell.week !== undefined) {
@@ -866,7 +873,7 @@ export default function Grades() {
       setSelectedCell(null);
       setGradeValue('');
     }
-  }, [selectedCell, gradeValue, gradeType, selectedClassroom, grades, students, getGradeForWeek, createGrade, updateGrade]);
+  }, [selectedCell, gradeValue, gradeType, selectedClassroom, grades, students, getGradeForWeek, createGrade, updateGrade, successFeedback, errorFeedback]);
 
   // الانتقال للطالب التالي بدون حفظ
   const goToNextStudent = useCallback(() => {
