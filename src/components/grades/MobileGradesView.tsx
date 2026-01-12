@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChevronDown, ChevronUp, Plus, Loader2, User } from 'lucide-react';
 import { GradingStructureData, GradingGroup, GradingColumn } from '@/hooks/useGradingStructures';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 
 interface MobileGradesViewProps {
   structure: GradingStructureData;
@@ -152,6 +153,7 @@ export function MobileGradesView({
   } | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [saving, setSaving] = useState(false);
+  const { successFeedback, errorFeedback } = useHapticFeedback();
 
   const calculateColumnValue = useCallback((studentId: string, column: GradingColumn, group: GradingGroup): number => {
     if (column.type === 'score') {
@@ -172,14 +174,23 @@ export function MobileGradesView({
 
   // حفظ الدرجة والانتقال للطالب التالي أو إغلاق الحوار
   const handleSave = async (closeAfterSave = false) => {
-    if (!editDialog || !inputValue) return;
+    if (!editDialog || !inputValue) {
+      errorFeedback();
+      return;
+    }
     
     const score = parseFloat(inputValue);
-    if (isNaN(score) || score < 0 || score > editDialog.maxScore) return;
+    if (isNaN(score) || score < 0 || score > editDialog.maxScore) {
+      errorFeedback();
+      return;
+    }
     
     setSaving(true);
     try {
       await onSaveGrade(editDialog.studentId, editDialog.columnId, score, editDialog.maxScore);
+      
+      // تشغيل ردة فعل النجاح (اهتزاز + صوت)
+      successFeedback();
       
       if (closeAfterSave) {
         setEditDialog(null);
