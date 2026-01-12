@@ -22,29 +22,42 @@ export default function GradeLevelsPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingGrade, setEditingGrade] = useState<any>(null);
-  const [form, setForm] = useState({ name: '', name_ar: '', grade_number: 1 });
+  const [formName, setFormName] = useState('');
+  const [formNameAr, setFormNameAr] = useState('');
+  const [formGradeNumber, setFormGradeNumber] = useState(1);
 
   const openDialog = (grade?: any) => {
     if (grade) {
       setEditingGrade(grade);
-      setForm({ name: grade.name, name_ar: grade.name_ar, grade_number: grade.grade_number });
+      setFormName(grade.name || '');
+      setFormNameAr(grade.name_ar || '');
+      setFormGradeNumber(grade.grade_number || 1);
     } else {
       setEditingGrade(null);
       const nextNumber = (gradeLevels?.length || 0) + 1;
-      setForm({ name: '', name_ar: '', grade_number: nextNumber });
+      setFormName('');
+      setFormNameAr('');
+      setFormGradeNumber(nextNumber);
     }
     setDialogOpen(true);
   };
 
   const handleSave = async () => {
-    if (!form.name_ar || !selectedLevelId) return;
+    if (!formNameAr || !selectedLevelId) return;
     
     if (editingGrade) {
-      await updateGradeLevel.mutateAsync({ id: editingGrade.id, ...form });
+      await updateGradeLevel.mutateAsync({ 
+        id: editingGrade.id, 
+        name: formName,
+        name_ar: formNameAr,
+        grade_number: formGradeNumber
+      });
     } else {
       await createGradeLevel.mutateAsync({
         education_level_id: selectedLevelId,
-        ...form,
+        name: formName,
+        name_ar: formNameAr,
+        grade_number: formGradeNumber,
       });
     }
     setDialogOpen(false);
@@ -146,16 +159,16 @@ export default function GradeLevelsPage() {
             <div>
               <Label>الاسم بالعربية</Label>
               <Input
-                value={form.name_ar}
-                onChange={(e) => setForm(prev => ({ ...prev, name_ar: e.target.value }))}
+                value={formNameAr}
+                onChange={(e) => setFormNameAr(e.target.value)}
                 placeholder="مثال: الصف الأول"
               />
             </div>
             <div>
               <Label>الاسم بالإنجليزية (اختياري)</Label>
               <Input
-                value={form.name}
-                onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
                 placeholder="e.g. First Grade"
               />
             </div>
@@ -164,8 +177,8 @@ export default function GradeLevelsPage() {
               <Input
                 type="number"
                 min="1"
-                value={form.grade_number}
-                onChange={(e) => setForm(prev => ({ ...prev, grade_number: parseInt(e.target.value) || 1 }))}
+                value={formGradeNumber}
+                onChange={(e) => setFormGradeNumber(parseInt(e.target.value) || 1)}
               />
             </div>
           </div>
