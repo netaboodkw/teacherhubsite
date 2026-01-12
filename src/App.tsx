@@ -24,6 +24,9 @@ import SubscriptionsPage from "./pages/admin/SubscriptionsPage";
 // Teacher Pages
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import TeacherTemplates from "./pages/teacher/TeacherTemplates";
+import TeacherSubscription from "./pages/teacher/TeacherSubscription";
+import SubscriptionSuccess from "./pages/teacher/SubscriptionSuccess";
+import SubscriptionError from "./pages/teacher/SubscriptionError";
 import Classrooms from "./pages/Classrooms";
 import NewClassroom from "./pages/NewClassroom";
 import EditClassroom from "./pages/EditClassroom";
@@ -94,6 +97,9 @@ const App = () => (
           <Route path="/teacher/attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
           <Route path="/teacher/grades" element={<ProtectedRoute><Grades /></ProtectedRoute>} />
           <Route path="/teacher/templates" element={<ProtectedRoute><TeacherTemplates /></ProtectedRoute>} />
+          <Route path="/teacher/subscription" element={<ProtectedRoute><TeacherSubscription /></ProtectedRoute>} />
+          <Route path="/teacher/subscription/success" element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>} />
+          <Route path="/teacher/subscription/error" element={<ProtectedRoute><SubscriptionError /></ProtectedRoute>} />
           <Route path="/teacher/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
           <Route path="/teacher/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
