@@ -98,15 +98,41 @@ export function useDefaultGradingStructures() {
   });
 }
 
-// Get grading structure for a specific classroom based on education level, grade level, and subject
+// Get grading structure for a specific classroom based on education level, grade level, subject, and teacher template
 export function useClassroomGradingStructure(classroom?: {
   education_level_id?: string | null;
   grade_level_id?: string | null;
   subject_id?: string | null;
+  teacher_template_id?: string | null;
 }) {
   return useQuery({
-    queryKey: ['classroom_grading_structure', classroom?.education_level_id, classroom?.grade_level_id, classroom?.subject_id],
+    queryKey: ['classroom_grading_structure', classroom?.education_level_id, classroom?.grade_level_id, classroom?.subject_id, classroom?.teacher_template_id],
     queryFn: async () => {
+      // If there's a teacher template, use it directly
+      if (classroom?.teacher_template_id) {
+        const { data: templateData, error: templateError } = await supabase
+          .from('teacher_grading_templates')
+          .select('*')
+          .eq('id', classroom.teacher_template_id)
+          .single();
+        
+        if (!templateError && templateData) {
+          return {
+            id: templateData.id,
+            name: templateData.name,
+            name_ar: templateData.name_ar,
+            structure: templateData.structure as unknown as GradingStructureData,
+            subject_id: null,
+            education_level_id: null,
+            grade_level_id: null,
+            template_id: null,
+            is_default: false,
+            created_at: templateData.created_at,
+            updated_at: templateData.updated_at,
+          } as GradingStructure;
+        }
+      }
+      
       if (!classroom?.education_level_id) return null;
       
       // Try to find the most specific match first:
@@ -163,7 +189,7 @@ export function useClassroomGradingStructure(classroom?: {
         structure: bestMatch.structure as unknown as GradingStructureData
       } as GradingStructure;
     },
-    enabled: !!classroom?.education_level_id,
+    enabled: !!(classroom?.education_level_id || classroom?.teacher_template_id),
   });
 }
 

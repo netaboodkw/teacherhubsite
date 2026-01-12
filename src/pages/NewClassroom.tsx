@@ -5,14 +5,16 @@ import { useGradeLevels } from '@/hooks/useGradeLevels';
 import { useSubjects } from '@/hooks/useSubjects';
 import { useProfile } from '@/hooks/useProfile';
 import { useEducationLevels } from '@/hooks/useEducationLevels';
-import { useNavigate } from 'react-router-dom';
+import { useTeacherTemplates } from '@/hooks/useTeacherTemplates';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ClassScheduleEditor, ClassSchedule } from '@/components/classrooms/ClassScheduleEditor';
-import { ArrowRight, GraduationCap, Loader2 } from 'lucide-react';
+import { ArrowRight, GraduationCap, Loader2, LayoutGrid, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const colorOptions = [
   { value: 'bg-primary', label: 'أزرق' },
@@ -27,6 +29,7 @@ export default function NewClassroom() {
   const navigate = useNavigate();
   const { profile, isLoading: profileLoading } = useProfile();
   const { data: educationLevels } = useEducationLevels();
+  const { data: teacherTemplates = [] } = useTeacherTemplates();
   
   // Teacher's education level is fixed from their profile
   const teacherEducationLevelId = profile?.education_level_id || '';
@@ -44,6 +47,7 @@ export default function NewClassroom() {
     education_level_id: '',
     subject_id: '',
     grade_level_id: '',
+    teacher_template_id: '',
   });
   const [classSchedule, setClassSchedule] = useState<ClassSchedule>({});
 
@@ -73,13 +77,14 @@ export default function NewClassroom() {
     e.preventDefault();
     await createClassroom.mutateAsync({
       name: formData.name,
-      subject: formData.subject,
+      subject: formData.subject || 'مادة غير محددة',
       schedule: formData.schedule,
       color: formData.color,
       class_schedule: classSchedule,
       education_level_id: formData.education_level_id || null,
       subject_id: formData.subject_id || null,
       grade_level_id: formData.grade_level_id || null,
+      teacher_template_id: formData.teacher_template_id || null,
     });
     navigate('/teacher/classrooms');
   };
@@ -204,6 +209,53 @@ export default function NewClassroom() {
               value={classSchedule}
               onChange={setClassSchedule}
             />
+
+            {/* Teacher Template Selection */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>قالب الدرجات (اختياري)</Label>
+                <Link 
+                  to="/teacher/templates" 
+                  className="text-xs text-primary hover:underline flex items-center gap-1"
+                >
+                  <Plus className="h-3 w-3" />
+                  إنشاء قالب
+                </Link>
+              </div>
+              
+              {teacherTemplates.length === 0 ? (
+                <Alert>
+                  <LayoutGrid className="h-4 w-4" />
+                  <AlertDescription>
+                    لا توجد قوالب خاصة. سيتم استخدام القالب الافتراضي من النظام (إن وجد).{' '}
+                    <Link to="/teacher/templates" className="text-primary hover:underline">
+                      إنشاء قالب جديد
+                    </Link>
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <Select 
+                  value={formData.teacher_template_id} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, teacher_template_id: value === 'none' ? '' : value }))}
+                >
+                  <SelectTrigger>
+                    <LayoutGrid className="h-4 w-4 text-muted-foreground ml-2" />
+                    <SelectValue placeholder="استخدام القالب الافتراضي من النظام" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">استخدام القالب الافتراضي من النظام</SelectItem>
+                    {teacherTemplates.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.name_ar}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <p className="text-xs text-muted-foreground">
+                يمكنك اختيار قالب درجات خاص بك أو استخدام القالب الافتراضي المحدد من المشرف
+              </p>
+            </div>
 
             <div className="space-y-2">
               <Label>لون الفصل</Label>
