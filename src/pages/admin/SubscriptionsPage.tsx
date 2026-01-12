@@ -11,10 +11,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Plus, Edit, Trash2, Calendar, Package, Tag, Settings2, Save } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, Calendar, Package, Tag, Settings2, Save, Users, CreditCard, Crown, Clock, AlertTriangle, CheckCircle, XCircle, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import {
   useSubscriptionSettings,
   useUpdateSubscriptionSettings,
@@ -34,6 +36,47 @@ import {
   SubscriptionPackage,
   DiscountCode,
 } from '@/hooks/useSubscription';
+
+interface Subscriber {
+  id: string;
+  user_id: string;
+  status: string;
+  trial_started_at: string | null;
+  trial_ends_at: string | null;
+  subscription_started_at: string | null;
+  subscription_ends_at: string | null;
+  courses_remaining: number;
+  is_read_only: boolean;
+  package: {
+    name_ar: string;
+    courses_count: number;
+    price: number;
+  } | null;
+  profile: {
+    full_name: string;
+    phone: string | null;
+    school_name: string | null;
+  } | null;
+}
+
+interface Payment {
+  id: string;
+  amount: number;
+  original_amount: number;
+  discount_amount: number;
+  currency: string;
+  status: string;
+  payment_method: string | null;
+  invoice_id: string | null;
+  created_at: string;
+  paid_at: string | null;
+  package: {
+    name_ar: string;
+  } | null;
+  profile: {
+    full_name: string;
+  } | null;
+}
 
 export default function SubscriptionsPage() {
   const { data: settings, isLoading: settingsLoading } = useSubscriptionSettings();
@@ -56,6 +99,116 @@ export default function SubscriptionsPage() {
   const [trialEnabled, setTrialEnabled] = useState(settings?.trial_enabled ?? true);
   const [trialDays, setTrialDays] = useState(settings?.trial_days ?? 100);
   const [expiryBehavior, setExpiryBehavior] = useState<'read_only' | 'full_lockout'>(settings?.expiry_behavior as 'read_only' | 'full_lockout' ?? 'read_only');
+
+  // Subscribers filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('all');
+
+  // Fetch subscribers
+  const { data: subscribers, isLoading: subscribersLoading } = useQuery({
+    queryKey: ['admin-subscribers'],
+    queryFn: async () => {
+      const { data: subs, error } = await supabase
+        .from('teacher_subscriptions')
+        .select(`
+          *,
+          package:subscription_packages(name_ar, courses_count, price)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Fetch profiles separately
+      const userIds = subs?.map(s => s.user_id) || [];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, phone, school_name')
+        .in('user_id', userIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+      return subs?.map(sub => ({
+        ...sub,
+        profile: profileMap.get(sub.user_id) || null
+      })) as Subscriber[];
+    },
+  });
+
+  // Fetch payments
+  const { data: payments, isLoading: paymentsLoading } = useQuery({
+    queryKey: ['admin-payments'],
+    queryFn: async () => {
+      const { data: pays, error } = await supabase
+        .from('subscription_payments')
+        .select(`
+          *,
+          package:subscription_packages(name_ar)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const userIds = pays?.map(p => p.user_id) || [];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .in('user_id', userIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+      return pays?.map(pay => ({
+        ...pay,
+        profile: profileMap.get(pay.user_id) || null
+      })) as Payment[];
+    },
+  });
+
+  // Filtered subscribers
+  const filteredSubscribers = subscribers?.filter(sub => {
+    const matchesSearch = !searchQuery || 
+      sub.profile?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      sub.profile?.phone?.includes(searchQuery);
+    const matchesStatus = statusFilter === 'all' || sub.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  }) || [];
+
+  // Filtered payments
+  const filteredPayments = payments?.filter(pay => {
+    const matchesSearch = !searchQuery || 
+      pay.profile?.full_name?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = paymentStatusFilter === 'all' || pay.status === paymentStatusFilter;
+    return matchesSearch && matchesStatus;
+  }) || [];
+
+  const getSubscriptionBadge = (status: string, isReadOnly: boolean) => {
+    if (isReadOnly) {
+      return <Badge variant="outline" className="gap-1"><AlertTriangle className="h-3 w-3" />قراءة فقط</Badge>;
+    }
+    switch (status) {
+      case 'trial':
+        return <Badge variant="secondary" className="gap-1"><Clock className="h-3 w-3" />تجريبي</Badge>;
+      case 'active':
+        return <Badge className="gap-1 bg-emerald-600"><Crown className="h-3 w-3" />نشط</Badge>;
+      case 'expired':
+        return <Badge variant="destructive" className="gap-1"><XCircle className="h-3 w-3" />منتهي</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const getPaymentBadge = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <Badge className="gap-1 bg-emerald-600"><CheckCircle className="h-3 w-3" />مكتمل</Badge>;
+      case 'pending':
+        return <Badge variant="secondary" className="gap-1"><Clock className="h-3 w-3" />قيد الانتظار</Badge>;
+      case 'failed':
+        return <Badge variant="destructive" className="gap-1"><XCircle className="h-3 w-3" />فشل</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
 
   // Dialog states
   const [courseDialog, setCourseDialog] = useState(false);
@@ -275,12 +428,20 @@ export default function SubscriptionsPage() {
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold">إدارة الاشتراكات</h1>
-          <p className="text-muted-foreground mt-1">إعداد الكورسات والباقات وأكواد الخصم</p>
+          <h1 className="text-2xl lg:text-3xl font-bold">الاشتراكات والمدفوعات</h1>
+          <p className="text-muted-foreground mt-1">إدارة الاشتراكات والمشتركين والمدفوعات</p>
         </div>
 
-        <Tabs defaultValue="settings" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+        <Tabs defaultValue="subscribers" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="subscribers" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              المشتركين
+            </TabsTrigger>
+            <TabsTrigger value="payments" className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              المدفوعات
+            </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings2 className="h-4 w-4" />
               الإعدادات
@@ -298,6 +459,180 @@ export default function SubscriptionsPage() {
               الخصومات
             </TabsTrigger>
           </TabsList>
+
+          {/* Subscribers Tab */}
+          <TabsContent value="subscribers">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  المشتركين ({filteredSubscribers.length})
+                </CardTitle>
+                <CardDescription>عرض وإدارة جميع المشتركين في النظام</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="البحث بالاسم أو رقم الهاتف..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pr-10"
+                    />
+                  </div>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="حالة الاشتراك" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">الكل</SelectItem>
+                      <SelectItem value="trial">تجريبي</SelectItem>
+                      <SelectItem value="active">نشط</SelectItem>
+                      <SelectItem value="expired">منتهي</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {subscribersLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <div className="rounded-md border overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>المعلم</TableHead>
+                          <TableHead>الحالة</TableHead>
+                          <TableHead>الباقة</TableHead>
+                          <TableHead>تاريخ الانتهاء</TableHead>
+                          <TableHead>الكورسات المتبقية</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredSubscribers.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                              لا يوجد مشتركين
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          filteredSubscribers.map((sub) => (
+                            <TableRow key={sub.id}>
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium">{sub.profile?.full_name || 'غير معروف'}</p>
+                                  <p className="text-sm text-muted-foreground">{sub.profile?.school_name || '-'}</p>
+                                </div>
+                              </TableCell>
+                              <TableCell>{getSubscriptionBadge(sub.status, sub.is_read_only)}</TableCell>
+                              <TableCell>{sub.package?.name_ar || '-'}</TableCell>
+                              <TableCell>
+                                {sub.status === 'trial' && sub.trial_ends_at
+                                  ? format(new Date(sub.trial_ends_at), 'dd MMM yyyy', { locale: ar })
+                                  : sub.subscription_ends_at
+                                  ? format(new Date(sub.subscription_ends_at), 'dd MMM yyyy', { locale: ar })
+                                  : '-'}
+                              </TableCell>
+                              <TableCell>{sub.courses_remaining}</TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Payments Tab */}
+          <TabsContent value="payments">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5" />
+                  سجل المدفوعات ({filteredPayments.length})
+                </CardTitle>
+                <CardDescription>جميع عمليات الدفع والفواتير</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="البحث بالاسم..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pr-10"
+                    />
+                  </div>
+                  <Select value={paymentStatusFilter} onValueChange={setPaymentStatusFilter}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="حالة الدفع" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">الكل</SelectItem>
+                      <SelectItem value="completed">مكتمل</SelectItem>
+                      <SelectItem value="pending">قيد الانتظار</SelectItem>
+                      <SelectItem value="failed">فشل</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {paymentsLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <div className="rounded-md border overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>المعلم</TableHead>
+                          <TableHead>الباقة</TableHead>
+                          <TableHead>المبلغ</TableHead>
+                          <TableHead>الحالة</TableHead>
+                          <TableHead>التاريخ</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredPayments.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                              لا توجد مدفوعات
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          filteredPayments.map((pay) => (
+                            <TableRow key={pay.id}>
+                              <TableCell>{pay.profile?.full_name || 'غير معروف'}</TableCell>
+                              <TableCell>{pay.package?.name_ar || '-'}</TableCell>
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium">{pay.amount.toFixed(2)} د.ك</p>
+                                  {pay.discount_amount > 0 && (
+                                    <p className="text-xs text-muted-foreground line-through">
+                                      {pay.original_amount.toFixed(2)} د.ك
+                                    </p>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>{getPaymentBadge(pay.status)}</TableCell>
+                              <TableCell>
+                                {format(new Date(pay.created_at), 'dd MMM yyyy', { locale: ar })}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Settings Tab */}
           <TabsContent value="settings">
