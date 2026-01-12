@@ -900,6 +900,23 @@ export default function Grades() {
     return student?.name || '';
   }, [selectedCell, students]);
 
+  // الحصول على اسم العمود الحالي
+  const getCurrentColumnName = useCallback(() => {
+    if (!selectedCell) return '';
+    if (selectedCell.week !== undefined) {
+      return `الأسبوع ${selectedCell.week}`;
+    }
+    if (selectedCell.columnId && gradingStructure?.structure?.groups) {
+      for (const group of gradingStructure.structure.groups) {
+        const column = group.columns.find(c => c.id === selectedCell.columnId);
+        if (column) {
+          return column.name_ar;
+        }
+      }
+    }
+    return '';
+  }, [selectedCell, gradingStructure]);
+
   // التنقل بين الأسابيع
   const goToPreviousWeeks = () => {
     if (currentWeekStart > 1) {
@@ -1127,6 +1144,11 @@ export default function Grades() {
                     ? (getGradeForWeek(selectedCell.studentId, selectedCell.week) ? 'تعديل الدرجة' : 'إضافة درجة')
                     : (grades.find(g => g.student_id === selectedCell?.studentId && g.title === selectedCell?.columnId) ? 'تعديل الدرجة' : 'إضافة درجة')
                   }
+                  {getCurrentColumnName() && (
+                    <span className="text-muted-foreground font-normal text-sm mr-2">
+                      ({getCurrentColumnName()})
+                    </span>
+                  )}
                 </span>
                 <Badge variant="secondary">
                   {getCurrentStudentIndex() + 1} / {students.length}
