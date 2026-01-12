@@ -148,6 +148,7 @@ export function MobileGradesView({
     columnId: string;
     maxScore: number;
     currentValue: number;
+    studentName?: string;
   } | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [saving, setSaving] = useState(false);
@@ -164,11 +165,13 @@ export function MobileGradesView({
   }, [grades]);
 
   const handleCellClick = useCallback((studentId: string, columnId: string, maxScore: number, currentValue: number) => {
-    setEditDialog({ studentId, columnId, maxScore, currentValue });
+    const student = students.find(s => s.id === studentId);
+    setEditDialog({ studentId, columnId, maxScore, currentValue, studentName: student?.name });
     setInputValue(currentValue > 0 ? String(currentValue) : '');
-  }, []);
+  }, [students]);
 
-  const handleSave = async () => {
+  // حفظ الدرجة والانتقال للطالب التالي أو إغلاق الحوار
+  const handleSave = async (closeAfterSave = false) => {
     if (!editDialog || !inputValue) return;
     
     const score = parseFloat(inputValue);
@@ -177,11 +180,84 @@ export function MobileGradesView({
     setSaving(true);
     try {
       await onSaveGrade(editDialog.studentId, editDialog.columnId, score, editDialog.maxScore);
-      setEditDialog(null);
-      setInputValue('');
+      
+      if (closeAfterSave) {
+        setEditDialog(null);
+        setInputValue('');
+      } else {
+        // الانتقال للطالب التالي
+        const currentIndex = students.findIndex(s => s.id === editDialog.studentId);
+        if (currentIndex < students.length - 1) {
+          const nextStudent = students[currentIndex + 1];
+          const nextValue = calculateColumnValue(nextStudent.id, 
+            { id: editDialog.columnId, type: 'score', name_ar: '', max_score: editDialog.maxScore }, 
+            structure.groups[0]
+          );
+          setEditDialog({
+            studentId: nextStudent.id,
+            columnId: editDialog.columnId,
+            maxScore: editDialog.maxScore,
+            currentValue: nextValue,
+            studentName: nextStudent.name
+          });
+          setInputValue(nextValue > 0 ? String(nextValue) : '');
+        } else {
+          // آخر طالب - إغلاق الحوار
+          setEditDialog(null);
+          setInputValue('');
+        }
+      }
     } finally {
       setSaving(false);
     }
+  };
+
+  // الانتقال للطالب التالي بدون حفظ
+  const goToNextStudent = () => {
+    if (!editDialog) return;
+    const currentIndex = students.findIndex(s => s.id === editDialog.studentId);
+    if (currentIndex < students.length - 1) {
+      const nextStudent = students[currentIndex + 1];
+      const nextValue = calculateColumnValue(nextStudent.id, 
+        { id: editDialog.columnId, type: 'score', name_ar: '', max_score: editDialog.maxScore }, 
+        structure.groups[0]
+      );
+      setEditDialog({
+        studentId: nextStudent.id,
+        columnId: editDialog.columnId,
+        maxScore: editDialog.maxScore,
+        currentValue: nextValue,
+        studentName: nextStudent.name
+      });
+      setInputValue(nextValue > 0 ? String(nextValue) : '');
+    }
+  };
+
+  // الانتقال للطالب السابق
+  const goToPrevStudent = () => {
+    if (!editDialog) return;
+    const currentIndex = students.findIndex(s => s.id === editDialog.studentId);
+    if (currentIndex > 0) {
+      const prevStudent = students[currentIndex - 1];
+      const prevValue = calculateColumnValue(prevStudent.id, 
+        { id: editDialog.columnId, type: 'score', name_ar: '', max_score: editDialog.maxScore }, 
+        structure.groups[0]
+      );
+      setEditDialog({
+        studentId: prevStudent.id,
+        columnId: editDialog.columnId,
+        maxScore: editDialog.maxScore,
+        currentValue: prevValue,
+        studentName: prevStudent.name
+      });
+      setInputValue(prevValue > 0 ? String(prevValue) : '');
+    }
+  };
+
+  // الحصول على ترتيب الطالب الحالي
+  const getCurrentStudentIndex = () => {
+    if (!editDialog) return -1;
+    return students.findIndex(s => s.id === editDialog.studentId);
   };
 
   // Quick score buttons
@@ -224,10 +300,20 @@ export function MobileGradesView({
       <Dialog open={!!editDialog} onOpenChange={() => setEditDialog(null)}>
         <DialogContent dir="rtl" className="max-w-[90vw] sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>تعديل الدرجة</DialogTitle>
+            <DialogTitle className="flex items-center justify-between">
+              <span>إدخال الدرجة</span>
+              <Badge variant="secondary">
+                {getCurrentStudentIndex() + 1} / {students.length}
+              </Badge>
+            </DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4">
+            {/* اسم الطالب */}
+            <div className="text-center p-2 bg-muted rounded-lg">
+              <span className="font-medium">{editDialog?.studentName}</span>
+            </div>
+            
             <div className="space-y-2">
               <Label>الدرجة (الحد الأقصى: {editDialog?.maxScore})</Label>
               <Input
@@ -244,14 +330,14 @@ export function MobileGradesView({
             </div>
             
             {/* Quick Score Buttons */}
-            <div className="flex gap-2 justify-center">
-              {quickScores.map(score => (
+            <div className="grid grid-cols-6 gap-1.5">
+              {Array.from({ length: Math.min((editDialog?.maxScore || 10) + 1, 11) }, (_, i) => i).map(score => (
                 <Button
                   key={score}
                   type="button"
-                  variant="outline"
-                  size="lg"
-                  className="flex-1"
+                  variant={inputValue === String(score) ? "default" : "outline"}
+                  size="sm"
+                  className="h-10 text-lg font-bold"
                   onClick={() => setInputValue(String(score))}
                 >
                   {score}
@@ -259,12 +345,40 @@ export function MobileGradesView({
               ))}
             </div>
             
+            {/* أزرار التنقل والحفظ */}
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                onClick={goToPrevStudent}
+                disabled={getCurrentStudentIndex() <= 0}
+                className="flex-1"
+              >
+                السابق
+              </Button>
+              <Button 
+                onClick={() => handleSave(false)} 
+                disabled={saving || !inputValue}
+                className="flex-[2] gradient-hero"
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'حفظ والتالي'}
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={goToNextStudent}
+                disabled={getCurrentStudentIndex() >= students.length - 1}
+                className="flex-1"
+              >
+                التالي
+              </Button>
+            </div>
+            
+            {/* زر الإغلاق */}
             <Button 
-              onClick={handleSave} 
-              disabled={saving || !inputValue}
-              className="w-full h-12"
+              variant="ghost"
+              onClick={() => setEditDialog(null)}
+              className="w-full"
             >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'حفظ'}
+              إغلاق
             </Button>
           </div>
         </DialogContent>
