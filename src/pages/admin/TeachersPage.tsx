@@ -3,17 +3,18 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Users, Edit, UserPlus, Phone, School, GraduationCap, Mail, User, Search } from 'lucide-react';
+import { Loader2, Users, Edit, UserPlus, Phone, School, GraduationCap, Mail, User, Search, Trash2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useTeachers, Teacher } from '@/hooks/useTeachers';
+import { useTeachers, Teacher, useDeleteTeacher } from '@/hooks/useTeachers';
 import { useEducationLevels } from '@/hooks/useEducationLevels';
 import { useSubjects } from '@/hooks/useSubjects';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const DEFAULT_OTP = '12345';
 const KUWAIT_PHONE_REGEX = /^[569]\d{7}$/;
@@ -22,6 +23,7 @@ export default function TeachersPage() {
   const { data: teachers, isLoading, refetch } = useTeachers();
   const { data: educationLevels } = useEducationLevels();
   const { data: subjects } = useSubjects();
+  const deleteTeacherMutation = useDeleteTeacher();
   
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,6 +51,10 @@ export default function TeachersPage() {
     education_level_id: '',
   });
   const [adding, setAdding] = useState(false);
+
+  // Delete teacher dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [teacherToDelete, setTeacherToDelete] = useState<Teacher | null>(null);
 
   // Filter teachers
   const filteredTeachers = teachers?.filter(teacher => 
@@ -286,6 +292,16 @@ export default function TeachersPage() {
                         <Edit className="h-4 w-4 ml-1" />
                         تعديل
                       </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        onClick={() => {
+                          setTeacherToDelete(teacher);
+                          setDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -515,6 +531,69 @@ export default function TeachersPage() {
               </Button>
               <Button onClick={handleAddTeacher} disabled={adding}>
                 {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : 'تسجيل المعلم'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Teacher Confirmation Dialog */}
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <DialogContent dir="rtl" className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+                تأكيد حذف المعلم
+              </DialogTitle>
+              <DialogDescription>
+                هذا الإجراء لا يمكن التراجع عنه
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  سيتم حذف المعلم <strong>{teacherToDelete?.full_name}</strong> وجميع البيانات المرتبطة به نهائياً:
+                </AlertDescription>
+              </Alert>
+              <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 mr-4">
+                <li>جميع الصفوف التي أنشأها</li>
+                <li>جميع الطلاب المسجلين في صفوفه</li>
+                <li>جميع سجلات الحضور</li>
+                <li>جميع الدرجات</li>
+                <li>جميع ملاحظات السلوك</li>
+                <li>جميع قوالب الدرجات الخاصة به</li>
+                <li>حساب المعلم نفسه</li>
+              </ul>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setDeleteDialogOpen(false);
+                  setTeacherToDelete(null);
+                }}
+              >
+                إلغاء
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={async () => {
+                  if (teacherToDelete) {
+                    await deleteTeacherMutation.mutateAsync(teacherToDelete.user_id);
+                    setDeleteDialogOpen(false);
+                    setTeacherToDelete(null);
+                  }
+                }}
+                disabled={deleteTeacherMutation.isPending}
+              >
+                {deleteTeacherMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 ml-1" />
+                    حذف نهائي
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
