@@ -27,13 +27,27 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (
+    email: string, 
+    password: string, 
+    fullName: string,
+    additionalData?: {
+      education_level_id?: string;
+      phone?: string;
+      school_name?: string;
+      subject?: string;
+    }
+  ) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           full_name: fullName,
+          education_level_id: additionalData?.education_level_id,
+          phone: additionalData?.phone,
+          school_name: additionalData?.school_name,
+          subject: additionalData?.subject,
         },
         emailRedirectTo: window.location.origin,
       },
