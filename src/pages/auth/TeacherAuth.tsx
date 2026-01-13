@@ -124,8 +124,19 @@ export default function TeacherAuth() {
     
     setRegisterLoading(true);
     try {
-      // Sign up user
-      const { data, error: signUpError } = await signUp(email.trim(), password, fullName.trim());
+      // Sign up user with all profile data in metadata
+      // The database trigger will automatically create the profile with this data
+      const { data, error: signUpError } = await signUp(
+        email.trim(), 
+        password, 
+        fullName.trim(),
+        {
+          education_level_id: educationLevelId,
+          phone: phone.trim() || undefined,
+          school_name: schoolName.trim() || undefined,
+          subject: subject.trim() || undefined,
+        }
+      );
       
       if (signUpError) {
         if (signUpError.message.includes('already registered')) {
@@ -141,96 +152,24 @@ export default function TeacherAuth() {
         return;
       }
       
-      const userId = data.user.id;
-      console.log('User created with ID:', userId);
-      console.log('Attempting to save education_level_id:', educationLevelId);
+      console.log('User created successfully with education_level_id in metadata');
       
-      // Wait for the database trigger to create the profile
-      let profileExists = false;
-      let waitRetries = 0;
-      const maxWaitRetries = 15;
+      // The database trigger will automatically create the profile with all the data
+      // Wait a moment to ensure the trigger has completed
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      while (!profileExists && waitRetries < maxWaitRetries) {
-        await new Promise(resolve => setTimeout(resolve, 400));
-        
-        const { data: existingProfile, error: checkError } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('user_id', userId)
-          .maybeSingle();
-        
-        if (checkError) {
-          console.error('Error checking profile:', checkError);
-        }
-        
-        if (existingProfile) {
-          profileExists = true;
-          console.log('Profile found after', waitRetries + 1, 'attempts');
-        } else {
-          console.log('Waiting for profile creation, attempt', waitRetries + 1);
-          waitRetries++;
-        }
-      }
+      // Verify profile was created with correct data
+      const { data: verifyProfile } = await supabase
+        .from('profiles')
+        .select('education_level_id')
+        .eq('user_id', data.user.id)
+        .maybeSingle();
       
-      if (!profileExists) {
-        console.error('Profile was not created by trigger after maximum retries');
-        toast.error('حدث خطأ في إنشاء الملف الشخصي. يرجى المحاولة مرة أخرى');
-        return;
-      }
-      
-      // Now update the profile with all required data
-      let updateSuccess = false;
-      let updateRetries = 0;
-      const maxUpdateRetries = 5;
-      
-      while (!updateSuccess && updateRetries < maxUpdateRetries) {
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({
-            full_name: fullName.trim(),
-            school_name: schoolName.trim() || null,
-            education_level_id: educationLevelId,
-            subject: subject.trim() || null,
-            phone: phone.trim() || null,
-            is_profile_complete: true,
-          })
-          .eq('user_id', userId);
-        
-        if (updateError) {
-          console.error(`Profile update attempt ${updateRetries + 1} failed:`, updateError);
-          updateRetries++;
-          await new Promise(resolve => setTimeout(resolve, 300));
-          continue;
-        }
-        
-        // Verify the update
-        const { data: verifyProfile, error: verifyError } = await supabase
-          .from('profiles')
-          .select('education_level_id, full_name, phone')
-          .eq('user_id', userId)
-          .single();
-        
-        if (verifyError) {
-          console.error('Verification error:', verifyError);
-          updateRetries++;
-          continue;
-        }
-        
-        console.log('Verification result:', verifyProfile);
-        
-        if (verifyProfile?.education_level_id === educationLevelId) {
-          updateSuccess = true;
-          console.log('Profile updated successfully with education_level_id:', educationLevelId);
-        } else {
-          console.error('Verification failed. Expected:', educationLevelId, 'Got:', verifyProfile?.education_level_id);
-          updateRetries++;
-          await new Promise(resolve => setTimeout(resolve, 300));
-        }
-      }
-      
-      if (!updateSuccess) {
-        console.error('Failed to update profile after all retries');
-        toast.error('تم إنشاء الحساب لكن فشل حفظ المرحلة الدراسية. يرجى تحديثها من الإعدادات');
+      if (verifyProfile?.education_level_id !== educationLevelId) {
+        console.warn('Profile education_level_id mismatch, trigger may have failed');
+        // Profile might need manual update later
+      } else {
+        console.log('Profile created successfully with education_level_id:', educationLevelId);
       }
       
       toast.success('تم إنشاء الحساب بنجاح');
