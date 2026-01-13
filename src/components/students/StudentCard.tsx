@@ -56,11 +56,11 @@ export function StudentCard({ student, onClick }: StudentCardProps) {
           )}
         </div>
         
-        <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-foreground group-hover:text-primary transition-colors truncate">
+        <div className="flex-1 min-w-0 space-y-1">
+          <h4 className="font-medium text-foreground group-hover:text-primary transition-colors truncate leading-tight">
             {student.name}
           </h4>
-          <p className="text-sm text-muted-foreground truncate">
+          <p className="text-xs text-muted-foreground truncate">
             {student.student_id}
           </p>
         </div>

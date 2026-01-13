@@ -235,18 +235,6 @@ export default function TeacherSubscription() {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             {getStatusBadge()}
-            {subscription?.subscription_ends_at && (
-              <Badge variant="outline" className="gap-1">
-                <Calendar className="h-3 w-3" />
-                ينتهي في: {format(new Date(subscription.subscription_ends_at), 'dd MMMM yyyy', { locale: ar })}
-              </Badge>
-            )}
-            {subscription?.trial_ends_at && !subscription?.subscription_ends_at && (
-              <Badge variant="outline" className="gap-1">
-                <Calendar className="h-3 w-3" />
-                الفترة التجريبية تنتهي: {format(new Date(subscription.trial_ends_at), 'dd MMMM yyyy', { locale: ar })}
-              </Badge>
-            )}
           </div>
         </div>
 
@@ -265,8 +253,8 @@ export default function TeacherSubscription() {
 
           {/* Packages Tab */}
           <TabsContent value="packages" className="space-y-6 mt-6">
-            {/* Read-only warning */}
-            {subscriptionStatus.isReadOnly && (
+            {/* Read-only warning - only show when subscription is actually in read-only mode */}
+            {subscription?.is_read_only && (
               <Card className="border-destructive bg-destructive/5">
                 <CardContent className="flex items-center gap-4 p-4">
                   <AlertTriangle className="h-8 w-8 text-destructive shrink-0" />
