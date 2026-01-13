@@ -489,13 +489,13 @@ function StructuredGradingView({
                   return group.columns.map(column => (
                     <th 
                       key={column.id}
-                      className="border p-2 text-center text-sm min-w-[70px]"
+                      className="border p-2 text-center text-sm w-[80px] min-w-[80px] max-w-[80px]"
                       style={{ 
                         backgroundColor: column.useGroupColor !== false ? group.color : 'var(--card)'
                       }}
                     >
                       <div className="flex flex-col items-center gap-1">
-                        <span>{column.name_ar}</span>
+                        <span className="truncate w-full text-xs" title={column.name_ar}>{column.name_ar}</span>
                         <div className="flex items-center gap-1">
                           <Badge 
                             variant={column.type === 'score' ? 'secondary' : column.type === 'total' ? 'default' : (column.type === 'grand_total' || column.type === 'group_sum' || column.type === 'external_sum') ? 'destructive' : 'outline'}
