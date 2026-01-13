@@ -141,63 +141,57 @@ export default function TeacherAuth() {
         return;
       }
       
-      // Wait for the trigger to create profile, then update it with retry logic
+      // Wait a bit for the trigger to create the profile
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Update profile with all required data using upsert to handle any race conditions
       let profileUpdated = false;
       let retries = 0;
-      const maxRetries = 10;
+      const maxRetries = 5;
       
       while (!profileUpdated && retries < maxRetries) {
-        // Increase wait time progressively
-        await new Promise(resolve => setTimeout(resolve, 500 + (retries * 200)));
-        
-        // First check if profile exists
-        const { data: existingProfile } = await supabase
+        // Try upsert - this will update if exists or insert if not
+        const { error: upsertError } = await supabase
           .from('profiles')
-          .select('id')
-          .eq('user_id', data.user.id)
-          .maybeSingle();
-        
-        if (!existingProfile) {
-          console.log(`Profile not created yet, retry ${retries + 1}`);
-          retries++;
-          continue;
-        }
-        
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
+          .upsert({
+            user_id: data.user.id,
             full_name: fullName.trim(),
             school_name: schoolName.trim() || null,
             education_level_id: educationLevelId,
             subject: subject.trim() || null,
             phone: phone.trim(),
             is_profile_complete: true,
-          })
-          .eq('user_id', data.user.id);
+          }, {
+            onConflict: 'user_id'
+          });
         
-        if (!profileError) {
-          // Verify the update was successful
-          const { data: verifyProfile } = await supabase
-            .from('profiles')
-            .select('education_level_id')
-            .eq('user_id', data.user.id)
-            .single();
-          
-          if (verifyProfile?.education_level_id === educationLevelId) {
-            profileUpdated = true;
-          } else {
-            console.error('Profile update verification failed');
-            retries++;
-          }
-        } else {
-          console.error(`Profile update attempt ${retries + 1} failed:`, profileError);
+        if (upsertError) {
+          console.error(`Profile upsert attempt ${retries + 1} failed:`, upsertError);
           retries++;
+          await new Promise(resolve => setTimeout(resolve, 500));
+          continue;
+        }
+        
+        // Verify the update was successful
+        const { data: verifyProfile } = await supabase
+          .from('profiles')
+          .select('education_level_id')
+          .eq('user_id', data.user.id)
+          .single();
+        
+        if (verifyProfile?.education_level_id === educationLevelId) {
+          profileUpdated = true;
+          console.log('Profile updated successfully with education_level_id:', educationLevelId);
+        } else {
+          console.error('Profile verification failed, education_level_id:', verifyProfile?.education_level_id);
+          retries++;
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
       }
       
       if (!profileUpdated) {
         console.error('Failed to update profile after all retries');
-        toast.error('تم إنشاء الحساب لكن فشل حفظ بعض البيانات. يرجى تحديثها من الإعدادات');
+        toast.error('تم إنشاء الحساب لكن فشل حفظ المرحلة الدراسية. يرجى تحديثها من الإعدادات');
       }
       
       toast.success('تم إنشاء الحساب بنجاح');
