@@ -947,8 +947,8 @@ export default function ClassroomView() {
       <Dialog open={!!selectedStudent && dialogMode === 'note'} onOpenChange={() => setSelectedStudent(null)}>
         <DialogContent dir="rtl" className="max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+            <DialogTitle className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden shrink-0">
                 {selectedStudent?.avatar_url ? (
                   <img
                     src={selectedStudent.avatar_url}
@@ -956,10 +956,12 @@ export default function ClassroomView() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <User className="h-5 w-5 text-primary" />
+                  <User className="h-6 w-6 text-primary" />
                 )}
               </div>
-              <span className="truncate">{selectedStudent?.name}</span>
+              <div className="flex-1 min-w-0">
+                <span className="block text-lg">{selectedStudent?.name}</span>
+              </div>
             </DialogTitle>
             <DialogDescription>
               اختر ملاحظة سريعة أو اكتب ملاحظة مخصصة

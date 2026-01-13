@@ -321,8 +321,18 @@ export function MobileGradesView({
           
           <div className="space-y-4">
             {/* اسم الطالب */}
-            <div className="text-center p-2 bg-muted rounded-lg">
-              <span className="font-medium">{editDialog?.studentName}</span>
+            <div className="text-center p-3 bg-muted rounded-lg">
+              <p className="font-medium text-lg">{editDialog?.studentName}</p>
+              {editDialog && (() => {
+                // Find column name
+                for (const group of structure.groups) {
+                  const col = group.columns.find(c => c.id === editDialog.columnId);
+                  if (col) {
+                    return <p className="text-sm text-muted-foreground mt-1">{col.name_ar}</p>;
+                  }
+                }
+                return null;
+              })()}
             </div>
             
             <div className="space-y-2">
