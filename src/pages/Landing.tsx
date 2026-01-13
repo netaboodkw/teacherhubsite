@@ -139,7 +139,7 @@ export default function Landing() {
               </Button>
             </Link>
             <Link to="/auth/department-head" className="w-full">
-              <Button size="lg" variant="outline" className="w-full border-2 border-background/50 text-primary-foreground hover:bg-background/20 h-14 text-lg">
+              <Button size="lg" className="w-full bg-background/20 backdrop-blur-sm border-2 border-background text-primary-foreground hover:bg-background/30 h-14 text-lg">
                 <Building2 className="ml-3 h-6 w-6" />
                 دخول رؤساء الأقسام
                 <ArrowLeft className="mr-auto h-5 w-5" />
