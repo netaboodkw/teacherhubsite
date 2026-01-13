@@ -144,10 +144,24 @@ export default function TeacherAuth() {
       // Wait for the trigger to create profile, then update it with retry logic
       let profileUpdated = false;
       let retries = 0;
-      const maxRetries = 5;
+      const maxRetries = 10;
       
       while (!profileUpdated && retries < maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Increase wait time progressively
+        await new Promise(resolve => setTimeout(resolve, 500 + (retries * 200)));
+        
+        // First check if profile exists
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('user_id', data.user.id)
+          .maybeSingle();
+        
+        if (!existingProfile) {
+          console.log(`Profile not created yet, retry ${retries + 1}`);
+          retries++;
+          continue;
+        }
         
         const { error: profileError } = await supabase
           .from('profiles')
@@ -162,7 +176,19 @@ export default function TeacherAuth() {
           .eq('user_id', data.user.id);
         
         if (!profileError) {
-          profileUpdated = true;
+          // Verify the update was successful
+          const { data: verifyProfile } = await supabase
+            .from('profiles')
+            .select('education_level_id')
+            .eq('user_id', data.user.id)
+            .single();
+          
+          if (verifyProfile?.education_level_id === educationLevelId) {
+            profileUpdated = true;
+          } else {
+            console.error('Profile update verification failed');
+            retries++;
+          }
         } else {
           console.error(`Profile update attempt ${retries + 1} failed:`, profileError);
           retries++;
@@ -171,6 +197,7 @@ export default function TeacherAuth() {
       
       if (!profileUpdated) {
         console.error('Failed to update profile after all retries');
+        toast.error('تم إنشاء الحساب لكن فشل حفظ بعض البيانات. يرجى تحديثها من الإعدادات');
       }
       
       toast.success('تم إنشاء الحساب بنجاح');

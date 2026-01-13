@@ -11,9 +11,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ClassScheduleEditor, ClassSchedule } from '@/components/classrooms/ClassScheduleEditor';
-import { ArrowRight, GraduationCap, Loader2, LayoutGrid, Plus } from 'lucide-react';
+import { ArrowRight, GraduationCap, Loader2, LayoutGrid, Plus, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent } from '@/components/ui/card';
 
 // Pastel colors for classroom selection
 const colorOptions = [
@@ -107,6 +108,50 @@ export default function NewClassroom() {
       <TeacherLayout>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </TeacherLayout>
+    );
+  }
+
+  // Check if teacher has no education level set
+  if (!teacherEducationLevelId) {
+    return (
+      <TeacherLayout>
+        <div className="max-w-2xl mx-auto animate-fade-in">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate(-1)}
+            className="mb-6"
+          >
+            <ArrowRight className="w-4 h-4 ml-2" />
+            رجوع
+          </Button>
+
+          <Card className="border-destructive/50 bg-destructive/5">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-xl bg-destructive/10">
+                  <AlertTriangle className="w-6 h-6 text-destructive" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold text-destructive mb-2">
+                    المرحلة التعليمية غير محددة
+                  </h2>
+                  <p className="text-muted-foreground mb-4">
+                    يجب تحديد المرحلة التعليمية في ملفك الشخصي قبل إنشاء فصول جديدة.
+                    هذا ضروري لربط الفصل بالصفوف الدراسية المناسبة.
+                  </p>
+                  <Button 
+                    onClick={() => navigate('/teacher/settings')}
+                    className="gradient-hero"
+                  >
+                    <GraduationCap className="w-4 h-4 ml-2" />
+                    الذهاب للإعدادات
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </TeacherLayout>
     );
