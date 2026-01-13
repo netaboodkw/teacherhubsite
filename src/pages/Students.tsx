@@ -98,14 +98,15 @@ export default function Students() {
         {filteredStudents.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredStudents.map((student) => (
-              <div key={student.id} className="relative">
+              <div key={student.id} className="flex flex-col gap-1">
+                {/* Classroom name outside the card */}
+                <span className="text-xs text-muted-foreground px-1 truncate">
+                  {getClassroomName(student.classroom_id)}
+                </span>
                 <StudentCard 
                   student={student} 
                   onClick={() => navigate(`/teacher/students/${student.id}`)}
                 />
-                <span className="absolute top-2 left-2 text-xs bg-muted px-2 py-1 rounded-full text-muted-foreground">
-                  {getClassroomName(student.classroom_id)}
-                </span>
               </div>
             ))}
           </div>

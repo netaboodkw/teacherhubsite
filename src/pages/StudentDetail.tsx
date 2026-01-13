@@ -415,9 +415,9 @@ export default function StudentDetail() {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
                 {grades.slice(0, 12).map((grade) => (
-                  <div key={grade.id} className="p-3 rounded-lg bg-muted/50 text-center">
+                  <div key={grade.id} className="p-3 rounded-lg bg-muted/50 text-center space-y-1">
                     <p className="text-lg font-bold text-primary">{grade.score}/{grade.max_score}</p>
-                    <p className="text-xs text-muted-foreground truncate">{grade.title}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2" title={grade.title}>{grade.title}</p>
                   </div>
                 ))}
               </div>
