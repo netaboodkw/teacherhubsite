@@ -14,7 +14,6 @@ import {
   LogOut,
   LayoutGrid,
   CreditCard,
-  Receipt,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -34,8 +33,7 @@ const navItems = [
   { href: '/teacher/grades', icon: BookOpen, label: 'الدرجات' },
   { href: '/teacher/templates', icon: LayoutGrid, label: 'قوالب الدرجات' },
   { href: '/teacher/reports', icon: BarChart3, label: 'التقارير' },
-  { href: '/teacher/subscription', icon: CreditCard, label: 'الاشتراك' },
-  { href: '/teacher/payments', icon: Receipt, label: 'المدفوعات' },
+  { href: '/teacher/subscription', icon: CreditCard, label: 'الاشتراك والمدفوعات' },
 ];
 
 export function TeacherSidebar({ isOpen, onClose }: TeacherSidebarProps) {
