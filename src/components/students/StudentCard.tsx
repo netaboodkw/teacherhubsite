@@ -40,7 +40,7 @@ export function StudentCard({ student, onClick }: StudentCardProps) {
   return (
     <div 
       onClick={onClick}
-      className="flex flex-col gap-3 p-4 rounded-xl bg-card border border-border hover:shadow-md hover:border-primary/20 transition-all cursor-pointer group"
+      className="flex flex-col gap-3 p-4 rounded-xl bg-card border border-border hover:shadow-md hover:border-primary/20 transition-all cursor-pointer group h-[180px]"
     >
       {/* Header with avatar and name */}
       <div className="flex items-center gap-4">

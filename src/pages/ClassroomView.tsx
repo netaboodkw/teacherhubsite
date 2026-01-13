@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -595,9 +595,28 @@ export default function ClassroomView() {
         <div className="px-3 py-3 sm:px-4 sm:py-4">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
-              <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate('/teacher/classrooms')}>
-                <ArrowRight className="h-5 w-5" />
-              </Button>
+              <div className="flex items-center shrink-0">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" onClick={() => navigate('/teacher')}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>الرئيسية</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" onClick={() => navigate('/teacher/classrooms')}>
+                        <ArrowRight className="h-5 w-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>الفصول</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <div className="min-w-0">
                 <h1 className="text-base sm:text-xl font-bold truncate">{classroom.name}</h1>
                 <p className="text-xs sm:text-sm text-muted-foreground truncate">{classroom.subject}</p>
