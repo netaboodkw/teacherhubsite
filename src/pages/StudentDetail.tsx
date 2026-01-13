@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useStudent, useUpdateStudent, useDeleteStudent } from '@/hooks/useStudents';
@@ -6,6 +6,7 @@ import { useClassroom, useClassrooms } from '@/hooks/useClassrooms';
 import { useBehaviorNotes, useUpdateBehaviorNote, useDeleteBehaviorNote } from '@/hooks/useBehaviorNotes';
 import { useGrades } from '@/hooks/useGrades';
 import { useAttendance } from '@/hooks/useAttendance';
+import { useClassroomGradingStructure } from '@/hooks/useGradingStructures';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -35,6 +36,36 @@ export default function StudentDetail() {
   const { data: behaviorNotes = [], isLoading: loadingNotes } = useBehaviorNotes(studentId);
   const { data: grades = [] } = useGrades(student?.classroom_id || undefined, studentId);
   const { data: allAttendance = [] } = useAttendance(student?.classroom_id || undefined);
+  
+  // Get grading structure to resolve column names
+  const { data: gradingStructure } = useClassroomGradingStructure(classroom ? {
+    education_level_id: classroom.education_level_id,
+    grade_level_id: classroom.grade_level_id,
+    subject_id: classroom.subject_id,
+    teacher_template_id: classroom.teacher_template_id,
+  } : undefined);
+  
+  // Create a map of column IDs to their Arabic names
+  const columnNamesMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    if (gradingStructure?.structure?.groups) {
+      gradingStructure.structure.groups.forEach(group => {
+        group.columns.forEach(col => {
+          map[col.id] = col.name_ar;
+        });
+      });
+    }
+    return map;
+  }, [gradingStructure]);
+  
+  // Helper to get display name for a grade
+  const getGradeDisplayTitle = (gradeTitle: string): string => {
+    // Check if it's a column ID (starts with col_)
+    if (gradeTitle.startsWith('col_') && columnNamesMap[gradeTitle]) {
+      return columnNamesMap[gradeTitle];
+    }
+    return gradeTitle;
+  };
   
   // Filter attendance for this student
   const studentAttendance = allAttendance.filter(a => a.student_id === studentId);
@@ -417,7 +448,7 @@ export default function StudentDetail() {
                 {grades.slice(0, 12).map((grade) => (
                   <div key={grade.id} className="p-3 rounded-lg bg-muted/50 text-center space-y-1">
                     <p className="text-lg font-bold text-primary">{grade.score}/{grade.max_score}</p>
-                    <p className="text-xs text-muted-foreground line-clamp-2" title={grade.title}>{grade.title}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2" title={getGradeDisplayTitle(grade.title)}>{getGradeDisplayTitle(grade.title)}</p>
                   </div>
                 ))}
               </div>
