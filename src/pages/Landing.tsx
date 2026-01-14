@@ -39,7 +39,7 @@ const stats = [
   { value: '98%', label: 'رضا المستخدمين', icon: Heart },
 ];
 
-// Detailed features with full descriptions
+// Detailed features with full descriptions - Pastel Colors
 const detailedFeatures = [
   {
     id: 'students',
@@ -47,14 +47,14 @@ const detailedFeatures = [
     title: 'إدارة الطلاب الذكية',
     subtitle: 'كل بيانات طلابك في مكان واحد',
     description: 'أضف طلابك بسهولة تامة مع إمكانية استيراد البيانات من ملفات Excel أو من صور قوائم الطلاب باستخدام الذكاء الاصطناعي. بالإضافة لترتيب الطلاب حسب مواقعهم الفعلية في الفصل الدراسي.',
-    gradient: 'from-[#7DD3E1] to-[#5BC0CE]',
+    gradient: 'from-[#B8E4EC] to-[#98D6E0]',
     benefits: [
       { icon: Upload, text: 'استيراد من Excel بضغطة واحدة' },
       { icon: FileImage, text: 'استخراج الأسماء من الصور بالذكاء الاصطناعي' },
       { icon: Layout, text: 'ترتيب الطلاب حسب مواقعهم في الصف' },
       { icon: Camera, text: 'إضافة صور الطلاب للتعرف عليهم' },
     ],
-    color: '#5BC0CE',
+    color: '#7DD3E1',
   },
   {
     id: 'attendance',
@@ -62,14 +62,14 @@ const detailedFeatures = [
     title: 'تسجيل الحضور السريع',
     subtitle: 'وداعاً للدفاتر الورقية',
     description: 'سجل حضور وغياب طلابك بضغطة واحدة فقط. نظام ذكي يحفظ السجلات ويولد تقارير شاملة تلقائياً.',
-    gradient: 'from-[#C9A8D6] to-[#B897C5]',
+    gradient: 'from-[#E8D4F0] to-[#DCC6E8]',
     benefits: [
       { icon: Zap, text: 'تسجيل فوري بضغطة واحدة' },
       { icon: Calendar, text: 'سجل كامل لكل يوم ومادة' },
       { icon: PieChart, text: 'إحصائيات الحضور التفصيلية' },
       { icon: Bell, text: 'تنبيهات للغياب المتكرر' },
     ],
-    color: '#B897C5',
+    color: '#C9A8D6',
   },
   {
     id: 'grades',
@@ -77,14 +77,14 @@ const detailedFeatures = [
     title: 'نظام الدرجات المتكامل',
     subtitle: 'تقييم شامل ودقيق',
     description: 'أدخل درجات طلابك بسهولة مع دعم لجميع أنواع التقييمات. صمم نماذج الدرجات حسب المادة والمرحلة بطريقة سهلة وسريعة، مع إمكانية استيراد أي كشف درجات من خلال الذكاء الاصطناعي.',
-    gradient: 'from-[#F5C78E] to-[#E8B77D]',
+    gradient: 'from-[#FDDCB8] to-[#F8D0A8]',
     benefits: [
       { icon: Settings, text: 'تصميم نماذج درجات حسب المادة والمرحلة' },
       { icon: Upload, text: 'استيراد كشف الدرجات بالذكاء الاصطناعي' },
       { icon: Target, text: 'حساب المعدلات التلقائي' },
       { icon: Download, text: 'تصدير الدرجات للطباعة' },
     ],
-    color: '#E8B77D',
+    color: '#F5C78E',
   },
   {
     id: 'templates',
@@ -92,14 +92,14 @@ const detailedFeatures = [
     title: 'قوالب التقييم المخصصة',
     subtitle: 'صمم نظام تقييمك الخاص',
     description: 'أنشئ قوالب تقييم مخصصة تناسب مادتك ومرحلتك الدراسية بسرعة فائقة. حدد الأوزان والدرجات حسب متطلبات وزارة التربية أو حسب رغبتك الشخصية.',
-    gradient: 'from-[#7DD3E1] to-[#C9A8D6]',
+    gradient: 'from-[#B8E4EC] to-[#E8D4F0]',
     benefits: [
       { icon: Zap, text: 'إنشاء قوالب بسرعة وسهولة' },
       { icon: Layers, text: 'فترات متعددة (أسابيع، شهور، فصول)' },
       { icon: Target, text: 'أوزان مخصصة لكل نوع تقييم' },
       { icon: BookOpen, text: 'قوالب جاهزة حسب المرحلة' },
     ],
-    color: '#7DD3E1',
+    color: '#A8DDE6',
   },
   {
     id: 'classroom',
@@ -107,14 +107,14 @@ const detailedFeatures = [
     title: 'الفصل الافتراضي التفاعلي',
     subtitle: 'نظم فصلك كما تريد',
     description: 'رتّب مقاعد الطلاب في الفصل الافتراضي بالسحب والإفلات. سجل ملاحظات سلوكية إيجابية وسلبية لكل طالب.',
-    gradient: 'from-[#5BC0CE] to-[#7DD3E1]',
+    gradient: 'from-[#98D6E0] to-[#B8E4EC]',
     benefits: [
       { icon: Palette, text: 'ترتيب المقاعد بالسحب والإفلات' },
       { icon: ThumbsUp, text: 'ملاحظات سلوكية إيجابية' },
       { icon: ThumbsDown, text: 'ملاحظات سلوكية سلبية' },
       { icon: Star, text: 'نظام النقاط والمكافآت' },
     ],
-    color: '#5BC0CE',
+    color: '#7DD3E1',
   },
   {
     id: 'reports',
@@ -122,14 +122,14 @@ const detailedFeatures = [
     title: 'الإحصائيات والتقارير الذكية',
     subtitle: 'تحليل شامل لأداء طلابك',
     description: 'احصل على إحصائيات وتقارير ذكية شاملة: أفضل الطلاب من ناحية الدرجات والسلوك، أفضل الفصول أداءً، نسبة التفاعل والحضور، وتحليلات متقدمة تساعدك على اتخاذ القرارات الصحيحة.',
-    gradient: 'from-[#C9A8D6] to-[#F5C78E]',
+    gradient: 'from-[#E8D4F0] to-[#FDDCB8]',
     benefits: [
       { icon: Award, text: 'ترتيب أفضل الطلاب درجاتًا وسلوكًا' },
       { icon: TrendingUp, text: 'أفضل الفصول ونسبة التفاعل' },
       { icon: BarChart3, text: 'إحصائيات الحضور والغياب' },
       { icon: Printer, text: 'تقارير جاهزة للطباعة والمشاركة' },
     ],
-    color: '#C9A8D6',
+    color: '#DCC6E8',
   },
 ];
 
@@ -170,20 +170,20 @@ export default function Landing() {
   
   return (
     <div className="min-h-screen bg-background overflow-x-hidden" dir="rtl">
-      {/* Hero Section */}
+      {/* Hero Section - Pastel Colors */}
       <div className="relative min-h-screen flex items-center justify-center">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#7DD3E1] via-[#5BC0CE] to-[#4AA8B8]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#B8E4EC] via-[#A8DDE6] to-[#98D6E0]" />
         
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-20 right-10 w-72 h-72 bg-[#F5C78E]/30 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-20 left-10 w-96 h-96 bg-[#C9A8D6]/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-          <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-white/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+          <div className="absolute top-20 right-10 w-72 h-72 bg-[#FDDCB8]/40 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-20 left-10 w-96 h-96 bg-[#E8D4F0]/40 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-white/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         </div>
 
         {/* Login Button */}
         <div className="absolute top-6 left-6 z-20">
           <Link to="/auth/teacher?tab=login">
-            <Button size="lg" className="bg-white/95 text-[#5BC0CE] hover:bg-white hover:text-[#4AA8B8] font-bold shadow-lg border-0 h-12 px-6 transition-all hover:scale-105">
+            <Button size="lg" className="bg-white text-[#6BC5D2] hover:bg-white hover:text-[#5BB8C5] font-bold shadow-lg border-0 h-12 px-6 transition-all hover:scale-105">
               <LogIn className="ml-2 h-5 w-5" />
               تسجيل الدخول
             </Button>
@@ -202,7 +202,7 @@ export default function Landing() {
           </p>
 
           <div className="mb-10">
-            <Badge className="text-xl px-8 py-4 bg-white text-[#5BC0CE] shadow-xl border-0 hover:bg-white hover:text-[#4AA8B8] transition-all cursor-default">
+            <Badge className="text-xl px-8 py-4 bg-white text-[#6BC5D2] shadow-xl border-0 hover:bg-white hover:text-[#5BB8C5] transition-all cursor-default">
               <Gift className="w-6 h-6 ml-3 animate-bounce" />
               تجربة مجانية لمدة {trialDays} يوم!
             </Badge>
@@ -210,7 +210,7 @@ export default function Landing() {
 
           <div className="flex flex-wrap justify-center gap-3 mb-12">
             {highlights.map((item, i) => (
-              <div key={i} className="flex items-center gap-2 text-white bg-white/15 backdrop-blur-sm px-5 py-2.5 rounded-full border border-white/25 hover:bg-white/25 transition-colors">
+              <div key={i} className="flex items-center gap-2 text-[#4A9BA8] bg-white/40 backdrop-blur-sm px-5 py-2.5 rounded-full border border-white/50 hover:bg-white/60 transition-colors">
                 <item.icon className="w-4 h-4" />
                 <span className="text-sm font-medium">{item.text}</span>
               </div>
@@ -219,13 +219,13 @@ export default function Landing() {
           
           <div className="flex flex-col items-center gap-4 max-w-md mx-auto">
             <Link to="/auth/teacher" className="w-full">
-              <Button size="lg" className="w-full bg-white text-[#5BC0CE] hover:bg-white/95 hover:text-[#4AA8B8] h-16 text-lg font-bold shadow-xl hover:scale-105 transition-all border-0">
+              <Button size="lg" className="w-full bg-white text-[#6BC5D2] hover:bg-white/95 hover:text-[#5BB8C5] h-16 text-lg font-bold shadow-xl hover:scale-105 transition-all border-0">
                 <GraduationCap className="ml-3 h-6 w-6" />
                 ابدأ تجربتك المجانية الآن
                 <ArrowLeft className="mr-auto h-5 w-5" />
               </Button>
             </Link>
-            <p className="text-white/80 text-sm">بدون بطاقة ائتمان • إلغاء في أي وقت</p>
+            <p className="text-[#4A9BA8]/90 text-sm font-medium">بدون بطاقة ائتمان • إلغاء في أي وقت</p>
           </div>
         </div>
         
@@ -236,25 +236,25 @@ export default function Landing() {
         </div>
       </div>
 
-      {/* Stats Section */}
-      <div className="py-16 px-4 bg-gradient-to-br from-[#5BC0CE] to-[#4AA8B8]">
+      {/* Stats Section - Pastel */}
+      <div className="py-16 px-4 bg-gradient-to-br from-[#A8DDE6] to-[#98D6E0]">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {stats.map((stat, i) => (
-              <div key={i} className="text-center p-6 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 hover:bg-white/20 transition-colors">
-                <stat.icon className="w-10 h-10 text-white mx-auto mb-3 opacity-80" />
-                <div className="text-4xl md:text-5xl font-bold text-white mb-2">{stat.value}</div>
-                <div className="text-white/80 font-medium">{stat.label}</div>
+              <div key={i} className="text-center p-6 bg-white/50 backdrop-blur-sm rounded-2xl border border-white/60 hover:bg-white/70 transition-colors">
+                <stat.icon className="w-10 h-10 text-[#4A9BA8] mx-auto mb-3" />
+                <div className="text-4xl md:text-5xl font-bold text-[#3A8B98] mb-2">{stat.value}</div>
+                <div className="text-[#5AA8B5] font-medium">{stat.label}</div>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Why Choose Us */}
+      {/* Why Choose Us - Pastel */}
       <div className="py-16 px-4 bg-background">
         <div className="max-w-4xl mx-auto text-center">
-          <Badge className="mb-4 bg-[#7DD3E1]/20 text-[#4AA8B8] border-0 text-sm px-4 py-1.5">
+          <Badge className="mb-4 bg-[#B8E4EC]/40 text-[#5AA8B5] border-0 text-sm px-4 py-1.5">
             <Sparkles className="w-4 h-4 ml-2" />
             لماذا Teacher Hub؟
           </Badge>
@@ -266,7 +266,7 @@ export default function Landing() {
             بدلاً من قضاء ساعات في الأعمال الإدارية، استخدم وقتك في ما تحبه: التعليم!
           </p>
           <Link to="/auth/teacher">
-            <Button size="lg" className="bg-[#5BC0CE] hover:bg-[#4AA8B8] text-white h-14 px-8 text-lg font-bold shadow-lg">
+            <Button size="lg" className="bg-[#7DD3E1] hover:bg-[#6BC5D2] text-white h-14 px-8 text-lg font-bold shadow-lg">
               <Gift className="ml-2 h-5 w-5" />
               جرّب مجاناً لمدة {trialDays} يوم
             </Button>

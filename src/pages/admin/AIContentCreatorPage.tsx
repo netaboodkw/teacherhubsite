@@ -494,15 +494,17 @@ export default function AIContentCreatorPage() {
                     
                     {selectedFeature && (
                       <div className="absolute inset-0 flex flex-col pointer-events-none">
-                        {/* Top Section - Logo and App Name */}
+                        {/* Top Section - Logo as App Icon */}
                         <div className="pt-5 px-3 text-center">
                           <div className="inline-flex flex-col items-center gap-2">
                             {isCustomLogo && (
-                              <img 
-                                src={logoUrl} 
-                                alt="شعار" 
-                                className="w-12 h-12 object-contain drop-shadow-lg"
-                              />
+                              <div className="w-14 h-14 rounded-2xl bg-white/95 backdrop-blur-sm p-2 shadow-xl ring-2 ring-white/30">
+                                <img 
+                                  src={logoUrl} 
+                                  alt="شعار" 
+                                  className="w-full h-full object-contain"
+                                />
+                              </div>
                             )}
                             <p className="text-white text-xs font-bold drop-shadow-lg">
                               منصة المعلم الذكي
