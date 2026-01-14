@@ -630,7 +630,7 @@ serve(async (req) => {
     
     if (contentType === 'feature' && selectedFeature) {
       finalPrompt = `
-Create a beautiful, ${paletteConfig.mood} illustration for a teacher's app promotional post.
+Create a HIGH QUALITY, HIGH RESOLUTION (1024x1024 minimum, 1K quality) beautiful, ${paletteConfig.mood} illustration for a teacher's app promotional post.
 DO NOT include any text, letters, or words in the image - only visuals.
 
 DESIGN STYLE: ${styleConfig.name}
@@ -649,12 +649,13 @@ COMPOSITION:
 - Center the main illustration element
 - Background should be a soft gradient or subtle pattern (not plain) using the color palette
 
+QUALITY: Ultra high resolution, sharp details, professional quality, 1K resolution, crisp edges
 MOOD: ${paletteConfig.mood}, suitable for educators
 NO TEXT, NO LETTERS, NO WORDS - only beautiful illustrations in ${styleConfig.name} style
 `.trim();
     } else if (contentType === 'marketing') {
       finalPrompt = `
-Create a stunning MARKETING illustration for a teacher's app promotional campaign.
+Create a HIGH QUALITY, HIGH RESOLUTION (1024x1024 minimum, 1K quality) stunning MARKETING illustration for a teacher's app promotional campaign.
 DO NOT include any text, letters, or words in the image - only visuals.
 
 PURPOSE: ${contentConfig.purpose}
@@ -674,12 +675,13 @@ COMPOSITION:
 - Leave space at top for logo and at bottom for text overlay
 - Create visual hierarchy that draws the eye to the center
 
+QUALITY: Ultra high resolution, sharp details, professional quality, 1K resolution, crisp edges
 MOOD: ${contentConfig.mood}
 NO TEXT, NO LETTERS, NO WORDS - only stunning marketing visuals in ${styleConfig.name} style
 `.trim();
     } else if (contentType === 'interactive') {
       finalPrompt = `
-Create an INTERACTIVE and engaging illustration for a teacher's app social media post.
+Create a HIGH QUALITY, HIGH RESOLUTION (1024x1024 minimum, 1K quality) INTERACTIVE and engaging illustration for a teacher's app social media post.
 DO NOT include any text, letters, or words in the image - only visuals.
 
 PURPOSE: ${contentConfig.purpose}
@@ -699,12 +701,13 @@ COMPOSITION:
 - Leave space at top for logo and at bottom for text overlay
 - Design should encourage viewer participation
 
+QUALITY: Ultra high resolution, sharp details, professional quality, 1K resolution, crisp edges
 MOOD: ${contentConfig.mood}
 NO TEXT, NO LETTERS, NO WORDS - only engaging interactive visuals in ${styleConfig.name} style
 `.trim();
     } else if (contentType === 'trial') {
       finalPrompt = `
-Create an inviting illustration to encourage users to TRY the teacher's app.
+Create a HIGH QUALITY, HIGH RESOLUTION (1024x1024 minimum, 1K quality) inviting illustration to encourage users to TRY the teacher's app.
 DO NOT include any text, letters, or words in the image - only visuals.
 
 PURPOSE: ${contentConfig.purpose}
@@ -725,12 +728,13 @@ COMPOSITION:
 - Leave space at top for logo and at bottom for text overlay
 - Create a sense of excitement and opportunity
 
+QUALITY: Ultra high resolution, sharp details, professional quality, 1K resolution, crisp edges
 MOOD: ${contentConfig.mood}
 NO TEXT, NO LETTERS, NO WORDS - only welcoming trial-invitation visuals in ${styleConfig.name} style
 `.trim();
     } else if (contentType === 'testimonial') {
       finalPrompt = `
-Create a warm illustration for showcasing USER TESTIMONIALS and experiences.
+Create a HIGH QUALITY, HIGH RESOLUTION (1024x1024 minimum, 1K quality) warm illustration for showcasing USER TESTIMONIALS and experiences.
 DO NOT include any text, letters, or words in the image - only visuals.
 
 PURPOSE: ${contentConfig.purpose}
@@ -751,12 +755,13 @@ COMPOSITION:
 - Leave space at top for logo and at bottom for text overlay
 - Create a trustworthy, authentic feel
 
+QUALITY: Ultra high resolution, sharp details, professional quality, 1K resolution, crisp edges
 MOOD: ${contentConfig.mood}
 NO TEXT, NO LETTERS, NO WORDS - only testimonial-style visuals in ${styleConfig.name} style
 `.trim();
     } else if (contentType === 'tips') {
       finalPrompt = `
-Create an educational illustration for sharing TIPS and advice for teachers.
+Create a HIGH QUALITY, HIGH RESOLUTION (1024x1024 minimum, 1K quality) educational illustration for sharing TIPS and advice for teachers.
 DO NOT include any text, letters, or words in the image - only visuals.
 
 PURPOSE: ${contentConfig.purpose}
@@ -777,12 +782,13 @@ COMPOSITION:
 - Leave space at top for logo and at bottom for text overlay
 - Create a helpful, informative atmosphere
 
+QUALITY: Ultra high resolution, sharp details, professional quality, 1K resolution, crisp edges
 MOOD: ${contentConfig.mood}
 NO TEXT, NO LETTERS, NO WORDS - only educational tips-style visuals in ${styleConfig.name} style
 `.trim();
     } else if (prompt) {
       finalPrompt = `
-Create a creative illustration with these specifications:
+Create a HIGH QUALITY, HIGH RESOLUTION (1024x1024 minimum, 1K quality) creative illustration with these specifications:
 DO NOT include any text or letters - this is just a visual illustration.
 
 USER REQUEST: ${prompt}
@@ -794,6 +800,7 @@ Color palette: ${paletteConfig.colors}
 Mood: ${paletteConfig.mood}
 
 Aspect ratio: ${aspectRatio}
+QUALITY: Ultra high resolution, sharp details, professional quality, 1K resolution
 NO TEXT, NO LETTERS, NO WORDS - only beautiful visual elements in ${styleConfig.name} style
 `.trim();
     } else {
