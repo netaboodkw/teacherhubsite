@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import logo from '@/assets/logo.png';
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -78,9 +79,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           )}>
             {!collapsed && (
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
-                  <Shield className="w-6 h-6 text-destructive" />
-                </div>
+                <img src={logo} alt="Teacher Hub" className="w-10 h-10 object-contain" />
                 <div>
                   <h1 className="font-bold text-lg text-foreground">لوحة الإدارة</h1>
                   <p className="text-xs text-muted-foreground">إدارة النظام</p>
@@ -88,9 +87,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
               </div>
             )}
             {collapsed && (
-              <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
-                <Shield className="w-6 h-6 text-destructive" />
-              </div>
+              <img src={logo} alt="Teacher Hub" className="w-10 h-10 object-contain" />
             )}
           </div>
 

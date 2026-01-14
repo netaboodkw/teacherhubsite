@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Loader2, ArrowLeft, Mail, Lock, User, Eye, EyeOff, Phone, Users } from 'lucide-react';
 import heroBg from '@/assets/hero-bg.jpg';
+import logo from '@/assets/logo.png';
 
 export default function DepartmentHeadAuth() {
   const navigate = useNavigate();
@@ -178,9 +179,7 @@ export default function DepartmentHeadAuth() {
           <Card className="border-0 shadow-lg">
             <CardHeader className="space-y-1 pb-4">
               <div className="flex items-center justify-center mb-2">
-                <div className="p-3 rounded-full bg-primary/10">
-                  <Users className="h-8 w-8 text-primary" />
-                </div>
+                <img src={logo} alt="Teacher Hub" className="w-16 h-16 object-contain" />
               </div>
               <CardTitle className="text-2xl font-bold text-center">
                 رئيس القسم

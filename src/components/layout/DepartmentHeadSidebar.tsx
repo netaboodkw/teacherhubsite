@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import logo from '@/assets/logo.png';
 
 interface DepartmentHeadSidebarProps {
   isOpen: boolean;
@@ -74,9 +75,7 @@ export function DepartmentHeadSidebar({ isOpen, onClose }: DepartmentHeadSidebar
           )}>
             {!collapsed && (
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-                  <Eye className="w-6 h-6 text-white" />
-                </div>
+                <img src={logo} alt="Teacher Hub" className="w-10 h-10 object-contain" />
                 <div>
                   <h1 className="font-bold text-lg text-foreground">رئيس القسم</h1>
                   <p className="text-xs text-muted-foreground">متابعة المعلمين</p>
@@ -84,9 +83,7 @@ export function DepartmentHeadSidebar({ isOpen, onClose }: DepartmentHeadSidebar
               </div>
             )}
             {collapsed && (
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-                <Eye className="w-6 h-6 text-white" />
-              </div>
+              <img src={logo} alt="Teacher Hub" className="w-10 h-10 object-contain" />
             )}
           </div>
 

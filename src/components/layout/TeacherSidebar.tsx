@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import logo from '@/assets/logo.png';
 
 interface TeacherSidebarProps {
   isOpen: boolean;
@@ -76,19 +77,15 @@ export function TeacherSidebar({ isOpen, onClose }: TeacherSidebarProps) {
           )}>
             {!collapsed && (
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl gradient-hero flex items-center justify-center">
-                  <GraduationCap className="w-6 h-6 text-primary-foreground" />
-                </div>
+                <img src={logo} alt="Teacher Hub" className="w-10 h-10 object-contain" />
                 <div>
-                  <h1 className="font-bold text-lg text-foreground">TeacherHub</h1>
+                  <h1 className="font-bold text-lg text-foreground">Teacher Hub</h1>
                   <p className="text-xs text-muted-foreground">إدارة الصفوف</p>
                 </div>
               </div>
             )}
             {collapsed && (
-              <div className="w-10 h-10 rounded-xl gradient-hero flex items-center justify-center">
-                <GraduationCap className="w-6 h-6 text-primary-foreground" />
-              </div>
+              <img src={logo} alt="Teacher Hub" className="w-10 h-10 object-contain" />
             )}
           </div>
 
