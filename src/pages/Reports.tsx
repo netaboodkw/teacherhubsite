@@ -777,7 +777,15 @@ export default function Reports() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              <div className="text-center p-4 rounded-lg bg-muted/50">
+                <p className="text-3xl font-bold text-primary">{classrooms.length}</p>
+                <p className="text-sm text-muted-foreground">الصفوف</p>
+              </div>
+              <div className="text-center p-4 rounded-lg bg-muted/50">
+                <p className="text-3xl font-bold text-primary">{students.length}</p>
+                <p className="text-sm text-muted-foreground">الطلاب</p>
+              </div>
               <div className="text-center p-4 rounded-lg bg-muted/50">
                 <p className="text-3xl font-bold text-primary">{grades.length}</p>
                 <p className="text-sm text-muted-foreground">إجمالي الدرجات</p>
@@ -797,7 +805,179 @@ export default function Reports() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Weekly Attendance Trend */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-primary" />
+              اتجاه الحضور الأسبوعي
+            </CardTitle>
+            <CardDescription>
+              نسبة الحضور خلال الأسابيع الماضية
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <WeeklyAttendanceChart attendance={attendance} />
+          </CardContent>
+        </Card>
+
+        {/* Most Absent Students */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <XCircle className="w-5 h-5" />
+              الطلاب الأكثر غياباً
+            </CardTitle>
+            <CardDescription>
+              الطلاب الذين لديهم أعلى نسبة غياب
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <MostAbsentStudents attendance={attendance} students={students} classrooms={classrooms} />
+          </CardContent>
+        </Card>
       </div>
     </TeacherLayout>
+  );
+}
+
+// Weekly Attendance Chart Component
+function WeeklyAttendanceChart({ attendance }: { attendance: any[] }) {
+  const weeklyData = useMemo(() => {
+    const weeks: Record<string, { present: number; absent: number; late: number; total: number }> = {};
+    
+    attendance.forEach(record => {
+      const date = new Date(record.date);
+      const weekStart = new Date(date);
+      weekStart.setDate(date.getDate() - date.getDay());
+      const weekKey = format(weekStart, 'yyyy-MM-dd');
+      
+      if (!weeks[weekKey]) {
+        weeks[weekKey] = { present: 0, absent: 0, late: 0, total: 0 };
+      }
+      
+      weeks[weekKey].total += 1;
+      if (record.status === 'present') weeks[weekKey].present += 1;
+      else if (record.status === 'absent') weeks[weekKey].absent += 1;
+      else if (record.status === 'late') weeks[weekKey].late += 1;
+    });
+    
+    return Object.entries(weeks)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-8)
+      .map(([weekStart, data]) => ({
+        week: format(new Date(weekStart), 'dd/MM', { locale: ar }),
+        'نسبة الحضور': data.total > 0 ? Math.round((data.present / data.total) * 100) : 0,
+        'حاضر': data.present,
+        'غائب': data.absent,
+        'متأخر': data.late,
+      }));
+  }, [attendance]);
+
+  if (weeklyData.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <Calendar className="w-10 h-10 mx-auto mb-3 opacity-30" />
+        <p>لا توجد بيانات حضور كافية</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-[300px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={weeklyData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="week" />
+          <YAxis domain={[0, 100]} />
+          <Tooltip />
+          <Bar dataKey="نسبة الحضور" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// Most Absent Students Component
+function MostAbsentStudents({ attendance, students, classrooms }: { attendance: any[]; students: any[]; classrooms: any[] }) {
+  const mostAbsent = useMemo(() => {
+    const absentCounts: Record<string, number> = {};
+    const totalCounts: Record<string, number> = {};
+    
+    attendance.forEach(record => {
+      if (!totalCounts[record.student_id]) {
+        totalCounts[record.student_id] = 0;
+        absentCounts[record.student_id] = 0;
+      }
+      totalCounts[record.student_id] += 1;
+      if (record.status === 'absent') {
+        absentCounts[record.student_id] += 1;
+      }
+    });
+    
+    return students
+      .map(s => {
+        const total = totalCounts[s.id] || 0;
+        const absent = absentCounts[s.id] || 0;
+        const absentRate = total > 0 ? Math.round((absent / total) * 100) : 0;
+        const classroom = classrooms.find(c => c.id === s.classroom_id);
+        return {
+          ...s,
+          absentCount: absent,
+          totalRecords: total,
+          absentRate,
+          classroomName: classroom?.name || 'غير محدد',
+        };
+      })
+      .filter(s => s.absentCount > 0)
+      .sort((a, b) => b.absentRate - a.absentRate)
+      .slice(0, 10);
+  }, [attendance, students, classrooms]);
+
+  if (mostAbsent.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <XCircle className="w-10 h-10 mx-auto mb-3 opacity-30" />
+        <p>لا يوجد طلاب غائبين</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3 max-h-[400px] overflow-y-auto">
+      {mostAbsent.map((student, index) => (
+        <div 
+          key={student.id}
+          className="flex items-center gap-3 p-3 rounded-lg border bg-gradient-to-l from-red-50/50 to-transparent dark:from-red-950/20"
+        >
+          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 font-bold text-sm">
+            {index + 1}
+          </div>
+          <Avatar className="w-9 h-9">
+            <AvatarImage src={student.avatar_url || undefined} />
+            <AvatarFallback className="bg-red-100 text-red-700 text-sm">
+              {student.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || '؟'}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-medium text-foreground text-sm truncate">
+              {student.name}
+            </h4>
+            <p className="text-xs text-muted-foreground truncate">
+              {student.classroomName}
+            </p>
+          </div>
+          <div className="flex flex-col items-end gap-0.5">
+            <Badge variant="secondary" className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+              {student.absentRate}% غياب
+            </Badge>
+            <span className="text-xs text-muted-foreground">
+              {student.absentCount} من {student.totalRecords}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
