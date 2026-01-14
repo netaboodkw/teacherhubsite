@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useState } from 'react';
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useClassrooms, type Classroom } from '@/hooks/useClassrooms';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,16 +6,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, Filter, GraduationCap, Printer } from 'lucide-react';
+import { Calendar, Clock, Filter, GraduationCap, Printer, Maximize2, Minimize2 } from 'lucide-react';
 import { educationSchedules, getScheduleByEducationLevel, weekDays, type EducationSchedule } from '@/lib/periodSchedules';
 import { cn } from '@/lib/utils';
 import { useProfile } from '@/hooks/useProfile';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 export default function TeacherSchedule() {
   const { data: classrooms, isLoading } = useClassrooms();
   const { profile } = useProfile();
   const [selectedClassroom, setSelectedClassroom] = useState<string>('all');
   const [selectedEducationLevel, setSelectedEducationLevel] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'full' | 'compact'>('full');
 
   const handlePrint = () => {
     window.print();
@@ -122,10 +124,28 @@ export default function TeacherSchedule() {
                 <p className="text-muted-foreground">عرض الجدول الأسبوعي لجميع الصفوف</p>
               </div>
             </div>
-            <Button onClick={handlePrint} className="gap-2">
-              <Printer className="w-4 h-4" />
-              طباعة الجدول
-            </Button>
+            <div className="flex items-center gap-2">
+              <ToggleGroup 
+                type="single" 
+                value={viewMode} 
+                onValueChange={(value) => value && setViewMode(value as 'full' | 'compact')}
+                className="border rounded-lg"
+              >
+                <ToggleGroupItem value="full" aria-label="عرض كامل" className="gap-1.5 px-3">
+                  <Maximize2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">كامل</span>
+                </ToggleGroupItem>
+                <ToggleGroupItem value="compact" aria-label="عرض مختصر" className="gap-1.5 px-3">
+                  <Minimize2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">مختصر</span>
+                </ToggleGroupItem>
+              </ToggleGroup>
+              <Button onClick={handlePrint} className="gap-2">
+                <Printer className="w-4 h-4" />
+                <span className="hidden sm:inline">طباعة الجدول</span>
+                <span className="sm:hidden">طباعة</span>
+              </Button>
+            </div>
           </div>
 
           {/* Filters */}
@@ -164,38 +184,40 @@ export default function TeacherSchedule() {
           </div>
         </div>
 
-        {/* Period Times Card */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Clock className="w-5 h-5" />
-              أوقات الحصص - {currentSchedule.levelNameAr}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-              {currentSchedule.periods.map((period, index) => (
-                <div
-                  key={index}
-                  className={cn(
-                    "p-3 rounded-lg text-center text-sm",
-                    period.isBreak 
-                      ? "bg-muted/50 text-muted-foreground" 
-                      : "bg-primary/5 border border-primary/20"
-                  )}
-                >
-                  <div className="font-medium">{period.nameAr}</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {period.startTime} - {period.endTime}
+        {/* Period Times Card - Only show in full mode */}
+        {viewMode === 'full' && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Clock className="w-5 h-5" />
+                أوقات الحصص - {currentSchedule.levelNameAr}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                {currentSchedule.periods.map((period, index) => (
+                  <div
+                    key={index}
+                    className={cn(
+                      "p-3 rounded-lg text-center text-sm",
+                      period.isBreak 
+                        ? "bg-muted/50 text-muted-foreground" 
+                        : "bg-primary/5 border border-primary/20"
+                    )}
+                  >
+                    <div className="font-medium">{period.nameAr}</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {period.startTime} - {period.endTime}
+                    </div>
+                    <Badge variant="secondary" className="mt-1 text-xs">
+                      {period.duration} دقيقة
+                    </Badge>
                   </div>
-                  <Badge variant="secondary" className="mt-1 text-xs">
-                    {period.duration} دقيقة
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Schedule Grid */}
         <Card>
@@ -222,34 +244,53 @@ export default function TeacherSchedule() {
               <tbody>
                 {classPeriods.map((period, periodIndex) => (
                   <tr key={periodIndex}>
-                    <td className="border border-border bg-muted/30 p-3">
-                      <div className="font-medium">{period.nameAr}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {period.startTime} - {period.endTime}
-                      </div>
+                    <td className={cn(
+                      "border border-border bg-muted/30",
+                      viewMode === 'compact' ? "p-1.5" : "p-3"
+                    )}>
+                      <div className={cn(
+                        "font-medium",
+                        viewMode === 'compact' && "text-xs"
+                      )}>{period.nameAr}</div>
+                      {viewMode === 'full' && (
+                        <div className="text-xs text-muted-foreground">
+                          {period.startTime} - {period.endTime}
+                        </div>
+                      )}
                     </td>
                     {weekDays.map(day => {
                       const cellClassrooms = scheduleGrid[periodIndex]?.[day.key] || [];
                       return (
-                        <td key={day.key} className="border border-border p-2 align-top">
+                        <td key={day.key} className={cn(
+                          "border border-border align-top",
+                          viewMode === 'compact' ? "p-1" : "p-2"
+                        )}>
                           {cellClassrooms.length > 0 ? (
-                            <div className="space-y-1">
+                            <div className={viewMode === 'compact' ? "space-y-0.5" : "space-y-1"}>
                               {cellClassrooms.map(classroom => (
                                 <div
                                   key={classroom.id}
-                                  className="p-2 rounded-lg text-xs"
+                                  className={cn(
+                                    "rounded-lg",
+                                    viewMode === 'compact' ? "p-1 text-[10px]" : "p-2 text-xs"
+                                  )}
                                   style={{ 
                                     backgroundColor: `${classroom.color}20`,
                                     borderRight: `3px solid ${classroom.color}`
                                   }}
                                 >
                                   <div className="font-medium truncate">{classroom.name}</div>
-                                  <div className="text-muted-foreground truncate">{classroom.subject}</div>
+                                  {viewMode === 'full' && (
+                                    <div className="text-muted-foreground truncate">{classroom.subject}</div>
+                                  )}
                                 </div>
                               ))}
                             </div>
                           ) : (
-                            <div className="text-center text-muted-foreground text-xs py-2">-</div>
+                            <div className={cn(
+                              "text-center text-muted-foreground",
+                              viewMode === 'compact' ? "text-[10px] py-1" : "text-xs py-2"
+                            )}>-</div>
                           )}
                         </td>
                       );
@@ -261,8 +302,8 @@ export default function TeacherSchedule() {
           </CardContent>
         </Card>
 
-        {/* Legend */}
-        {filteredClassrooms.length > 0 && (
+        {/* Legend - Only show in full mode */}
+        {viewMode === 'full' && filteredClassrooms.length > 0 && (
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">دليل الألوان</CardTitle>
