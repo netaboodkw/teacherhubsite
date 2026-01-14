@@ -35,6 +35,16 @@ const colorPalettes = {
     colors: "Deep navy (#2C3E50), Royal purple (#8E44AD), Emerald (#16A085), Crimson (#E74C3C)",
     mood: "elegant, professional, sophisticated, bold",
   },
+  sunset: {
+    name: "Sunset",
+    colors: "Warm orange (#FF6B35), Soft cream (#F7C59F), Light beige (#EFEFD0), Deep blue (#004E89)",
+    mood: "warm, inspiring, hopeful, romantic",
+  },
+  ocean: {
+    name: "Ocean",
+    colors: "Deep blue (#0077B6), Bright cyan (#00B4D8), Light sky (#90E0EF), Pale aqua (#CAF0F8)",
+    mood: "calm, refreshing, peaceful, serene",
+  },
 };
 
 // Design style configurations
@@ -54,6 +64,22 @@ const designStyles = {
   isometric: {
     name: "Isometric 3D",
     description: "Clean geometric 3D objects from an isometric perspective. Modern, tech-inspired with precise angles.",
+  },
+  glassmorphism: {
+    name: "Glassmorphism",
+    description: "Frosted glass effect with transparency and blur. Modern UI style with floating glass panels and soft light reflections.",
+  },
+  retro: {
+    name: "Retro/Vintage",
+    description: "Classic vintage style with halftone patterns, worn textures, and nostalgic color schemes. 70s-80s inspired aesthetic.",
+  },
+  neon: {
+    name: "Neon Glow",
+    description: "Vibrant neon lights with glowing effects on dark backgrounds. Cyberpunk-inspired with electric colors and light trails.",
+  },
+  minimal: {
+    name: "Minimalist",
+    description: "Clean, simple design with lots of white space. Single-line icons, basic shapes, and subtle gradients.",
   },
 };
 

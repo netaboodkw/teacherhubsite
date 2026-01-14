@@ -37,8 +37,8 @@ import { cn } from '@/lib/utils';
 
 type AspectRatio = '3:4' | '9:16';
 type ContentType = 'feature' | 'custom';
-type ColorPalette = 'pastel' | 'vibrant' | 'dark';
-type DesignStyle = 'clay3d' | 'watercolor' | 'origami' | 'isometric';
+type ColorPalette = 'pastel' | 'vibrant' | 'dark' | 'sunset' | 'ocean';
+type DesignStyle = 'clay3d' | 'watercolor' | 'origami' | 'isometric' | 'glassmorphism' | 'retro' | 'neon' | 'minimal';
 
 interface SavedContent {
   id: string;
@@ -62,6 +62,8 @@ const colorPaletteOptions = [
   { value: 'pastel', label: 'باستيل', description: 'ألوان هادئة ودافئة', colors: ['#A8DDE6', '#DCC6E8', '#FDDCB8', '#B8E6CF'] },
   { value: 'vibrant', label: 'زاهي', description: 'ألوان مشرقة وحيوية', colors: ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3'] },
   { value: 'dark', label: 'داكن', description: 'ألوان عميقة وأنيقة', colors: ['#2C3E50', '#8E44AD', '#16A085', '#E74C3C'] },
+  { value: 'sunset', label: 'غروب', description: 'ألوان الغروب الدافئة', colors: ['#FF6B35', '#F7C59F', '#EFEFD0', '#004E89'] },
+  { value: 'ocean', label: 'محيط', description: 'ألوان البحر الهادئة', colors: ['#0077B6', '#00B4D8', '#90E0EF', '#CAF0F8'] },
 ];
 
 const designStyleOptions = [
@@ -69,6 +71,10 @@ const designStyleOptions = [
   { value: 'watercolor', label: 'ألوان مائية', icon: '🖌️', description: 'رسم فني بألوان مائية' },
   { value: 'origami', label: 'أوريغامي', icon: '📄', description: 'فن طي الورق الياباني' },
   { value: 'isometric', label: 'إيزومتري', icon: '📐', description: 'أشكال هندسية ثلاثية الأبعاد' },
+  { value: 'glassmorphism', label: 'زجاجي', icon: '💎', description: 'تأثيرات زجاجية شفافة' },
+  { value: 'retro', label: 'ريترو', icon: '📻', description: 'طراز كلاسيكي قديم' },
+  { value: 'neon', label: 'نيون', icon: '✨', description: 'إضاءة نيون متوهجة' },
+  { value: 'minimal', label: 'بسيط', icon: '⬜', description: 'تصميم نظيف ومينيمال' },
 ];
 
 export default function AIContentCreatorPage() {
@@ -89,10 +95,16 @@ export default function AIContentCreatorPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<SavedContent | null>(null);
   const [selectedFeature, setSelectedFeature] = useState<AppFeature | null>(null);
+  const [customTitle, setCustomTitle] = useState('');
+  const [customMarketingText, setCustomMarketingText] = useState('');
   const [features, setFeatures] = useState<AppFeature[]>([]);
   const [isLoadingFeatures, setIsLoadingFeatures] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
+
+  // Display title and marketing text (custom or from feature)
+  const displayTitle = customTitle || selectedFeature?.title || '';
+  const displayMarketingText = customMarketingText || selectedFeature?.marketingText || '';
 
   // Fetch features from edge function
   useEffect(() => {
@@ -439,6 +451,44 @@ export default function AIContentCreatorPage() {
                 </div>
               )}
 
+              {/* Custom Text Editing */}
+              {selectedFeature && (
+                <div className="space-y-3 p-3 rounded-lg bg-muted/50 border">
+                  <Label className="text-base font-medium flex items-center gap-2">
+                    ✏️ تخصيص النص
+                  </Label>
+                  <div className="space-y-2">
+                    <Input
+                      value={customTitle}
+                      onChange={(e) => setCustomTitle(e.target.value)}
+                      placeholder={selectedFeature.title}
+                      dir="rtl"
+                      className="text-sm"
+                    />
+                    <Textarea
+                      value={customMarketingText}
+                      onChange={(e) => setCustomMarketingText(e.target.value)}
+                      placeholder={selectedFeature.marketingText}
+                      className="min-h-[60px] resize-none text-sm"
+                      dir="rtl"
+                    />
+                    {(customTitle || customMarketingText) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setCustomTitle('');
+                          setCustomMarketingText('');
+                        }}
+                        className="text-xs"
+                      >
+                        إعادة للنص الأصلي
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Design Style */}
               <div className="space-y-3">
                 <Label className="text-base font-medium">نمط التصميم</Label>
@@ -655,7 +705,7 @@ export default function AIContentCreatorPage() {
                               className="text-white text-base font-bold text-center mb-2 leading-snug"
                               style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
                             >
-                              {selectedFeature.title}
+                              {displayTitle}
                             </h2>
                             
                             {/* Divider */}
@@ -669,7 +719,7 @@ export default function AIContentCreatorPage() {
                               className="text-xs text-center leading-relaxed"
                               style={{ color: 'rgba(255, 255, 255, 0.9)' }}
                             >
-                              "{selectedFeature.marketingText}"
+                              "{displayMarketingText}"
                             </p>
                           </div>
                           
