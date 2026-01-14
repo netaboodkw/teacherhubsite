@@ -70,7 +70,7 @@ export function useMarkAttendance() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (record: { student_id: string; classroom_id: string; date: string; status: AttendanceStatus }) => {
+    mutationFn: async (record: { student_id: string; classroom_id: string; date: string; status: AttendanceStatus; period?: number }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('يجب تسجيل الدخول أولاً');
 
@@ -83,7 +83,7 @@ export function useMarkAttendance() {
           classroom_id: record.classroom_id,
           date: record.date,
           status: record.status,
-          period: 1,
+          period: record.period || 1,
         }, {
           onConflict: 'student_id,date,period',
         })
@@ -106,14 +106,14 @@ export function useBulkMarkAttendance() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (records: { student_id: string; classroom_id: string; date: string; status: AttendanceStatus }[]) => {
+    mutationFn: async (records: { student_id: string; classroom_id: string; date: string; status: AttendanceStatus; period?: number }[]) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('يجب تسجيل الدخول أولاً');
 
       const recordsWithUserId = records.map(r => ({
         ...r,
         user_id: user.id,
-        period: 1,
+        period: r.period || 1,
       }));
 
       const { data, error } = await supabase

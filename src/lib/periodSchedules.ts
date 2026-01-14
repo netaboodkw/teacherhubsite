@@ -89,3 +89,113 @@ export const weekDays = [
   { key: 'wednesday', name: 'الأربعاء' },
   { key: 'thursday', name: 'الخميس' },
 ];
+
+// Get current time in Kuwait timezone
+export function getKuwaitTime(): Date {
+  const now = new Date();
+  // Kuwait is UTC+3
+  const kuwaitOffset = 3 * 60; // minutes
+  const localOffset = now.getTimezoneOffset(); // minutes (negative for east of UTC)
+  const totalOffset = kuwaitOffset + localOffset;
+  return new Date(now.getTime() + totalOffset * 60 * 1000);
+}
+
+// Get current day key in Kuwait timezone
+export function getKuwaitDayKey(): string {
+  const kuwaitTime = getKuwaitTime();
+  const dayIndex = kuwaitTime.getDay();
+  const dayMap: Record<number, string> = {
+    0: 'sunday',
+    1: 'monday',
+    2: 'tuesday',
+    3: 'wednesday',
+    4: 'thursday',
+    5: 'friday',
+    6: 'saturday',
+  };
+  return dayMap[dayIndex];
+}
+
+// Get current date string in Kuwait timezone (YYYY-MM-DD)
+export function getKuwaitDateString(): string {
+  const kuwaitTime = getKuwaitTime();
+  const year = kuwaitTime.getFullYear();
+  const month = String(kuwaitTime.getMonth() + 1).padStart(2, '0');
+  const day = String(kuwaitTime.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// Parse time string (HH:MM) to minutes since midnight
+function parseTimeToMinutes(timeStr: string): number {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
+// Get current period based on classroom schedule and Kuwait time
+export function getCurrentPeriod(
+  classSchedule: Record<string, number[]> | null | undefined,
+  educationLevelName?: string
+): { period: number; periodInfo: PeriodTime | null; isClassDay: boolean } {
+  const kuwaitTime = getKuwaitTime();
+  const currentDayKey = getKuwaitDayKey();
+  
+  // Check if today is a class day for this classroom
+  const todayPeriods = classSchedule?.[currentDayKey] || [];
+  const isClassDay = todayPeriods.length > 0;
+  
+  if (!isClassDay) {
+    return { period: 0, periodInfo: null, isClassDay: false };
+  }
+  
+  // Get the schedule for this education level
+  const schedule = getScheduleByEducationLevel(educationLevelName);
+  const currentMinutes = kuwaitTime.getHours() * 60 + kuwaitTime.getMinutes();
+  
+  // Find the current period based on time
+  for (const periodTime of schedule.periods) {
+    if (periodTime.isBreak) continue;
+    
+    const startMinutes = parseTimeToMinutes(periodTime.startTime);
+    const endMinutes = parseTimeToMinutes(periodTime.endTime);
+    
+    if (currentMinutes >= startMinutes && currentMinutes < endMinutes) {
+      // Check if this period is scheduled for today in this classroom
+      if (todayPeriods.includes(periodTime.period)) {
+        return { period: periodTime.period, periodInfo: periodTime, isClassDay: true };
+      }
+    }
+  }
+  
+  // If no current period matches, find the next upcoming period for today
+  let closestPeriod: PeriodTime | null = null;
+  let closestDiff = Infinity;
+  
+  for (const periodTime of schedule.periods) {
+    if (periodTime.isBreak) continue;
+    if (!todayPeriods.includes(periodTime.period)) continue;
+    
+    const startMinutes = parseTimeToMinutes(periodTime.startTime);
+    if (startMinutes > currentMinutes) {
+      const diff = startMinutes - currentMinutes;
+      if (diff < closestDiff) {
+        closestDiff = diff;
+        closestPeriod = periodTime;
+      }
+    }
+  }
+  
+  // Return the first scheduled period if before school or between periods
+  if (closestPeriod) {
+    return { period: closestPeriod.period, periodInfo: closestPeriod, isClassDay: true };
+  }
+  
+  // If after all periods, return the last scheduled period
+  const lastPeriodNum = Math.max(...todayPeriods);
+  const lastPeriodInfo = schedule.periods.find(p => p.period === lastPeriodNum && !p.isBreak);
+  
+  return { 
+    period: lastPeriodNum, 
+    periodInfo: lastPeriodInfo || null, 
+    isClassDay: true 
+  };
+}
