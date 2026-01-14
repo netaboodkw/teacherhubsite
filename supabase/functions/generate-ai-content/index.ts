@@ -328,6 +328,45 @@ const appFeatures = [
   },
 ];
 
+// Content type templates for different marketing purposes
+const contentTypeTemplates = {
+  feature: {
+    purpose: "showcase a specific app feature",
+    elements: "icons representing the feature, educational elements, professional look",
+    mood: "informative, professional, clear",
+  },
+  marketing: {
+    purpose: "promotional and advertising content to attract new users",
+    elements: "eye-catching visuals, call-to-action feel, premium look, sparkles, highlights",
+    mood: "exciting, persuasive, premium, aspirational",
+  },
+  interactive: {
+    purpose: "engage audience with questions and polls",
+    elements: "question marks, poll graphics, emoji reactions, engagement symbols, hands raised",
+    mood: "fun, engaging, participatory, curious",
+  },
+  trial: {
+    purpose: "encourage users to try the app for free",
+    elements: "gift box, free trial badge, rocket launch, unlock symbols, welcome gestures",
+    mood: "inviting, exciting, risk-free, welcoming",
+  },
+  testimonial: {
+    purpose: "showcase user experiences and reviews",
+    elements: "speech bubbles, star ratings, happy faces, quote symbols, heart reactions",
+    mood: "trustworthy, authentic, warm, relatable",
+  },
+  tips: {
+    purpose: "share educational tips and advice for teachers",
+    elements: "lightbulb, book, notepad, checklist, teacher symbols, educational icons",
+    mood: "helpful, informative, friendly, supportive",
+  },
+  custom: {
+    purpose: "custom content based on user description",
+    elements: "based on user input",
+    mood: "versatile",
+  },
+};
+
 // Function to get random marketing text for a feature
 function getRandomMarketingText(feature: typeof appFeatures[0]): string {
   const texts = feature.marketingTexts;
@@ -352,7 +391,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, aspectRatio, colorPalette = 'pastel', designStyle = 'clay3d', featureId, getFeatures } = await req.json();
+    const { prompt, aspectRatio, colorPalette = 'pastel', designStyle = 'clay3d', featureId, contentType = 'feature', getFeatures } = await req.json();
 
     // If requesting features list - return with random marketing text each time
     if (getFeatures) {
@@ -375,6 +414,7 @@ serve(async (req) => {
     // Get color palette and design style configs
     const paletteConfig = colorPalettes[colorPalette as keyof typeof colorPalettes] || colorPalettes.pastel;
     const styleConfig = designStyles[designStyle as keyof typeof designStyles] || designStyles.clay3d;
+    const contentConfig = contentTypeTemplates[contentType as keyof typeof contentTypeTemplates] || contentTypeTemplates.feature;
 
     // Find selected feature
     let selectedFeature: typeof appFeatures[0] | null = null;
@@ -386,10 +426,10 @@ serve(async (req) => {
       }
     }
 
-    // Create prompt for visual-only design (no Arabic text - we'll overlay it)
+    // Create prompt based on content type
     let finalPrompt: string;
     
-    if (selectedFeature) {
+    if (contentType === 'feature' && selectedFeature) {
       finalPrompt = `
 Create a beautiful, ${paletteConfig.mood} illustration for a teacher's app promotional post.
 DO NOT include any text, letters, or words in the image - only visuals.
@@ -413,6 +453,134 @@ COMPOSITION:
 MOOD: ${paletteConfig.mood}, suitable for educators
 NO TEXT, NO LETTERS, NO WORDS - only beautiful illustrations in ${styleConfig.name} style
 `.trim();
+    } else if (contentType === 'marketing') {
+      finalPrompt = `
+Create a stunning MARKETING illustration for a teacher's app promotional campaign.
+DO NOT include any text, letters, or words in the image - only visuals.
+
+PURPOSE: ${contentConfig.purpose}
+
+DESIGN STYLE: ${styleConfig.name}
+${styleConfig.description}
+
+VISUAL ELEMENTS:
+- ${contentConfig.elements}
+- Eye-catching central element that grabs attention
+- Premium, high-quality aesthetic
+- Color palette: ${paletteConfig.colors}
+- Add sparkles, glows, or highlights to make it pop
+
+COMPOSITION:
+- Aspect ratio: ${aspectRatio} (vertical for stories)
+- Leave space at top for logo and at bottom for text overlay
+- Create visual hierarchy that draws the eye to the center
+
+MOOD: ${contentConfig.mood}
+NO TEXT, NO LETTERS, NO WORDS - only stunning marketing visuals in ${styleConfig.name} style
+`.trim();
+    } else if (contentType === 'interactive') {
+      finalPrompt = `
+Create an INTERACTIVE and engaging illustration for a teacher's app social media post.
+DO NOT include any text, letters, or words in the image - only visuals.
+
+PURPOSE: ${contentConfig.purpose}
+
+DESIGN STYLE: ${styleConfig.name}
+${styleConfig.description}
+
+VISUAL ELEMENTS:
+- ${contentConfig.elements}
+- Create elements that suggest interaction and engagement
+- Fun, playful visual elements
+- Color palette: ${paletteConfig.colors}
+- Add emojis-style elements, reaction buttons, or poll graphics
+
+COMPOSITION:
+- Aspect ratio: ${aspectRatio} (vertical for stories)
+- Leave space at top for logo and at bottom for text overlay
+- Design should encourage viewer participation
+
+MOOD: ${contentConfig.mood}
+NO TEXT, NO LETTERS, NO WORDS - only engaging interactive visuals in ${styleConfig.name} style
+`.trim();
+    } else if (contentType === 'trial') {
+      finalPrompt = `
+Create an inviting illustration to encourage users to TRY the teacher's app.
+DO NOT include any text, letters, or words in the image - only visuals.
+
+PURPOSE: ${contentConfig.purpose}
+
+DESIGN STYLE: ${styleConfig.name}
+${styleConfig.description}
+
+VISUAL ELEMENTS:
+- ${contentConfig.elements}
+- Gift box or present being opened
+- Rocket launching or door opening to new possibilities
+- Welcoming, inviting visual metaphors
+- Color palette: ${paletteConfig.colors}
+- Add celebratory elements: confetti, stars, sparkles
+
+COMPOSITION:
+- Aspect ratio: ${aspectRatio} (vertical for stories)
+- Leave space at top for logo and at bottom for text overlay
+- Create a sense of excitement and opportunity
+
+MOOD: ${contentConfig.mood}
+NO TEXT, NO LETTERS, NO WORDS - only welcoming trial-invitation visuals in ${styleConfig.name} style
+`.trim();
+    } else if (contentType === 'testimonial') {
+      finalPrompt = `
+Create a warm illustration for showcasing USER TESTIMONIALS and experiences.
+DO NOT include any text, letters, or words in the image - only visuals.
+
+PURPOSE: ${contentConfig.purpose}
+
+DESIGN STYLE: ${styleConfig.name}
+${styleConfig.description}
+
+VISUAL ELEMENTS:
+- ${contentConfig.elements}
+- Speech bubbles or quote symbols
+- Happy teacher figures (abstract, no faces needed)
+- Star ratings or heart symbols
+- Color palette: ${paletteConfig.colors}
+- Add warm, friendly visual elements
+
+COMPOSITION:
+- Aspect ratio: ${aspectRatio} (vertical for stories)
+- Leave space at top for logo and at bottom for text overlay
+- Create a trustworthy, authentic feel
+
+MOOD: ${contentConfig.mood}
+NO TEXT, NO LETTERS, NO WORDS - only testimonial-style visuals in ${styleConfig.name} style
+`.trim();
+    } else if (contentType === 'tips') {
+      finalPrompt = `
+Create an educational illustration for sharing TIPS and advice for teachers.
+DO NOT include any text, letters, or words in the image - only visuals.
+
+PURPOSE: ${contentConfig.purpose}
+
+DESIGN STYLE: ${styleConfig.name}
+${styleConfig.description}
+
+VISUAL ELEMENTS:
+- ${contentConfig.elements}
+- Lightbulb for ideas
+- Books, notepads, or educational items
+- Helpful, supportive visual metaphors
+- Color palette: ${paletteConfig.colors}
+- Add organized, structured visual elements
+
+COMPOSITION:
+- Aspect ratio: ${aspectRatio} (vertical for stories)
+- Leave space at top for logo and at bottom for text overlay
+- Create a helpful, informative atmosphere
+
+MOOD: ${contentConfig.mood}
+NO TEXT, NO LETTERS, NO WORDS - only educational tips-style visuals in ${styleConfig.name} style
+`.trim();
     } else if (prompt) {
       finalPrompt = `
 Create a creative illustration with these specifications:
@@ -431,7 +599,7 @@ NO TEXT, NO LETTERS, NO WORDS - only beautiful visual elements in ${styleConfig.
 `.trim();
     } else {
       return new Response(
-        JSON.stringify({ error: "Feature ID or prompt is required" }),
+        JSON.stringify({ error: "Content type or prompt is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

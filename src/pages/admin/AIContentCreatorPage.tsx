@@ -36,9 +36,62 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
 type AspectRatio = '3:4' | '9:16';
-type ContentType = 'feature' | 'custom';
+type ContentType = 'feature' | 'marketing' | 'interactive' | 'trial' | 'testimonial' | 'tips' | 'custom';
 type ColorPalette = 'pastel' | 'vibrant' | 'dark' | 'sunset' | 'ocean';
 type DesignStyle = 'clay3d' | 'watercolor' | 'origami' | 'isometric' | 'glassmorphism' | 'retro' | 'neon' | 'minimal';
+
+// Content type configurations
+const contentTypeOptions = [
+  { 
+    value: 'feature', 
+    label: 'مميزات التطبيق', 
+    icon: '⭐', 
+    description: 'اعرض مميزات التطبيق',
+    color: 'bg-blue-500/10 border-blue-500/30'
+  },
+  { 
+    value: 'marketing', 
+    label: 'تسويقي', 
+    icon: '📢', 
+    description: 'محتوى ترويجي وإعلاني',
+    color: 'bg-purple-500/10 border-purple-500/30'
+  },
+  { 
+    value: 'interactive', 
+    label: 'تفاعلي', 
+    icon: '🎯', 
+    description: 'بوستات تفاعلية وأسئلة',
+    color: 'bg-green-500/10 border-green-500/30'
+  },
+  { 
+    value: 'trial', 
+    label: 'جذب للتجربة', 
+    icon: '🚀', 
+    description: 'تشجيع على تجربة التطبيق',
+    color: 'bg-orange-500/10 border-orange-500/30'
+  },
+  { 
+    value: 'testimonial', 
+    label: 'آراء وتجارب', 
+    icon: '💬', 
+    description: 'شهادات وتجارب المستخدمين',
+    color: 'bg-pink-500/10 border-pink-500/30'
+  },
+  { 
+    value: 'tips', 
+    label: 'نصائح تعليمية', 
+    icon: '💡', 
+    description: 'نصائح ومعلومات للمعلمين',
+    color: 'bg-yellow-500/10 border-yellow-500/30'
+  },
+  { 
+    value: 'custom', 
+    label: 'مخصص', 
+    icon: '✏️', 
+    description: 'محتوى مخصص بوصفك',
+    color: 'bg-gray-500/10 border-gray-500/30'
+  },
+];
 
 interface SavedContent {
   id: string;
@@ -180,6 +233,7 @@ export default function AIContentCreatorPage() {
           aspectRatio,
           colorPalette,
           designStyle,
+          contentType,
           featureId: contentType === 'feature' ? selectedFeature?.id : null,
         },
       });
@@ -375,18 +429,29 @@ export default function AIContentCreatorPage() {
               {/* Content Type */}
               <div className="space-y-3">
                 <Label className="text-base font-medium">نوع المحتوى</Label>
-                <Tabs value={contentType} onValueChange={(v) => setContentType(v as ContentType)}>
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="feature" className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4" />
-                      مميزات التطبيق
-                    </TabsTrigger>
-                    <TabsTrigger value="custom" className="flex items-center gap-2">
-                      <Quote className="w-4 h-4" />
-                      وصف مخصص
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {contentTypeOptions.map((type) => (
+                    <button
+                      key={type.value}
+                      onClick={() => {
+                        setContentType(type.value as ContentType);
+                        setSelectedFeature(null);
+                        setCustomTitle('');
+                        setCustomMarketingText('');
+                      }}
+                      className={cn(
+                        "p-2 rounded-lg border-2 text-center transition-all",
+                        "hover:border-primary/50",
+                        contentType === type.value
+                          ? "border-primary bg-primary/10"
+                          : `border-border ${type.color}`
+                      )}
+                    >
+                      <span className="text-xl block mb-1">{type.icon}</span>
+                      <p className="font-medium text-xs">{type.label}</p>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Feature Selection */}
@@ -437,6 +502,43 @@ export default function AIContentCreatorPage() {
                 </div>
               )}
 
+              {/* Content-specific inputs for non-feature types */}
+              {['marketing', 'interactive', 'trial', 'testimonial', 'tips'].includes(contentType) && (
+                <div className="space-y-3 p-3 rounded-lg bg-muted/50 border">
+                  <Label className="text-base font-medium flex items-center gap-2">
+                    ✏️ تخصيص النص للبوست
+                  </Label>
+                  <div className="space-y-2">
+                    <Input
+                      value={customTitle}
+                      onChange={(e) => setCustomTitle(e.target.value)}
+                      placeholder={
+                        contentType === 'marketing' ? 'عنوان الإعلان (مثال: جرّب الآن مجاناً!)' :
+                        contentType === 'interactive' ? 'السؤال التفاعلي (مثال: ما أكثر ميزة تحتاجها؟)' :
+                        contentType === 'trial' ? 'عنوان دعوة التجربة (مثال: ابدأ تجربتك المجانية)' :
+                        contentType === 'testimonial' ? 'عنوان الشهادة (مثال: ماذا يقول المعلمون؟)' :
+                        'عنوان النصيحة (مثال: نصيحة اليوم للمعلم)'
+                      }
+                      dir="rtl"
+                      className="text-sm"
+                    />
+                    <Textarea
+                      value={customMarketingText}
+                      onChange={(e) => setCustomMarketingText(e.target.value)}
+                      placeholder={
+                        contentType === 'marketing' ? 'النص الترويجي (مثال: وفّر وقتك وركّز على طلابك)' :
+                        contentType === 'interactive' ? 'خيارات التفاعل أو تفاصيل السؤال' :
+                        contentType === 'trial' ? 'مميزات التجربة المجانية' :
+                        contentType === 'testimonial' ? 'نص الشهادة أو التجربة' :
+                        'نص النصيحة التعليمية'
+                      }
+                      className="min-h-[60px] resize-none text-sm"
+                      dir="rtl"
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Custom Prompt */}
               {contentType === 'custom' && (
                 <div className="space-y-3">
@@ -451,8 +553,8 @@ export default function AIContentCreatorPage() {
                 </div>
               )}
 
-              {/* Custom Text Editing */}
-              {selectedFeature && (
+              {/* Custom Text Editing for Features */}
+              {contentType === 'feature' && selectedFeature && (
                 <div className="space-y-3 p-3 rounded-lg bg-muted/50 border">
                   <Label className="text-base font-medium flex items-center gap-2">
                     ✏️ تخصيص النص
