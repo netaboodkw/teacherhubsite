@@ -11,7 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Plus, Edit, Trash2, Calendar, Package, Tag, Settings2, Save, Users, CreditCard, Crown, Clock, AlertTriangle, CheckCircle, XCircle, Search } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, Calendar, Package, Tag, Settings2, Save, Users, CreditCard, Crown, Clock, AlertTriangle, CheckCircle, XCircle, Search, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -164,6 +164,52 @@ export default function SubscriptionsPage() {
     },
   });
 
+  // Fetch discount code usage details
+  const { data: codeUsageDetails } = useQuery({
+    queryKey: ['discount-code-usage'],
+    queryFn: async () => {
+      const { data: usages, error } = await supabase
+        .from('subscription_payments')
+        .select(`
+          id,
+          user_id,
+          discount_code_id,
+          amount,
+          created_at,
+          discount_codes!inner(code)
+        `)
+        .not('discount_code_id', 'is', null);
+
+      if (error) throw error;
+
+      const userIds = usages?.map(u => u.user_id) || [];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .in('user_id', userIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+      return usages?.map(usage => ({
+        ...usage,
+        profile: profileMap.get(usage.user_id) || null
+      })) || [];
+    },
+  });
+
+  // Group usage by discount code
+  const codeUsageMap = new Map<string, { users: Array<{ name: string; date: string }> }>();
+  codeUsageDetails?.forEach(usage => {
+    const codeId = usage.discount_code_id;
+    if (!codeUsageMap.has(codeId)) {
+      codeUsageMap.set(codeId, { users: [] });
+    }
+    codeUsageMap.get(codeId)!.users.push({
+      name: usage.profile?.full_name || 'غير معروف',
+      date: usage.created_at
+    });
+  });
+
   // Filtered subscribers
   const filteredSubscribers = subscribers?.filter(sub => {
     const matchesSearch = !searchQuery || 
@@ -214,6 +260,7 @@ export default function SubscriptionsPage() {
   const [courseDialog, setCourseDialog] = useState(false);
   const [packageDialog, setPackageDialog] = useState(false);
   const [codeDialog, setCodeDialog] = useState(false);
+  const [codeUsageDialog, setCodeUsageDialog] = useState<{ code: DiscountCode; users: Array<{ name: string; date: string }> } | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<{ type: 'course' | 'package' | 'code'; id: string } | null>(null);
 
   // Editing states
@@ -237,7 +284,7 @@ export default function SubscriptionsPage() {
     description: '',
     courses_count: 1,
     price: 0,
-    currency: 'SAR',
+    currency: 'KWD',
     display_order: 0,
     is_active: true,
   });
@@ -316,7 +363,7 @@ export default function SubscriptionsPage() {
         description: '',
         courses_count: 1,
         price: 0,
-        currency: 'SAR',
+        currency: 'KWD',
         display_order: packages.length,
         is_active: true,
       });
@@ -908,38 +955,61 @@ export default function SubscriptionsPage() {
                         <TableHead>نوع الخصم</TableHead>
                         <TableHead>القيمة</TableHead>
                         <TableHead>الاستخدام</TableHead>
+                        <TableHead>المستخدمون</TableHead>
                         <TableHead>الحالة</TableHead>
                         <TableHead className="text-left">الإجراءات</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {discountCodes.map((code) => (
-                        <TableRow key={code.id}>
-                          <TableCell className="font-mono font-bold">{code.code}</TableCell>
-                          <TableCell>{code.discount_type === 'percentage' ? 'نسبة مئوية' : 'مبلغ ثابت'}</TableCell>
-                          <TableCell>
-                            {code.discount_value}{code.discount_type === 'percentage' ? '%' : ' ر.س'}
-                          </TableCell>
-                          <TableCell>
-                            {code.current_uses}/{code.max_uses || '∞'}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={code.is_active ? 'default' : 'secondary'}>
-                              {code.is_active ? 'مفعل' : 'معطل'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button variant="ghost" size="icon" onClick={() => openCodeDialog(code)}>
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setDeleteDialog({ type: 'code', id: code.id })}>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {discountCodes.map((code) => {
+                        const usage = codeUsageMap.get(code.id);
+                        const actualUses = usage?.users.length || 0;
+                        return (
+                          <TableRow key={code.id}>
+                            <TableCell className="font-mono font-bold">{code.code}</TableCell>
+                            <TableCell>{code.discount_type === 'percentage' ? 'نسبة مئوية' : 'مبلغ ثابت'}</TableCell>
+                            <TableCell>
+                              {code.discount_value}{code.discount_type === 'percentage' ? '%' : ' د.ك'}
+                            </TableCell>
+                            <TableCell>
+                              <span className={actualUses > 0 ? 'text-emerald-600 font-medium' : ''}>
+                                {actualUses}
+                              </span>
+                              /{code.max_uses || '∞'}
+                            </TableCell>
+                            <TableCell>
+                              {actualUses > 0 ? (
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="text-primary"
+                                  onClick={() => setCodeUsageDialog({ code, users: usage?.users || [] })}
+                                >
+                                  <Eye className="h-3 w-3 ml-1" />
+                                  عرض ({actualUses})
+                                </Button>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">لا يوجد</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={code.is_active ? 'default' : 'secondary'}>
+                                {code.is_active ? 'مفعل' : 'معطل'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                <Button variant="ghost" size="icon" onClick={() => openCodeDialog(code)}>
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setDeleteDialog({ type: 'code', id: code.id })}>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 )}
@@ -1198,6 +1268,45 @@ export default function SubscriptionsPage() {
                 {(createCode.isPending || updateCode.isPending) && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
                 حفظ
               </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Code Usage Dialog */}
+        <Dialog open={!!codeUsageDialog} onOpenChange={() => setCodeUsageDialog(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                مستخدمو كود الخصم: {codeUsageDialog?.code.code}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+              {codeUsageDialog?.users.length === 0 ? (
+                <p className="text-center text-muted-foreground py-4">لم يتم استخدام هذا الكود بعد</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>اسم المستخدم</TableHead>
+                      <TableHead>تاريخ الاستخدام</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {codeUsageDialog?.users.map((user, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{user.name}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {format(new Date(user.date), 'dd MMM yyyy - HH:mm', { locale: ar })}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCodeUsageDialog(null)}>إغلاق</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
