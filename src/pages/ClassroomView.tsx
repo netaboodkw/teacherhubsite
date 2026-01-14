@@ -712,42 +712,7 @@ export default function ClassroomView() {
 
       {/* Main Content */}
       <div className="p-3 sm:p-4 max-w-5xl mx-auto">
-        {/* Board */}
-        <Card className="mb-3 sm:mb-4 bg-muted/50">
-          <CardContent className="p-3 sm:p-4 text-center">
-            <div className="bg-background border-2 border-dashed rounded-lg py-3 sm:py-4">
-              <p className="text-muted-foreground font-medium text-sm sm:text-base">السبورة</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Stats Banner - Motivational Message, Engagement, Best Student - Always visible */}
-        <ClassroomStatsBanner 
-          students={students}
-          behaviorNotes={behaviorNotes}
-          classroomId={classroomId || ''}
-          classroomName={classroom.name}
-        />
-
-        {/* Weekly Achievements Manager - calculates and awards badges */}
-        <WeeklyAchievementsManager
-          students={students}
-          behaviorNotes={behaviorNotes}
-          classroomId={classroomId || ''}
-        />
-
-        {/* Weekly Leaderboard - shows top students */}
-        {activeTab === 'notes' && (
-          <div className="mb-4">
-            <WeeklyLeaderboard
-              students={students}
-              behaviorNotes={behaviorNotes}
-              classroomId={classroomId || ''}
-            />
-          </div>
-        )}
-
-        {/* Quick Action Buttons - Timer & Random Picker */}
+        {/* Quick Action Buttons - Timer & Random Picker & Stats - Above Board */}
         {activeTab === 'notes' && (
           <div className="flex items-center justify-center gap-3 mb-4">
             <Button 
@@ -766,6 +731,45 @@ export default function ClassroomView() {
               <Shuffle className="h-5 w-5" />
               اختيار عشوائي
             </Button>
+          </div>
+        )}
+
+        {/* Board */}
+        <Card className="mb-3 sm:mb-4 bg-muted/50">
+          <CardContent className="p-3 sm:p-4 text-center">
+            <div className="bg-background border-2 border-dashed rounded-lg py-3 sm:py-4">
+              <p className="text-muted-foreground font-medium text-sm sm:text-base">السبورة</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Stats Banner - Motivational Message, Engagement, Best Student - Conditional */}
+        {classroom.show_stats_banner !== false && (
+          <ClassroomStatsBanner 
+            students={students}
+            behaviorNotes={behaviorNotes}
+            classroomId={classroomId || ''}
+            classroomName={classroom.name}
+          />
+        )}
+
+        {/* Weekly Achievements Manager - calculates and awards badges */}
+        {classroom.show_badges !== false && (
+          <WeeklyAchievementsManager
+            students={students}
+            behaviorNotes={behaviorNotes}
+            classroomId={classroomId || ''}
+          />
+        )}
+
+        {/* Weekly Leaderboard - shows top students */}
+        {activeTab === 'notes' && classroom.show_leaderboard !== false && (
+          <div className="mb-4">
+            <WeeklyLeaderboard
+              students={students}
+              behaviorNotes={behaviorNotes}
+              classroomId={classroomId || ''}
+            />
           </div>
         )}
 
@@ -991,10 +995,12 @@ export default function ClassroomView() {
                       <p className="text-sm text-center font-medium truncate w-full leading-tight max-w-[90px]">
                         {getShortName(student.name)}
                       </p>
-                      {/* Student Badges */}
-                      <div className="mt-1">
-                        <StudentBadges studentId={student.id} classroomId={classroomId || ''} />
-                      </div>
+                      {/* Student Badges - Conditional */}
+                      {classroom.show_badges !== false && (
+                        <div className="mt-1">
+                          <StudentBadges studentId={student.id} classroomId={classroomId || ''} />
+                        </div>
+                      )}
                     </div>
                   );
                 })}

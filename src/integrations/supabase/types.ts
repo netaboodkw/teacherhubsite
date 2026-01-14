@@ -198,6 +198,9 @@ export type Database = {
           is_archived: boolean
           name: string
           schedule: string | null
+          show_badges: boolean | null
+          show_leaderboard: boolean | null
+          show_stats_banner: boolean | null
           subject: string
           subject_id: string | null
           teacher_template_id: string | null
@@ -216,6 +219,9 @@ export type Database = {
           is_archived?: boolean
           name: string
           schedule?: string | null
+          show_badges?: boolean | null
+          show_leaderboard?: boolean | null
+          show_stats_banner?: boolean | null
           subject: string
           subject_id?: string | null
           teacher_template_id?: string | null
@@ -234,6 +240,9 @@ export type Database = {
           is_archived?: boolean
           name?: string
           schedule?: string | null
+          show_badges?: boolean | null
+          show_leaderboard?: boolean | null
+          show_stats_banner?: boolean | null
           subject?: string
           subject_id?: string | null
           teacher_template_id?: string | null

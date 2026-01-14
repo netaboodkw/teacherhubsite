@@ -32,6 +32,10 @@ export interface Classroom {
   archived_at: string | null;
   created_at: string;
   updated_at: string;
+  // Display settings
+  show_badges: boolean;
+  show_leaderboard: boolean;
+  show_stats_banner: boolean;
 }
 
 export function useClassrooms() {
@@ -119,6 +123,9 @@ export function useCreateClassroom() {
       subject_id?: string | null;
       grade_level_id?: string | null;
       teacher_template_id?: string | null;
+      show_badges?: boolean;
+      show_leaderboard?: boolean;
+      show_stats_banner?: boolean;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('يجب تسجيل الدخول أولاً');
@@ -136,6 +143,9 @@ export function useCreateClassroom() {
           subject_id: classroom.subject_id || null,
           grade_level_id: classroom.grade_level_id || null,
           teacher_template_id: classroom.teacher_template_id || null,
+          show_badges: classroom.show_badges ?? true,
+          show_leaderboard: classroom.show_leaderboard ?? true,
+          show_stats_banner: classroom.show_stats_banner ?? true,
         })
         .select()
         .single();
