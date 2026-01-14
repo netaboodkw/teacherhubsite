@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,13 +6,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Wand2, Download, Image as ImageIcon, Quote, Smartphone, Save, FolderOpen, Trash2, X } from 'lucide-react';
+import { Loader2, Wand2, Download, Image as ImageIcon, Quote, Smartphone, Save, FolderOpen, Trash2, X, Sparkles, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useSiteLogo } from '@/hooks/useSiteLogo';
-import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -33,9 +32,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 type AspectRatio = '3:4' | '9:16';
-type ContentType = 'screenshot' | 'quote';
+type ContentType = 'feature' | 'custom';
 
 interface SavedContent {
   id: string;
@@ -47,16 +47,19 @@ interface SavedContent {
   created_at: string;
 }
 
-const aspectRatioSizes: Record<AspectRatio, { width: number; height: number }> = {
-  '3:4': { width: 768, height: 1024 },
-  '9:16': { width: 576, height: 1024 },
-};
+interface AppFeature {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  marketingText: string;
+}
 
 export default function AIContentCreatorPage() {
   const { user } = useAuth();
   const { logoUrl, isCustomLogo } = useSiteLogo();
   const queryClient = useQueryClient();
-  const [contentType, setContentType] = useState<ContentType>('screenshot');
+  const [contentType, setContentType] = useState<ContentType>('feature');
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('9:16');
   const [prompt, setPrompt] = useState('');
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
@@ -67,13 +70,28 @@ export default function AIContentCreatorPage() {
   const [showLibrary, setShowLibrary] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<SavedContent | null>(null);
-  const [generatedFeature, setGeneratedFeature] = useState<{ title: string; description: string } | null>(null);
-  const [includeLogo, setIncludeLogo] = useState(true);
+  const [selectedFeature, setSelectedFeature] = useState<AppFeature | null>(null);
+  const [features, setFeatures] = useState<AppFeature[]>([]);
+  const [isLoadingFeatures, setIsLoadingFeatures] = useState(true);
 
-  const defaultPrompts: Record<ContentType, string> = {
-    screenshot: 'تصميم واجهة تطبيق تعليمي عصري بألوان زرقاء وبيضاء، يعرض لوحة تحكم المعلم مع إحصائيات الطلاب والحضور والدرجات. التصميم احترافي ونظيف مع أيقونات واضحة وخطوط عربية جميلة.',
-    quote: 'تصميم بوست تربوي ملهم بخلفية متدرجة من الأزرق الداكن إلى الفاتح، مع اقتباس تربوي عربي بخط عربي أنيق، مزين بزخارف إسلامية خفيفة وأيقونات تعليمية.',
-  };
+  // Fetch features from edge function
+  useEffect(() => {
+    const fetchFeatures = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('generate-ai-content', {
+          body: { getFeatures: true },
+        });
+        if (data?.features) {
+          setFeatures(data.features);
+        }
+      } catch (err) {
+        console.error('Error fetching features:', err);
+      } finally {
+        setIsLoadingFeatures(false);
+      }
+    };
+    fetchFeatures();
+  }, []);
 
   // Fetch saved content
   const { data: savedContent = [], isLoading: isLoadingContent } = useQuery({
@@ -110,23 +128,25 @@ export default function AIContentCreatorPage() {
     },
   });
 
-  const handleGenerate = async (autoGenerate = false) => {
-    if (!autoGenerate && !prompt.trim()) {
+  const handleGenerate = async () => {
+    if (contentType === 'feature' && !selectedFeature) {
+      toast.error('يرجى اختيار ميزة من القائمة');
+      return;
+    }
+    if (contentType === 'custom' && !prompt.trim()) {
       toast.error('يرجى كتابة وصف للمحتوى المطلوب');
       return;
     }
 
     setIsGenerating(true);
     setGeneratedImage(null);
-    setGeneratedFeature(null);
 
     try {
       const { data, error } = await supabase.functions.invoke('generate-ai-content', {
         body: {
-          prompt: autoGenerate ? '' : prompt,
+          prompt: contentType === 'custom' ? prompt : '',
           aspectRatio,
-          autoGenerate,
-          logoUrl: includeLogo && isCustomLogo ? logoUrl : null,
+          featureId: contentType === 'feature' ? selectedFeature?.id : null,
         },
       });
 
@@ -145,7 +165,7 @@ export default function AIContentCreatorPage() {
       if (data?.imageUrl) {
         setGeneratedImage(data.imageUrl);
         if (data.feature) {
-          setGeneratedFeature(data.feature);
+          setSelectedFeature(data.feature);
         }
         toast.success('تم إنشاء المحتوى بنجاح!');
       } else {
@@ -181,14 +201,13 @@ export default function AIContentCreatorPage() {
     setIsSaving(true);
 
     try {
-      // Save to database
       const { error } = await supabase.from('ai_generated_content').insert({
         user_id: user.id,
         title: saveTitle.trim(),
         image_url: generatedImage,
         content_type: contentType,
         aspect_ratio: aspectRatio,
-        prompt: prompt,
+        prompt: prompt || selectedFeature?.title,
       });
 
       if (error) throw error;
@@ -205,10 +224,6 @@ export default function AIContentCreatorPage() {
     }
   };
 
-  const handleUseDefaultPrompt = () => {
-    setPrompt(defaultPrompts[contentType]);
-  };
-
   return (
     <AdminLayout>
       <div className="p-4 md:p-6 space-y-6">
@@ -219,7 +234,7 @@ export default function AIContentCreatorPage() {
               إنشاء محتوى بالذكاء الاصطناعي
             </h1>
             <p className="text-muted-foreground mt-1">
-              إنشاء صور ترويجية للتطبيق واقتباسات تربوية باستخدام الذكاء الاصطناعي
+              إنشاء صور ترويجية للتطبيق باستخدام الذكاء الاصطناعي
             </p>
           </div>
           <Button
@@ -237,7 +252,7 @@ export default function AIContentCreatorPage() {
           <Card>
             <CardHeader>
               <CardTitle>إعدادات المحتوى</CardTitle>
-              <CardDescription>حدد نوع المحتوى والحجم المطلوب</CardDescription>
+              <CardDescription>اختر ميزة التطبيق وحجم الصورة</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Content Type */}
@@ -245,17 +260,79 @@ export default function AIContentCreatorPage() {
                 <Label className="text-base font-medium">نوع المحتوى</Label>
                 <Tabs value={contentType} onValueChange={(v) => setContentType(v as ContentType)}>
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="screenshot" className="flex items-center gap-2">
-                      <Smartphone className="w-4 h-4" />
-                      واجهة التطبيق
+                    <TabsTrigger value="feature" className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      مميزات التطبيق
                     </TabsTrigger>
-                    <TabsTrigger value="quote" className="flex items-center gap-2">
+                    <TabsTrigger value="custom" className="flex items-center gap-2">
                       <Quote className="w-4 h-4" />
-                      اقتباس تربوي
+                      وصف مخصص
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
+
+              {/* Feature Selection */}
+              {contentType === 'feature' && (
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">اختر الميزة</Label>
+                  <ScrollArea className="h-[280px] rounded-lg border p-2">
+                    <div className="space-y-2">
+                      {isLoadingFeatures ? (
+                        <div className="flex items-center justify-center py-8">
+                          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                        </div>
+                      ) : (
+                        features.map((feature) => (
+                          <button
+                            key={feature.id}
+                            onClick={() => setSelectedFeature(feature)}
+                            className={cn(
+                              "w-full text-right p-3 rounded-lg border-2 transition-all",
+                              "hover:border-primary/50 hover:bg-primary/5",
+                              selectedFeature?.id === feature.id
+                                ? "border-primary bg-primary/10"
+                                : "border-transparent bg-muted/50"
+                            )}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className={cn(
+                                "w-5 h-5 rounded-full border-2 flex-shrink-0 mt-0.5 flex items-center justify-center",
+                                selectedFeature?.id === feature.id
+                                  ? "border-primary bg-primary text-primary-foreground"
+                                  : "border-muted-foreground/30"
+                              )}>
+                                {selectedFeature?.id === feature.id && (
+                                  <Check className="w-3 h-3" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-bold text-foreground">{feature.title}</h4>
+                                <p className="text-sm text-muted-foreground line-clamp-1">{feature.description}</p>
+                                <p className="text-xs text-primary mt-1">"{feature.marketingText}"</p>
+                              </div>
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </ScrollArea>
+                </div>
+              )}
+
+              {/* Custom Prompt */}
+              {contentType === 'custom' && (
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">وصف المحتوى</Label>
+                  <Textarea
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder="اكتب وصفاً للصورة المطلوبة (مثال: خلفية ملونة مع أيقونات تعليمية)"
+                    className="min-h-[120px] resize-none"
+                    dir="rtl"
+                  />
+                </div>
+              )}
 
               {/* Aspect Ratio */}
               <div className="space-y-3">
@@ -282,111 +359,25 @@ export default function AIContentCreatorPage() {
                 </RadioGroup>
               </div>
 
-              {/* Logo Option */}
-              <div className="space-y-3">
-                <Label className="text-base font-medium">إضافة الشعار</Label>
-                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    {isCustomLogo ? (
-                      <img src={logoUrl} alt="شعار المنصة" className="w-10 h-10 object-contain rounded" />
-                    ) : (
-                      <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
-                        <ImageIcon className="w-5 h-5 text-muted-foreground" />
-                      </div>
-                    )}
-                    <div>
-                      <p className="text-sm font-medium">
-                        {isCustomLogo ? 'شعار المنصة' : 'لم يتم تحميل شعار'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {isCustomLogo ? 'سيتم إضافته للصور المُنشأة' : 'يمكنك تحميله من الإعدادات'}
-                      </p>
-                    </div>
-                  </div>
-                  <Switch
-                    checked={includeLogo}
-                    onCheckedChange={setIncludeLogo}
-                    disabled={!isCustomLogo}
-                  />
-                </div>
-              </div>
-
-              {/* Prompt */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-base font-medium">وصف المحتوى</Label>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleUseDefaultPrompt}
-                    className="text-xs"
-                  >
-                    استخدام قالب جاهز
-                  </Button>
-                </div>
-                <Textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="اكتب وصفاً تفصيلياً للصورة المطلوبة..."
-                  className="min-h-[120px] resize-none"
-                  dir="rtl"
-                />
-                <p className="text-xs text-muted-foreground">
-                  نصيحة: كلما كان الوصف أكثر تفصيلاً، كانت النتيجة أفضل
-                </p>
-              </div>
-
-              {/* Generate Buttons */}
-              <div className="space-y-3">
-                <Button
-                  onClick={() => handleGenerate(true)}
-                  disabled={isGenerating}
-                  className="w-full"
-                  size="lg"
-                  variant="default"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 ml-2 animate-spin" />
-                      جاري الإنشاء...
-                    </>
-                  ) : (
-                    <>
-                      <Wand2 className="w-4 h-4 ml-2" />
-                      🎲 توليد ميزة عشوائية
-                    </>
-                  )}
-                </Button>
-                
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">أو</span>
-                  </div>
-                </div>
-
-                <Button
-                  onClick={() => handleGenerate(false)}
-                  disabled={isGenerating || !prompt.trim()}
-                  className="w-full"
-                  size="lg"
-                  variant="outline"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 ml-2 animate-spin" />
-                      جاري الإنشاء...
-                    </>
-                  ) : (
-                    <>
-                      <Wand2 className="w-4 h-4 ml-2" />
-                      إنشاء من الوصف
-                    </>
-                  )}
-                </Button>
-              </div>
+              {/* Generate Button */}
+              <Button
+                onClick={handleGenerate}
+                disabled={isGenerating || (contentType === 'feature' && !selectedFeature) || (contentType === 'custom' && !prompt.trim())}
+                className="w-full"
+                size="lg"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                    جاري الإنشاء...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="w-4 h-4 ml-2" />
+                    إنشاء الصورة
+                  </>
+                )}
+              </Button>
             </CardContent>
           </Card>
 
@@ -409,15 +400,15 @@ export default function AIContentCreatorPage() {
                 )}
               </CardTitle>
               <CardDescription>
-                الصورة المنشأة بواسطة الذكاء الاصطناعي
+                الصورة المنشأة مع النص العربي
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div 
-                className={`
-                  bg-muted rounded-lg flex items-center justify-center overflow-hidden mx-auto
-                  ${aspectRatio === '3:4' ? 'aspect-[3/4] max-w-[300px]' : 'aspect-[9/16] max-w-[225px]'}
-                `}
+                className={cn(
+                  "bg-muted rounded-lg flex items-center justify-center overflow-hidden mx-auto relative",
+                  aspectRatio === '3:4' ? 'aspect-[3/4] max-w-[300px]' : 'aspect-[9/16] max-w-[225px]'
+                )}
               >
                 {isGenerating ? (
                   <div className="text-center space-y-3">
@@ -431,10 +422,31 @@ export default function AIContentCreatorPage() {
                       alt="محتوى منشأ بالذكاء الاصطناعي"
                       className="w-full h-full object-cover"
                     />
-                    {generatedFeature && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                        <h3 className="text-white font-bold text-lg">{generatedFeature.title}</h3>
-                        <p className="text-white/80 text-sm">{generatedFeature.description}</p>
+                    {/* Arabic Text Overlay */}
+                    {selectedFeature && (
+                      <div className="absolute inset-0 flex flex-col justify-between p-4 pointer-events-none">
+                        {/* Top - Logo and App Name */}
+                        <div className="text-center">
+                          {isCustomLogo && (
+                            <img src={logoUrl} alt="شعار" className="w-12 h-12 mx-auto mb-2 drop-shadow-lg" />
+                          )}
+                          <p className="text-white text-sm font-bold drop-shadow-lg">منصة المعلم الذكي</p>
+                        </div>
+                        
+                        {/* Center - Feature Text */}
+                        <div className="text-center space-y-2">
+                          <h2 className="text-white text-2xl font-bold drop-shadow-lg leading-relaxed">
+                            {selectedFeature.title}
+                          </h2>
+                          <p className="text-white/90 text-lg drop-shadow-lg">
+                            {selectedFeature.marketingText}
+                          </p>
+                        </div>
+                        
+                        {/* Bottom - Website */}
+                        <div className="text-center">
+                          <p className="text-white/80 text-xs drop-shadow-lg">teacher-hub.app</p>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -442,7 +454,7 @@ export default function AIContentCreatorPage() {
                   <div className="text-center space-y-3 p-6">
                     <ImageIcon className="w-12 h-12 text-muted-foreground/50 mx-auto" />
                     <p className="text-sm text-muted-foreground">
-                      ستظهر الصورة هنا بعد الإنشاء
+                      اختر ميزة ثم اضغط "إنشاء الصورة"
                     </p>
                   </div>
                 )}
@@ -496,60 +508,54 @@ export default function AIContentCreatorPage() {
 
       {/* Library Dialog */}
       <Dialog open={showLibrary} onOpenChange={setShowLibrary}>
-        <DialogContent className="max-w-4xl max-h-[85vh]">
+        <DialogContent className="max-w-3xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FolderOpen className="w-5 h-5" />
-              مكتبة المحتوى ({savedContent.length})
-            </DialogTitle>
+            <DialogTitle>مكتبة المحتوى</DialogTitle>
             <DialogDescription>
-              جميع الصور المحفوظة
+              المحتوى المحفوظ سابقاً
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="max-h-[60vh]">
+          <ScrollArea className="h-[50vh]">
             {isLoadingContent ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin" />
               </div>
             ) : savedContent.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
-                <ImageIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <FolderOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
                 <p>لا يوجد محتوى محفوظ</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-1">
-                {savedContent.map((item) => (
-                  <div
-                    key={item.id}
-                    className="group relative bg-muted rounded-lg overflow-hidden cursor-pointer"
-                    onClick={() => setSelectedImage(item)}
-                  >
-                    <div className={`
-                      ${item.aspect_ratio === '3:4' ? 'aspect-[3/4]' : 'aspect-[9/16]'}
-                    `}>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4">
+                {savedContent.map((content) => (
+                  <div key={content.id} className="group relative">
+                    <div 
+                      className="aspect-[3/4] rounded-lg overflow-hidden cursor-pointer"
+                      onClick={() => setSelectedImage(content)}
+                    >
                       <img
-                        src={item.image_url}
-                        alt={item.title}
-                        className="w-full h-full object-cover"
+                        src={content.image_url}
+                        alt={content.title}
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
                       />
                     </div>
-                    <div className="absolute inset-0 bg-foreground/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end">
-                      <div className="p-2 w-full">
-                        <p className="text-background text-sm font-medium truncate">{item.title}</p>
-                        <p className="text-background/70 text-xs">
-                          {item.content_type === 'screenshot' ? 'واجهة' : 'اقتباس'} • {item.aspect_ratio}
-                        </p>
-                      </div>
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => handleDownload(content.image_url)}
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => setDeleteId(content.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteId(item.id);
-                      }}
-                      className="absolute top-2 left-2 bg-destructive text-destructive-foreground p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <p className="text-sm font-medium mt-2 truncate">{content.title}</p>
                   </div>
                 ))}
               </div>
@@ -560,40 +566,28 @@ export default function AIContentCreatorPage() {
 
       {/* Image Preview Dialog */}
       <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{selectedImage?.title}</DialogTitle>
-            <DialogDescription>
-              {selectedImage?.content_type === 'screenshot' ? 'واجهة التطبيق' : 'اقتباس تربوي'} • {selectedImage?.aspect_ratio}
-            </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-center py-4">
-            <div className={`
-              ${selectedImage?.aspect_ratio === '3:4' ? 'aspect-[3/4] max-w-[300px]' : 'aspect-[9/16] max-w-[225px]'}
-              w-full rounded-lg overflow-hidden
-            `}>
+          {selectedImage && (
+            <div className="space-y-4">
               <img
-                src={selectedImage?.image_url}
-                alt={selectedImage?.title}
-                className="w-full h-full object-cover"
+                src={selectedImage.image_url}
+                alt={selectedImage.title}
+                className="w-full rounded-lg"
               />
-            </div>
-          </div>
-          {selectedImage?.prompt && (
-            <div className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
-              <p className="font-medium mb-1">الوصف المستخدم:</p>
-              <p className="line-clamp-3">{selectedImage.prompt}</p>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => handleDownload(selectedImage.image_url)}
+                >
+                  <Download className="w-4 h-4 ml-2" />
+                  تحميل
+                </Button>
+              </div>
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSelectedImage(null)}>
-              إغلاق
-            </Button>
-            <Button onClick={() => selectedImage && handleDownload(selectedImage.image_url)}>
-              <Download className="w-4 h-4 ml-2" />
-              تحميل
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 

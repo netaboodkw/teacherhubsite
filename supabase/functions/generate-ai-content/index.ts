@@ -18,61 +18,83 @@ const brandColors = {
 // App features for generating content
 const appFeatures = [
   {
+    id: "attendance",
     title: "إدارة الحضور الذكية",
     description: "سجّل حضور طلابك بنقرة واحدة فقط!",
     icon: "calendar with checkmark",
+    marketingText: "وداعاً للورق! سجّل الحضور بثوانٍ",
   },
   {
+    id: "grades",
     title: "متابعة الدرجات",
     description: "رصد درجات طلابك مع تحليلات الأداء",
     icon: "bar chart going up",
+    marketingText: "تابع تقدم طلابك بذكاء",
   },
   {
+    id: "dashboard",
     title: "لوحة تحكم شاملة",
     description: "كل فصولك وطلابك في مكان واحد",
     icon: "dashboard with widgets",
+    marketingText: "كل شيء تحتاجه في مكان واحد",
   },
   {
+    id: "reports",
     title: "تقارير احترافية",
     description: "تقارير PDF جاهزة للطباعة والمشاركة",
     icon: "document with charts",
+    marketingText: "تقارير جاهزة بضغطة زر",
   },
   {
+    id: "behavior",
     title: "ملاحظات سلوكية",
     description: "وثّق السلوك الإيجابي والسلبي للطلاب",
     icon: "speech bubbles with thumbs up/down",
+    marketingText: "راقب سلوك طلابك بسهولة",
   },
   {
+    id: "schedule",
     title: "جدول الحصص",
     description: "نظّم جدولك مع تنبيهات ذكية",
     icon: "clock with schedule",
+    marketingText: "لا تفوّت أي حصة مع التنبيهات الذكية",
   },
   {
+    id: "classrooms",
     title: "إدارة الفصول",
     description: "أنشئ ونظّم فصولك الدراسية بسهولة",
     icon: "group of students",
+    marketingText: "نظّم فصولك باحترافية",
   },
   {
+    id: "random",
     title: "اختيار طالب عشوائي",
     description: "حفّز مشاركة طلابك بأداة تفاعلية",
     icon: "dice or shuffle arrows",
+    marketingText: "اجعل حصتك أكثر تفاعلية!",
   },
   {
+    id: "import",
     title: "استيراد الطلاب",
     description: "استورد بيانات طلابك من Excel أو بالصور",
     icon: "upload with spreadsheet",
+    marketingText: "أضف طلابك في ثوانٍ معدودة",
   },
   {
+    id: "templates",
     title: "قوالب التقييم",
     description: "صمم نظام تقييمك حسب مادتك ومرحلتك",
     icon: "template with checkboxes",
+    marketingText: "قوالب تقييم مرنة تناسب احتياجاتك",
   }
 ];
 
 interface FeatureType {
+  id: string;
   title: string;
   description: string;
   icon: string;
+  marketingText: string;
 }
 
 serve(async (req) => {
@@ -82,7 +104,15 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, aspectRatio, autoGenerate, logoUrl } = await req.json();
+    const { prompt, aspectRatio, featureId, getFeatures } = await req.json();
+
+    // If requesting features list
+    if (getFeatures) {
+      return new Response(
+        JSON.stringify({ features: appFeatures }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -93,73 +123,60 @@ serve(async (req) => {
       );
     }
 
-    // Select a random feature if autoGenerate is true
+    // Find selected feature
     let selectedFeature: FeatureType | null = null;
-    let finalPrompt = prompt;
+    if (featureId) {
+      selectedFeature = appFeatures.find(f => f.id === featureId) || null;
+      if (!selectedFeature) {
+        // Random feature if not found
+        selectedFeature = appFeatures[Math.floor(Math.random() * appFeatures.length)];
+      }
+    }
+
+    // Create prompt for visual-only design (no Arabic text - we'll overlay it)
+    let finalPrompt: string;
     
-    if (autoGenerate) {
-      selectedFeature = appFeatures[Math.floor(Math.random() * appFeatures.length)];
-      
-      const logoInstruction = logoUrl 
-        ? `IMPORTANT: Include the actual platform logo from this URL: ${logoUrl} - Place it prominently at the top or bottom of the image.`
-        : `Logo area: Small white circle or rounded rectangle at bottom with a simple education/teacher icon inside.`;
-
+    if (selectedFeature) {
       finalPrompt = `
-Create a professional Arabic social media story/post image for a teacher app called "منصة المعلم الذكي" (Teacher Hub).
+Create a stunning visual background design for a mobile app social media post. 
+DO NOT include any text or letters in the image - this is just a background.
 
-CRITICAL REQUIREMENTS:
-1. Arabic text MUST be clear, readable, and correctly written (right-to-left)
-2. Include the app name "منصة المعلم الذكي" at the top or bottom
-3. Include "teacher-hub.app" website URL in small text
-4. ${logoInstruction}
-
-CONTENT:
-- Main Title (Arabic, large, bold, white): "${selectedFeature.title}"
-- Description (Arabic, smaller, white/light): "${selectedFeature.description}"
-- Icon: A simple ${selectedFeature.icon} icon in white
-
-DESIGN:
+DESIGN REQUIREMENTS:
+- Create a beautiful abstract gradient background
+- Main colors: Cyan (#5BC0CE, #7DD3E1), Purple (#C9A8D6), with subtle Orange (#F5C78E) accents
+- Add a large, prominent white icon representing: ${selectedFeature.icon}
+- The icon should be centered and clearly visible
+- Add subtle decorative elements: floating circles, dots, soft light effects, abstract shapes
+- Style: Modern, clean, minimalist, professional, suitable for education/school app
 - Aspect ratio: ${aspectRatio} (vertical, for Instagram stories)
-- Background: Beautiful gradient from ${brandColors.primary} (cyan) to ${brandColors.primaryLight} (light cyan) with subtle ${brandColors.purple} (purple) accent
-- Style: Modern, clean, minimalist, professional
-- Add subtle decorative elements like circles, dots, or waves in lighter shades
-- The design should look like a premium app marketing material
-- Use vector/flat design style, no photos
-
-BRANDING:
-- Website: "teacher-hub.app" in small white text
-- Colors: Cyan (#5BC0CE, #7DD3E1), Purple (#C9A8D6), Orange accents (#F5C78E)
+- The design should have space at top and bottom for text overlay later
+- Make it look like premium app marketing material
+- Use soft gradients and modern glassmorphism effects
+- NO TEXT, NO LETTERS, NO WORDS - only visual elements and icons
 
 Make it visually stunning and suitable for Instagram/social media marketing.
 `.trim();
-    } else if (!prompt) {
-      return new Response(
-        JSON.stringify({ error: "Prompt is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    } else {
-      // For custom prompts, add branding requirements
-      const logoInstruction = logoUrl 
-        ? `Include the platform logo from: ${logoUrl}`
-        : `Include a simple education/teacher icon`;
-
+    } else if (prompt) {
       finalPrompt = `
-Create an Arabic social media image with these specifications:
-
-CRITICAL: Arabic text must be clear and readable (right-to-left).
+Create a visual background design for social media with these specifications:
+DO NOT include any text or letters - this is just a visual background.
 
 USER REQUEST: ${prompt}
 
-BRANDING TO INCLUDE:
-- App name "منصة المعلم الذكي" somewhere visible
-- Website "teacher-hub.app" in small text
-- ${logoInstruction}
+DESIGN:
 - Color scheme: Cyan (#5BC0CE, #7DD3E1), Purple (#C9A8D6), Orange (#F5C78E)
 - Aspect ratio: ${aspectRatio}
 - Style: Modern, clean, professional, suitable for social media
+- Add decorative elements and icons based on the request
+- NO TEXT, NO LETTERS, NO WORDS - only visual elements
 
 Make it visually stunning and marketing-ready.
 `.trim();
+    } else {
+      return new Response(
+        JSON.stringify({ error: "Feature ID or prompt is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     console.log("Calling Lovable AI with feature:", selectedFeature?.title || "custom prompt");
