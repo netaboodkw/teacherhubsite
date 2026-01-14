@@ -27,10 +27,9 @@ export default function TeacherAuth() {
   const { data: educationLevels = [] } = useEducationLevels();
   const { data: systemSettings } = useSystemSettings();
   
-  // Terms settings
-  const termsEnabled = systemSettings?.find(s => s.key === 'terms_enabled')?.value === true || 
-                       systemSettings?.find(s => s.key === 'terms_enabled')?.value === 'true';
-  const termsContent = (systemSettings?.find(s => s.key === 'terms_content')?.value as string) || '';
+  // Terms settings - Always require terms acceptance
+  const termsContent = (systemSettings?.find(s => s.key === 'terms_content')?.value as string) || 'الشروط والأحكام الخاصة باستخدام منصة Teacher Hub.\n\nباستخدامك للمنصة فإنك توافق على:\n1. الحفاظ على سرية بيانات الطلاب\n2. استخدام المنصة للأغراض التعليمية فقط\n3. عدم مشاركة حسابك مع الآخرين\n4. الالتزام بقوانين دولة الكويت';
+  const termsEnabled = true; // Always require terms
   
   // Check if user is logged in with a different role
   const isLoggedInWithDifferentRole = user && userRole && userRole.role !== 'user';
@@ -351,11 +350,12 @@ export default function TeacherAuth() {
                         <Input
                           id="phone"
                           type="tel"
-                          placeholder="96512345678"
+                          placeholder="9XXXXXXX"
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
                           className="pr-10"
                           dir="ltr"
+                          maxLength={8}
                         />
                       </div>
                     </div>
@@ -511,7 +511,7 @@ export default function TeacherAuth() {
           </Card>
           
           <p className="text-center text-sm text-muted-foreground mt-6">
-            منصة كويتية 🇰🇼 صُممت للمعلم العربي
+            منصة كويتية 🇰🇼 صُممت للمعلم
           </p>
         </div>
       </div>
