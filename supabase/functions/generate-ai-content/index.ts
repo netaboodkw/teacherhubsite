@@ -427,6 +427,17 @@ serve(async (req) => {
   try {
     const { prompt, aspectRatio, colorPalette = 'pastel', designStyle = 'clay3d', featureId, contentType = 'feature', getFeatures, getSuggestions } = await req.json();
 
+    // Calculate actual pixel dimensions based on aspect ratio for high quality output
+    const getDimensions = (ratio: string) => {
+      if (ratio === '9:16') {
+        return { width: 1080, height: 1920, description: 'vertical story format 9:16' };
+      } else if (ratio === '3:4') {
+        return { width: 1620, height: 2160, description: 'vertical post format 3:4' };
+      }
+      return { width: 1080, height: 1920, description: 'vertical format' };
+    };
+    const dimensions = getDimensions(aspectRatio);
+
     // If requesting features list - return with random marketing text each time
     if (getFeatures) {
       const featuresWithRandomText = appFeatures.map(f => transformFeatureForResponse(f));
@@ -644,12 +655,14 @@ VISUAL ELEMENTS FOR "${selectedFeature.title}":
 - Include subtle patterns: dots, soft geometric shapes, organic curves
 
 COMPOSITION:
-- Aspect ratio: ${aspectRatio} (vertical for stories)
+- Image dimensions: ${dimensions.width}x${dimensions.height} pixels (${dimensions.description})
+- Aspect ratio: ${aspectRatio} - MUST fill the ENTIRE canvas completely with NO empty spaces or borders
 - Leave space at top for logo and at bottom for text overlay
 - Center the main illustration element
 - Background should be a soft gradient or subtle pattern (not plain) using the color palette
+- The illustration MUST extend to ALL edges of the image
 
-QUALITY: Ultra high resolution, sharp details, professional quality, 1K resolution, crisp edges
+QUALITY: Ultra high resolution ${dimensions.width}x${dimensions.height}, sharp details, professional quality, 1K resolution, crisp edges
 MOOD: ${paletteConfig.mood}, suitable for educators
 NO TEXT, NO LETTERS, NO WORDS - only beautiful illustrations in ${styleConfig.name} style
 `.trim();
@@ -671,11 +684,13 @@ VISUAL ELEMENTS:
 - Add sparkles, glows, or highlights to make it pop
 
 COMPOSITION:
-- Aspect ratio: ${aspectRatio} (vertical for stories)
+- Image dimensions: ${dimensions.width}x${dimensions.height} pixels (${dimensions.description})
+- Aspect ratio: ${aspectRatio} - MUST fill the ENTIRE canvas completely with NO empty spaces or borders
 - Leave space at top for logo and at bottom for text overlay
 - Create visual hierarchy that draws the eye to the center
+- The illustration MUST extend to ALL edges of the image
 
-QUALITY: Ultra high resolution, sharp details, professional quality, 1K resolution, crisp edges
+QUALITY: Ultra high resolution ${dimensions.width}x${dimensions.height}, sharp details, professional quality, 1K resolution, crisp edges
 MOOD: ${contentConfig.mood}
 NO TEXT, NO LETTERS, NO WORDS - only stunning marketing visuals in ${styleConfig.name} style
 `.trim();
@@ -697,11 +712,13 @@ VISUAL ELEMENTS:
 - Add emojis-style elements, reaction buttons, or poll graphics
 
 COMPOSITION:
-- Aspect ratio: ${aspectRatio} (vertical for stories)
+- Image dimensions: ${dimensions.width}x${dimensions.height} pixels (${dimensions.description})
+- Aspect ratio: ${aspectRatio} - MUST fill the ENTIRE canvas completely with NO empty spaces or borders
 - Leave space at top for logo and at bottom for text overlay
 - Design should encourage viewer participation
+- The illustration MUST extend to ALL edges of the image
 
-QUALITY: Ultra high resolution, sharp details, professional quality, 1K resolution, crisp edges
+QUALITY: Ultra high resolution ${dimensions.width}x${dimensions.height}, sharp details, professional quality, 1K resolution, crisp edges
 MOOD: ${contentConfig.mood}
 NO TEXT, NO LETTERS, NO WORDS - only engaging interactive visuals in ${styleConfig.name} style
 `.trim();
@@ -724,11 +741,13 @@ VISUAL ELEMENTS:
 - Add celebratory elements: confetti, stars, sparkles
 
 COMPOSITION:
-- Aspect ratio: ${aspectRatio} (vertical for stories)
+- Image dimensions: ${dimensions.width}x${dimensions.height} pixels (${dimensions.description})
+- Aspect ratio: ${aspectRatio} - MUST fill the ENTIRE canvas completely with NO empty spaces or borders
 - Leave space at top for logo and at bottom for text overlay
 - Create a sense of excitement and opportunity
+- The illustration MUST extend to ALL edges of the image
 
-QUALITY: Ultra high resolution, sharp details, professional quality, 1K resolution, crisp edges
+QUALITY: Ultra high resolution ${dimensions.width}x${dimensions.height}, sharp details, professional quality, 1K resolution, crisp edges
 MOOD: ${contentConfig.mood}
 NO TEXT, NO LETTERS, NO WORDS - only welcoming trial-invitation visuals in ${styleConfig.name} style
 `.trim();
@@ -751,11 +770,13 @@ VISUAL ELEMENTS:
 - Add warm, friendly visual elements
 
 COMPOSITION:
-- Aspect ratio: ${aspectRatio} (vertical for stories)
+- Image dimensions: ${dimensions.width}x${dimensions.height} pixels (${dimensions.description})
+- Aspect ratio: ${aspectRatio} - MUST fill the ENTIRE canvas completely with NO empty spaces or borders
 - Leave space at top for logo and at bottom for text overlay
 - Create a trustworthy, authentic feel
+- The illustration MUST extend to ALL edges of the image
 
-QUALITY: Ultra high resolution, sharp details, professional quality, 1K resolution, crisp edges
+QUALITY: Ultra high resolution ${dimensions.width}x${dimensions.height}, sharp details, professional quality, 1K resolution, crisp edges
 MOOD: ${contentConfig.mood}
 NO TEXT, NO LETTERS, NO WORDS - only testimonial-style visuals in ${styleConfig.name} style
 `.trim();
@@ -778,11 +799,13 @@ VISUAL ELEMENTS:
 - Add organized, structured visual elements
 
 COMPOSITION:
-- Aspect ratio: ${aspectRatio} (vertical for stories)
+- Image dimensions: ${dimensions.width}x${dimensions.height} pixels (${dimensions.description})
+- Aspect ratio: ${aspectRatio} - MUST fill the ENTIRE canvas completely with NO empty spaces or borders
 - Leave space at top for logo and at bottom for text overlay
 - Create a helpful, informative atmosphere
+- The illustration MUST extend to ALL edges of the image
 
-QUALITY: Ultra high resolution, sharp details, professional quality, 1K resolution, crisp edges
+QUALITY: Ultra high resolution ${dimensions.width}x${dimensions.height}, sharp details, professional quality, 1K resolution, crisp edges
 MOOD: ${contentConfig.mood}
 NO TEXT, NO LETTERS, NO WORDS - only educational tips-style visuals in ${styleConfig.name} style
 `.trim();
@@ -799,8 +822,12 @@ ${styleConfig.description}
 Color palette: ${paletteConfig.colors}
 Mood: ${paletteConfig.mood}
 
-Aspect ratio: ${aspectRatio}
-QUALITY: Ultra high resolution, sharp details, professional quality, 1K resolution
+COMPOSITION:
+- Image dimensions: ${dimensions.width}x${dimensions.height} pixels (${dimensions.description})
+- Aspect ratio: ${aspectRatio} - MUST fill the ENTIRE canvas completely with NO empty spaces or borders
+- The illustration MUST extend to ALL edges of the image
+
+QUALITY: Ultra high resolution ${dimensions.width}x${dimensions.height}, sharp details, professional quality, 1K resolution
 NO TEXT, NO LETTERS, NO WORDS - only beautiful visual elements in ${styleConfig.name} style
 `.trim();
     } else {
