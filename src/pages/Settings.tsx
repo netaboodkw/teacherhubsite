@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useProfile } from '@/hooks/useProfile';
 import { useEducationLevels } from '@/hooks/useEducationLevels';
@@ -11,16 +12,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { User, School, Mail, Users, Loader2, Save, GraduationCap, Phone, BookOpen, Volume2, Vibrate } from 'lucide-react';
+import { User, School, Mail, Users, Loader2, Save, GraduationCap, Phone, BookOpen, Volume2, Vibrate, CreditCard, Clock, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
 import { InviteDepartmentHead } from '@/components/teacher/InviteDepartmentHead';
 import { getHapticEnabled, setHapticEnabled } from '@/hooks/useHapticFeedback';
+import { useMySubscription, useSubscriptionSettings, getSubscriptionStatus } from '@/hooks/useSubscription';
+import { format } from 'date-fns';
+import { ar } from 'date-fns/locale';
 
 export default function Settings() {
   const { profile, isLoading, refetch } = useProfile();
   const { data: educationLevels } = useEducationLevels();
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
+  const { data: subscription, isLoading: subscriptionLoading } = useMySubscription();
+  const { data: subscriptionSettings } = useSubscriptionSettings();
+  const subscriptionStatus = getSubscriptionStatus(subscription, subscriptionSettings);
   const [hapticEnabled, setHapticEnabledState] = useState(getHapticEnabled());
   const [formData, setFormData] = useState({
     full_name: '',
@@ -100,6 +108,130 @@ export default function Settings() {
           <h1 className="text-2xl font-bold">الإعدادات</h1>
           <p className="text-muted-foreground">إدارة معلوماتك الشخصية وبيانات المدرسة</p>
         </div>
+
+        {/* Subscription Status Card */}
+        {subscriptionSettings?.enabled && (
+          <Card className={subscriptionStatus.status === 'trial' ? 'border-amber-500/50 bg-amber-500/5' : 
+                           subscriptionStatus.status === 'active' ? 'border-green-500/50 bg-green-500/5' :
+                           subscriptionStatus.status === 'trial_expired' || subscriptionStatus.status === 'expired' ? 'border-destructive/50 bg-destructive/5' : ''}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                حالة الاشتراك
+              </CardTitle>
+              <CardDescription>
+                معلومات اشتراكك الحالي في النظام
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {subscriptionLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <>
+                  {/* Subscription Type Badge */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">نوع الاشتراك</span>
+                    <Badge 
+                      variant={subscriptionStatus.status === 'trial' ? 'secondary' : 
+                               subscriptionStatus.status === 'active' ? 'default' :
+                               subscriptionStatus.status === 'free' ? 'outline' : 'destructive'}
+                      className={subscriptionStatus.status === 'trial' ? 'bg-amber-500/20 text-amber-700 border-amber-500/30' : 
+                                 subscriptionStatus.status === 'active' ? 'bg-green-500/20 text-green-700 border-green-500/30' : ''}
+                    >
+                      {subscriptionStatus.status === 'trial' && (
+                        <><Clock className="h-3 w-3 ml-1" /> فترة تجريبية</>
+                      )}
+                      {subscriptionStatus.status === 'active' && (
+                        <><CheckCircle2 className="h-3 w-3 ml-1" /> مشترك</>
+                      )}
+                      {subscriptionStatus.status === 'free' && 'مجاني'}
+                      {subscriptionStatus.status === 'trial_expired' && (
+                        <><XCircle className="h-3 w-3 ml-1" /> انتهت الفترة التجريبية</>
+                      )}
+                      {subscriptionStatus.status === 'expired' && (
+                        <><XCircle className="h-3 w-3 ml-1" /> منتهي</>
+                      )}
+                      {subscriptionStatus.status === 'none' && 'غير مشترك'}
+                    </Badge>
+                  </div>
+
+                  {/* Trial/Subscription End Date */}
+                  {subscription?.trial_ends_at && subscriptionStatus.status === 'trial' && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground flex items-center gap-1">
+                          <AlertTriangle className="h-4 w-4 text-amber-500" />
+                          تنتهي الفترة التجريبية
+                        </span>
+                        <span className="font-medium">
+                          {format(new Date(subscription.trial_ends_at), 'dd MMMM yyyy', { locale: ar })}
+                        </span>
+                      </div>
+                      {subscriptionStatus.daysRemaining !== null && (
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span>الأيام المتبقية</span>
+                            <span className={subscriptionStatus.daysRemaining <= 3 ? 'text-destructive font-medium' : ''}>
+                              {subscriptionStatus.daysRemaining} يوم
+                            </span>
+                          </div>
+                          <Progress 
+                            value={Math.max(0, (subscriptionStatus.daysRemaining / (subscriptionSettings?.trial_days || 10)) * 100)} 
+                            className="h-2"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {subscription?.subscription_ends_at && subscriptionStatus.status === 'active' && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">ينتهي الاشتراك</span>
+                      <span className="font-medium">
+                        {format(new Date(subscription.subscription_ends_at), 'dd MMMM yyyy', { locale: ar })}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Warning for expiring soon */}
+                  {subscriptionStatus.status === 'trial' && subscriptionStatus.daysRemaining !== null && subscriptionStatus.daysRemaining <= 3 && (
+                    <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                      <p className="text-sm text-amber-700 dark:text-amber-400 flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        ستنتهي الفترة التجريبية قريباً! اشترك الآن للاستمرار في استخدام جميع المميزات.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Expired status */}
+                  {(subscriptionStatus.status === 'trial_expired' || subscriptionStatus.status === 'expired') && (
+                    <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+                      <p className="text-sm text-destructive flex items-center gap-2">
+                        <XCircle className="h-4 w-4" />
+                        {subscriptionStatus.isReadOnly 
+                          ? 'انتهى اشتراكك. يمكنك عرض البيانات فقط بدون تعديل.'
+                          : 'انتهى اشتراكك. يرجى الاشتراك للاستمرار.'}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Subscribe/Manage Button */}
+                  <Separator />
+                  <div className="flex justify-end">
+                    <Button asChild variant={subscriptionStatus.status === 'active' ? 'outline' : 'default'}>
+                      <Link to="/teacher/subscription">
+                        <CreditCard className="h-4 w-4 ml-2" />
+                        {subscriptionStatus.status === 'active' ? 'إدارة الاشتراك' : 'اشترك الآن'}
+                      </Link>
+                    </Button>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Personal Information */}
