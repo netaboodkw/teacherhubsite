@@ -7,6 +7,12 @@ export interface ClassSchedule {
   [day: string]: number[];
 }
 
+export interface EducationLevel {
+  id: string;
+  name: string;
+  name_ar: string;
+}
+
 export interface Classroom {
   id: string;
   user_id: string;
@@ -16,6 +22,7 @@ export interface Classroom {
   color: string;
   class_schedule: ClassSchedule | null;
   education_level_id: string | null;
+  education_level?: EducationLevel | null;
   subject_id: string | null;
   grade_level: number | null;
   grade_level_id: string | null;
@@ -32,7 +39,10 @@ export function useClassrooms() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('classrooms')
-        .select('*')
+        .select(`
+          *,
+          education_level:education_levels(id, name, name_ar)
+        `)
         .eq('is_archived', false)
         .order('created_at', { ascending: false });
       
