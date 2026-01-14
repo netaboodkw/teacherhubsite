@@ -718,14 +718,13 @@ export default function ClassroomView() {
           </CardContent>
         </Card>
 
-        {/* Stats Banner - Motivational Message, Engagement, Best Student */}
-        {activeTab === 'notes' && (
-          <ClassroomStatsBanner 
-            students={students}
-            behaviorNotes={behaviorNotes}
-            classroomName={classroom.name}
-          />
-        )}
+        {/* Stats Banner - Motivational Message, Engagement, Best Student - Always visible */}
+        <ClassroomStatsBanner 
+          students={students}
+          behaviorNotes={behaviorNotes}
+          classroomId={classroomId || ''}
+          classroomName={classroom.name}
+        />
 
         {/* Quick Action Buttons - Timer & Random Picker */}
         {activeTab === 'notes' && (

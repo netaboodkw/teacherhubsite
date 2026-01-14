@@ -271,6 +271,66 @@ export type Database = {
           },
         ]
       }
+      daily_classroom_stats: {
+        Row: {
+          best_student_id: string | null
+          best_student_points: number | null
+          classroom_id: string
+          created_at: string
+          date: string
+          engagement_rate: number | null
+          id: string
+          negative_notes_count: number | null
+          positive_notes_count: number | null
+          total_students: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          best_student_id?: string | null
+          best_student_points?: number | null
+          classroom_id: string
+          created_at?: string
+          date?: string
+          engagement_rate?: number | null
+          id?: string
+          negative_notes_count?: number | null
+          positive_notes_count?: number | null
+          total_students?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          best_student_id?: string | null
+          best_student_points?: number | null
+          classroom_id?: string
+          created_at?: string
+          date?: string
+          engagement_rate?: number | null
+          id?: string
+          negative_notes_count?: number | null
+          positive_notes_count?: number | null
+          total_students?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_classroom_stats_best_student_id_fkey"
+            columns: ["best_student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_classroom_stats_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       department_heads: {
         Row: {
           avatar_url: string | null
