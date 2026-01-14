@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { AttendanceButton } from '@/components/attendance/AttendanceButton';
 import { useStudents } from '@/hooks/useStudents';
@@ -32,6 +32,7 @@ import {
 import { format, isToday, subDays, addDays } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { getCurrentPeriod, getKuwaitDateString, getScheduleByEducationLevel } from '@/lib/periodSchedules';
 
 export default function Attendance() {
   const { data: classrooms = [] } = useClassrooms();
@@ -48,6 +49,23 @@ export default function Attendance() {
 
   // Get selected classroom info
   const currentClassroom = classrooms.find(c => c.id === selectedClassroom);
+
+  // Auto-detect current period based on classroom schedule and Kuwait time
+  const currentPeriodInfo = useMemo(() => {
+    if (!currentClassroom) return { period: 1, periodInfo: null, isClassDay: false };
+    
+    const classSchedule = currentClassroom.class_schedule as Record<string, number[]> | null;
+    const educationLevelName = currentClassroom.education_level?.name_ar || currentClassroom.education_level?.name;
+    
+    return getCurrentPeriod(classSchedule, educationLevelName);
+  }, [currentClassroom]);
+
+  // Get the schedule for displaying period name
+  const scheduleInfo = useMemo(() => {
+    if (!currentClassroom) return null;
+    const educationLevelName = currentClassroom.education_level?.name_ar || currentClassroom.education_level?.name;
+    return getScheduleByEducationLevel(educationLevelName);
+  }, [currentClassroom]);
 
   // Get all unique dates with attendance records
   const attendanceDates = useMemo(() => {
@@ -83,6 +101,7 @@ export default function Attendance() {
       classroom_id: selectedClassroom,
       date: dateString,
       status,
+      period: currentPeriodInfo.period || 1,
     }));
     if (records.length > 0) {
       await bulkMark.mutateAsync(records);
@@ -191,9 +210,32 @@ export default function Attendance() {
 
             {/* Record Attendance Tab */}
             <TabsContent value="record" className="space-y-6 mt-6">
-              {/* Date Navigation Card */}
+              {/* Current Period & Date Navigation Card */}
               <Card>
-                <CardContent className="py-4">
+                <CardContent className="py-4 space-y-4">
+                  {/* Current Period Display */}
+                  {isToday(selectedDate) && currentPeriodInfo.periodInfo && (
+                    <div className="flex items-center justify-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                      <Clock className="w-5 h-5 text-primary" />
+                      <span className="font-semibold text-primary">
+                        الحصة الحالية: {currentPeriodInfo.periodInfo.nameAr}
+                      </span>
+                      <Badge variant="secondary" className="text-xs">
+                        {currentPeriodInfo.periodInfo.startTime} - {currentPeriodInfo.periodInfo.endTime}
+                      </Badge>
+                    </div>
+                  )}
+                  
+                  {isToday(selectedDate) && !currentPeriodInfo.isClassDay && currentClassroom && (
+                    <div className="flex items-center justify-center gap-3 p-3 rounded-lg bg-muted border border-border">
+                      <AlertCircle className="w-5 h-5 text-muted-foreground" />
+                      <span className="text-muted-foreground">
+                        لا توجد حصص مجدولة لهذا الصف اليوم
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Date Navigation */}
                   <div className="flex items-center justify-between">
                     <Button variant="ghost" size="icon" onClick={handlePreviousDay} className="rounded-full">
                       <ChevronRight className="w-5 h-5" />
