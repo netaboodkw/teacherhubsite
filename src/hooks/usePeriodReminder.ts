@@ -2,16 +2,17 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useHapticFeedback } from './useHapticFeedback';
 import type { PeriodTime, EducationSchedule } from '@/lib/periodSchedules';
 import type { Classroom } from '@/hooks/useClassrooms';
+import { playNotificationSound, type SoundType } from '@/lib/notificationSounds';
 
 // مفتاح التخزين المحلي
 const REMINDER_SETTINGS_KEY = 'period_reminder_settings';
-const REMINDER_ENABLED_KEY = 'period_reminder_enabled';
 
 export interface ReminderSettings {
   enabled: boolean;
   minutesBefore: number; // كم دقيقة قبل الحصة
   soundEnabled: boolean;
   vibrationEnabled: boolean;
+  soundType: SoundType; // نوع الصوت المختار
 }
 
 const DEFAULT_SETTINGS: ReminderSettings = {
@@ -19,6 +20,7 @@ const DEFAULT_SETTINGS: ReminderSettings = {
   minutesBefore: 5,
   soundEnabled: true,
   vibrationEnabled: true,
+  soundType: 'classic',
 };
 
 // حفظ الإعدادات
@@ -41,55 +43,6 @@ export const getReminderSettings = (): ReminderSettings => {
     console.log('Could not read reminder settings');
   }
   return DEFAULT_SETTINGS;
-};
-
-// تشغيل صوت التنبيه
-const playReminderSound = (type: 'upcoming' | 'start' = 'upcoming') => {
-  try {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    
-    if (type === 'start') {
-      // صوت بداية الحصة - نغمتين صاعدتين
-      const frequencies = [523, 659, 784]; // C5, E5, G5 - chord
-      frequencies.forEach((freq, i) => {
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
-        oscillator.type = 'sine';
-        
-        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-        
-        oscillator.start(audioContext.currentTime + i * 0.1);
-        oscillator.stop(audioContext.currentTime + 0.6);
-      });
-    } else {
-      // صوت تنبيه قبل الحصة - نغمة واحدة
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
-      oscillator.frequency.setValueAtTime(523, audioContext.currentTime + 0.15); // C5
-      oscillator.type = 'sine';
-      
-      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.4, audioContext.currentTime + 0.05);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
-      
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.4);
-    }
-  } catch (error) {
-    console.log('Audio not supported:', error);
-  }
 };
 
 // اهتزاز الجهاز
@@ -229,7 +182,7 @@ export function usePeriodReminder(
 
             // تشغيل الصوت
             if (settings.soundEnabled) {
-              playReminderSound('upcoming');
+              playNotificationSound(settings.soundType, false);
             }
 
             // تشغيل الاهتزاز
@@ -275,7 +228,7 @@ export function usePeriodReminder(
 
             // صوت بداية الحصة
             if (settings.soundEnabled) {
-              playReminderSound('start');
+              playNotificationSound(settings.soundType, true);
             }
 
             // اهتزاز أطول لبداية الحصة
