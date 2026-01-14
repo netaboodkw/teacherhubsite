@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import heroBg from '@/assets/hero-bg.jpg';
 import { useSiteLogo } from '@/hooks/useSiteLogo';
+import { useSubscriptionSettings } from '@/hooks/useSubscription';
 import featureDashboard from '@/assets/feature-dashboard.png';
 import featureGrades from '@/assets/feature-grades.png';
 import featureAttendance from '@/assets/feature-attendance.png';
@@ -85,6 +86,10 @@ const highlights = [
 
 export default function Landing() {
   const { logoUrl } = useSiteLogo();
+  const { data: subscriptionSettings } = useSubscriptionSettings();
+  
+  // Get trial days from settings, default to 10 if not set
+  const trialDays = subscriptionSettings?.trial_days ?? 10;
   
   return (
     <div className="min-h-screen bg-background" dir="rtl">
@@ -121,7 +126,7 @@ export default function Landing() {
           <div className="mb-8">
             <Badge className="text-lg px-6 py-3 bg-background text-foreground shadow-lg">
               <Gift className="w-5 h-5 ml-2" />
-              اشتراك مجاني لمدة 100 يوم!
+              اشتراك مجاني لمدة {trialDays} يوم!
             </Badge>
           </div>
 
@@ -172,7 +177,7 @@ export default function Landing() {
               <div className="text-sm text-muted-foreground">طالب</div>
             </div>
             <div className="space-y-2">
-              <div className="text-4xl font-bold text-primary">100</div>
+              <div className="text-4xl font-bold text-primary">{trialDays}</div>
               <div className="text-sm text-muted-foreground">يوم تجربة مجانية</div>
             </div>
           </div>
@@ -325,7 +330,7 @@ export default function Landing() {
         <div className="max-w-3xl mx-auto text-center">
           <Gift className="w-16 h-16 mx-auto mb-6 opacity-80" />
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            ابدأ الآن مجاناً لمدة 100 يوم!
+            ابدأ الآن مجاناً لمدة {trialDays} يوم!
           </h2>
           <p className="text-lg opacity-90 mb-8">
             انضم لآلاف المعلمين الذين يستخدمون Teacher Hub لإدارة صفوفهم بكفاءة.
