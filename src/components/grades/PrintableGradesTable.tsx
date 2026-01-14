@@ -7,8 +7,11 @@ interface PrintableGradesTableProps {
   teacherName: string;
   classroomName: string;
   departmentHeadName?: string | null;
+  principalName?: string | null;
+  schoolName?: string | null;
   templateName: string;
   useNormalFont?: boolean;
+  showFooterInfo?: boolean;
 }
 
 export function PrintableGradesTable({
@@ -18,8 +21,11 @@ export function PrintableGradesTable({
   teacherName,
   classroomName,
   departmentHeadName,
+  principalName,
+  schoolName,
   templateName,
-  useNormalFont = false
+  useNormalFont = false,
+  showFooterInfo = true
 }: PrintableGradesTableProps) {
   
   const calculateColumnValue = (studentId: string, column: GradingColumn, group: GradingGroup): number => {
@@ -139,16 +145,15 @@ export function PrintableGradesTable({
     }, 0);
   };
 
+  const hasFooterInfo = showFooterInfo && (schoolName || principalName || departmentHeadName);
+
   return (
     <div className={`print-container ${useNormalFont ? 'print-normal-font' : 'print-arabic-font'}`} style={{ display: 'none' }} dir="rtl">
-      {/* Print Header - Only Teacher, Classroom, and Department Head */}
+      {/* Print Header - Only Teacher, Classroom */}
       <div className="print-header">
         <h1>{templateName}</h1>
         <p><strong>المعلم:</strong> {teacherName}</p>
         <p><strong>الصف:</strong> {classroomName}</p>
-        {departmentHeadName && (
-          <p><strong>رئيس القسم:</strong> {departmentHeadName}</p>
-        )}
       </div>
       
       {/* Print Table */}
@@ -234,6 +239,43 @@ export function PrintableGradesTable({
           })}
         </tbody>
       </table>
+
+      {/* Footer Info - School, Principal, Department Head */}
+      {hasFooterInfo && (
+        <div className="print-footer" style={{ 
+          marginTop: '30px', 
+          borderTop: '1px solid #ccc', 
+          paddingTop: '20px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          gap: '20px'
+        }}>
+          {schoolName && (
+            <div style={{ textAlign: 'center', flex: 1 }}>
+              <p style={{ fontWeight: 'bold', marginBottom: '5px' }}>المدرسة</p>
+              <p>{schoolName}</p>
+            </div>
+          )}
+          {principalName && (
+            <div style={{ textAlign: 'center', flex: 1 }}>
+              <p style={{ fontWeight: 'bold', marginBottom: '5px' }}>مدير/ة المدرسة</p>
+              <p>{principalName}</p>
+              <div style={{ marginTop: '30px', borderTop: '1px solid #333', width: '150px', margin: '30px auto 0' }}>
+                <p style={{ fontSize: '10px', color: '#666' }}>التوقيع</p>
+              </div>
+            </div>
+          )}
+          {departmentHeadName && (
+            <div style={{ textAlign: 'center', flex: 1 }}>
+              <p style={{ fontWeight: 'bold', marginBottom: '5px' }}>رئيس/ة القسم</p>
+              <p>{departmentHeadName}</p>
+              <div style={{ marginTop: '30px', borderTop: '1px solid #333', width: '150px', margin: '30px auto 0' }}>
+                <p style={{ fontSize: '10px', color: '#666' }}>التوقيع</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

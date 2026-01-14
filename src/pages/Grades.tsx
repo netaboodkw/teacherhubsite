@@ -11,12 +11,14 @@ import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { PrintableGradesTable } from '@/components/grades/PrintableGradesTable';
 import { BulkGradeEntry } from '@/components/grades/BulkGradeEntry';
 import { MobileGradesView } from '@/components/grades/MobileGradesView';
+import { PrintOptionsDialog, PrintOptions } from '@/components/grades/PrintOptionsDialog';
+import { exportGradesToExcel } from '@/lib/exportExcel';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronRight, ChevronLeft, Plus, Loader2, Table, Settings, ChevronDown, ChevronUp, Printer, MessageSquare, Calendar, Clock, X, Users, Smartphone } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Plus, Loader2, Table, Settings, ChevronDown, ChevronUp, Printer, MessageSquare, Calendar, Clock, X, Users, Smartphone, FileSpreadsheet } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -701,9 +703,46 @@ export default function Grades() {
     setStudentDialogOpen(true);
   };
   
+  // Print options state
+  const [printOptionsOpen, setPrintOptionsOpen] = useState(false);
+  const [printOptions, setPrintOptions] = useState<PrintOptions>({
+    showSchoolName: true,
+    showPrincipalName: true,
+    showDepartmentHeadName: true,
+  });
+  
   // Print function
-  const handlePrint = () => {
-    window.print();
+  const handlePrintWithOptions = (options: PrintOptions) => {
+    setPrintOptions(options);
+    // Small delay to ensure state is updated before printing
+    setTimeout(() => {
+      window.print();
+    }, 100);
+  };
+  
+  // Export Excel function
+  const handleExportExcel = (options: PrintOptions) => {
+    if (!gradingStructure?.structure || !selectedClassroomData) {
+      toast.error('لا توجد بيانات للتصدير');
+      return;
+    }
+    
+    exportGradesToExcel({
+      structure: gradingStructure.structure,
+      students,
+      grades,
+      teacherName: profile?.full_name || '',
+      classroomName: selectedClassroomData.name,
+      templateName: gradingStructure.name_ar,
+      schoolName: profile?.school_name,
+      principalName: profile?.principal_name,
+      departmentHeadName: profile?.department_head_name,
+      showSchoolName: options.showSchoolName,
+      showPrincipalName: options.showPrincipalName,
+      showDepartmentHeadName: options.showDepartmentHeadName,
+    });
+    
+    toast.success('تم تصدير الملف بنجاح');
   };
 
   // الأسابيع المعروضة (4 أسابيع في كل مرة)
@@ -990,15 +1029,15 @@ export default function Grades() {
             </Select>
             {hasStructure && students.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
-                {/* زر الطباعة - يظهر دائماً */}
+                {/* زر الطباعة والتصدير */}
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={handlePrint}
+                  onClick={() => setPrintOptionsOpen(true)}
                   className="print:hidden"
                 >
                   <Printer className="h-4 w-4 ml-1" />
-                  <span className="hidden sm:inline">طباعة</span>
+                  <span className="hidden sm:inline">طباعة / تصدير</span>
                 </Button>
                 
                 {!isMobile && (
@@ -1386,6 +1425,17 @@ export default function Grades() {
             onSave={handleBulkSave}
           />
         )}
+        
+        {/* Print Options Dialog */}
+        <PrintOptionsDialog
+          open={printOptionsOpen}
+          onOpenChange={setPrintOptionsOpen}
+          onPrint={handlePrintWithOptions}
+          onExportExcel={handleExportExcel}
+          schoolName={profile?.school_name}
+          principalName={profile?.principal_name}
+          departmentHeadName={profile?.department_head_name}
+        />
       </div>
       
       {/* Printable Table - Outside the hidden div, shown only when printing */}
@@ -1396,9 +1446,12 @@ export default function Grades() {
           grades={grades}
           teacherName={profile?.full_name || ''}
           classroomName={selectedClassroomData?.name || ''}
-          departmentHeadName={profile?.department_head_name}
+          departmentHeadName={printOptions.showDepartmentHeadName ? profile?.department_head_name : null}
+          principalName={printOptions.showPrincipalName ? profile?.principal_name : null}
+          schoolName={printOptions.showSchoolName ? profile?.school_name : null}
           templateName={gradingStructure.name_ar}
           useNormalFont={useNormalFont}
+          showFooterInfo={printOptions.showSchoolName || printOptions.showPrincipalName || printOptions.showDepartmentHeadName}
         />
       )}
     </TeacherLayout>
