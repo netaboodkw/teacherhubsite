@@ -10,8 +10,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { ClassScheduleEditor, ClassSchedule } from '@/components/classrooms/ClassScheduleEditor';
-import { ArrowRight, GraduationCap, Loader2, LayoutGrid, Plus, AlertTriangle } from 'lucide-react';
+import { ArrowRight, GraduationCap, Loader2, LayoutGrid, Plus, AlertTriangle, Trophy, BarChart3, Award } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
@@ -48,6 +49,9 @@ export default function NewClassroom() {
     education_level_id: '',
     grade_level_id: '',
     teacher_template_id: '',
+    show_badges: true,
+    show_leaderboard: true,
+    show_stats_banner: true,
   });
   const [classSchedule, setClassSchedule] = useState<ClassSchedule>({});
 
@@ -99,6 +103,9 @@ export default function NewClassroom() {
       subject_id: null,
       grade_level_id: formData.grade_level_id || null,
       teacher_template_id: formData.teacher_template_id || null,
+      show_badges: formData.show_badges,
+      show_leaderboard: formData.show_leaderboard,
+      show_stats_banner: formData.show_stats_banner,
     });
     navigate('/teacher/classrooms');
   };
@@ -322,6 +329,55 @@ export default function NewClassroom() {
               <p className="text-xs text-muted-foreground">
                 يمكنك اختيار قالب درجات خاص بك لهذا الفصل
               </p>
+            </div>
+
+            {/* Display Settings */}
+            <div className="space-y-4 border-t pt-6">
+              <Label className="text-base font-semibold">إعدادات العرض</Label>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <Label>إظهار شريط الإحصائيات</Label>
+                      <p className="text-xs text-muted-foreground">رسالة اليوم ونسبة التفاعل والطالب المتميز</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={formData.show_stats_banner}
+                    onCheckedChange={(checked) => setFormData({ ...formData, show_stats_banner: checked })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <Label>إظهار جدول المتميزين</Label>
+                      <p className="text-xs text-muted-foreground">ترتيب أفضل 5 طلاب أسبوعياً</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={formData.show_leaderboard}
+                    onCheckedChange={(checked) => setFormData({ ...formData, show_leaderboard: checked })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Award className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <Label>إظهار الشارات والميداليات</Label>
+                      <p className="text-xs text-muted-foreground">شارات الإنجازات تحت صورة الطالب</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={formData.show_badges}
+                    onCheckedChange={(checked) => setFormData({ ...formData, show_badges: checked })}
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">

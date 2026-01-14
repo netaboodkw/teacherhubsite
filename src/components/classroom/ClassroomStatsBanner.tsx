@@ -26,9 +26,9 @@ interface ClassroomStatsBannerProps {
   classroomName: string;
 }
 
-// Motivational messages for students
+// Motivational messages for students (Kuwait specific)
 const motivationalMessages = [
-  "أنتم نجوم المستقبل! ✨",
+  "أنتم نجوم الكويت! ✨",
   "كل يوم فرصة جديدة للتميز! 🌟",
   "النجاح يبدأ بخطوة واحدة! 🚀",
   "معاً نحقق الأحلام! 💪",
@@ -41,8 +41,8 @@ const motivationalMessages = [
   "اليوم نتعلم، غداً نقود! 🎓",
   "كل سؤال يفتح باب معرفة! 💡",
   "المثابرة سر التفوق! 🔥",
-  "أنتم فخر الوطن! 🇸🇦",
-  "بالعلم نبني المستقبل! 🏗️",
+  "أنتم فخر الكويت! 🇰🇼",
+  "بالعلم نبني الكويت! 🏗️",
 ];
 
 export function ClassroomStatsBanner({ students, behaviorNotes, classroomId, classroomName }: ClassroomStatsBannerProps) {
