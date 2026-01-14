@@ -1,18 +1,25 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useClassrooms, type Classroom } from '@/hooks/useClassrooms';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Calendar, Clock, Filter, GraduationCap } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar, Clock, Filter, GraduationCap, Printer } from 'lucide-react';
 import { educationSchedules, getScheduleByEducationLevel, weekDays, type EducationSchedule } from '@/lib/periodSchedules';
 import { cn } from '@/lib/utils';
+import { useProfile } from '@/hooks/useProfile';
 
 export default function TeacherSchedule() {
   const { data: classrooms, isLoading } = useClassrooms();
+  const { profile } = useProfile();
   const [selectedClassroom, setSelectedClassroom] = useState<string>('all');
   const [selectedEducationLevel, setSelectedEducationLevel] = useState<string>('all');
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   // Get unique education levels from classrooms
   const educationLevels = useMemo(() => {
@@ -104,15 +111,21 @@ export default function TeacherSchedule() {
     <TeacherLayout>
       <div className="p-4 lg:p-6 space-y-6">
         {/* Header */}
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-xl gradient-hero">
-              <Calendar className="w-6 h-6 text-primary-foreground" />
+        <div className="flex flex-col gap-4 print:hidden">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl gradient-hero">
+                <Calendar className="w-6 h-6 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">جدول الحصص</h1>
+                <p className="text-muted-foreground">عرض الجدول الأسبوعي لجميع الصفوف</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">جدول الحصص</h1>
-              <p className="text-muted-foreground">عرض الجدول الأسبوعي لجميع الصفوف</p>
-            </div>
+            <Button onClick={handlePrint} className="gap-2">
+              <Printer className="w-4 h-4" />
+              طباعة الجدول
+            </Button>
           </div>
 
           {/* Filters */}
@@ -151,11 +164,19 @@ export default function TeacherSchedule() {
           </div>
         </div>
 
+        {/* Printable Header */}
+        <div className="hidden print:block text-center mb-6">
+          <h1 className="text-2xl font-bold mb-2">جدول الحصص الأسبوعي</h1>
+          <p className="text-lg">{currentSchedule.levelNameAr}</p>
+          {profile?.school_name && <p className="text-muted-foreground">{profile.school_name}</p>}
+          {profile?.full_name && <p className="text-muted-foreground">المعلم: {profile.full_name}</p>}
+        </div>
+
         {/* Period Times Card */}
-        <Card>
+        <Card className="print:shadow-none print:border-0">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Clock className="w-5 h-5" />
+            <CardTitle className="flex items-center gap-2 text-lg print:text-xl">
+              <Clock className="w-5 h-5 print:hidden" />
               أوقات الحصص - {currentSchedule.levelNameAr}
             </CardTitle>
           </CardHeader>
@@ -185,15 +206,15 @@ export default function TeacherSchedule() {
         </Card>
 
         {/* Schedule Grid */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
+        <Card className="print:shadow-none print:border-0">
+          <CardHeader className="print:pb-2">
+            <CardTitle className="flex items-center gap-2 print:text-xl">
+              <Calendar className="w-5 h-5 print:hidden" />
               الجدول الأسبوعي
             </CardTitle>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
-            <table className="w-full min-w-[600px] border-collapse">
+          <CardContent className="overflow-x-auto print:overflow-visible">
+            <table className="w-full min-w-[600px] border-collapse print:min-w-0 print:text-sm">
               <thead>
                 <tr>
                   <th className="border border-border bg-muted/50 p-3 text-right font-medium">
@@ -250,20 +271,20 @@ export default function TeacherSchedule() {
 
         {/* Legend */}
         {filteredClassrooms.length > 0 && (
-          <Card>
+          <Card className="print:shadow-none print:border-0">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">دليل الألوان</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-3 print:gap-2">
                 {filteredClassrooms.map(classroom => (
                   <div
                     key={classroom.id}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg border"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg border print:px-2 print:py-1 print:text-sm"
                     style={{ borderColor: classroom.color }}
                   >
                     <div
-                      className="w-4 h-4 rounded"
+                      className="w-4 h-4 rounded print:w-3 print:h-3"
                       style={{ backgroundColor: classroom.color }}
                     />
                     <span className="text-sm font-medium">{classroom.name}</span>
@@ -275,7 +296,7 @@ export default function TeacherSchedule() {
         )}
 
         {filteredClassrooms.length === 0 && (
-          <Card>
+          <Card className="print:hidden">
             <CardContent className="py-12 text-center">
               <GraduationCap className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">لا توجد صفوف</h3>
@@ -285,6 +306,11 @@ export default function TeacherSchedule() {
             </CardContent>
           </Card>
         )}
+
+        {/* Print Footer */}
+        <div className="hidden print:block text-center mt-8 pt-4 border-t text-sm text-muted-foreground">
+          <p>تم الطباعة بتاريخ: {new Date().toLocaleDateString('ar-SA')}</p>
+        </div>
       </div>
     </TeacherLayout>
   );
