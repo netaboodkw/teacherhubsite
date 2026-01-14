@@ -80,9 +80,23 @@ export function useSubscriptionSettings() {
         .maybeSingle();
       
       if (error) throw error;
-      const value = data?.value as unknown as SubscriptionSettings | null;
-      return value || { enabled: false, trial_enabled: true, trial_days: 100, expiry_behavior: 'read_only' as const };
+      
+      // Parse the value properly - it's stored as a JSON object
+      if (data?.value && typeof data.value === 'object') {
+        const val = data.value as Record<string, unknown>;
+        return {
+          enabled: val.enabled === true,
+          trial_enabled: val.trial_enabled === true,
+          trial_days: typeof val.trial_days === 'number' ? val.trial_days : 10,
+          expiry_behavior: (val.expiry_behavior as 'read_only' | 'full_lockout') || 'read_only',
+        } as SubscriptionSettings;
+      }
+      
+      // Default values if not found
+      return { enabled: false, trial_enabled: true, trial_days: 10, expiry_behavior: 'read_only' as const };
     },
+    staleTime: 0, // Always fetch fresh data
+    refetchOnWindowFocus: true,
   });
 }
 
