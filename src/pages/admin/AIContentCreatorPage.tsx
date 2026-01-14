@@ -402,9 +402,13 @@ export default function AIContentCreatorPage() {
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, targetWidth, targetHeight);
 
-      // Base preview dimensions for scaling
-      const previewWidth = aspectRatio === '9:16' ? 225 : 300;
-      const scale = targetWidth / previewWidth;
+      // Get actual preview dimensions for accurate scaling
+      const previewElement = previewRef.current;
+      const actualPreviewWidth = previewElement?.offsetWidth || (aspectRatio === '9:16' ? 225 : 300);
+      const actualPreviewHeight = previewElement?.offsetHeight || (aspectRatio === '9:16' ? 400 : 400);
+      
+      // Scale based on width ratio
+      const scale = targetWidth / actualPreviewWidth;
 
       // Common text settings
       ctx.textAlign = 'center';
