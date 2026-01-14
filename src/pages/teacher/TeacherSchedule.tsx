@@ -409,40 +409,42 @@ export default function TeacherSchedule() {
       {/* Print Container - Hidden on screen, visible on print */}
       <div className="hidden print:block print-container print-arabic-font">
         <div className="print-header">
-          <h1>جدول الحصص الأسبوعي</h1>
+          <h1>جدول الحصص الأسبوعي {viewMode === 'compact' ? '(مختصر)' : ''}</h1>
           <p style={{ fontSize: '14px', fontWeight: 'bold' }}>{currentSchedule.levelNameAr}</p>
           {profile?.school_name && <p>المدرسة: {profile.school_name}</p>}
           {profile?.full_name && <p>المعلم/ة: {profile.full_name}</p>}
         </div>
 
-        {/* Period Times for Print */}
-        <div style={{ marginBottom: '15px' }}>
-          <h3 style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '8px', textAlign: 'right' }}>أوقات الحصص:</h3>
-          <table className="print-table" style={{ marginBottom: '10px' }}>
-            <thead>
-              <tr>
-                {currentSchedule.periods.map((period, index) => (
-                  <th key={index} style={{ 
-                    backgroundColor: period.isBreak ? '#fff3cd' : '#e8f4fd',
-                    fontSize: '8px',
-                    padding: '4px 2px'
-                  }}>
-                    {period.nameAr}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                {currentSchedule.periods.map((period, index) => (
-                  <td key={index} style={{ fontSize: '8px', padding: '3px 2px' }}>
-                    {period.startTime} - {period.endTime}
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        {/* Period Times for Print - Only in full mode */}
+        {viewMode === 'full' && (
+          <div style={{ marginBottom: '15px' }}>
+            <h3 style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '8px', textAlign: 'right' }}>أوقات الحصص:</h3>
+            <table className="print-table" style={{ marginBottom: '10px' }}>
+              <thead>
+                <tr>
+                  {currentSchedule.periods.map((period, index) => (
+                    <th key={index} style={{ 
+                      backgroundColor: period.isBreak ? '#fff3cd' : '#e8f4fd',
+                      fontSize: '8px',
+                      padding: '4px 2px'
+                    }}>
+                      {period.nameAr}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  {currentSchedule.periods.map((period, index) => (
+                    <td key={index} style={{ fontSize: '8px', padding: '3px 2px' }}>
+                      {period.startTime} - {period.endTime}
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Main Schedule Table for Print */}
         <table className="print-table">
@@ -459,14 +461,16 @@ export default function TeacherSchedule() {
               <tr key={periodIndex}>
                 <td style={{ textAlign: 'right', fontWeight: 'bold' }}>
                   <div>{period.nameAr}</div>
-                  <div style={{ fontSize: '7px', color: '#666' }}>
-                    {period.startTime} - {period.endTime}
-                  </div>
+                  {viewMode === 'full' && (
+                    <div style={{ fontSize: '7px', color: '#666' }}>
+                      {period.startTime} - {period.endTime}
+                    </div>
+                  )}
                 </td>
                 {weekDays.map(day => {
                   const cellClassrooms = scheduleGrid[periodIndex]?.[day.key] || [];
                   return (
-                    <td key={day.key} style={{ padding: '3px' }}>
+                    <td key={day.key} style={{ padding: viewMode === 'compact' ? '2px' : '3px' }}>
                       {cellClassrooms.length > 0 ? (
                         cellClassrooms.map(classroom => {
                           const hexColor = getHexColor(classroom.color);
@@ -474,16 +478,18 @@ export default function TeacherSchedule() {
                             <div
                               key={classroom.id}
                               style={{ 
-                                padding: '3px',
+                                padding: viewMode === 'compact' ? '2px' : '3px',
                                 marginBottom: '2px',
                                 backgroundColor: hexToRgba(classroom.color, 0.25),
                                 borderRight: `3px solid ${hexColor}`,
                                 borderRadius: '3px',
-                                fontSize: '8px'
+                                fontSize: viewMode === 'compact' ? '7px' : '8px'
                               }}
                             >
                               <div style={{ fontWeight: 'bold' }}>{classroom.name}</div>
-                              <div style={{ fontSize: '7px', color: '#666' }}>{classroom.subject}</div>
+                              {viewMode === 'full' && (
+                                <div style={{ fontSize: '7px', color: '#666' }}>{classroom.subject}</div>
+                              )}
                             </div>
                           );
                         })
@@ -498,35 +504,38 @@ export default function TeacherSchedule() {
           </tbody>
         </table>
 
-        {/* Legend for Print */}
-        {filteredClassrooms.length > 0 && (
+        {/* Legend for Print - Only in full mode */}
+        {viewMode === 'full' && filteredClassrooms.length > 0 && (
           <div style={{ marginTop: '15px' }}>
             <h3 style={{ fontSize: '10px', fontWeight: 'bold', marginBottom: '5px' }}>دليل الألوان:</h3>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {filteredClassrooms.map(classroom => (
-                <div
-                  key={classroom.id}
-                  style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '4px',
-                    padding: '3px 6px',
-                    border: `1px solid ${classroom.color}`,
-                    borderRadius: '4px',
-                    fontSize: '8px'
-                  }}
-                >
+              {filteredClassrooms.map(classroom => {
+                const hexColor = getHexColor(classroom.color);
+                return (
                   <div
+                    key={classroom.id}
                     style={{ 
-                      width: '10px', 
-                      height: '10px', 
-                      borderRadius: '2px',
-                      backgroundColor: classroom.color 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '4px',
+                      padding: '3px 6px',
+                      border: `1px solid ${hexColor}`,
+                      borderRadius: '4px',
+                      fontSize: '8px'
                     }}
-                  />
-                  <span>{classroom.name}</span>
-                </div>
-              ))}
+                  >
+                    <div
+                      style={{ 
+                        width: '10px', 
+                        height: '10px', 
+                        borderRadius: '2px',
+                        backgroundColor: hexColor 
+                      }}
+                    />
+                    <span>{classroom.name}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
