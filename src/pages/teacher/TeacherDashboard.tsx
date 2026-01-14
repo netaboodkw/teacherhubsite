@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GraduationCap, Users, ClipboardCheck, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ClassroomCard } from '@/components/dashboard/ClassroomCard';
+import { TodaySchedule } from '@/components/dashboard/TodaySchedule';
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -93,35 +94,46 @@ export default function TeacherDashboard() {
           ))}
         </div>
 
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">صفوفي</h2>
-            <Link to="/teacher/classrooms/new" className="text-primary hover:underline text-sm">
-              + إضافة صف
-            </Link>
+        {/* جدول اليوم وصفوفي */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* جدول اليوم */}
+          <div className="lg:col-span-1">
+            <TodaySchedule 
+              classrooms={classrooms || []} 
+            />
           </div>
-          
-          {classroomsLoading ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardContent className="h-32" />
-                </Card>
-              ))}
+
+          {/* صفوفي */}
+          <div className="lg:col-span-2">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">صفوفي</h2>
+              <Link to="/teacher/classrooms/new" className="text-primary hover:underline text-sm">
+                + إضافة صف
+              </Link>
             </div>
-          ) : classrooms?.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                لا توجد صفوف. أنشئ صفاً جديداً للبدء.
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {classrooms?.slice(0, 6).map((classroom) => (
-                <ClassroomCard key={classroom.id} classroom={classroom} basePath="/teacher" />
-              ))}
-            </div>
-          )}
+            
+            {classroomsLoading ? (
+              <div className="grid gap-4 md:grid-cols-2">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i} className="animate-pulse">
+                    <CardContent className="h-32" />
+                  </Card>
+                ))}
+              </div>
+            ) : classrooms?.length === 0 ? (
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  لا توجد صفوف. أنشئ صفاً جديداً للبدء.
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {classrooms?.slice(0, 6).map((classroom) => (
+                  <ClassroomCard key={classroom.id} classroom={classroom} basePath="/teacher" />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </TeacherLayout>
