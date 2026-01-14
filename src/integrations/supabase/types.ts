@@ -775,6 +775,8 @@ export type Database = {
           id: string
           name: string
           notes: string | null
+          parent_name: string | null
+          parent_phone: string | null
           special_needs: boolean
           student_id: string
           updated_at: string
@@ -787,6 +789,8 @@ export type Database = {
           id?: string
           name: string
           notes?: string | null
+          parent_name?: string | null
+          parent_phone?: string | null
           special_needs?: boolean
           student_id: string
           updated_at?: string
@@ -799,6 +803,8 @@ export type Database = {
           id?: string
           name?: string
           notes?: string | null
+          parent_name?: string | null
+          parent_phone?: string | null
           special_needs?: boolean
           student_id?: string
           updated_at?: string
