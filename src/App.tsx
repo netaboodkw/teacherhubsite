@@ -22,6 +22,7 @@ import ArchivedClassroomsPage from "./pages/admin/ArchivedClassroomsPage";
 import UsersManagementPage from "./pages/admin/UsersManagementPage";
 import SubscriptionsPage from "./pages/admin/SubscriptionsPage";
 import SubscribersPage from "./pages/admin/SubscribersPage";
+import AIContentCreatorPage from "./pages/admin/AIContentCreatorPage";
 
 // Teacher Pages
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
@@ -90,6 +91,7 @@ const App = () => (
           <Route path="/admin/settings" element={<ProtectedRoute><AdminSettingsPage /></ProtectedRoute>} />
           <Route path="/admin/subscriptions" element={<ProtectedRoute><SubscriptionsPage /></ProtectedRoute>} />
           <Route path="/admin/subscribers" element={<ProtectedRoute><SubscribersPage /></ProtectedRoute>} />
+          <Route path="/admin/ai-content" element={<ProtectedRoute><AIContentCreatorPage /></ProtectedRoute>} />
 
           {/* Teacher Routes */}
           <Route path="/teacher" element={<ProtectedRoute><TeacherDashboard /></ProtectedRoute>} />
