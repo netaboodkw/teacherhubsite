@@ -25,7 +25,7 @@ export function ClassroomCard({ classroom, basePath = '', showEditButton = false
 
   return (
     <Link to={linkPath}>
-      <div className="group relative overflow-hidden rounded-2xl bg-card p-6 shadow-sm border border-border hover:shadow-lg hover:border-primary/20 transition-all duration-300">
+      <div className="group relative overflow-hidden rounded-2xl bg-card p-5 shadow-sm border border-border hover:shadow-lg hover:border-primary/20 transition-all duration-300 min-h-[140px]">
         {/* Color indicator */}
         <div 
           className="absolute top-0 right-0 w-2 h-full"
@@ -33,14 +33,14 @@ export function ClassroomCard({ classroom, basePath = '', showEditButton = false
         />
         
         <div className="pr-4">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors truncate">
+          <div className="flex items-start justify-between gap-2 mb-3">
+            <div className="flex-1">
+              <h3 className="font-bold text-base sm:text-lg text-foreground group-hover:text-primary transition-colors leading-tight">
                 {classroom.name}
               </h3>
-              <p className="text-sm text-muted-foreground mt-1 truncate">{classroom.subject}</p>
+              <p className="text-sm text-muted-foreground mt-1">{classroom.subject}</p>
             </div>
-            <div className="flex items-center gap-2 mr-2">
+            <div className="flex items-center gap-1 shrink-0">
               {showEditButton && (
                 <Button
                   variant="ghost"

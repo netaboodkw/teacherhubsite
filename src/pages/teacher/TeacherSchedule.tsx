@@ -229,85 +229,102 @@ export default function TeacherSchedule() {
         )}
 
         {/* Schedule Grid */}
-        <Card>
-          <CardHeader>
+        <Card className="overflow-hidden">
+          <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2">
               <Calendar className="w-5 h-5" />
               الجدول الأسبوعي
             </CardTitle>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
-            <table className="w-full min-w-[600px] border-collapse">
-              <thead>
-                <tr>
-                  <th className="border border-border bg-muted/50 p-3 text-right font-medium">
-                    الحصة
-                  </th>
-                  {weekDays.map(day => (
-                    <th key={day.key} className="border border-border bg-muted/50 p-3 text-center font-medium">
-                      {day.name}
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[700px] border-collapse">
+                <thead>
+                  <tr>
+                    <th className="border border-border bg-muted/50 p-3 text-right font-semibold min-w-[100px]">
+                      الحصة
                     </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {classPeriods.map((period, periodIndex) => (
-                  <tr key={periodIndex}>
-                    <td className={cn(
-                      "border border-border bg-muted/30",
-                      viewMode === 'compact' ? "p-1.5" : "p-3"
-                    )}>
-                      <div className={cn(
-                        "font-medium",
-                        viewMode === 'compact' && "text-xs"
-                      )}>{period.nameAr}</div>
-                      {viewMode === 'full' && (
-                        <div className="text-xs text-muted-foreground">
-                          {period.startTime} - {period.endTime}
-                        </div>
-                      )}
-                    </td>
-                    {weekDays.map(day => {
-                      const cellClassrooms = scheduleGrid[periodIndex]?.[day.key] || [];
-                      return (
-                        <td key={day.key} className={cn(
-                          "border border-border align-top",
-                          viewMode === 'compact' ? "p-1" : "p-2"
-                        )}>
-                          {cellClassrooms.length > 0 ? (
-                            <div className={viewMode === 'compact' ? "space-y-0.5" : "space-y-1"}>
-                              {cellClassrooms.map(classroom => (
-                                <div
-                                  key={classroom.id}
-                                  className={cn(
-                                    "rounded-lg",
-                                    viewMode === 'compact' ? "p-1 text-[10px]" : "p-2 text-xs"
-                                  )}
-                                  style={{ 
-                                    backgroundColor: hexToRgba(classroom.color, 0.15),
-                                    borderRight: `3px solid ${classroom.color || '#666'}`
-                                  }}
-                                >
-                                  <div className="font-medium truncate">{classroom.name}</div>
-                                  {viewMode === 'full' && (
-                                    <div className="text-muted-foreground truncate">{classroom.subject}</div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className={cn(
-                              "text-center text-muted-foreground",
-                              viewMode === 'compact' ? "text-[10px] py-1" : "text-xs py-2"
-                            )}>-</div>
-                          )}
-                        </td>
-                      );
-                    })}
+                    {weekDays.map(day => (
+                      <th key={day.key} className="border border-border bg-muted/50 p-3 text-center font-semibold">
+                        {day.name}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {classPeriods.map((period, periodIndex) => (
+                    <tr key={periodIndex} className="hover:bg-muted/20 transition-colors">
+                      <td className={cn(
+                        "border border-border bg-muted/20",
+                        viewMode === 'compact' ? "p-2" : "p-3"
+                      )}>
+                        <div className={cn(
+                          "font-semibold text-foreground",
+                          viewMode === 'compact' ? "text-xs" : "text-sm"
+                        )}>{period.nameAr}</div>
+                        {viewMode === 'full' && (
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {period.startTime} - {period.endTime}
+                          </div>
+                        )}
+                      </td>
+                      {weekDays.map(day => {
+                        const cellClassrooms = scheduleGrid[periodIndex]?.[day.key] || [];
+                        return (
+                          <td key={day.key} className={cn(
+                            "border border-border align-top min-w-[100px]",
+                            viewMode === 'compact' ? "p-1.5" : "p-2"
+                          )}>
+                            {cellClassrooms.length > 0 ? (
+                              <div className={viewMode === 'compact' ? "space-y-1" : "space-y-1.5"}>
+                                {cellClassrooms.map(classroom => {
+                                  const bgColor = classroom.color 
+                                    ? hexToRgba(classroom.color, 0.2) 
+                                    : 'rgba(100, 100, 100, 0.1)';
+                                  const borderColor = classroom.color || '#888';
+                                  
+                                  return (
+                                    <div
+                                      key={classroom.id}
+                                      className={cn(
+                                        "rounded-md transition-all hover:shadow-sm",
+                                        viewMode === 'compact' ? "p-1.5" : "p-2"
+                                      )}
+                                      style={{ 
+                                        backgroundColor: bgColor,
+                                        borderRight: `4px solid ${borderColor}`,
+                                        boxShadow: `inset 0 0 0 1px ${hexToRgba(borderColor, 0.2)}`
+                                      }}
+                                    >
+                                      <div className={cn(
+                                        "font-semibold text-foreground",
+                                        viewMode === 'compact' ? "text-[11px]" : "text-xs"
+                                      )}>
+                                        {classroom.name}
+                                      </div>
+                                      {viewMode === 'full' && (
+                                        <div className="text-[11px] text-muted-foreground mt-0.5">
+                                          {classroom.subject}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <div className={cn(
+                                "text-center text-muted-foreground/50",
+                                viewMode === 'compact' ? "text-xs py-1" : "text-sm py-2"
+                              )}>—</div>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
 
