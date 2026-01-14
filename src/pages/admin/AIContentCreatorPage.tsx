@@ -331,68 +331,207 @@ export default function AIContentCreatorPage() {
     }
   };
 
-  // Export merged image with text overlay
+  // Export merged image with text overlay - 2K quality using Canvas API
   const handleExportMerged = async () => {
-    if (!previewRef.current || !generatedImage) return;
+    if (!generatedImage) return;
     
     setIsExporting(true);
     try {
-      const element = previewRef.current;
+      // Target 2K resolution
+      const targetWidth = aspectRatio === '9:16' ? 1440 : 1620; // 2K width
+      const targetHeight = aspectRatio === '9:16' ? 2560 : 2160; // 2K height
       
-      // Get the actual rendered dimensions
-      const rect = element.getBoundingClientRect();
-      const originalWidth = rect.width;
-      const originalHeight = rect.height;
+      // Create canvas with target dimensions
+      const canvas = document.createElement('canvas');
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      const ctx = canvas.getContext('2d');
       
-      // Calculate export dimensions (maintain aspect ratio, target 1080 width for quality)
-      const exportWidth = 1080;
-      const exportHeight = aspectRatio === '9:16' ? 1920 : 1440; // 9:16 or 3:4
-      const scale = exportWidth / originalWidth;
+      if (!ctx) {
+        throw new Error('Could not get canvas context');
+      }
 
-      const canvas = await html2canvas(element, {
-        useCORS: true,
-        allowTaint: true,
-        scale: scale,
-        width: originalWidth,
-        height: originalHeight,
-        backgroundColor: null,
-        logging: false,
-        imageTimeout: 15000,
-        windowWidth: originalWidth,
-        windowHeight: originalHeight,
-        onclone: (clonedDoc, clonedElement) => {
-          // Ensure the cloned element maintains exact dimensions
-          clonedElement.style.width = `${originalWidth}px`;
-          clonedElement.style.height = `${originalHeight}px`;
-          clonedElement.style.maxWidth = 'none';
-          clonedElement.style.maxHeight = 'none';
-          clonedElement.style.margin = '0';
-          clonedElement.style.padding = '0';
-          clonedElement.style.overflow = 'hidden';
-          
-          // Apply solid backgrounds to backdrop-blur elements
-          const backdropElements = clonedElement.querySelectorAll('[class*="backdrop-blur"]');
-          backdropElements.forEach((el) => {
-            const htmlEl = el as HTMLElement;
-            htmlEl.style.backdropFilter = 'none';
-            htmlEl.style.setProperty('-webkit-backdrop-filter', 'none');
-            htmlEl.style.backgroundColor = 'rgba(255, 255, 255, 0.25)';
-          });
-          
-          // Fix drop-shadow by converting to text-shadow
-          const shadowElements = clonedElement.querySelectorAll('[class*="drop-shadow"]');
-          shadowElements.forEach((el) => {
-            (el as HTMLElement).style.filter = 'none';
-            (el as HTMLElement).style.textShadow = '0 2px 4px rgba(0,0,0,0.5)';
-          });
-        }
-      });
+      // Load the generated image
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
       
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = generatedImage;
+      });
+
+      // Draw background image to fill canvas (object-cover behavior)
+      const imgAspect = img.width / img.height;
+      const canvasAspect = targetWidth / targetHeight;
+      
+      let drawWidth, drawHeight, drawX, drawY;
+      
+      if (imgAspect > canvasAspect) {
+        // Image is wider - crop sides
+        drawHeight = targetHeight;
+        drawWidth = targetHeight * imgAspect;
+        drawX = (targetWidth - drawWidth) / 2;
+        drawY = 0;
+      } else {
+        // Image is taller - crop top/bottom
+        drawWidth = targetWidth;
+        drawHeight = targetWidth / imgAspect;
+        drawX = 0;
+        drawY = (targetHeight - drawHeight) / 2;
+      }
+      
+      ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+
+      // Draw gradient overlay
+      const gradient = ctx.createLinearGradient(0, 0, 0, targetHeight);
+      gradient.addColorStop(0, 'rgba(0, 0, 0, 0.5)');
+      gradient.addColorStop(0.3, 'rgba(0, 0, 0, 0)');
+      gradient.addColorStop(0.5, 'rgba(0, 0, 0, 0)');
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, targetWidth, targetHeight);
+
+      // Scale factor for elements
+      const scale = targetWidth / 225; // Based on preview width
+
+      // Draw logo if custom logo exists
+      if (isCustomLogo && logoUrl) {
+        const logoImg = new Image();
+        logoImg.crossOrigin = 'anonymous';
+        
+        try {
+          await new Promise<void>((resolve, reject) => {
+            logoImg.onload = () => resolve();
+            logoImg.onerror = () => reject(new Error('Failed to load logo'));
+            logoImg.src = logoUrl;
+          });
+
+          const logoSize = 56 * scale; // w-14 = 56px
+          const logoX = (targetWidth - logoSize) / 2;
+          const logoY = 20 * scale;
+          const logoPadding = 8 * scale;
+          const logoBoxSize = logoSize + logoPadding * 2;
+          const logoBoxX = logoX - logoPadding;
+          const logoBoxY = logoY - logoPadding;
+
+          // Draw logo background
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+          ctx.beginPath();
+          const radius = 16 * scale;
+          ctx.roundRect(logoBoxX, logoBoxY, logoBoxSize, logoBoxSize, radius);
+          ctx.fill();
+          
+          // Draw logo shadow
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+          ctx.shadowBlur = 25 * scale;
+          ctx.shadowOffsetY = 10 * scale;
+          
+          // Draw logo
+          ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+          
+          // Reset shadow
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetY = 0;
+        } catch (err) {
+          console.warn('Could not load logo:', err);
+        }
+      }
+
+      // Draw platform name
+      ctx.fillStyle = 'white';
+      ctx.font = `bold ${12 * scale}px 'Tajawal', 'Segoe UI', sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+      ctx.shadowBlur = 4 * scale;
+      ctx.shadowOffsetY = 2 * scale;
+      ctx.fillText('منصة المعلم الذكي', targetWidth / 2, (isCustomLogo ? 100 : 50) * scale);
+      
+      // Reset shadow
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+
+      // Draw bottom content box if there's content
+      if (displayTitle || displayMarketingText) {
+        const boxPadding = 16 * scale;
+        const boxMargin = 12 * scale;
+        const boxWidth = targetWidth - boxMargin * 2;
+        const boxHeight = 130 * scale;
+        const boxY = targetHeight - boxHeight - (20 * scale);
+        const boxRadius = 12 * scale;
+
+        // Draw box background
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.beginPath();
+        ctx.roundRect(boxMargin, boxY, boxWidth, boxHeight, boxRadius);
+        ctx.fill();
+
+        // Draw box border
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 1 * scale;
+        ctx.stroke();
+
+        // Draw title
+        if (displayTitle) {
+          ctx.fillStyle = 'white';
+          ctx.font = `bold ${16 * scale}px 'Tajawal', 'Segoe UI', sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+          ctx.shadowBlur = 3 * scale;
+          ctx.fillText(displayTitle, targetWidth / 2, boxY + 30 * scale);
+        }
+
+        // Draw divider
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        const dividerWidth = 48 * scale;
+        ctx.fillRect((targetWidth - dividerWidth) / 2, boxY + 45 * scale, dividerWidth, 2 * scale);
+
+        // Draw marketing text
+        if (displayMarketingText) {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+          ctx.font = `${12 * scale}px 'Tajawal', 'Segoe UI', sans-serif`;
+          ctx.textAlign = 'center';
+          
+          // Word wrap the text
+          const maxWidth = boxWidth - boxPadding * 2;
+          const words = `"${displayMarketingText}"`.split(' ');
+          let line = '';
+          let y = boxY + 70 * scale;
+          const lineHeight = 18 * scale;
+          
+          for (const word of words) {
+            const testLine = line + (line ? ' ' : '') + word;
+            const metrics = ctx.measureText(testLine);
+            if (metrics.width > maxWidth && line) {
+              ctx.fillText(line, targetWidth / 2, y);
+              line = word;
+              y += lineHeight;
+            } else {
+              line = testLine;
+            }
+          }
+          ctx.fillText(line, targetWidth / 2, y);
+        }
+        
+        // Reset shadow
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+      }
+
+      // Draw website at bottom
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+      ctx.font = `${9 * scale}px 'Tajawal', 'Segoe UI', sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('teacherhub.site', targetWidth / 2, targetHeight - 15 * scale);
+
+      // Download
       const link = document.createElement('a');
-      link.download = `teacherhub-${selectedFeature?.id || 'content'}-${Date.now()}.png`;
+      link.download = `teacherhub-${selectedFeature?.id || 'content'}-2K-${Date.now()}.png`;
       link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
-      toast.success('تم تصدير الصورة المدمجة بنجاح!');
+      toast.success('تم تصدير الصورة بجودة 2K!');
     } catch (err) {
       console.error('Error exporting:', err);
       toast.error('حدث خطأ أثناء التصدير');
