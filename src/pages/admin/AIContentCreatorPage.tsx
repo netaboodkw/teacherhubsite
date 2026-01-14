@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Wand2, Download, Image as ImageIcon, Quote, Smartphone, Save, FolderOpen, Trash2, X, Sparkles, Check, RefreshCw } from 'lucide-react';
+import { Loader2, Wand2, Download, Image as ImageIcon, Quote, Smartphone, Save, FolderOpen, Trash2, X, Sparkles, Check, RefreshCw, Share2 } from 'lucide-react';
+import html2canvas from 'html2canvas';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -73,6 +74,8 @@ export default function AIContentCreatorPage() {
   const [selectedFeature, setSelectedFeature] = useState<AppFeature | null>(null);
   const [features, setFeatures] = useState<AppFeature[]>([]);
   const [isLoadingFeatures, setIsLoadingFeatures] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
+  const previewRef = useRef<HTMLDivElement>(null);
 
   // Fetch features from edge function
   useEffect(() => {
@@ -198,6 +201,32 @@ export default function AIContentCreatorPage() {
     } catch (err) {
       console.error('Error refreshing text:', err);
       toast.error('حدث خطأ أثناء تحديث النص');
+    }
+  };
+
+  // Export merged image with text overlay
+  const handleExportMerged = async () => {
+    if (!previewRef.current || !generatedImage) return;
+    
+    setIsExporting(true);
+    try {
+      const canvas = await html2canvas(previewRef.current, {
+        useCORS: true,
+        allowTaint: true,
+        scale: 3, // Higher quality
+        backgroundColor: null,
+      });
+      
+      const link = document.createElement('a');
+      link.download = `teacherhub-${selectedFeature?.id || 'content'}-${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      toast.success('تم تصدير الصورة المدمجة بنجاح!');
+    } catch (err) {
+      console.error('Error exporting:', err);
+      toast.error('حدث خطأ أثناء التصدير');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -409,7 +438,7 @@ export default function AIContentCreatorPage() {
               <CardTitle className="flex items-center justify-between">
                 <span>المعاينة</span>
                 {generatedImage && (
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     {selectedFeature && (
                       <Button variant="outline" size="sm" onClick={handleRefreshText}>
                         <RefreshCw className="w-4 h-4 ml-2" />
@@ -420,9 +449,18 @@ export default function AIContentCreatorPage() {
                       <Save className="w-4 h-4 ml-2" />
                       حفظ
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDownload()}>
-                      <Download className="w-4 h-4 ml-2" />
-                      تحميل
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      onClick={handleExportMerged}
+                      disabled={isExporting}
+                    >
+                      {isExporting ? (
+                        <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                      ) : (
+                        <Share2 className="w-4 h-4 ml-2" />
+                      )}
+                      تصدير مدمج
                     </Button>
                   </div>
                 )}
@@ -433,6 +471,7 @@ export default function AIContentCreatorPage() {
             </CardHeader>
             <CardContent>
               <div 
+                ref={previewRef}
                 className={cn(
                   "bg-muted rounded-lg flex items-center justify-center overflow-hidden mx-auto relative",
                   aspectRatio === '3:4' ? 'aspect-[3/4] max-w-[300px]' : 'aspect-[9/16] max-w-[225px]'
