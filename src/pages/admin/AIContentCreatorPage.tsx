@@ -37,6 +37,8 @@ import { cn } from '@/lib/utils';
 
 type AspectRatio = '3:4' | '9:16';
 type ContentType = 'feature' | 'custom';
+type ColorPalette = 'pastel' | 'vibrant' | 'dark';
+type DesignStyle = 'clay3d' | 'watercolor' | 'origami' | 'isometric';
 
 interface SavedContent {
   id: string;
@@ -56,12 +58,27 @@ interface AppFeature {
   marketingText: string;
 }
 
+const colorPaletteOptions = [
+  { value: 'pastel', label: 'باستيل', description: 'ألوان هادئة ودافئة', colors: ['#A8DDE6', '#DCC6E8', '#FDDCB8', '#B8E6CF'] },
+  { value: 'vibrant', label: 'زاهي', description: 'ألوان مشرقة وحيوية', colors: ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3'] },
+  { value: 'dark', label: 'داكن', description: 'ألوان عميقة وأنيقة', colors: ['#2C3E50', '#8E44AD', '#16A085', '#E74C3C'] },
+];
+
+const designStyleOptions = [
+  { value: 'clay3d', label: 'طين 3D', icon: '🎨', description: 'أشكال ثلاثية الأبعاد ناعمة' },
+  { value: 'watercolor', label: 'ألوان مائية', icon: '🖌️', description: 'رسم فني بألوان مائية' },
+  { value: 'origami', label: 'أوريغامي', icon: '📄', description: 'فن طي الورق الياباني' },
+  { value: 'isometric', label: 'إيزومتري', icon: '📐', description: 'أشكال هندسية ثلاثية الأبعاد' },
+];
+
 export default function AIContentCreatorPage() {
   const { user } = useAuth();
   const { logoUrl, isCustomLogo } = useSiteLogo();
   const queryClient = useQueryClient();
   const [contentType, setContentType] = useState<ContentType>('feature');
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('9:16');
+  const [colorPalette, setColorPalette] = useState<ColorPalette>('pastel');
+  const [designStyle, setDesignStyle] = useState<DesignStyle>('clay3d');
   const [prompt, setPrompt] = useState('');
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -149,6 +166,8 @@ export default function AIContentCreatorPage() {
         body: {
           prompt: contentType === 'custom' ? prompt : '',
           aspectRatio,
+          colorPalette,
+          designStyle,
           featureId: contentType === 'feature' ? selectedFeature?.id : null,
         },
       });
@@ -384,6 +403,66 @@ export default function AIContentCreatorPage() {
                   />
                 </div>
               )}
+
+              {/* Design Style */}
+              <div className="space-y-3">
+                <Label className="text-base font-medium">نمط التصميم</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {designStyleOptions.map((style) => (
+                    <button
+                      key={style.value}
+                      onClick={() => setDesignStyle(style.value as DesignStyle)}
+                      className={cn(
+                        "p-3 rounded-lg border-2 text-right transition-all",
+                        "hover:border-primary/50 hover:bg-primary/5",
+                        designStyle === style.value
+                          ? "border-primary bg-primary/10"
+                          : "border-border bg-muted/30"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">{style.icon}</span>
+                        <div>
+                          <p className="font-medium text-sm">{style.label}</p>
+                          <p className="text-xs text-muted-foreground">{style.description}</p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Color Palette */}
+              <div className="space-y-3">
+                <Label className="text-base font-medium">لوحة الألوان</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {colorPaletteOptions.map((palette) => (
+                    <button
+                      key={palette.value}
+                      onClick={() => setColorPalette(palette.value as ColorPalette)}
+                      className={cn(
+                        "p-3 rounded-lg border-2 text-center transition-all",
+                        "hover:border-primary/50",
+                        colorPalette === palette.value
+                          ? "border-primary bg-primary/10"
+                          : "border-border bg-muted/30"
+                      )}
+                    >
+                      <div className="flex justify-center gap-1 mb-2">
+                        {palette.colors.map((color, i) => (
+                          <div
+                            key={i}
+                            className="w-4 h-4 rounded-full border border-border/50"
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
+                      </div>
+                      <p className="font-medium text-sm">{palette.label}</p>
+                      <p className="text-xs text-muted-foreground">{palette.description}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               {/* Aspect Ratio */}
               <div className="space-y-3">

@@ -18,6 +18,45 @@ const brandColors = {
   background: "#F0F9FA",   // Light cyan background
 };
 
+// Color palette configurations
+const colorPalettes = {
+  pastel: {
+    name: "Pastel",
+    colors: "Soft teal (#A8DDE6, #7DD3E1), Lavender (#DCC6E8, #E8D5F0), Soft peach (#FDDCB8, #FEE8D6), Mint green (#B8E6CF)",
+    mood: "soft, gentle, warm, calming",
+  },
+  vibrant: {
+    name: "Vibrant",
+    colors: "Coral red (#FF6B6B), Turquoise (#4ECDC4), Sunny yellow (#FFE66D), Fresh mint (#95E1D3)",
+    mood: "energetic, exciting, playful, dynamic",
+  },
+  dark: {
+    name: "Dark",
+    colors: "Deep navy (#2C3E50), Royal purple (#8E44AD), Emerald (#16A085), Crimson (#E74C3C)",
+    mood: "elegant, professional, sophisticated, bold",
+  },
+};
+
+// Design style configurations
+const designStyles = {
+  clay3d: {
+    name: "3D Clay/Plasticine",
+    description: "Soft, rounded, cute 3D objects with a handmade clay or plasticine feel. Think Claymation style with smooth, tactile surfaces.",
+  },
+  watercolor: {
+    name: "Watercolor Illustration",
+    description: "Soft, artistic watercolor splashes and painted elements. Flowing colors with gentle gradients and organic brush strokes.",
+  },
+  origami: {
+    name: "Paper Craft/Origami",
+    description: "Layered paper cutouts with subtle shadows and depth. Clean geometric folds like Japanese origami art.",
+  },
+  isometric: {
+    name: "Isometric 3D",
+    description: "Clean geometric 3D objects from an isometric perspective. Modern, tech-inspired with precise angles.",
+  },
+};
+
 // Expanded app features with multiple marketing texts for randomization
 const appFeatures = [
   {
@@ -200,6 +239,67 @@ const appFeatures = [
       "أمان طلابك أولويتنا",
     ],
   },
+  // New Interactive Posts features
+  {
+    id: "interactive_poll",
+    title: "استطلاعات رأي تفاعلية",
+    description: "اسأل طلابك واحصل على آرائهم بشكل ممتع",
+    icon: "poll chart with question marks and voting hands",
+    marketingTexts: [
+      "اسأل طلابك واكتشف آراءهم!",
+      "استطلاعات رأي ممتعة وتفاعلية",
+      "شارك طلابك في القرارات",
+      "اجعل صوت كل طالب مسموع",
+    ],
+  },
+  {
+    id: "interactive_quiz",
+    title: "اختبارات سريعة",
+    description: "اختبر فهم طلابك بأسئلة سريعة وممتعة",
+    icon: "quiz paper with checkmark and lightning bolt",
+    marketingTexts: [
+      "اختبر فهم طلابك بطريقة ممتعة!",
+      "أسئلة سريعة ونتائج فورية",
+      "تقييم سريع لفهم الدرس",
+      "اختبارات تفاعلية لكل حصة",
+    ],
+  },
+  {
+    id: "interactive_challenge",
+    title: "تحديات أسبوعية",
+    description: "حفّز طلابك بتحديات ومسابقات مثيرة",
+    icon: "trophy with stars and confetti",
+    marketingTexts: [
+      "تحدّى طلابك واكتشف المتميزين!",
+      "مسابقات أسبوعية مثيرة",
+      "حفّز روح التنافس الإيجابي",
+      "جوائز ومكافآت للمتفوقين",
+    ],
+  },
+  {
+    id: "interactive_feedback",
+    title: "تغذية راجعة فورية",
+    description: "احصل على ملاحظات طلابك حول الدروس",
+    icon: "feedback bubbles with emojis",
+    marketingTexts: [
+      "اسمع رأي طلابك في دروسك!",
+      "تغذية راجعة فورية وصادقة",
+      "طوّر أسلوبك بناءً على آراء طلابك",
+      "تواصل أفضل مع طلابك",
+    ],
+  },
+  {
+    id: "interactive_goals",
+    title: "أهداف ومكافآت",
+    description: "حدد أهداف للطلاب واحتفل بإنجازاتهم",
+    icon: "target with medal and celebration",
+    marketingTexts: [
+      "حدد أهداف واحتفل بالإنجازات!",
+      "مكافآت تحفيزية للطلاب",
+      "تتبع تقدم كل طالب",
+      "نظام نقاط ومكافآت ممتع",
+    ],
+  },
 ];
 
 // Function to get random marketing text for a feature
@@ -226,7 +326,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, aspectRatio, featureId, getFeatures } = await req.json();
+    const { prompt, aspectRatio, colorPalette = 'pastel', designStyle = 'clay3d', featureId, getFeatures } = await req.json();
 
     // If requesting features list - return with random marketing text each time
     if (getFeatures) {
@@ -246,6 +346,10 @@ serve(async (req) => {
       );
     }
 
+    // Get color palette and design style configs
+    const paletteConfig = colorPalettes[colorPalette as keyof typeof colorPalettes] || colorPalettes.pastel;
+    const styleConfig = designStyles[designStyle as keyof typeof designStyles] || designStyles.clay3d;
+
     // Find selected feature
     let selectedFeature: typeof appFeatures[0] | null = null;
     if (featureId) {
@@ -261,19 +365,16 @@ serve(async (req) => {
     
     if (selectedFeature) {
       finalPrompt = `
-Create a beautiful, warm, and creative illustration for a teacher's app promotional post.
+Create a beautiful, ${paletteConfig.mood} illustration for a teacher's app promotional post.
 DO NOT include any text, letters, or words in the image - only visuals.
 
-STYLE - CHOOSE ONE OF THESE CREATIVE APPROACHES:
-- 3D Clay/Plasticine style: Soft, rounded, cute 3D objects with a handmade feel
-- Paper craft/Origami style: Layered paper cutouts with subtle shadows
-- Watercolor illustration: Soft, artistic watercolor splashes and elements
-- Isometric 3D: Clean geometric 3D objects from an isometric view
+DESIGN STYLE: ${styleConfig.name}
+${styleConfig.description}
 
 VISUAL ELEMENTS FOR "${selectedFeature.title}":
 - Main visual element representing: ${selectedFeature.icon}
 - Make it look friendly, approachable, and educational
-- Use pastel colors: Soft teal (#7DD3E1, #A8DDE6), Lavender (#DCC6E8), Soft peach (#FDDCB8)
+- Color palette: ${paletteConfig.colors}
 - Add small decorative elements related to education: books, pencils, stars, hearts
 - Include subtle patterns: dots, soft geometric shapes, organic curves
 
@@ -281,10 +382,10 @@ COMPOSITION:
 - Aspect ratio: ${aspectRatio} (vertical for stories)
 - Leave space at top for logo and at bottom for text overlay
 - Center the main illustration element
-- Background should be a soft gradient or subtle pattern (not plain)
+- Background should be a soft gradient or subtle pattern (not plain) using the color palette
 
-MOOD: Warm, friendly, professional, inspiring, suitable for educators
-NO TEXT, NO LETTERS, NO WORDS - only beautiful illustrations
+MOOD: ${paletteConfig.mood}, suitable for educators
+NO TEXT, NO LETTERS, NO WORDS - only beautiful illustrations in ${styleConfig.name} style
 `.trim();
     } else if (prompt) {
       finalPrompt = `
@@ -293,14 +394,14 @@ DO NOT include any text or letters - this is just a visual illustration.
 
 USER REQUEST: ${prompt}
 
-STYLE: 
-- Use one of: 3D clay style, paper craft, watercolor, or isometric 3D
-- Make it warm, friendly, and approachable
-- Pastel color palette: Soft teal, lavender, peach tones
-- Educational and professional feel
+DESIGN STYLE: ${styleConfig.name}
+${styleConfig.description}
+
+Color palette: ${paletteConfig.colors}
+Mood: ${paletteConfig.mood}
 
 Aspect ratio: ${aspectRatio}
-NO TEXT, NO LETTERS, NO WORDS - only beautiful visual elements
+NO TEXT, NO LETTERS, NO WORDS - only beautiful visual elements in ${styleConfig.name} style
 `.trim();
     } else {
       return new Response(
@@ -309,7 +410,7 @@ NO TEXT, NO LETTERS, NO WORDS - only beautiful visual elements
       );
     }
 
-    console.log("Calling Lovable AI with feature:", selectedFeature?.title || "custom prompt");
+    console.log("Calling Lovable AI with feature:", selectedFeature?.title || "custom prompt", "style:", designStyle, "palette:", colorPalette);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
