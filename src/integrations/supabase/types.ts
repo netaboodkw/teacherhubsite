@@ -47,6 +47,42 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_generated_content: {
+        Row: {
+          aspect_ratio: string
+          content_type: string
+          created_at: string
+          id: string
+          image_url: string
+          prompt: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aspect_ratio?: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          image_url: string
+          prompt?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aspect_ratio?: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          prompt?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       attendance_records: {
         Row: {
           classroom_id: string
