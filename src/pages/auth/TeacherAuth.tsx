@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { Loader2, ArrowLeft, Mail, Lock, User, Building2, BookOpen, GraduationCap, Eye, EyeOff, Phone, LogOut, AlertTriangle } from 'lucide-react';
 import heroBg from '@/assets/hero-bg.jpg';
+import logo from '@/assets/logo.png';
 
 export default function TeacherAuth() {
   const navigate = useNavigate();

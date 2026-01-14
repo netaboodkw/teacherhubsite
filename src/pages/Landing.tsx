@@ -8,6 +8,7 @@ import {
   Smartphone, Cloud, CheckCircle, Star, Gift, Building2, Camera, Eye
 } from 'lucide-react';
 import heroBg from '@/assets/hero-bg.jpg';
+import logo from '@/assets/logo.png';
 
 const features = [
   {
@@ -94,12 +95,12 @@ export default function Landing() {
         <div className="absolute inset-0 bg-gradient-to-b from-primary/90 via-primary/80 to-background" />
         
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto py-12">
-          <div className="inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-background/20 backdrop-blur-sm mb-8 shadow-2xl">
-            <GraduationCap className="w-14 h-14 text-primary-foreground" />
+          <div className="inline-flex items-center justify-center w-32 h-32 rounded-3xl bg-background/90 backdrop-blur-sm mb-8 shadow-2xl p-2">
+            <img src={logo} alt="Teacher Hub" className="w-full h-full object-contain" />
           </div>
           
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-primary-foreground mb-6">
-            TeacherHub
+            Teacher Hub
           </h1>
           
           <p className="text-xl md:text-2xl text-primary-foreground/90 mb-4 leading-relaxed">
@@ -280,7 +281,7 @@ export default function Landing() {
             ابدأ الآن مجاناً لمدة 100 يوم!
           </h2>
           <p className="text-lg opacity-90 mb-8">
-            انضم لآلاف المعلمين الذين يستخدمون TeacherHub لإدارة صفوفهم بكفاءة.
+            انضم لآلاف المعلمين الذين يستخدمون Teacher Hub لإدارة صفوفهم بكفاءة.
             لا حاجة لبطاقة ائتمان، سجل الآن واستمتع بجميع المميزات.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -299,13 +300,11 @@ export default function Landing() {
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-                <GraduationCap className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <span className="font-bold text-xl">TeacherHub</span>
+              <img src={logo} alt="Teacher Hub" className="w-12 h-12 object-contain" />
+              <span className="font-bold text-xl">Teacher Hub</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              © 2024 TeacherHub. جميع الحقوق محفوظة
+              © 2024 Teacher Hub. جميع الحقوق محفوظة
             </p>
           </div>
         </div>

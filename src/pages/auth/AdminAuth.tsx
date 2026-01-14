@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Mail, Lock, Loader2, Shield, LogOut, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import logo from '@/assets/logo.png';
 
 export default function AdminAuth() {
   const [action, setAction] = useState<'login' | 'signup'>('login');
@@ -147,8 +148,8 @@ export default function AdminAuth() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 p-4" dir="rtl">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary mb-4 mx-auto">
-            <Shield className="w-8 h-8 text-primary-foreground" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-background/90 mb-4 mx-auto">
+            <img src={logo} alt="Teacher Hub" className="w-14 h-14 object-contain" />
           </div>
           <CardTitle className="text-2xl font-bold">لوحة تحكم المشرفين</CardTitle>
           <CardDescription>
