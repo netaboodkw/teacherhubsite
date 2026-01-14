@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +20,8 @@ import {
 } from "@/components/ui/accordion";
 import { useSiteLogo } from '@/hooks/useSiteLogo';
 import { useSubscriptionSettings, useSubscriptionPackages } from '@/hooks/useSubscription';
+import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import defaultLogo from '@/assets/logo.png';
 
 const highlights = [
@@ -140,9 +143,26 @@ const additionalFeatures = [
 ];
 
 export default function Landing() {
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+  const { data: userRole, isLoading: roleLoading } = useUserRole();
   const { logoUrl, isCustomLogo } = useSiteLogo();
   const { data: subscriptionSettings } = useSubscriptionSettings();
   const { data: packages = [] } = useSubscriptionPackages();
+  
+  // Auto-redirect logged-in users to their dashboard
+  useEffect(() => {
+    if (!authLoading && !roleLoading && user) {
+      const role = userRole?.role;
+      if (role === 'admin') {
+        navigate('/admin', { replace: true });
+      } else if (role === 'department_head') {
+        navigate('/department-head', { replace: true });
+      } else {
+        navigate('/teacher', { replace: true });
+      }
+    }
+  }, [user, userRole, authLoading, roleLoading, navigate]);
   
   const trialDays = subscriptionSettings?.trial_days ?? 10;
   const displayLogo = isCustomLogo ? logoUrl : defaultLogo;
