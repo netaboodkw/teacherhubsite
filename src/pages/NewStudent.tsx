@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { StudentAvatarUpload } from '@/components/students/StudentAvatarUpload';
-import { ArrowRight, Users, Loader2, HeartPulse } from 'lucide-react';
+import { ArrowRight, Users, Loader2, HeartPulse, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function NewStudent() {
@@ -27,6 +27,8 @@ export default function NewStudent() {
     notes: '',
     special_needs: false,
     avatar_url: '',
+    parent_name: '',
+    parent_phone: '',
   });
 
   // Auto-select classroom if provided in URL
@@ -178,6 +180,38 @@ export default function NewStudent() {
                 checked={formData.special_needs}
                 onCheckedChange={(checked) => setFormData({ ...formData, special_needs: checked })}
               />
+            </div>
+
+            {/* Parent Information */}
+            <div className="space-y-4 p-4 rounded-lg border border-border bg-muted/30">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Phone className="w-4 h-4" />
+                <span className="text-sm font-medium">بيانات ولي الأمر (اختياري)</span>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="parent_name">اسم ولي الأمر</Label>
+                  <Input
+                    id="parent_name"
+                    placeholder="اسم ولي الأمر"
+                    value={formData.parent_name}
+                    onChange={(e) => setFormData({ ...formData, parent_name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="parent_phone">رقم جوال ولي الأمر</Label>
+                  <Input
+                    id="parent_phone"
+                    type="tel"
+                    placeholder="05xxxxxxxx"
+                    value={formData.parent_phone}
+                    onChange={(e) => setFormData({ ...formData, parent_phone: e.target.value })}
+                    dir="ltr"
+                    className="text-left"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">
