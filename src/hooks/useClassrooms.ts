@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from './useAuth';
+import { notifySupervisingDepartmentHeads } from './useSupervisionNotifications';
 
 export interface ClassSchedule {
   [day: string]: number[];
@@ -142,9 +143,17 @@ export function useCreateClassroom() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['classrooms'] });
       toast.success('تم إنشاء الصف بنجاح');
+      
+      // Notify supervising department heads
+      notifySupervisingDepartmentHeads(
+        'new_classroom',
+        'فصل جديد',
+        `تم إضافة فصل جديد: ${data.name}`,
+        data.id
+      );
     },
     onError: (error) => {
       toast.error('فشل في إنشاء الصف: ' + error.message);

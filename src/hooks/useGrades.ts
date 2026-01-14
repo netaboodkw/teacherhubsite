@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { notifySupervisingDepartmentHeads } from './useSupervisionNotifications';
 
 export type GradeType = 'exam' | 'assignment' | 'participation' | 'project';
 
@@ -108,9 +109,17 @@ export function useCreateGrade() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['grades'] });
       toast.success('تمت إضافة الدرجة بنجاح');
+      
+      // Notify supervising department heads
+      notifySupervisingDepartmentHeads(
+        'new_grades',
+        'رصد درجات جديدة',
+        `تم رصد درجة جديدة: ${data.title}`,
+        data.classroom_id
+      );
     },
     onError: (error) => {
       toast.error('فشل في إضافة الدرجة: ' + error.message);

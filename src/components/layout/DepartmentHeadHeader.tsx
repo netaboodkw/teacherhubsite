@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useSupervisedTeachers } from '@/hooks/useDepartmentHeads';
 import { useDepartmentHeadContext } from '@/contexts/DepartmentHeadContext';
 import { Badge } from '@/components/ui/badge';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 interface DepartmentHeadHeaderProps {
   onMenuClick: () => void;
@@ -33,6 +34,8 @@ export function DepartmentHeadHeader({ onMenuClick, showTeacherSelector = true }
           <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30">
             وضع المشاهدة فقط
           </Badge>
+          
+          <NotificationBell />
         </div>
 
         {/* Teacher Selector */}
