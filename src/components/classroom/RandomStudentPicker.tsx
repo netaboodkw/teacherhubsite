@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { User, Shuffle, Check, X, RotateCcw } from 'lucide-react';
+import { User, Shuffle, Check, X, RotateCcw, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface Student {
   id: string;
@@ -12,15 +14,17 @@ interface Student {
 
 interface RandomStudentPickerProps {
   students: Student[];
+  classroomId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function RandomStudentPicker({ students, open, onOpenChange }: RandomStudentPickerProps) {
+export function RandomStudentPicker({ students, classroomId, open, onOpenChange }: RandomStudentPickerProps) {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [answerResult, setAnswerResult] = useState<'correct' | 'wrong' | null>(null);
+  const [savingAnswer, setSavingAnswer] = useState(false);
 
   const pickRandomStudent = () => {
     if (students.length === 0) return;
@@ -48,8 +52,34 @@ export function RandomStudentPicker({ students, open, onOpenChange }: RandomStud
     }, 100);
   };
 
-  const handleAnswer = (result: 'correct' | 'wrong') => {
-    setAnswerResult(result);
+  const handleAnswer = async (result: 'correct' | 'wrong') => {
+    if (!selectedStudent || !classroomId) return;
+    
+    setSavingAnswer(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('يجب تسجيل الدخول');
+
+      const { error } = await supabase
+        .from('behavior_notes')
+        .insert({
+          student_id: selectedStudent.id,
+          classroom_id: classroomId,
+          user_id: user.id,
+          type: result === 'correct' ? 'positive' : 'negative',
+          description: result === 'correct' ? 'إجابة صحيحة' : 'إجابة خاطئة',
+          points: result === 'correct' ? 1 : -1,
+        });
+
+      if (error) throw error;
+      
+      setAnswerResult(result);
+      toast.success(result === 'correct' ? 'تم تسجيل الإجابة الصحيحة' : 'تم تسجيل الإجابة الخاطئة');
+    } catch (error: any) {
+      toast.error(error.message || 'حدث خطأ أثناء الحفظ');
+    } finally {
+      setSavingAnswer(false);
+    }
   };
 
   const reset = () => {
@@ -152,8 +182,9 @@ export function RandomStudentPicker({ students, open, onOpenChange }: RandomStud
                     variant="outline"
                     className="gap-2 border-green-500 text-green-600 hover:bg-green-50 hover:text-green-700 dark:hover:bg-green-950"
                     onClick={() => handleAnswer('correct')}
+                    disabled={savingAnswer}
                   >
-                    <Check className="h-5 w-5" />
+                    {savingAnswer ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
                     صحيح
                   </Button>
                   <Button
@@ -161,8 +192,9 @@ export function RandomStudentPicker({ students, open, onOpenChange }: RandomStud
                     variant="outline"
                     className="gap-2 border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950"
                     onClick={() => handleAnswer('wrong')}
+                    disabled={savingAnswer}
                   >
-                    <X className="h-5 w-5" />
+                    {savingAnswer ? <Loader2 className="h-5 w-5 animate-spin" /> : <X className="h-5 w-5" />}
                     خطأ
                   </Button>
                 </div>

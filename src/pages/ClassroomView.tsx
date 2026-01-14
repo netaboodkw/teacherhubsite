@@ -1141,6 +1141,7 @@ export default function ClassroomView() {
       {/* Random Student Picker */}
       <RandomStudentPicker
         students={students}
+        classroomId={classroomId || ''}
         open={randomPickerOpen}
         onOpenChange={setRandomPickerOpen}
       />
