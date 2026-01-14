@@ -34,9 +34,10 @@ import { toast } from 'sonner';
 import { 
   ArrowRight, User, Plus, Minus, MessageSquare, Save, Loader2, 
   Move, Check, X, Clock, FileText, ClipboardCheck,
-  MoreVertical, Archive, Settings, UserPlus, GripVertical, HeartPulse, StickyNote, Shuffle
+  MoreVertical, Archive, Settings, UserPlus, GripVertical, HeartPulse, StickyNote, Shuffle, Timer
 } from 'lucide-react';
 import { RandomStudentPicker } from '@/components/classroom/RandomStudentPicker';
+import { ClassroomTimer } from '@/components/classroom/ClassroomTimer';
 
 interface StudentPosition {
   student_id: string;
@@ -265,6 +266,7 @@ export default function ClassroomView() {
   const [selectedPeriod, setSelectedPeriod] = useState<number>(1);
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [randomPickerOpen, setRandomPickerOpen] = useState(false);
+  const [timerOpen, setTimerOpen] = useState(false);
 
   // Create a map of students who have notes
   const studentsWithNotes = useMemo(() => {
@@ -629,6 +631,9 @@ export default function ClassroomView() {
               {activeTab === 'notes' && (
                 <>
                   {/* Mobile: Show icons only */}
+                  <Button variant="outline" size="icon" className="sm:hidden" onClick={() => setTimerOpen(true)}>
+                    <Timer className="h-4 w-4" />
+                  </Button>
                   <Button variant="outline" size="icon" className="sm:hidden" onClick={() => setRandomPickerOpen(true)}>
                     <Shuffle className="h-4 w-4" />
                   </Button>
@@ -640,6 +645,10 @@ export default function ClassroomView() {
                   </Button>
                   
                   {/* Desktop: Show full buttons */}
+                  <Button variant="outline" size="sm" className="hidden sm:flex" onClick={() => setTimerOpen(true)}>
+                    <Timer className="h-4 w-4 ml-1" />
+                    مؤقت
+                  </Button>
                   <Button variant="outline" size="sm" className="hidden sm:flex" onClick={() => setRandomPickerOpen(true)}>
                     <Shuffle className="h-4 w-4 ml-1" />
                     اختيار عشوائي
@@ -1134,6 +1143,12 @@ export default function ClassroomView() {
         students={students}
         open={randomPickerOpen}
         onOpenChange={setRandomPickerOpen}
+      />
+
+      {/* Classroom Timer */}
+      <ClassroomTimer
+        open={timerOpen}
+        onOpenChange={setTimerOpen}
       />
     </div>
   );
