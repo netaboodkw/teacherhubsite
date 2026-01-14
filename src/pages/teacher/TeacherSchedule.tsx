@@ -12,6 +12,15 @@ import { cn } from '@/lib/utils';
 import { useProfile } from '@/hooks/useProfile';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
+// Helper function to convert hex to rgba
+const hexToRgba = (hex: string, alpha: number): string => {
+  if (!hex || hex.length < 7) return `rgba(100, 100, 100, ${alpha})`;
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
 export default function TeacherSchedule() {
   const { data: classrooms, isLoading } = useClassrooms();
   const { profile } = useProfile();
@@ -275,8 +284,8 @@ export default function TeacherSchedule() {
                                     viewMode === 'compact' ? "p-1 text-[10px]" : "p-2 text-xs"
                                   )}
                                   style={{ 
-                                    backgroundColor: `${classroom.color}20`,
-                                    borderRight: `3px solid ${classroom.color}`
+                                    backgroundColor: hexToRgba(classroom.color, 0.15),
+                                    borderRight: `3px solid ${classroom.color || '#666'}`
                                   }}
                                 >
                                   <div className="font-medium truncate">{classroom.name}</div>
@@ -314,11 +323,14 @@ export default function TeacherSchedule() {
                   <div
                     key={classroom.id}
                     className="flex items-center gap-2 px-3 py-2 rounded-lg border"
-                    style={{ borderColor: classroom.color }}
+                    style={{ 
+                      borderColor: classroom.color || '#666',
+                      backgroundColor: hexToRgba(classroom.color, 0.1)
+                    }}
                   >
                     <div
                       className="w-4 h-4 rounded"
-                      style={{ backgroundColor: classroom.color }}
+                      style={{ backgroundColor: classroom.color || '#666' }}
                     />
                     <span className="text-sm font-medium">{classroom.name}</span>
                   </div>
@@ -409,8 +421,8 @@ export default function TeacherSchedule() {
                             style={{ 
                               padding: '3px',
                               marginBottom: '2px',
-                              backgroundColor: `${classroom.color}30`,
-                              borderRight: `3px solid ${classroom.color}`,
+                              backgroundColor: hexToRgba(classroom.color, 0.2),
+                              borderRight: `3px solid ${classroom.color || '#666'}`,
                               borderRadius: '3px',
                               fontSize: '8px'
                             }}
