@@ -295,27 +295,42 @@ export default function AIContentCreatorPage() {
     
     setIsExporting(true);
     try {
-      // Clone the element to apply export-specific styles
       const element = previewRef.current;
       
-      // Temporarily modify styles for better html2canvas compatibility
-      const backdropElements = element.querySelectorAll('[class*="backdrop-blur"]');
-      backdropElements.forEach((el) => {
-        (el as HTMLElement).style.backdropFilter = 'none';
-        (el as HTMLElement).style.backgroundColor = 'rgba(255, 255, 255, 0.25)';
-      });
+      // Get the actual rendered dimensions
+      const rect = element.getBoundingClientRect();
+      const originalWidth = rect.width;
+      const originalHeight = rect.height;
+      
+      // Calculate export dimensions (maintain aspect ratio, target 1080 width for quality)
+      const exportWidth = 1080;
+      const exportHeight = aspectRatio === '9:16' ? 1920 : 1440; // 9:16 or 3:4
+      const scale = exportWidth / originalWidth;
 
       const canvas = await html2canvas(element, {
         useCORS: true,
         allowTaint: true,
-        scale: 3, // Higher quality
+        scale: scale,
+        width: originalWidth,
+        height: originalHeight,
         backgroundColor: null,
         logging: false,
         imageTimeout: 15000,
-        onclone: (clonedDoc) => {
-          // Apply solid backgrounds to cloned elements for compatibility
-          const clonedBackdropElements = clonedDoc.querySelectorAll('[class*="backdrop-blur"]');
-          clonedBackdropElements.forEach((el) => {
+        windowWidth: originalWidth,
+        windowHeight: originalHeight,
+        onclone: (clonedDoc, clonedElement) => {
+          // Ensure the cloned element maintains exact dimensions
+          clonedElement.style.width = `${originalWidth}px`;
+          clonedElement.style.height = `${originalHeight}px`;
+          clonedElement.style.maxWidth = 'none';
+          clonedElement.style.maxHeight = 'none';
+          clonedElement.style.margin = '0';
+          clonedElement.style.padding = '0';
+          clonedElement.style.overflow = 'hidden';
+          
+          // Apply solid backgrounds to backdrop-blur elements
+          const backdropElements = clonedElement.querySelectorAll('[class*="backdrop-blur"]');
+          backdropElements.forEach((el) => {
             const htmlEl = el as HTMLElement;
             htmlEl.style.backdropFilter = 'none';
             htmlEl.style.setProperty('-webkit-backdrop-filter', 'none');
@@ -323,18 +338,12 @@ export default function AIContentCreatorPage() {
           });
           
           // Fix drop-shadow by converting to text-shadow
-          const shadowElements = clonedDoc.querySelectorAll('[class*="drop-shadow"]');
+          const shadowElements = clonedElement.querySelectorAll('[class*="drop-shadow"]');
           shadowElements.forEach((el) => {
             (el as HTMLElement).style.filter = 'none';
             (el as HTMLElement).style.textShadow = '0 2px 4px rgba(0,0,0,0.5)';
           });
         }
-      });
-      
-      // Restore original styles
-      backdropElements.forEach((el) => {
-        (el as HTMLElement).style.backdropFilter = '';
-        (el as HTMLElement).style.backgroundColor = '';
       });
       
       const link = document.createElement('a');
