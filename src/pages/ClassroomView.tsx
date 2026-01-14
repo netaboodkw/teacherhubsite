@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,6 +41,7 @@ import { RandomStudentPicker } from '@/components/classroom/RandomStudentPicker'
 import { ClassroomTimer } from '@/components/classroom/ClassroomTimer';
 import { ClassroomStatsBanner } from '@/components/classroom/ClassroomStatsBanner';
 import { StudentBadges, WeeklyAchievementsManager, WeeklyLeaderboard } from '@/components/classroom/StudentBadges';
+import { getCurrentPeriod, getScheduleByEducationLevel } from '@/lib/periodSchedules';
 
 interface StudentPosition {
   student_id: string;
@@ -271,6 +273,30 @@ export default function ClassroomView() {
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [randomPickerOpen, setRandomPickerOpen] = useState(false);
   const [timerOpen, setTimerOpen] = useState(false);
+
+  // Auto-detect current period based on classroom schedule and Kuwait time
+  const currentPeriodInfo = useMemo(() => {
+    if (!classroom) return { period: 1, periodInfo: null, isClassDay: false };
+    
+    const classSchedule = classroom.class_schedule as Record<string, number[]> | null;
+    const educationLevelName = classroom.education_level?.name_ar || classroom.education_level?.name;
+    
+    return getCurrentPeriod(classSchedule, educationLevelName);
+  }, [classroom]);
+
+  // Get schedule info for period names
+  const scheduleInfo = useMemo(() => {
+    if (!classroom) return null;
+    const educationLevelName = classroom.education_level?.name_ar || classroom.education_level?.name;
+    return getScheduleByEducationLevel(educationLevelName);
+  }, [classroom]);
+
+  // Set initial period based on auto-detection
+  useEffect(() => {
+    if (currentPeriodInfo.period > 0) {
+      setSelectedPeriod(currentPeriodInfo.period);
+    }
+  }, [currentPeriodInfo.period]);
 
   // Create a map of students who have notes
   const studentsWithNotes = useMemo(() => {
@@ -798,15 +824,43 @@ export default function ClassroomView() {
         {/* Attendance Controls */}
         {activeTab === 'attendance' && (
           <div className="space-y-3 mb-4">
+            {/* Current Period Info */}
+            {currentPeriodInfo.periodInfo && (
+              <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-primary/10 border border-primary/20">
+                <Clock className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-primary">
+                  الحصة الحالية: {currentPeriodInfo.periodInfo.nameAr}
+                </span>
+                <Badge variant="secondary" className="text-xs">
+                  {currentPeriodInfo.periodInfo.startTime} - {currentPeriodInfo.periodInfo.endTime}
+                </Badge>
+              </div>
+            )}
+
+            {!currentPeriodInfo.isClassDay && classroom && (
+              <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-muted border border-border">
+                <span className="text-sm text-muted-foreground">
+                  لا توجد حصص مجدولة لهذا الصف اليوم
+                </span>
+              </div>
+            )}
+
             {/* Period Selection */}
             <div className="flex items-center justify-center gap-3">
               <Label className="text-sm font-medium">الحصة:</Label>
               <Select value={String(selectedPeriod)} onValueChange={(v) => setSelectedPeriod(Number(v))}>
-                <SelectTrigger className="w-28 sm:w-32">
+                <SelectTrigger className="w-32 sm:w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {[1,2,3,4,5,6,7].map(n => (
+                  {scheduleInfo?.periods.filter(p => !p.isBreak && p.period > 0).map(p => (
+                    <SelectItem key={p.period} value={String(p.period)}>
+                      {p.nameAr}
+                      {p.period === currentPeriodInfo.period && (
+                        <span className="mr-2 text-primary">(الحالية)</span>
+                      )}
+                    </SelectItem>
+                  )) || [1,2,3,4,5,6,7].map(n => (
                     <SelectItem key={n} value={String(n)}>الحصة {n}</SelectItem>
                   ))}
                 </SelectContent>
