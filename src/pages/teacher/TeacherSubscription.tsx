@@ -224,9 +224,40 @@ export default function TeacherSubscription() {
     );
   }
 
+  // Format trial end date
+  const getTrialEndDate = () => {
+    if (subscription?.trial_ends_at) {
+      return format(new Date(subscription.trial_ends_at), 'dd MMMM yyyy', { locale: ar });
+    }
+    return null;
+  };
+
   return (
     <TeacherLayout>
       <div className="max-w-5xl mx-auto space-y-6">
+        {/* Trial Period Banner - Show when user is in trial */}
+        {subscriptionStatus.status === 'trial' && subscription?.trial_ends_at && (
+          <Card className="border-amber-500 bg-amber-500/10">
+            <CardContent className="flex items-center gap-4 p-4">
+              <div className="p-2 rounded-full bg-amber-500/20">
+                <Clock className="h-6 w-6 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-700">أنت في الفترة التجريبية</h3>
+                <p className="text-sm text-muted-foreground">
+                  تنتهي الفترة التجريبية في{' '}
+                  <span className="font-bold text-amber-700">{getTrialEndDate()}</span>
+                  {' '}({subscriptionStatus.daysRemaining} يوم متبقي)
+                </p>
+              </div>
+              <Badge variant="secondary" className="gap-1 bg-amber-100 text-amber-700 border-amber-300">
+                <Calendar className="h-3 w-3" />
+                {subscriptionStatus.daysRemaining} يوم
+              </Badge>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Header */}
         <div className="text-center space-y-4">
           <h1 className="text-3xl font-bold">الاشتراك والمدفوعات</h1>
@@ -235,6 +266,13 @@ export default function TeacherSubscription() {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             {getStatusBadge()}
+            {/* Show trial end date next to badge */}
+            {subscriptionStatus.status === 'trial' && subscription?.trial_ends_at && (
+              <Badge variant="outline" className="gap-1">
+                <Calendar className="h-3 w-3" />
+                تنتهي في: {getTrialEndDate()}
+              </Badge>
+            )}
           </div>
         </div>
 
