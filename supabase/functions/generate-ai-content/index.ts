@@ -5,96 +5,218 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Platform brand colors from Landing page
+// Platform brand colors from Landing page (matching index.css)
 const brandColors = {
   primary: "#5BC0CE",      // Cyan/Teal
   primaryLight: "#7DD3E1", // Light Cyan
   secondary: "#4AA8B8",    // Darker Teal
   purple: "#C9A8D6",       // Soft Purple
+  lavender: "#E8D5F0",     // Light Lavender
   orange: "#F5C78E",       // Warm Orange
+  peach: "#F8DBC5",        // Light Peach
   green: "#10B981",        // Success Green
+  background: "#F0F9FA",   // Light cyan background
 };
 
-// App features for generating content
+// Expanded app features with multiple marketing texts for randomization
 const appFeatures = [
   {
     id: "attendance",
     title: "إدارة الحضور الذكية",
     description: "سجّل حضور طلابك بنقرة واحدة فقط!",
-    icon: "calendar with checkmark",
-    marketingText: "وداعاً للورق! سجّل الحضور بثوانٍ",
+    icon: "calendar with checkmark icon",
+    marketingTexts: [
+      "وداعاً للورق! سجّل الحضور بثوانٍ",
+      "تتبع حضور طلابك بكل سهولة",
+      "نظام حضور ذكي وسريع",
+      "سجّل الحضور واحصل على تقارير فورية",
+    ],
   },
   {
     id: "grades",
     title: "متابعة الدرجات",
     description: "رصد درجات طلابك مع تحليلات الأداء",
-    icon: "bar chart going up",
-    marketingText: "تابع تقدم طلابك بذكاء",
+    icon: "bar chart going up with star",
+    marketingTexts: [
+      "تابع تقدم طلابك بذكاء",
+      "درجات دقيقة وتحليلات شاملة",
+      "ارصد الدرجات في لحظات",
+      "تحليل أداء الطلاب بكل وضوح",
+    ],
   },
   {
     id: "dashboard",
     title: "لوحة تحكم شاملة",
     description: "كل فصولك وطلابك في مكان واحد",
-    icon: "dashboard with widgets",
-    marketingText: "كل شيء تحتاجه في مكان واحد",
+    icon: "dashboard grid with widgets and charts",
+    marketingTexts: [
+      "كل شيء تحتاجه في مكان واحد",
+      "لوحة تحكم ذكية لكل معلم",
+      "نظرة شاملة على كل فصولك",
+      "إدارة سهلة ومنظمة",
+    ],
   },
   {
     id: "reports",
     title: "تقارير احترافية",
     description: "تقارير PDF جاهزة للطباعة والمشاركة",
-    icon: "document with charts",
-    marketingText: "تقارير جاهزة بضغطة زر",
+    icon: "document with pie chart and print icon",
+    marketingTexts: [
+      "تقارير جاهزة بضغطة زر",
+      "اطبع وشارك تقاريرك بسهولة",
+      "تقارير PDF احترافية",
+      "وثّق أداء طلابك باحترافية",
+    ],
   },
   {
     id: "behavior",
     title: "ملاحظات سلوكية",
     description: "وثّق السلوك الإيجابي والسلبي للطلاب",
-    icon: "speech bubbles with thumbs up/down",
-    marketingText: "راقب سلوك طلابك بسهولة",
+    icon: "thumbs up and thumbs down with notepad",
+    marketingTexts: [
+      "راقب سلوك طلابك بسهولة",
+      "وثّق الإيجابيات والسلبيات",
+      "تتبع السلوك اليومي للطلاب",
+      "نظام ملاحظات سلوكية متكامل",
+    ],
   },
   {
     id: "schedule",
     title: "جدول الحصص",
     description: "نظّم جدولك مع تنبيهات ذكية",
-    icon: "clock with schedule",
-    marketingText: "لا تفوّت أي حصة مع التنبيهات الذكية",
+    icon: "clock with calendar schedule",
+    marketingTexts: [
+      "لا تفوّت أي حصة مع التنبيهات الذكية",
+      "نظّم وقتك باحترافية",
+      "جدول ذكي لكل معلم",
+      "تنبيهات قبل كل حصة",
+    ],
   },
   {
     id: "classrooms",
     title: "إدارة الفصول",
     description: "أنشئ ونظّم فصولك الدراسية بسهولة",
-    icon: "group of students",
-    marketingText: "نظّم فصولك باحترافية",
+    icon: "classroom with students silhouettes",
+    marketingTexts: [
+      "نظّم فصولك باحترافية",
+      "أنشئ فصولك في ثوانٍ",
+      "إدارة سهلة لكل الفصول",
+      "كل فصولك في متناول يدك",
+    ],
   },
   {
     id: "random",
     title: "اختيار طالب عشوائي",
     description: "حفّز مشاركة طلابك بأداة تفاعلية",
-    icon: "dice or shuffle arrows",
-    marketingText: "اجعل حصتك أكثر تفاعلية!",
+    icon: "spinning wheel with dice",
+    marketingTexts: [
+      "اجعل حصتك أكثر تفاعلية!",
+      "حفّز طلابك بالتشويق",
+      "عشوائية ممتعة في الفصل",
+      "أضف الحماس لحصتك",
+    ],
   },
   {
     id: "import",
     title: "استيراد الطلاب",
     description: "استورد بيانات طلابك من Excel أو بالصور",
-    icon: "upload with spreadsheet",
-    marketingText: "أضف طلابك في ثوانٍ معدودة",
+    icon: "upload arrow with spreadsheet",
+    marketingTexts: [
+      "أضف طلابك في ثوانٍ معدودة",
+      "استورد من Excel بسهولة",
+      "وفّر وقتك مع الاستيراد الذكي",
+      "بيانات طلابك جاهزة فوراً",
+    ],
   },
   {
     id: "templates",
     title: "قوالب التقييم",
     description: "صمم نظام تقييمك حسب مادتك ومرحلتك",
-    icon: "template with checkboxes",
-    marketingText: "قوالب تقييم مرنة تناسب احتياجاتك",
-  }
+    icon: "template grid with checkmarks",
+    marketingTexts: [
+      "قوالب تقييم مرنة تناسب احتياجاتك",
+      "صمم تقييمك الخاص",
+      "قوالب جاهزة لكل مادة",
+      "تقييم مخصص لكل معلم",
+    ],
+  },
+  {
+    id: "students",
+    title: "إدارة الطلاب",
+    description: "ملفات شاملة لكل طالب مع جميع البيانات",
+    icon: "student profile card with avatar",
+    marketingTexts: [
+      "كل بيانات طلابك في مكان واحد",
+      "ملف متكامل لكل طالب",
+      "تواصل سهل مع أولياء الأمور",
+      "إدارة شاملة لبيانات الطلاب",
+    ],
+  },
+  {
+    id: "notifications",
+    title: "التنبيهات الذكية",
+    description: "لا تفوت أي شيء مع التنبيهات الفورية",
+    icon: "bell with notification badge",
+    marketingTexts: [
+      "ابقَ على اطلاع دائم",
+      "تنبيهات فورية لكل جديد",
+      "لا تفوت أي تحديث مهم",
+      "إشعارات ذكية في الوقت المناسب",
+    ],
+  },
+  {
+    id: "analytics",
+    title: "تحليلات الأداء",
+    description: "رسوم بيانية وإحصائيات تفصيلية",
+    icon: "analytics graph with trending arrow",
+    marketingTexts: [
+      "افهم أداء طلابك بعمق",
+      "إحصائيات دقيقة ومفصلة",
+      "تحليلات ذكية لقرارات أفضل",
+      "اكتشف نقاط القوة والضعف",
+    ],
+  },
+  {
+    id: "mobile",
+    title: "تطبيق الجوال",
+    description: "استخدم المنصة من أي مكان على جوالك",
+    icon: "smartphone with app screens",
+    marketingTexts: [
+      "معك أينما كنت",
+      "إدارة فصولك من جوالك",
+      "تطبيق سريع وسهل الاستخدام",
+      "كل شيء في جيبك",
+    ],
+  },
+  {
+    id: "security",
+    title: "أمان وخصوصية",
+    description: "بياناتك محمية بأعلى معايير الأمان",
+    icon: "shield with lock",
+    marketingTexts: [
+      "بياناتك في أمان تام",
+      "خصوصية مضمونة",
+      "حماية عالية المستوى",
+      "أمان طلابك أولويتنا",
+    ],
+  },
 ];
 
-interface FeatureType {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-  marketingText: string;
+// Function to get random marketing text for a feature
+function getRandomMarketingText(feature: typeof appFeatures[0]): string {
+  const texts = feature.marketingTexts;
+  return texts[Math.floor(Math.random() * texts.length)];
+}
+
+// Transform feature for response (with random marketing text)
+function transformFeatureForResponse(feature: typeof appFeatures[0]) {
+  return {
+    id: feature.id,
+    title: feature.title,
+    description: feature.description,
+    icon: feature.icon,
+    marketingText: getRandomMarketingText(feature),
+  };
 }
 
 serve(async (req) => {
@@ -106,10 +228,11 @@ serve(async (req) => {
   try {
     const { prompt, aspectRatio, featureId, getFeatures } = await req.json();
 
-    // If requesting features list
+    // If requesting features list - return with random marketing text each time
     if (getFeatures) {
+      const featuresWithRandomText = appFeatures.map(f => transformFeatureForResponse(f));
       return new Response(
-        JSON.stringify({ features: appFeatures }),
+        JSON.stringify({ features: featuresWithRandomText }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -124,7 +247,7 @@ serve(async (req) => {
     }
 
     // Find selected feature
-    let selectedFeature: FeatureType | null = null;
+    let selectedFeature: typeof appFeatures[0] | null = null;
     if (featureId) {
       selectedFeature = appFeatures.find(f => f.id === featureId) || null;
       if (!selectedFeature) {
@@ -237,11 +360,14 @@ Make it visually stunning and marketing-ready.
       );
     }
 
+    // Transform feature for response with random marketing text
+    const responseFeature = selectedFeature ? transformFeatureForResponse(selectedFeature) : null;
+
     return new Response(
       JSON.stringify({ 
         imageUrl,
         message: data.choices?.[0]?.message?.content || "Image generated successfully",
-        feature: selectedFeature
+        feature: responseFeature
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
