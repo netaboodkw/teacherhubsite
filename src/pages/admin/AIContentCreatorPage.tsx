@@ -170,6 +170,8 @@ export default function AIContentCreatorPage() {
   const [isExporting, setIsExporting] = useState(false);
   const [textSuggestions, setTextSuggestions] = useState<TextSuggestion[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [titleColor, setTitleColor] = useState('#FFFFFF');
+  const [textColor, setTextColor] = useState('#FFFFFF');
   const previewRef = useRef<HTMLDivElement>(null);
 
   // Display title and marketing text (custom or from feature)
@@ -559,7 +561,7 @@ export default function AIContentCreatorPage() {
         // Draw title - text-base font-bold
         if (displayTitle) {
           ctx.save();
-          ctx.fillStyle = 'white';
+          ctx.fillStyle = titleColor;
           ctx.font = `bold ${titleFontSize}px 'Cairo', 'Segoe UI', sans-serif`;
           ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
           ctx.shadowBlur = 3 * scale;
@@ -573,14 +575,16 @@ export default function AIContentCreatorPage() {
         if (displayTitle && displayMarketingText) {
           const dividerWidth = 48 * scale;
           const dividerHeight = 2 * scale;
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+          // Use title color with 40% opacity for divider
+          ctx.fillStyle = titleColor + '66';
           ctx.fillRect((targetWidth - dividerWidth) / 2, currentY, dividerWidth, dividerHeight);
           currentY += dividerHeight + 8 * scale;
         }
 
         // Draw marketing text - text-xs with word wrap
         if (displayMarketingText) {
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+          // Use text color with 90% opacity
+          ctx.fillStyle = textColor + 'E6';
           ctx.font = `${textFontSize}px 'Cairo', 'Segoe UI', sans-serif`;
           
           const maxWidth = boxWidth - boxPadding * 2;
@@ -1025,6 +1029,76 @@ export default function AIContentCreatorPage() {
                 </RadioGroup>
               </div>
 
+              {/* Text Colors */}
+              <div className="space-y-3">
+                <Label className="text-base font-medium">ألوان النص</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">لون العنوان</Label>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="color"
+                        value={titleColor}
+                        onChange={(e) => setTitleColor(e.target.value)}
+                        className="w-10 h-10 rounded-lg border border-input cursor-pointer"
+                      />
+                      <Input
+                        value={titleColor}
+                        onChange={(e) => setTitleColor(e.target.value)}
+                        className="flex-1 font-mono text-sm"
+                        dir="ltr"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">لون النص</Label>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="color"
+                        value={textColor}
+                        onChange={(e) => setTextColor(e.target.value)}
+                        className="w-10 h-10 rounded-lg border border-input cursor-pointer"
+                      />
+                      <Input
+                        value={textColor}
+                        onChange={(e) => setTextColor(e.target.value)}
+                        className="flex-1 font-mono text-sm"
+                        dir="ltr"
+                      />
+                    </div>
+                  </div>
+                </div>
+                {/* Quick color presets */}
+                <div className="flex gap-2 flex-wrap">
+                  {[
+                    { color: '#FFFFFF', label: 'أبيض' },
+                    { color: '#000000', label: 'أسود' },
+                    { color: '#FFD700', label: 'ذهبي' },
+                    { color: '#FF6B6B', label: 'أحمر' },
+                    { color: '#4ECDC4', label: 'تركواز' },
+                    { color: '#45B7D1', label: 'أزرق' },
+                  ].map((preset) => (
+                    <Button
+                      key={preset.color}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => {
+                        setTitleColor(preset.color);
+                        setTextColor(preset.color);
+                      }}
+                    >
+                      <div 
+                        className="w-4 h-4 rounded-full border border-border"
+                        style={{ backgroundColor: preset.color }}
+                      />
+                      {preset.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
               {/* Generate Button */}
               <Button
                 onClick={handleGenerate}
@@ -1156,8 +1230,11 @@ export default function AIContentCreatorPage() {
                               {/* Title */}
                               {displayTitle && (
                                 <h2 
-                                  className="text-white text-base font-bold text-center mb-2 leading-snug"
-                                  style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
+                                  className="text-base font-bold text-center mb-2 leading-snug"
+                                  style={{ 
+                                    color: titleColor,
+                                    textShadow: '0 1px 3px rgba(0,0,0,0.3)' 
+                                  }}
                                 >
                                   {displayTitle}
                                 </h2>
@@ -1167,7 +1244,7 @@ export default function AIContentCreatorPage() {
                               {displayTitle && displayMarketingText && (
                                 <div 
                                   className="w-12 h-0.5 mx-auto mb-2"
-                                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.4)' }}
+                                  style={{ backgroundColor: `${titleColor}66` }}
                                 />
                               )}
                               
@@ -1175,7 +1252,7 @@ export default function AIContentCreatorPage() {
                               {displayMarketingText && (
                                 <p 
                                   className="text-xs text-center leading-relaxed"
-                                  style={{ color: 'rgba(255, 255, 255, 0.9)' }}
+                                  style={{ color: textColor, opacity: 0.9 }}
                                 >
                                   "{displayMarketingText}"
                                 </p>
