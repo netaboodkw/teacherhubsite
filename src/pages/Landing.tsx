@@ -9,6 +9,9 @@ import {
 } from 'lucide-react';
 import heroBg from '@/assets/hero-bg.jpg';
 import logo from '@/assets/logo.png';
+import featureDashboard from '@/assets/feature-dashboard.png';
+import featureGrades from '@/assets/feature-grades.png';
+import featureAttendance from '@/assets/feature-attendance.png';
 
 const features = [
   {
@@ -95,7 +98,7 @@ export default function Landing() {
         <div className="absolute inset-0 bg-gradient-to-b from-primary/90 via-primary/80 to-background" />
         
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto py-12">
-          <div className="inline-flex items-center justify-center w-32 h-32 rounded-3xl bg-background/90 backdrop-blur-sm mb-8 shadow-2xl p-2">
+          <div className="inline-flex items-center justify-center w-32 h-32 rounded-3xl bg-background/90 backdrop-blur-sm mb-8 shadow-2xl p-2 animate-logo-float">
             <img src={logo} alt="Teacher Hub" className="w-full h-full object-contain" />
           </div>
           
@@ -169,6 +172,48 @@ export default function Landing() {
             <div className="space-y-2">
               <div className="text-4xl font-bold text-primary">100</div>
               <div className="text-sm text-muted-foreground">يوم تجربة مجانية</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Screenshots Section */}
+      <div className="py-16 px-4 bg-muted/20">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <Badge variant="secondary" className="mb-4">شاهد التطبيق</Badge>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              تجربة استخدام احترافية
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              واجهة سهلة وبسيطة مصممة خصيصاً للمعلم العربي
+            </p>
+          </div>
+          
+          <div className="grid gap-8">
+            {/* Dashboard Screenshot */}
+            <div className="rounded-2xl overflow-hidden shadow-2xl border">
+              <img src={featureDashboard} alt="لوحة التحكم الرئيسية" className="w-full h-auto" />
+            </div>
+            
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Grades Screenshot */}
+              <div className="rounded-xl overflow-hidden shadow-xl border">
+                <img src={featureGrades} alt="إدخال الدرجات" className="w-full h-auto" />
+                <div className="p-4 bg-card text-center">
+                  <h3 className="font-bold">إدخال الدرجات</h3>
+                  <p className="text-sm text-muted-foreground">تتبع درجات طلابك بسهولة</p>
+                </div>
+              </div>
+              
+              {/* Attendance Screenshot */}
+              <div className="rounded-xl overflow-hidden shadow-xl border">
+                <img src={featureAttendance} alt="تسجيل الحضور" className="w-full h-auto" />
+                <div className="p-4 bg-card text-center">
+                  <h3 className="font-bold">تسجيل الحضور</h3>
+                  <p className="text-sm text-muted-foreground">سجل الحضور بضغطة واحدة</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

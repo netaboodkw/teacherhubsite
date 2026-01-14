@@ -42,7 +42,7 @@ export default function DepartmentHeadAuth() {
     
     setLoginLoading(true);
     try {
-      const { error } = await signIn(loginEmail.trim(), loginPassword);
+      const { error, data } = await signIn(loginEmail.trim(), loginPassword);
       
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
@@ -54,12 +54,11 @@ export default function DepartmentHeadAuth() {
       }
       
       // Check if user is a department head
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
+      if (data?.user) {
         const { data: dhProfile } = await supabase
           .from('department_heads')
           .select('id')
-          .eq('user_id', user.id)
+          .eq('user_id', data.user.id)
           .maybeSingle();
 
         if (!dhProfile) {
@@ -67,10 +66,12 @@ export default function DepartmentHeadAuth() {
           toast.error('هذا الحساب ليس حساب رئيس قسم');
           return;
         }
+        
+        toast.success('تم تسجيل الدخول بنجاح');
+        setTimeout(() => {
+          navigate('/department-head', { replace: true });
+        }, 100);
       }
-      
-      toast.success('تم تسجيل الدخول بنجاح');
-      navigate('/department-head');
     } catch (error: any) {
       toast.error(error.message || 'حدث خطأ أثناء تسجيل الدخول');
     } finally {

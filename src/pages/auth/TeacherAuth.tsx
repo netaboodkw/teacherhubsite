@@ -64,7 +64,7 @@ export default function TeacherAuth() {
     
     setLoginLoading(true);
     try {
-      const { error } = await signIn(loginEmail.trim(), loginPassword);
+      const { error, data } = await signIn(loginEmail.trim(), loginPassword);
       
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
@@ -75,8 +75,14 @@ export default function TeacherAuth() {
         return;
       }
       
-      toast.success('تم تسجيل الدخول بنجاح');
-      navigate('/teacher');
+      // Wait for session to be confirmed
+      if (data?.session) {
+        toast.success('تم تسجيل الدخول بنجاح');
+        // Small delay to ensure auth state is propagated
+        setTimeout(() => {
+          navigate('/teacher', { replace: true });
+        }, 100);
+      }
     } catch (error: any) {
       toast.error(error.message || 'حدث خطأ أثناء تسجيل الدخول');
     } finally {
