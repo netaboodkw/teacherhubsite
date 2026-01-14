@@ -8,8 +8,15 @@ import {
   Smartphone, Cloud, CheckCircle, Star, Gift, Building2, Camera,
   Zap, Award, TrendingUp, Heart, LogIn, Upload, FileImage, 
   PieChart, Download, Bell, Clock, Layers, Target, Palette,
-  BookOpen, MessageSquare, ThumbsUp, ThumbsDown, Layout, Settings
+  BookOpen, MessageSquare, ThumbsUp, ThumbsDown, Layout, Settings,
+  HelpCircle, ChevronDown
 } from 'lucide-react';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { useSiteLogo } from '@/hooks/useSiteLogo';
 import { useSubscriptionSettings, useSubscriptionPackages } from '@/hooks/useSubscription';
 import defaultLogo from '@/assets/logo.png';
@@ -755,6 +762,99 @@ export default function Landing() {
                 <Building2 className="ml-2 h-5 w-5" />
                 سجل كرئيس قسم
                 <ArrowLeft className="mr-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* FAQ Section */}
+      <div className="py-20 px-4 bg-background">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <Badge className="mb-4 bg-[#7DD3E1]/20 text-[#4AA8B8] border-0 text-sm px-4 py-1.5">
+              <HelpCircle className="w-4 h-4 ml-2" />
+              الأسئلة الشائعة
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
+              هل لديك أسئلة؟
+            </h2>
+            <p className="text-muted-foreground text-lg">
+              إليك إجابات على أكثر الأسئلة شيوعاً
+            </p>
+          </div>
+          
+          <Accordion type="single" collapsible className="space-y-4">
+            <AccordionItem value="item-1" className="border rounded-xl px-6 bg-card shadow-sm">
+              <AccordionTrigger className="text-right hover:no-underline py-5">
+                <span className="font-bold text-foreground">ما هي منصة Teacher Hub؟</span>
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground pb-5">
+                Teacher Hub هي منصة كويتية متكاملة صُممت خصيصاً للمعلمين في الكويت. تساعدك على إدارة صفوفك الدراسية، تسجيل حضور الطلاب، إدخال الدرجات، وإنشاء تقارير احترافية بكل سهولة. كل ذلك من مكان واحد وبواجهة عربية سهلة الاستخدام.
+              </AccordionContent>
+            </AccordionItem>
+            
+            <AccordionItem value="item-2" className="border rounded-xl px-6 bg-card shadow-sm">
+              <AccordionTrigger className="text-right hover:no-underline py-5">
+                <span className="font-bold text-foreground">هل المنصة مجانية؟</span>
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground pb-5">
+                نعم! نقدم تجربة مجانية لمدة {trialDays} يوم بدون الحاجة لبطاقة ائتمان. خلال فترة التجربة يمكنك استخدام جميع مميزات المنصة بشكل كامل. بعد انتهاء الفترة التجريبية، يمكنك اختيار الباقة المناسبة لاحتياجاتك.
+              </AccordionContent>
+            </AccordionItem>
+            
+            <AccordionItem value="item-3" className="border rounded-xl px-6 bg-card shadow-sm">
+              <AccordionTrigger className="text-right hover:no-underline py-5">
+                <span className="font-bold text-foreground">هل بياناتي آمنة؟</span>
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground pb-5">
+                نعم، أمان بياناتك أولويتنا القصوى. نستخدم أحدث تقنيات التشفير لحماية بياناتك وبيانات طلابك. جميع البيانات مُخزنة بشكل آمن مع نسخ احتياطية تلقائية. نلتزم بأعلى معايير الخصوصية والأمان.
+              </AccordionContent>
+            </AccordionItem>
+            
+            <AccordionItem value="item-4" className="border rounded-xl px-6 bg-card shadow-sm">
+              <AccordionTrigger className="text-right hover:no-underline py-5">
+                <span className="font-bold text-foreground">كيف أضيف طلابي للمنصة؟</span>
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground pb-5">
+                يمكنك إضافة الطلاب بعدة طرق سهلة: إضافة يدوية لكل طالب، استيراد من ملف Excel بضغطة واحدة، أو حتى تصوير قائمة الطلاب الورقية واستخراج الأسماء تلقائياً باستخدام الذكاء الاصطناعي!
+              </AccordionContent>
+            </AccordionItem>
+            
+            <AccordionItem value="item-5" className="border rounded-xl px-6 bg-card shadow-sm">
+              <AccordionTrigger className="text-right hover:no-underline py-5">
+                <span className="font-bold text-foreground">هل يمكنني استخدام المنصة من الجوال؟</span>
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground pb-5">
+                بالتأكيد! المنصة مُصممة لتعمل بشكل ممتاز على جميع الأجهزة: الكمبيوتر، الجوال، والتابلت. يمكنك تسجيل الحضور أو إدخال الدرجات من جوالك أثناء الحصة بكل سهولة.
+              </AccordionContent>
+            </AccordionItem>
+            
+            <AccordionItem value="item-6" className="border rounded-xl px-6 bg-card shadow-sm">
+              <AccordionTrigger className="text-right hover:no-underline py-5">
+                <span className="font-bold text-foreground">ما هي ميزة رئيس القسم؟</span>
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground pb-5">
+                يمكن لرؤساء الأقسام إنشاء حساب خاص يتيح لهم متابعة أداء المعلمين تحت إشرافهم. يمكنهم الاطلاع على تقارير الحضور والدرجات لجميع الصفوف، مما يسهل عملية المتابعة والتقييم.
+              </AccordionContent>
+            </AccordionItem>
+            
+            <AccordionItem value="item-7" className="border rounded-xl px-6 bg-card shadow-sm">
+              <AccordionTrigger className="text-right hover:no-underline py-5">
+                <span className="font-bold text-foreground">كيف يمكنني التواصل مع الدعم الفني؟</span>
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground pb-5">
+                فريق الدعم الفني متواجد لمساعدتك! يمكنك التواصل معنا عبر البريد الإلكتروني أو الواتساب. نسعى للرد على جميع الاستفسارات في أسرع وقت ممكن.
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+          
+          <div className="text-center mt-10">
+            <p className="text-muted-foreground mb-4">لم تجد إجابة سؤالك؟</p>
+            <Link to="/auth/teacher">
+              <Button variant="outline" size="lg" className="h-12 px-8">
+                <MessageSquare className="ml-2 h-5 w-5" />
+                تواصل معنا
               </Button>
             </Link>
           </div>
