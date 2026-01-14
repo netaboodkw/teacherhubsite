@@ -5,7 +5,7 @@ import { Clock, Calendar, ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import type { Classroom } from '@/hooks/useClassrooms';
-import { getScheduleByEducationLevel, weekDays, type PeriodTime } from '@/lib/periodSchedules';
+import { getScheduleByEducationLevel, weekDays } from '@/lib/periodSchedules';
 
 interface TodayScheduleProps {
   classrooms: Classroom[];
@@ -83,16 +83,16 @@ export function TodaySchedule({ classrooms, educationLevelName }: TodayScheduleP
   if (!isWorkDay) {
     return (
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Calendar className="w-5 h-5" />
+        <CardHeader className="p-3 pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Calendar className="w-4 h-4" />
             جدول اليوم
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-center py-6 text-muted-foreground">
-            <p className="text-lg">🎉 إجازة سعيدة!</p>
-            <p className="text-sm mt-1">لا توجد حصص اليوم</p>
+        <CardContent className="p-3 pt-0">
+          <div className="text-center py-4 text-muted-foreground">
+            <p className="text-base">🎉 إجازة سعيدة!</p>
+            <p className="text-xs mt-1">لا توجد حصص اليوم</p>
           </div>
         </CardContent>
       </Card>
@@ -103,31 +103,31 @@ export function TodaySchedule({ classrooms, educationLevelName }: TodayScheduleP
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Calendar className="w-5 h-5" />
-            جدول اليوم - {currentDayName}
+      <CardHeader className="p-3 pb-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-sm sm:text-base flex items-center gap-1.5 min-w-0">
+            <Calendar className="w-4 h-4 shrink-0" />
+            <span className="truncate">اليوم - {currentDayName}</span>
           </CardTitle>
           <Link 
             to="/teacher/schedule" 
-            className="text-sm text-primary hover:underline flex items-center gap-1"
+            className="text-xs text-primary hover:underline flex items-center gap-0.5 shrink-0"
           >
-            الجدول الكامل
-            <ChevronLeft className="w-4 h-4" />
+            <span className="hidden xs:inline">الجدول</span>
+            <ChevronLeft className="w-3.5 h-3.5" />
           </Link>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-2 pt-0">
         {!hasAnyClass ? (
-          <div className="text-center py-4 text-muted-foreground">
-            <p>لا توجد حصص مجدولة لهذا اليوم</p>
-            <Link to="/teacher/schedule" className="text-primary hover:underline text-sm">
-              إضافة جدول الحصص
+          <div className="text-center py-3 text-muted-foreground">
+            <p className="text-sm">لا توجد حصص مجدولة</p>
+            <Link to="/teacher/schedule" className="text-primary hover:underline text-xs">
+              إضافة جدول
             </Link>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-1">
             {todayPeriods.map((item, index) => {
               const isCurrent = index === currentPeriodIndex && status === 'current';
               const isNext = index === currentPeriodIndex && status === 'upcoming';
@@ -137,16 +137,16 @@ export function TodaySchedule({ classrooms, educationLevelName }: TodayScheduleP
                 <div
                   key={item.period.period}
                   className={cn(
-                    "flex items-center gap-3 p-2 rounded-lg transition-colors",
+                    "flex items-center gap-2 p-1.5 sm:p-2 rounded-lg transition-colors",
                     isCurrent && "bg-primary/10 border border-primary/30",
                     isNext && "bg-amber-500/10 border border-amber-500/30",
-                    isPast && "opacity-50",
+                    isPast && "opacity-40",
                     !isCurrent && !isNext && !isPast && "hover:bg-muted/50"
                   )}
                 >
                   {/* رقم الحصة */}
                   <div className={cn(
-                    "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
+                    "w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold shrink-0",
                     isCurrent ? "bg-primary text-primary-foreground" :
                     isNext ? "bg-amber-500 text-white" :
                     "bg-muted text-muted-foreground"
@@ -155,36 +155,31 @@ export function TodaySchedule({ classrooms, educationLevelName }: TodayScheduleP
                   </div>
                   
                   {/* معلومات الحصة */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <div className="flex items-center gap-1 flex-wrap">
                       {item.classroom ? (
                         <Link 
                           to={`/teacher/classroom/${item.classroom.id}`}
-                          className="font-medium text-sm hover:text-primary truncate"
+                          className="font-medium text-xs sm:text-sm hover:text-primary truncate max-w-[100px] sm:max-w-[140px]"
                         >
                           {item.classroom.name}
                         </Link>
                       ) : (
-                        <span className="text-sm text-muted-foreground">—</span>
+                        <span className="text-xs text-muted-foreground">—</span>
                       )}
                       {isCurrent && (
-                        <Badge variant="default" className="text-xs shrink-0">الآن</Badge>
+                        <Badge variant="default" className="text-[10px] px-1.5 py-0 h-4 shrink-0">الآن</Badge>
                       )}
                       {isNext && (
-                        <Badge variant="secondary" className="text-xs shrink-0 bg-amber-500/20 text-amber-700">التالية</Badge>
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 shrink-0 bg-amber-500/20 text-amber-700">التالية</Badge>
                       )}
                     </div>
-                    {item.classroom && (
-                      <p className="text-xs text-muted-foreground truncate">
-                        {item.classroom.subject}
-                      </p>
-                    )}
                   </div>
                   
                   {/* الوقت */}
-                  <div className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
-                    <Clock className="w-3 h-3" />
-                    <span>{item.period.startTime}</span>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-0.5 shrink-0">
+                    <Clock className="w-3 h-3 hidden sm:block" />
+                    <span className="font-mono">{item.period.startTime}</span>
                   </div>
                 </div>
               );
