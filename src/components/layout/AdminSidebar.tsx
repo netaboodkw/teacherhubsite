@@ -18,6 +18,7 @@ import {
   Archive,
   UsersRound,
   CreditCard,
+  Wand2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -37,6 +38,7 @@ const navItems = [
   { href: '/admin/teachers', icon: Users, label: 'المعلمون' },
   { href: '/admin/archived-classrooms', icon: Archive, label: 'الصفوف المؤرشفة' },
   { href: '/admin/subscriptions', icon: CreditCard, label: 'الاشتراكات والمدفوعات' },
+  { href: '/admin/ai-content', icon: Wand2, label: 'إنشاء محتوى AI' },
 ];
 
 export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
