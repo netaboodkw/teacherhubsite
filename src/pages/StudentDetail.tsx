@@ -51,8 +51,17 @@ export default function StudentDetail() {
     const map: Record<string, string> = {};
     if (gradingStructure?.structure?.groups) {
       gradingStructure.structure.groups.forEach(group => {
+        // Add group name for potential group-based titles
+        if (group.id) {
+          map[group.id] = group.name_ar;
+        }
         group.columns.forEach(col => {
+          // Map by column ID
           map[col.id] = col.name_ar;
+          // Also map by column ID without prefix for flexibility
+          if (col.id.startsWith('col_')) {
+            map[col.id.replace('col_', '')] = col.name_ar;
+          }
         });
       });
     }
@@ -61,13 +70,48 @@ export default function StudentDetail() {
   
   // Helper to get display name for a grade
   const getGradeDisplayTitle = (gradeTitle: string): string => {
-    // Check if it's a column ID (starts with col_)
-    if (gradeTitle.startsWith('col_') && columnNamesMap[gradeTitle]) {
+    // Direct match in column names map
+    if (columnNamesMap[gradeTitle]) {
       return columnNamesMap[gradeTitle];
     }
+    
+    // Check if it starts with col_ or contains underscore patterns
+    if (gradeTitle.startsWith('col_')) {
+      const withoutPrefix = gradeTitle.replace('col_', '');
+      if (columnNamesMap[withoutPrefix]) {
+        return columnNamesMap[withoutPrefix];
+      }
+    }
+    
+    // Check for UUID-like patterns (common in generated IDs)
+    const uuidPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+    const partialUuidPattern = /^[a-f0-9]{6,}$/i;
+    
+    if (uuidPattern.test(gradeTitle) || partialUuidPattern.test(gradeTitle)) {
+      // This is likely a generated ID, check if we have it mapped
+      if (columnNamesMap[gradeTitle]) {
+        return columnNamesMap[gradeTitle];
+      }
+      // Return a generic name if it's an unmapped ID
+      return 'درجة';
+    }
+    
+    // Check for patterns like "col_abc123" or "group_xyz"
+    if (/^(col_|group_|column_|grade_)/i.test(gradeTitle)) {
+      const cleanId = gradeTitle.replace(/^(col_|group_|column_|grade_)/i, '');
+      if (columnNamesMap[cleanId]) {
+        return columnNamesMap[cleanId];
+      }
+    }
+    
+    // If title contains only alphanumeric and underscores with numbers, it's likely a code
+    if (/^[a-zA-Z0-9_]+$/.test(gradeTitle) && /\d/.test(gradeTitle) && gradeTitle.length > 10) {
+      return 'درجة';
+    }
+    
     return gradeTitle;
   };
-  
+
   // Filter attendance for this student
   const studentAttendance = allAttendance.filter(a => a.student_id === studentId);
   
