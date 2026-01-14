@@ -11,7 +11,9 @@ import { educationSchedules, getScheduleByEducationLevel, weekDays, type Educati
 import { cn } from '@/lib/utils';
 import { useProfile } from '@/hooks/useProfile';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-
+import { usePeriodReminder } from '@/hooks/usePeriodReminder';
+import { PeriodReminderSettings } from '@/components/schedule/PeriodReminderSettings';
+import { UpcomingPeriodAlert } from '@/components/schedule/UpcomingPeriodAlert';
 // Color mapping for Tailwind class names to hex colors
 const colorClassToHex: { [key: string]: string } = {
   'bg-blue-200': '#bfdbfe',
@@ -108,6 +110,15 @@ export default function TeacherSchedule() {
     return educationSchedules[0];
   }, [selectedEducationLevel, educationLevels, filteredClassrooms]);
 
+  // Period reminder hook
+  const {
+    settings: reminderSettings,
+    updateSettings: updateReminderSettings,
+    upcomingPeriod,
+    notificationPermission,
+    requestPermission,
+  } = usePeriodReminder(currentSchedule, classrooms || [], true);
+
   // Build the schedule grid
   const scheduleGrid = useMemo(() => {
     const grid: { [periodIndex: number]: { [day: string]: Classroom[] } } = {};
@@ -169,6 +180,12 @@ export default function TeacherSchedule() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <PeriodReminderSettings
+                settings={reminderSettings}
+                onSettingsChange={updateReminderSettings}
+                notificationPermission={notificationPermission}
+                onRequestPermission={requestPermission}
+              />
               <ToggleGroup 
                 type="single" 
                 value={viewMode} 
@@ -191,6 +208,9 @@ export default function TeacherSchedule() {
               </Button>
             </div>
           </div>
+
+          {/* Upcoming Period Alert */}
+          <UpcomingPeriodAlert upcomingPeriod={upcomingPeriod} />
 
           {/* Filters */}
           <div className="flex flex-wrap gap-3">
