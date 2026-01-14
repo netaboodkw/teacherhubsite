@@ -109,9 +109,17 @@ export default function Landing() {
         </div>
         
         <div className="relative z-10 text-center px-4 max-w-5xl mx-auto py-16">
-          {/* Logo */}
-          <div className="inline-flex items-center justify-center w-36 h-36 rounded-3xl bg-white/95 backdrop-blur-sm mb-8 shadow-2xl p-3 animate-logo-float ring-4 ring-white/30">
-            <img src={logoUrl} alt="Teacher Hub" className="w-full h-full object-contain" />
+          {/* Logo - Large and prominent */}
+          <div className="inline-flex items-center justify-center w-44 h-44 md:w-52 md:h-52 rounded-[2rem] bg-white backdrop-blur-sm mb-10 shadow-2xl p-4 animate-logo-float ring-4 ring-white/40">
+            <img 
+              src={logoUrl} 
+              alt="Teacher Hub" 
+              className="w-full h-full object-contain drop-shadow-md"
+              onError={(e) => {
+                // Fallback to default logo on error
+                e.currentTarget.src = '/logo.png';
+              }}
+            />
           </div>
           
           {/* Title with gradient */}
