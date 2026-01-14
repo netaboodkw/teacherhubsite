@@ -422,30 +422,48 @@ export default function AIContentCreatorPage() {
                       alt="محتوى منشأ بالذكاء الاصطناعي"
                       className="w-full h-full object-cover"
                     />
-                    {/* Arabic Text Overlay */}
+                    {/* Professional Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/70 pointer-events-none" />
+                    
                     {selectedFeature && (
-                      <div className="absolute inset-0 flex flex-col justify-between p-4 pointer-events-none">
-                        {/* Top - Logo and App Name */}
-                        <div className="text-center">
-                          {isCustomLogo && (
-                            <img src={logoUrl} alt="شعار" className="w-12 h-12 mx-auto mb-2 drop-shadow-lg" />
-                          )}
-                          <p className="text-white text-sm font-bold drop-shadow-lg">منصة المعلم الذكي</p>
+                      <div className="absolute inset-0 flex flex-col pointer-events-none">
+                        {/* Top Section - Logo and App Name */}
+                        <div className="pt-5 px-3 text-center">
+                          <div className="inline-flex flex-col items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
+                            {isCustomLogo && (
+                              <img 
+                                src={logoUrl} 
+                                alt="شعار" 
+                                className="w-8 h-8 object-contain rounded-lg"
+                              />
+                            )}
+                            <p className="text-white text-[10px] font-semibold">
+                              منصة المعلم الذكي
+                            </p>
+                          </div>
                         </div>
                         
-                        {/* Center - Feature Text */}
-                        <div className="text-center space-y-2">
-                          <h2 className="text-white text-2xl font-bold drop-shadow-lg leading-relaxed">
-                            {selectedFeature.title}
-                          </h2>
-                          <p className="text-white/90 text-lg drop-shadow-lg">
-                            {selectedFeature.marketingText}
+                        {/* Bottom Section - Feature Content */}
+                        <div className="mt-auto pb-5 px-3">
+                          <div className="bg-white/15 backdrop-blur-md rounded-xl p-4 border border-white/20">
+                            {/* Feature Title */}
+                            <h2 className="text-white text-base font-bold text-center mb-2 leading-snug">
+                              {selectedFeature.title}
+                            </h2>
+                            
+                            {/* Divider */}
+                            <div className="w-12 h-0.5 bg-white/40 mx-auto mb-2" />
+                            
+                            {/* Marketing Text */}
+                            <p className="text-white/90 text-xs text-center leading-relaxed">
+                              "{selectedFeature.marketingText}"
+                            </p>
+                          </div>
+                          
+                          {/* Website */}
+                          <p className="text-white/60 text-[9px] text-center mt-3 font-medium tracking-wider">
+                            teacher-hub.app
                           </p>
-                        </div>
-                        
-                        {/* Bottom - Website */}
-                        <div className="text-center">
-                          <p className="text-white/80 text-xs drop-shadow-lg">teacher-hub.app</p>
                         </div>
                       </div>
                     )}
