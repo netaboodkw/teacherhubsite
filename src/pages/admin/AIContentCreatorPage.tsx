@@ -1021,7 +1021,8 @@ export default function AIContentCreatorPage() {
                       }}
                     />
                     
-                    {selectedFeature && (
+                    {/* Show overlay when there's content to display */}
+                    {(displayTitle || displayMarketingText || contentType !== 'custom') && (
                       <div className="absolute inset-0 flex flex-col pointer-events-none">
                         {/* Top Section - Logo as App Icon */}
                         <div className="pt-5 px-3 text-center">
@@ -1051,46 +1052,66 @@ export default function AIContentCreatorPage() {
                           </div>
                         </div>
                         
-                        {/* Bottom Section - Feature Content */}
-                        <div className="mt-auto pb-5 px-3">
-                          <div 
-                            className="rounded-xl p-4"
-                            style={{
-                              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                              border: '1px solid rgba(255, 255, 255, 0.3)'
-                            }}
-                          >
-                            {/* Feature Title */}
-                            <h2 
-                              className="text-white text-base font-bold text-center mb-2 leading-snug"
-                              style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
-                            >
-                              {displayTitle}
-                            </h2>
-                            
-                            {/* Divider */}
+                        {/* Bottom Section - Content */}
+                        {(displayTitle || displayMarketingText) && (
+                          <div className="mt-auto pb-5 px-3">
                             <div 
-                              className="w-12 h-0.5 mx-auto mb-2"
-                              style={{ backgroundColor: 'rgba(255, 255, 255, 0.4)' }}
-                            />
-                            
-                            {/* Marketing Text */}
-                            <p 
-                              className="text-xs text-center leading-relaxed"
-                              style={{ color: 'rgba(255, 255, 255, 0.9)' }}
+                              className="rounded-xl p-4"
+                              style={{
+                                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                border: '1px solid rgba(255, 255, 255, 0.3)'
+                              }}
                             >
-                              "{displayMarketingText}"
+                              {/* Title */}
+                              {displayTitle && (
+                                <h2 
+                                  className="text-white text-base font-bold text-center mb-2 leading-snug"
+                                  style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
+                                >
+                                  {displayTitle}
+                                </h2>
+                              )}
+                              
+                              {/* Divider */}
+                              {displayTitle && displayMarketingText && (
+                                <div 
+                                  className="w-12 h-0.5 mx-auto mb-2"
+                                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.4)' }}
+                                />
+                              )}
+                              
+                              {/* Marketing Text */}
+                              {displayMarketingText && (
+                                <p 
+                                  className="text-xs text-center leading-relaxed"
+                                  style={{ color: 'rgba(255, 255, 255, 0.9)' }}
+                                >
+                                  "{displayMarketingText}"
+                                </p>
+                              )}
+                            </div>
+                            
+                            {/* Website */}
+                            <p 
+                              className="text-[9px] text-center mt-3 font-medium tracking-wider"
+                              style={{ color: 'rgba(255, 255, 255, 0.6)' }}
+                            >
+                              teacherhub.site
                             </p>
                           </div>
-                          
-                          {/* Website */}
-                          <p 
-                            className="text-[9px] text-center mt-3 font-medium tracking-wider"
-                            style={{ color: 'rgba(255, 255, 255, 0.6)' }}
-                          >
-                            teacherhub.site
-                          </p>
-                        </div>
+                        )}
+                        
+                        {/* Show website even without text content */}
+                        {!displayTitle && !displayMarketingText && (
+                          <div className="mt-auto pb-5 px-3">
+                            <p 
+                              className="text-[9px] text-center font-medium tracking-wider"
+                              style={{ color: 'rgba(255, 255, 255, 0.6)' }}
+                            >
+                              teacherhub.site
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
