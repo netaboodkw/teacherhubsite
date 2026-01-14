@@ -391,7 +391,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, aspectRatio, colorPalette = 'pastel', designStyle = 'clay3d', featureId, contentType = 'feature', getFeatures } = await req.json();
+    const { prompt, aspectRatio, colorPalette = 'pastel', designStyle = 'clay3d', featureId, contentType = 'feature', getFeatures, getSuggestions } = await req.json();
 
     // If requesting features list - return with random marketing text each time
     if (getFeatures) {
@@ -400,6 +400,171 @@ serve(async (req) => {
         JSON.stringify({ features: featuresWithRandomText }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // If requesting text suggestions for a content type
+    if (getSuggestions && contentType) {
+      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+      if (!LOVABLE_API_KEY) {
+        return new Response(
+          JSON.stringify({ error: "API key not configured" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const contentConfig = contentTypeTemplates[contentType as keyof typeof contentTypeTemplates] || contentTypeTemplates.feature;
+      
+      const suggestionPrompts: Record<string, string> = {
+        marketing: `أنت خبير تسويق لتطبيق تعليمي للمعلمين. اقترح 4 أفكار مختلفة لبوستات تسويقية جذابة.
+لكل فكرة أعطني:
+- عنوان قصير جذاب (5-8 كلمات)
+- نص تسويقي مقنع (15-25 كلمة)
+
+الأفكار يجب أن تكون:
+- مثيرة للاهتمام وتدفع للتجربة
+- تركز على حل مشاكل المعلمين
+- تستخدم لغة عربية فصيحة وجذابة`,
+
+        interactive: `أنت خبير محتوى تفاعلي. اقترح 4 أفكار لبوستات تفاعلية تشجع المعلمين على المشاركة.
+لكل فكرة أعطني:
+- سؤال أو عنوان تفاعلي (5-10 كلمات)
+- نص يشرح كيفية التفاعل (15-25 كلمة)
+
+الأفكار يجب أن تكون:
+- أسئلة مثيرة للتفكير
+- استطلاعات رأي
+- تحديات ممتعة للمعلمين`,
+
+        trial: `أنت خبير في جذب المستخدمين الجدد. اقترح 4 أفكار لبوستات تشجع على تجربة التطبيق.
+لكل فكرة أعطني:
+- عنوان يدعو للتجربة (5-8 كلمات)
+- نص يوضح مميزات التجربة المجانية (15-25 كلمة)
+
+الأفكار يجب أن تكون:
+- تؤكد على سهولة البدء
+- تذكر أن التجربة مجانية
+- تركز على الفائدة الفورية للمعلم`,
+
+        testimonial: `أنت كاتب محتوى متخصص في شهادات العملاء. اقترح 4 أفكار لبوستات شهادات وتجارب المعلمين.
+لكل فكرة أعطني:
+- عنوان الشهادة (5-8 كلمات)
+- نص الشهادة أو التجربة (20-30 كلمة)
+
+الأفكار يجب أن تكون:
+- واقعية ومقنعة
+- تظهر نتائج ملموسة
+- بأسلوب معلم حقيقي`,
+
+        tips: `أنت مستشار تعليمي خبير. اقترح 4 نصائح تعليمية قيمة للمعلمين.
+لكل نصيحة أعطني:
+- عنوان النصيحة (5-8 كلمات)
+- شرح النصيحة وكيفية تطبيقها (20-30 كلمة)
+
+النصائح يجب أن تكون:
+- عملية وقابلة للتطبيق
+- مفيدة في الفصل الدراسي
+- مرتبطة بإدارة الصف والطلاب`,
+      };
+
+      const systemPrompt = suggestionPrompts[contentType] || suggestionPrompts.marketing;
+
+      try {
+        const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-3-flash-preview",
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: "أعطني 4 أفكار متنوعة ومبتكرة الآن. أجب بصيغة JSON فقط بهذا الشكل: [{\"title\": \"العنوان\", \"text\": \"النص\"}]" }
+            ],
+            tools: [
+              {
+                type: "function",
+                function: {
+                  name: "return_suggestions",
+                  description: "Return 4 content suggestions",
+                  parameters: {
+                    type: "object",
+                    properties: {
+                      suggestions: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            title: { type: "string", description: "العنوان القصير" },
+                            text: { type: "string", description: "النص التسويقي أو التفاعلي" }
+                          },
+                          required: ["title", "text"],
+                          additionalProperties: false
+                        }
+                      }
+                    },
+                    required: ["suggestions"],
+                    additionalProperties: false
+                  }
+                }
+              }
+            ],
+            tool_choice: { type: "function", function: { name: "return_suggestions" } }
+          }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("AI API error:", response.status, errorText);
+          
+          if (response.status === 429) {
+            return new Response(
+              JSON.stringify({ error: "تم تجاوز حد الطلبات، يرجى المحاولة لاحقاً" }),
+              { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+          if (response.status === 402) {
+            return new Response(
+              JSON.stringify({ error: "يرجى إضافة رصيد للاستمرار" }),
+              { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+          
+          throw new Error(`AI API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+        
+        if (toolCall?.function?.arguments) {
+          const parsed = JSON.parse(toolCall.function.arguments);
+          return new Response(
+            JSON.stringify({ suggestions: parsed.suggestions }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Fallback: try to parse from content
+        const content = data.choices?.[0]?.message?.content;
+        if (content) {
+          const jsonMatch = content.match(/\[[\s\S]*\]/);
+          if (jsonMatch) {
+            const suggestions = JSON.parse(jsonMatch[0]);
+            return new Response(
+              JSON.stringify({ suggestions }),
+              { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+        }
+
+        throw new Error("Could not parse suggestions from response");
+      } catch (error) {
+        console.error("Error generating suggestions:", error);
+        return new Response(
+          JSON.stringify({ error: "حدث خطأ في توليد الاقتراحات" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");

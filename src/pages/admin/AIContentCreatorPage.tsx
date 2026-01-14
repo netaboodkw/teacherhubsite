@@ -130,6 +130,11 @@ const designStyleOptions = [
   { value: 'minimal', label: 'بسيط', icon: '⬜', description: 'تصميم نظيف ومينيمال' },
 ];
 
+interface TextSuggestion {
+  title: string;
+  text: string;
+}
+
 export default function AIContentCreatorPage() {
   const { user } = useAuth();
   const { logoUrl, isCustomLogo } = useSiteLogo();
@@ -153,6 +158,8 @@ export default function AIContentCreatorPage() {
   const [features, setFeatures] = useState<AppFeature[]>([]);
   const [isLoadingFeatures, setIsLoadingFeatures] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [textSuggestions, setTextSuggestions] = useState<TextSuggestion[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
 
   // Display title and marketing text (custom or from feature)
@@ -177,6 +184,41 @@ export default function AIContentCreatorPage() {
     };
     fetchFeatures();
   }, []);
+
+  // Fetch text suggestions when content type changes (not for 'feature' and 'custom')
+  const fetchTextSuggestions = async () => {
+    if (['feature', 'custom'].includes(contentType)) {
+      setTextSuggestions([]);
+      return;
+    }
+    
+    setIsLoadingSuggestions(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-ai-content', {
+        body: { getSuggestions: true, contentType },
+      });
+      
+      if (error) throw error;
+      
+      if (data?.suggestions) {
+        setTextSuggestions(data.suggestions);
+      }
+    } catch (err) {
+      console.error('Error fetching suggestions:', err);
+      toast.error('حدث خطأ في تحميل الاقتراحات');
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+
+  // Load suggestions when content type changes
+  useEffect(() => {
+    if (!['feature', 'custom'].includes(contentType)) {
+      fetchTextSuggestions();
+    } else {
+      setTextSuggestions([]);
+    }
+  }, [contentType]);
 
   // Fetch saved content
   const { data: savedContent = [], isLoading: isLoadingContent } = useQuery({
@@ -513,10 +555,78 @@ export default function AIContentCreatorPage() {
 
               {/* Content-specific inputs for non-feature types */}
               {['marketing', 'interactive', 'trial', 'testimonial', 'tips'].includes(contentType) && (
-                <div className="space-y-3 p-3 rounded-lg bg-muted/50 border">
-                  <Label className="text-base font-medium flex items-center gap-2">
-                    ✏️ تخصيص النص للبوست
-                  </Label>
+                <div className="space-y-4 p-3 rounded-lg bg-muted/50 border">
+                  {/* AI Suggestions */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-primary" />
+                        اقتراحات ذكية
+                      </Label>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={fetchTextSuggestions}
+                        disabled={isLoadingSuggestions}
+                        className="h-7 px-2 text-xs"
+                      >
+                        {isLoadingSuggestions ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <>
+                            <RefreshCw className="w-3 h-3 ml-1" />
+                            تحديث
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    
+                    {isLoadingSuggestions ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                        <span className="mr-2 text-sm text-muted-foreground">جاري توليد الأفكار...</span>
+                      </div>
+                    ) : textSuggestions.length > 0 ? (
+                      <div className="grid grid-cols-1 gap-2">
+                        {textSuggestions.map((suggestion, index) => (
+                          <button
+                            key={index}
+                            onClick={() => {
+                              setCustomTitle(suggestion.title);
+                              setCustomMarketingText(suggestion.text);
+                              toast.success('تم اختيار الاقتراح');
+                            }}
+                            className={cn(
+                              "text-right p-2.5 rounded-lg border transition-all",
+                              "hover:border-primary/50 hover:bg-primary/5",
+                              customTitle === suggestion.title && customMarketingText === suggestion.text
+                                ? "border-primary bg-primary/10"
+                                : "border-border bg-background"
+                            )}
+                          >
+                            <p className="font-medium text-sm text-foreground mb-1">{suggestion.title}</p>
+                            <p className="text-xs text-muted-foreground line-clamp-2">{suggestion.text}</p>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-3 text-sm text-muted-foreground">
+                        اضغط "تحديث" للحصول على أفكار جديدة
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Divider */}
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs">
+                      <span className="bg-muted/50 px-2 text-muted-foreground">أو اكتب نصك</span>
+                    </div>
+                  </div>
+
+                  {/* Manual Text Input */}
                   <div className="space-y-2">
                     <Input
                       value={customTitle}
