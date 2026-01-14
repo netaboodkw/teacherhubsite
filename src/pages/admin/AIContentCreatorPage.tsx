@@ -229,16 +229,51 @@ export default function AIContentCreatorPage() {
     
     setIsExporting(true);
     try {
-      const canvas = await html2canvas(previewRef.current, {
+      // Clone the element to apply export-specific styles
+      const element = previewRef.current;
+      
+      // Temporarily modify styles for better html2canvas compatibility
+      const backdropElements = element.querySelectorAll('[class*="backdrop-blur"]');
+      backdropElements.forEach((el) => {
+        (el as HTMLElement).style.backdropFilter = 'none';
+        (el as HTMLElement).style.backgroundColor = 'rgba(255, 255, 255, 0.25)';
+      });
+
+      const canvas = await html2canvas(element, {
         useCORS: true,
         allowTaint: true,
         scale: 3, // Higher quality
         backgroundColor: null,
+        logging: false,
+        imageTimeout: 15000,
+        onclone: (clonedDoc) => {
+          // Apply solid backgrounds to cloned elements for compatibility
+          const clonedBackdropElements = clonedDoc.querySelectorAll('[class*="backdrop-blur"]');
+          clonedBackdropElements.forEach((el) => {
+            const htmlEl = el as HTMLElement;
+            htmlEl.style.backdropFilter = 'none';
+            htmlEl.style.setProperty('-webkit-backdrop-filter', 'none');
+            htmlEl.style.backgroundColor = 'rgba(255, 255, 255, 0.25)';
+          });
+          
+          // Fix drop-shadow by converting to text-shadow
+          const shadowElements = clonedDoc.querySelectorAll('[class*="drop-shadow"]');
+          shadowElements.forEach((el) => {
+            (el as HTMLElement).style.filter = 'none';
+            (el as HTMLElement).style.textShadow = '0 2px 4px rgba(0,0,0,0.5)';
+          });
+        }
+      });
+      
+      // Restore original styles
+      backdropElements.forEach((el) => {
+        (el as HTMLElement).style.backdropFilter = '';
+        (el as HTMLElement).style.backgroundColor = '';
       });
       
       const link = document.createElement('a');
       link.download = `teacherhub-${selectedFeature?.id || 'content'}-${Date.now()}.png`;
-      link.href = canvas.toDataURL('image/png');
+      link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
       toast.success('تم تصدير الصورة المدمجة بنجاح!');
     } catch (err) {
@@ -568,8 +603,13 @@ export default function AIContentCreatorPage() {
                       alt="محتوى منشأ بالذكاء الاصطناعي"
                       className="w-full h-full object-cover"
                     />
-                    {/* Professional Gradient Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/70 pointer-events-none" />
+                    {/* Professional Gradient Overlay - Solid colors for html2canvas compatibility */}
+                    <div 
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background: 'linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.7) 100%)'
+                      }}
+                    />
                     
                     {selectedFeature && (
                       <div className="absolute inset-0 flex flex-col pointer-events-none">
@@ -577,15 +617,25 @@ export default function AIContentCreatorPage() {
                         <div className="pt-5 px-3 text-center">
                           <div className="inline-flex flex-col items-center gap-2">
                             {isCustomLogo && (
-                              <div className="w-14 h-14 rounded-2xl bg-white/95 backdrop-blur-sm p-2 shadow-xl ring-2 ring-white/30">
+                              <div 
+                                className="w-14 h-14 rounded-2xl p-2"
+                                style={{
+                                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 0 0 2px rgba(255, 255, 255, 0.3)'
+                                }}
+                              >
                                 <img 
                                   src={logoUrl} 
                                   alt="شعار" 
                                   className="w-full h-full object-contain"
+                                  crossOrigin="anonymous"
                                 />
                               </div>
                             )}
-                            <p className="text-white text-xs font-bold drop-shadow-lg">
+                            <p 
+                              className="text-white text-xs font-bold"
+                              style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}
+                            >
                               منصة المعلم الذكي
                             </p>
                           </div>
@@ -593,23 +643,41 @@ export default function AIContentCreatorPage() {
                         
                         {/* Bottom Section - Feature Content */}
                         <div className="mt-auto pb-5 px-3">
-                          <div className="bg-white/15 backdrop-blur-md rounded-xl p-4 border border-white/20">
+                          <div 
+                            className="rounded-xl p-4"
+                            style={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                              border: '1px solid rgba(255, 255, 255, 0.3)'
+                            }}
+                          >
                             {/* Feature Title */}
-                            <h2 className="text-white text-base font-bold text-center mb-2 leading-snug">
+                            <h2 
+                              className="text-white text-base font-bold text-center mb-2 leading-snug"
+                              style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
+                            >
                               {selectedFeature.title}
                             </h2>
                             
                             {/* Divider */}
-                            <div className="w-12 h-0.5 bg-white/40 mx-auto mb-2" />
+                            <div 
+                              className="w-12 h-0.5 mx-auto mb-2"
+                              style={{ backgroundColor: 'rgba(255, 255, 255, 0.4)' }}
+                            />
                             
                             {/* Marketing Text */}
-                            <p className="text-white/90 text-xs text-center leading-relaxed">
+                            <p 
+                              className="text-xs text-center leading-relaxed"
+                              style={{ color: 'rgba(255, 255, 255, 0.9)' }}
+                            >
                               "{selectedFeature.marketingText}"
                             </p>
                           </div>
                           
                           {/* Website */}
-                          <p className="text-white/60 text-[9px] text-center mt-3 font-medium tracking-wider">
+                          <p 
+                            className="text-[9px] text-center mt-3 font-medium tracking-wider"
+                            style={{ color: 'rgba(255, 255, 255, 0.6)' }}
+                          >
                             teacherhub.site
                           </p>
                         </div>
