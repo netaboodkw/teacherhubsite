@@ -342,7 +342,7 @@ export default function TeacherSchedule() {
       </div>
 
       {/* Print Container - Hidden on screen, visible on print */}
-      <div className="print-container print-arabic-font">
+      <div className="hidden print:block print-container print-arabic-font">
         <div className="print-header">
           <h1>جدول الحصص الأسبوعي</h1>
           <p style={{ fontSize: '14px', fontWeight: 'bold' }}>{currentSchedule.levelNameAr}</p>
