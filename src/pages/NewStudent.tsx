@@ -200,11 +200,11 @@ export default function NewStudent() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="parent_phone">رقم جوال ولي الأمر</Label>
+                  <Label htmlFor="parent_phone">رقم هاتف ولي الأمر</Label>
                   <Input
                     id="parent_phone"
                     type="tel"
-                    placeholder="05xxxxxxxx"
+                    placeholder="مثال: 96550123"
                     value={formData.parent_phone}
                     onChange={(e) => setFormData({ ...formData, parent_phone: e.target.value })}
                     dir="ltr"

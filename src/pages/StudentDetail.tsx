@@ -475,11 +475,11 @@ export default function StudentDetail() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="parent_phone">رقم جوال ولي الأمر</Label>
+                      <Label htmlFor="parent_phone">رقم هاتف ولي الأمر</Label>
                       <Input
                         id="parent_phone"
                         type="tel"
-                        placeholder="05xxxxxxxx"
+                        placeholder="مثال: 96550123"
                         value={parentPhone}
                         onChange={(e) => setParentPhone(e.target.value)}
                         dir="ltr"
@@ -539,7 +539,7 @@ export default function StudentDetail() {
                       </div>
                       {(student as any).parent_phone && (
                         <a
-                          href={`https://wa.me/${(student as any).parent_phone.replace(/[^0-9]/g, '').replace(/^0/, '966')}`}
+                          href={`https://wa.me/965${(student as any).parent_phone.replace(/[^0-9]/g, '')}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white transition-colors"
