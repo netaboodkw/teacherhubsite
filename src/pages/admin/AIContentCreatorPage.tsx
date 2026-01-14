@@ -347,12 +347,12 @@ export default function AIContentCreatorPage() {
     
     setIsExporting(true);
     try {
-      // Load Tajawal font to ensure it's available for canvas
-      const fontFace = new FontFace('Tajawal', 'url(https://fonts.gstatic.com/s/tajawal/v9/Iura6YBj_oCad4k1nzGBC45I.woff2)', {
+      // Load Cairo font to ensure it's available for canvas
+      const fontFace = new FontFace('Cairo', 'url(https://fonts.gstatic.com/s/cairo/v28/SLXgc1nY6HkvangtZmpQdkhzfH5lkSs2SgRjCAGMQ1z0hOA-a1PiKQ.woff2)', {
         weight: '400',
         style: 'normal'
       });
-      const boldFontFace = new FontFace('Tajawal', 'url(https://fonts.gstatic.com/s/tajawal/v9/Iurf6YBj_oCad4k1l_6gLrZjiLlJ-G0.woff2)', {
+      const boldFontFace = new FontFace('Cairo', 'url(https://fonts.gstatic.com/s/cairo/v28/SLXgc1nY6HkvangtZmpQdkhzfH5lkSs2SgRjCAGMQ1z0hGA5a1PiKQ.woff2)', {
         weight: '700',
         style: 'normal'
       });
@@ -366,7 +366,7 @@ export default function AIContentCreatorPage() {
         document.fonts.add(loadedBoldFont);
         await document.fonts.ready;
       } catch (fontErr) {
-        console.warn('Could not load Tajawal font, using fallback:', fontErr);
+        console.warn('Could not load Cairo font, using fallback:', fontErr);
       }
 
       // Target 2K resolution - maintain exact aspect ratios
@@ -490,7 +490,7 @@ export default function AIContentCreatorPage() {
       // Draw platform name - text-xs = 12px
       ctx.save();
       ctx.fillStyle = 'white';
-      ctx.font = `bold ${12 * scale}px 'Tajawal', 'Segoe UI', sans-serif`;
+      ctx.font = `bold ${12 * scale}px 'Cairo', 'Segoe UI', sans-serif`;
       ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
       ctx.shadowBlur = 4 * scale;
       ctx.shadowOffsetY = 2 * scale;
@@ -520,7 +520,7 @@ export default function AIContentCreatorPage() {
         }
         if (displayMarketingText) {
           // Estimate text height (wrap text)
-          ctx.font = `${textFontSize}px 'Tajawal', 'Segoe UI', sans-serif`;
+          ctx.font = `${textFontSize}px 'Cairo', 'Segoe UI', sans-serif`;
           const maxTextWidth = boxWidth - boxPadding * 2;
           const words = `"${displayMarketingText}"`.split(' ');
           let lines = 1;
@@ -560,7 +560,7 @@ export default function AIContentCreatorPage() {
         if (displayTitle) {
           ctx.save();
           ctx.fillStyle = 'white';
-          ctx.font = `bold ${titleFontSize}px 'Tajawal', 'Segoe UI', sans-serif`;
+          ctx.font = `bold ${titleFontSize}px 'Cairo', 'Segoe UI', sans-serif`;
           ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
           ctx.shadowBlur = 3 * scale;
           currentY += titleFontSize / 2;
@@ -581,7 +581,7 @@ export default function AIContentCreatorPage() {
         // Draw marketing text - text-xs with word wrap
         if (displayMarketingText) {
           ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-          ctx.font = `${textFontSize}px 'Tajawal', 'Segoe UI', sans-serif`;
+          ctx.font = `${textFontSize}px 'Cairo', 'Segoe UI', sans-serif`;
           
           const maxWidth = boxWidth - boxPadding * 2;
           const words = `"${displayMarketingText}"`.split(' ');
@@ -607,13 +607,13 @@ export default function AIContentCreatorPage() {
         // Draw website below box - text-[9px]
         const websiteY = targetHeight - bottomPadding - 10 * scale;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-        ctx.font = `500 ${9 * scale}px 'Tajawal', 'Segoe UI', sans-serif`;
+        ctx.font = `500 ${9 * scale}px 'Cairo', 'Segoe UI', sans-serif`;
         ctx.fillText('teacherhub.site', targetWidth / 2, websiteY);
       } else {
         // Draw website at bottom when no content box
         const websiteY = targetHeight - 20 * scale;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-        ctx.font = `500 ${9 * scale}px 'Tajawal', 'Segoe UI', sans-serif`;
+        ctx.font = `500 ${9 * scale}px 'Cairo', 'Segoe UI', sans-serif`;
         ctx.fillText('teacherhub.site', targetWidth / 2, websiteY);
       }
 
