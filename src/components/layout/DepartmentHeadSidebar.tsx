@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import logo from '@/assets/logo.png';
+import { useSiteLogo } from '@/hooks/useSiteLogo';
 
 interface DepartmentHeadSidebarProps {
   isOpen: boolean;
@@ -40,6 +40,7 @@ export function DepartmentHeadSidebar({ isOpen, onClose }: DepartmentHeadSidebar
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const { signOut } = useAuth();
+  const { logoUrl } = useSiteLogo();
 
   const handleLogout = async () => {
     const { error } = await signOut();
@@ -75,7 +76,7 @@ export function DepartmentHeadSidebar({ isOpen, onClose }: DepartmentHeadSidebar
           )}>
             {!collapsed && (
               <div className="flex items-center gap-3">
-                <img src={logo} alt="Teacher Hub" className="w-10 h-10 object-contain" />
+                <img src={logoUrl} alt="Teacher Hub" className="w-10 h-10 object-contain" />
                 <div>
                   <h1 className="font-bold text-lg text-foreground">رئيس القسم</h1>
                   <p className="text-xs text-muted-foreground">متابعة المعلمين</p>
@@ -83,7 +84,7 @@ export function DepartmentHeadSidebar({ isOpen, onClose }: DepartmentHeadSidebar
               </div>
             )}
             {collapsed && (
-              <img src={logo} alt="Teacher Hub" className="w-10 h-10 object-contain" />
+              <img src={logoUrl} alt="Teacher Hub" className="w-10 h-10 object-contain" />
             )}
           </div>
 
