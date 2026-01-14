@@ -19,10 +19,11 @@ const highlights = [
   { icon: Cloud, text: 'بياناتك آمنة' },
   { icon: Shield, text: 'خصوصية تامة' },
   { icon: Smartphone, text: 'يعمل على كل الأجهزة' },
+  { icon: Heart, text: 'صُنع في الكويت 🇰🇼' },
 ];
 
 const stats = [
-  { value: '500+', label: 'معلم مسجل', icon: GraduationCap },
+  { value: '500+', label: 'معلم كويتي', icon: GraduationCap },
   { value: '2000+', label: 'صف دراسي', icon: Building2 },
   { value: '50,000+', label: 'طالب وطالبة', icon: Users },
   { value: '98%', label: 'رضا المستخدمين', icon: Heart },
@@ -389,29 +390,94 @@ export default function Landing() {
         </div>
       </div>
 
-      {/* Testimonial/Trust Section */}
-      <div className="py-16 px-4 bg-muted/30">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="flex justify-center gap-1 mb-4">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} className="w-8 h-8 text-[#F5C78E] fill-[#F5C78E]" />
-            ))}
+      {/* Testimonials Section - Kuwait Users */}
+      <div className="py-20 px-4 bg-muted/30">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <Badge className="mb-4 bg-[#7DD3E1]/20 text-[#4AA8B8] border-0 text-sm px-4 py-1.5">
+              <Star className="w-4 h-4 ml-2" />
+              آراء المعلمين
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
+              ماذا يقول معلمونا في الكويت؟ 🇰🇼
+            </h2>
+            <p className="text-muted-foreground text-lg">
+              تجارب حقيقية من معلمين يستخدمون المنصة يومياً
+            </p>
           </div>
-          <h3 className="text-2xl font-bold mb-4 text-foreground">
-            "المنصة غيّرت طريقة عملي بالكامل!"
-          </h3>
-          <p className="text-muted-foreground text-lg mb-6 leading-relaxed">
-            "كنت أقضي ساعات في تنظيم الدرجات وتسجيل الحضور. الآن أنجز كل شيء في دقائق معدودة. 
-            شكراً Teacher Hub على هذه المنصة الرائعة!"
-          </p>
-          <div className="flex items-center justify-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#7DD3E1] to-[#5BC0CE] flex items-center justify-center">
-              <GraduationCap className="w-6 h-6 text-white" />
-            </div>
-            <div className="text-right">
-              <p className="font-bold text-foreground">معلم من السعودية</p>
-              <p className="text-sm text-muted-foreground">مستخدم منذ 6 أشهر</p>
-            </div>
+          
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Testimonial 1 */}
+            <Card className="border-0 shadow-lg bg-card">
+              <CardContent className="p-6">
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-5 h-5 text-[#F5C78E] fill-[#F5C78E]" />
+                  ))}
+                </div>
+                <p className="text-foreground mb-6 leading-relaxed">
+                  "المنصة غيّرت طريقة عملي بالكامل! كنت أقضي ساعات في تنظيم الدرجات وتسجيل الحضور. الآن أنجز كل شيء في دقائق معدودة. شكراً Teacher Hub!"
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#7DD3E1] to-[#5BC0CE] flex items-center justify-center">
+                    <GraduationCap className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-foreground">أ. فاطمة الكندري</p>
+                    <p className="text-sm text-muted-foreground">معلمة رياضيات • الكويت 🇰🇼</p>
+                    <p className="text-xs text-[#5BC0CE]">مستخدمة منذ شهر</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Testimonial 2 */}
+            <Card className="border-0 shadow-lg bg-card">
+              <CardContent className="p-6">
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-5 h-5 text-[#F5C78E] fill-[#F5C78E]" />
+                  ))}
+                </div>
+                <p className="text-foreground mb-6 leading-relaxed">
+                  "أفضل منصة استخدمتها لإدارة صفوفي! ميزة استيراد الطلاب من الصور وفرت علي وقتاً كثيراً. أنصح كل معلم بتجربتها."
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#C9A8D6] to-[#B897C5] flex items-center justify-center">
+                    <GraduationCap className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-foreground">أ. محمد العنزي</p>
+                    <p className="text-sm text-muted-foreground">معلم علوم • الكويت 🇰🇼</p>
+                    <p className="text-xs text-[#5BC0CE]">مستخدم منذ أسبوعين</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Testimonial 3 */}
+            <Card className="border-0 shadow-lg bg-card">
+              <CardContent className="p-6">
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-5 h-5 text-[#F5C78E] fill-[#F5C78E]" />
+                  ))}
+                </div>
+                <p className="text-foreground mb-6 leading-relaxed">
+                  "منصة رائعة وسهلة الاستخدام! التقارير الجاهزة للطباعة ممتازة جداً. واجهة عربية ممتازة تفهم احتياجات المعلم الكويتي."
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#F5C78E] to-[#E8B77D] flex items-center justify-center">
+                    <GraduationCap className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-foreground">أ. نورة الشمري</p>
+                    <p className="text-sm text-muted-foreground">معلمة لغة عربية • الكويت 🇰🇼</p>
+                    <p className="text-xs text-[#5BC0CE]">مستخدمة منذ 10 أيام</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
@@ -504,12 +570,17 @@ export default function Landing() {
               </div>
               <div>
                 <span className="font-bold text-xl text-foreground">Teacher Hub</span>
-                <p className="text-sm text-muted-foreground">منصة المعلم الذكي</p>
+                <p className="text-sm text-muted-foreground">منصة المعلم الذكي 🇰🇼</p>
               </div>
             </div>
-            <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Teacher Hub. جميع الحقوق محفوظة
-            </p>
+            <div className="text-center md:text-left">
+              <p className="text-sm text-muted-foreground">
+                منصة كويتية صُممت للمعلم العربي
+              </p>
+              <p className="text-sm text-muted-foreground">
+                © {new Date().getFullYear()} Teacher Hub. جميع الحقوق محفوظة
+              </p>
+            </div>
           </div>
         </div>
       </footer>
