@@ -337,9 +337,9 @@ export default function AIContentCreatorPage() {
     
     setIsExporting(true);
     try {
-      // Target 2K resolution
-      const targetWidth = aspectRatio === '9:16' ? 1440 : 1620; // 2K width
-      const targetHeight = aspectRatio === '9:16' ? 2560 : 2160; // 2K height
+      // Target 2K resolution - maintain exact aspect ratios
+      const targetWidth = aspectRatio === '9:16' ? 1080 : 1620; // 9:16 or 3:4
+      const targetHeight = aspectRatio === '9:16' ? 1920 : 2160; // Full HD for story, 2K for post
       
       // Create canvas with target dimensions
       const canvas = document.createElement('canvas');
@@ -383,7 +383,7 @@ export default function AIContentCreatorPage() {
       
       ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
 
-      // Draw gradient overlay
+      // Draw gradient overlay - matches preview exactly
       const gradient = ctx.createLinearGradient(0, 0, 0, targetHeight);
       gradient.addColorStop(0, 'rgba(0, 0, 0, 0.5)');
       gradient.addColorStop(0.3, 'rgba(0, 0, 0, 0)');
@@ -392,10 +392,18 @@ export default function AIContentCreatorPage() {
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, targetWidth, targetHeight);
 
-      // Scale factor for elements
-      const scale = targetWidth / 225; // Based on preview width
+      // Base preview dimensions for scaling
+      const previewWidth = aspectRatio === '9:16' ? 225 : 300;
+      const scale = targetWidth / previewWidth;
 
-      // Draw logo if custom logo exists
+      // Common text settings
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      // Draw logo if custom logo exists - matches preview pt-5 (20px)
+      const topPadding = 20 * scale;
+      const logoSize = 56 * scale; // w-14 = 56px
+      
       if (isCustomLogo && logoUrl) {
         const logoImg = new Image();
         logoImg.crossOrigin = 'anonymous';
@@ -407,65 +415,101 @@ export default function AIContentCreatorPage() {
             logoImg.src = logoUrl;
           });
 
-          const logoSize = 56 * scale; // w-14 = 56px
-          const logoX = (targetWidth - logoSize) / 2;
-          const logoY = 20 * scale;
           const logoPadding = 8 * scale;
           const logoBoxSize = logoSize + logoPadding * 2;
-          const logoBoxX = logoX - logoPadding;
-          const logoBoxY = logoY - logoPadding;
+          const logoX = (targetWidth - logoBoxSize) / 2;
+          const logoY = topPadding;
+          const logoRadius = 16 * scale; // rounded-2xl
 
-          // Draw logo background
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-          ctx.beginPath();
-          const radius = 16 * scale;
-          ctx.roundRect(logoBoxX, logoBoxY, logoBoxSize, logoBoxSize, radius);
-          ctx.fill();
-          
-          // Draw logo shadow
+          // Draw logo background with shadow
+          ctx.save();
           ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
           ctx.shadowBlur = 25 * scale;
           ctx.shadowOffsetY = 10 * scale;
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+          ctx.beginPath();
+          ctx.roundRect(logoX, logoY, logoBoxSize, logoBoxSize, logoRadius);
+          ctx.fill();
+          ctx.restore();
           
-          // Draw logo
-          ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+          // Draw logo border
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+          ctx.lineWidth = 2 * scale;
+          ctx.beginPath();
+          ctx.roundRect(logoX, logoY, logoBoxSize, logoBoxSize, logoRadius);
+          ctx.stroke();
           
-          // Reset shadow
-          ctx.shadowColor = 'transparent';
-          ctx.shadowBlur = 0;
-          ctx.shadowOffsetY = 0;
+          // Draw logo image
+          ctx.drawImage(logoImg, logoX + logoPadding, logoY + logoPadding, logoSize, logoSize);
         } catch (err) {
           console.warn('Could not load logo:', err);
         }
       }
 
-      // Draw platform name
+      // Calculate platform name position (below logo or at top)
+      const platformNameY = isCustomLogo 
+        ? topPadding + logoSize + 24 * scale  // gap-2 = 8px + some padding
+        : topPadding + 16 * scale;
+
+      // Draw platform name - text-xs = 12px
+      ctx.save();
       ctx.fillStyle = 'white';
       ctx.font = `bold ${12 * scale}px 'Tajawal', 'Segoe UI', sans-serif`;
-      ctx.textAlign = 'center';
       ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
       ctx.shadowBlur = 4 * scale;
       ctx.shadowOffsetY = 2 * scale;
-      ctx.fillText('منصة المعلم الذكي', targetWidth / 2, (isCustomLogo ? 100 : 50) * scale);
-      
-      // Reset shadow
-      ctx.shadowColor = 'transparent';
-      ctx.shadowBlur = 0;
-      ctx.shadowOffsetY = 0;
+      ctx.fillText('منصة المعلم الذكي', targetWidth / 2, platformNameY);
+      ctx.restore();
 
-      // Draw bottom content box if there's content
+      // Draw bottom content box if there's content - matches preview pb-5 px-3
       if (displayTitle || displayMarketingText) {
-        const boxPadding = 16 * scale;
-        const boxMargin = 12 * scale;
-        const boxWidth = targetWidth - boxMargin * 2;
-        const boxHeight = 130 * scale;
-        const boxY = targetHeight - boxHeight - (20 * scale);
-        const boxRadius = 12 * scale;
+        const bottomPadding = 20 * scale; // pb-5
+        const horizontalPadding = 12 * scale; // px-3
+        const boxPadding = 16 * scale; // p-4
+        const boxWidth = targetWidth - horizontalPadding * 2;
+        
+        // Calculate box height based on content
+        const titleFontSize = 16 * scale; // text-base
+        const textFontSize = 12 * scale; // text-xs
+        const lineHeight = 1.5;
+        
+        let contentHeight = boxPadding * 2;
+        if (displayTitle) {
+          contentHeight += titleFontSize * lineHeight;
+        }
+        if (displayTitle && displayMarketingText) {
+          contentHeight += 8 * scale; // mb-2 spacing
+          contentHeight += 2 * scale; // divider
+          contentHeight += 8 * scale; // mb-2 spacing
+        }
+        if (displayMarketingText) {
+          // Estimate text height (wrap text)
+          ctx.font = `${textFontSize}px 'Tajawal', 'Segoe UI', sans-serif`;
+          const maxTextWidth = boxWidth - boxPadding * 2;
+          const words = `"${displayMarketingText}"`.split(' ');
+          let lines = 1;
+          let currentLine = '';
+          for (const word of words) {
+            const testLine = currentLine + (currentLine ? ' ' : '') + word;
+            if (ctx.measureText(testLine).width > maxTextWidth && currentLine) {
+              lines++;
+              currentLine = word;
+            } else {
+              currentLine = testLine;
+            }
+          }
+          contentHeight += lines * textFontSize * lineHeight;
+        }
+        
+        const boxHeight = Math.max(contentHeight, 100 * scale);
+        const websiteHeight = 30 * scale; // Space for website
+        const boxY = targetHeight - bottomPadding - websiteHeight - boxHeight;
+        const boxRadius = 12 * scale; // rounded-xl
 
         // Draw box background
         ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
         ctx.beginPath();
-        ctx.roundRect(boxMargin, boxY, boxWidth, boxHeight, boxRadius);
+        ctx.roundRect(horizontalPadding, boxY, boxWidth, boxHeight, boxRadius);
         ctx.fill();
 
         // Draw box border
@@ -473,65 +517,76 @@ export default function AIContentCreatorPage() {
         ctx.lineWidth = 1 * scale;
         ctx.stroke();
 
-        // Draw title
+        // Draw content inside box
+        let currentY = boxY + boxPadding;
+        
+        // Draw title - text-base font-bold
         if (displayTitle) {
+          ctx.save();
           ctx.fillStyle = 'white';
-          ctx.font = `bold ${16 * scale}px 'Tajawal', 'Segoe UI', sans-serif`;
-          ctx.textAlign = 'center';
+          ctx.font = `bold ${titleFontSize}px 'Tajawal', 'Segoe UI', sans-serif`;
           ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
           ctx.shadowBlur = 3 * scale;
-          ctx.fillText(displayTitle, targetWidth / 2, boxY + 30 * scale);
+          currentY += titleFontSize / 2;
+          ctx.fillText(displayTitle, targetWidth / 2, currentY);
+          currentY += titleFontSize / 2 + 8 * scale;
+          ctx.restore();
         }
 
-        // Draw divider
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-        const dividerWidth = 48 * scale;
-        ctx.fillRect((targetWidth - dividerWidth) / 2, boxY + 45 * scale, dividerWidth, 2 * scale);
+        // Draw divider - w-12 h-0.5
+        if (displayTitle && displayMarketingText) {
+          const dividerWidth = 48 * scale;
+          const dividerHeight = 2 * scale;
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+          ctx.fillRect((targetWidth - dividerWidth) / 2, currentY, dividerWidth, dividerHeight);
+          currentY += dividerHeight + 8 * scale;
+        }
 
-        // Draw marketing text
+        // Draw marketing text - text-xs with word wrap
         if (displayMarketingText) {
           ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-          ctx.font = `${12 * scale}px 'Tajawal', 'Segoe UI', sans-serif`;
-          ctx.textAlign = 'center';
+          ctx.font = `${textFontSize}px 'Tajawal', 'Segoe UI', sans-serif`;
           
-          // Word wrap the text
           const maxWidth = boxWidth - boxPadding * 2;
           const words = `"${displayMarketingText}"`.split(' ');
           let line = '';
-          let y = boxY + 70 * scale;
-          const lineHeight = 18 * scale;
+          const textLineHeight = textFontSize * lineHeight;
+          
+          currentY += textFontSize / 2;
           
           for (const word of words) {
             const testLine = line + (line ? ' ' : '') + word;
             const metrics = ctx.measureText(testLine);
             if (metrics.width > maxWidth && line) {
-              ctx.fillText(line, targetWidth / 2, y);
+              ctx.fillText(line, targetWidth / 2, currentY);
               line = word;
-              y += lineHeight;
+              currentY += textLineHeight;
             } else {
               line = testLine;
             }
           }
-          ctx.fillText(line, targetWidth / 2, y);
+          ctx.fillText(line, targetWidth / 2, currentY);
         }
-        
-        // Reset shadow
-        ctx.shadowColor = 'transparent';
-        ctx.shadowBlur = 0;
-      }
 
-      // Draw website at bottom
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-      ctx.font = `${9 * scale}px 'Tajawal', 'Segoe UI', sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.fillText('teacherhub.site', targetWidth / 2, targetHeight - 15 * scale);
+        // Draw website below box - text-[9px]
+        const websiteY = targetHeight - bottomPadding - 10 * scale;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.font = `500 ${9 * scale}px 'Tajawal', 'Segoe UI', sans-serif`;
+        ctx.fillText('teacherhub.site', targetWidth / 2, websiteY);
+      } else {
+        // Draw website at bottom when no content box
+        const websiteY = targetHeight - 20 * scale;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.font = `500 ${9 * scale}px 'Tajawal', 'Segoe UI', sans-serif`;
+        ctx.fillText('teacherhub.site', targetWidth / 2, websiteY);
+      }
 
       // Download
       const link = document.createElement('a');
-      link.download = `teacherhub-${selectedFeature?.id || 'content'}-2K-${Date.now()}.png`;
+      link.download = `teacherhub-${selectedFeature?.id || contentType}-2K-${Date.now()}.png`;
       link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
-      toast.success('تم تصدير الصورة بجودة 2K!');
+      toast.success('تم تصدير الصورة بجودة عالية!');
     } catch (err) {
       console.error('Error exporting:', err);
       toast.error('حدث خطأ أثناء التصدير');
