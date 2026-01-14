@@ -511,7 +511,7 @@ export default function TeacherAuth() {
           </Card>
           
           <p className="text-center text-sm text-muted-foreground mt-6">
-            منصة كويتية 🇰🇼 صُممت للمعلم
+            منصة كويتية 🇰🇼 صُممت للمعلم في الكويت
           </p>
         </div>
       </div>

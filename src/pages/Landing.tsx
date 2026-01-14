@@ -11,7 +11,7 @@ import {
   BookOpen, MessageSquare, ThumbsUp, ThumbsDown, Layout, Settings
 } from 'lucide-react';
 import { useSiteLogo } from '@/hooks/useSiteLogo';
-import { useSubscriptionSettings } from '@/hooks/useSubscription';
+import { useSubscriptionSettings, useSubscriptionPackages } from '@/hooks/useSubscription';
 import defaultLogo from '@/assets/logo.png';
 
 const highlights = [
@@ -135,9 +135,11 @@ const additionalFeatures = [
 export default function Landing() {
   const { logoUrl, isCustomLogo } = useSiteLogo();
   const { data: subscriptionSettings } = useSubscriptionSettings();
+  const { data: packages = [] } = useSubscriptionPackages();
   
   const trialDays = subscriptionSettings?.trial_days ?? 10;
   const displayLogo = isCustomLogo ? logoUrl : defaultLogo;
+  const activePackages = packages.filter(p => p.is_active).sort((a, b) => a.display_order - b.display_order);
   
   return (
     <div className="min-h-screen bg-background overflow-x-hidden" dir="rtl">
@@ -602,6 +604,85 @@ export default function Landing() {
         </div>
       </div>
 
+      {/* Pricing Section */}
+      {activePackages.length > 0 && (
+        <div className="py-20 px-4 bg-background">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <Badge className="mb-4 bg-[#F5C78E]/20 text-[#D4A574] border-0 text-sm px-4 py-1.5">
+                <Award className="w-4 h-4 ml-2" />
+                خطط الأسعار
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
+                اختر الباقة المناسبة لك
+              </h2>
+              <p className="text-muted-foreground text-lg">
+                جميع الباقات تشمل تجربة مجانية لمدة {trialDays} يوم
+              </p>
+            </div>
+            
+            <div className={`grid gap-6 ${activePackages.length === 1 ? 'max-w-md mx-auto' : activePackages.length === 2 ? 'md:grid-cols-2 max-w-3xl mx-auto' : 'md:grid-cols-3'}`}>
+              {activePackages.map((pkg, index) => (
+                <Card 
+                  key={pkg.id} 
+                  className={`border-0 shadow-lg hover:shadow-xl transition-all ${index === 1 && activePackages.length === 3 ? 'ring-2 ring-[#5BC0CE] scale-105' : ''}`}
+                >
+                  {index === 1 && activePackages.length === 3 && (
+                    <div className="bg-gradient-to-r from-[#5BC0CE] to-[#7DD3E1] text-white text-center py-2 text-sm font-bold rounded-t-lg">
+                      الأكثر شيوعاً
+                    </div>
+                  )}
+                  <CardContent className="p-6">
+                    <div className="text-center mb-6">
+                      <h3 className="text-xl font-bold mb-2 text-foreground">{pkg.name_ar}</h3>
+                      {pkg.description && (
+                        <p className="text-sm text-muted-foreground mb-4">{pkg.description}</p>
+                      )}
+                      <div className="flex items-baseline justify-center gap-1">
+                        <span className="text-4xl font-bold text-[#5BC0CE]">{pkg.price}</span>
+                        <span className="text-muted-foreground">{pkg.currency}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {pkg.courses_count} {pkg.courses_count === 1 ? 'فصل دراسي' : 'فصول دراسية'}
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-3 mb-6">
+                      {[
+                        'إدارة كاملة للطلاب',
+                        'تسجيل الحضور والغياب',
+                        'نظام الدرجات المتكامل',
+                        'تقارير وإحصائيات',
+                        'دعم فني متواصل',
+                      ].map((feature, i) => (
+                        <div key={i} className="flex items-center gap-2 text-sm text-foreground">
+                          <CheckCircle className="w-4 h-4 text-[#5BC0CE]" />
+                          <span>{feature}</span>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <Link to="/auth/teacher">
+                      <Button 
+                        className={`w-full h-12 font-bold ${index === 1 && activePackages.length === 3 
+                          ? 'bg-gradient-to-r from-[#5BC0CE] to-[#7DD3E1] text-white hover:opacity-90' 
+                          : 'bg-muted text-foreground hover:bg-muted/80'}`}
+                      >
+                        ابدأ التجربة المجانية
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            
+            <p className="text-center text-muted-foreground text-sm mt-8">
+              * جميع الأسعار بالدينار الكويتي - بدون رسوم خفية
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Final CTA Section */}
       <div className="py-24 px-4 bg-gradient-to-br from-[#7DD3E1] via-[#5BC0CE] to-[#4AA8B8] relative overflow-hidden">
         <div className="absolute inset-0">
@@ -695,7 +776,7 @@ export default function Landing() {
             </div>
             <div className="text-center md:text-left">
               <p className="text-sm text-muted-foreground">
-                منصة كويتية صُممت للمعلم
+                منصة كويتية صُممت للمعلم في الكويت
               </p>
               <p className="text-sm text-muted-foreground">
                 © {new Date().getFullYear()} Teacher Hub. جميع الحقوق محفوظة
