@@ -176,13 +176,14 @@ export function InviteDepartmentHead() {
                 
                 <div className="flex items-center gap-2">
                   {getStatusBadge(invitation.status)}
-                  {invitation.status === 'pending' && (
+                  {(invitation.status === 'pending' || invitation.status === 'accepted') && (
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-destructive hover:text-destructive"
                       onClick={() => handleDelete(invitation.id)}
                       disabled={deleteMutation.isPending}
+                      title={invitation.status === 'accepted' ? 'إيقاف الدعوة' : 'حذف الدعوة'}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { StudentAvatarUpload } from '@/components/students/StudentAvatarUpload';
+import { AttendanceHistoryDialog } from '@/components/attendance/AttendanceHistoryDialog';
 import { toast } from 'sonner';
 import { 
   ArrowRight, Save, Loader2, User, Plus, Minus, MessageSquare, 
@@ -85,6 +86,7 @@ export default function StudentDetail() {
 
   const [editingNote, setEditingNote] = useState<typeof behaviorNotes[0] | null>(null);
   const [editNoteDescription, setEditNoteDescription] = useState('');
+  const [attendanceDialogType, setAttendanceDialogType] = useState<'absent' | 'late' | null>(null);
 
   const initials = student?.name
     ?.split(' ')
@@ -263,19 +265,27 @@ export default function StudentDetail() {
             </CardContent>
           </Card>
           
-          <Card className="bg-destructive/10 border-destructive/20">
+          <Card 
+            className="bg-destructive/10 border-destructive/20 cursor-pointer hover:bg-destructive/20 transition-colors"
+            onClick={() => absentCount > 0 && setAttendanceDialogType('absent')}
+          >
             <CardContent className="p-4 text-center">
               <UserX className="h-6 w-6 mx-auto mb-2 text-destructive" />
               <p className="text-2xl font-bold text-destructive">{absentCount}</p>
               <p className="text-xs text-muted-foreground">أيام الغياب</p>
+              {absentCount > 0 && <p className="text-xs text-destructive mt-1">اضغط للتفاصيل</p>}
             </CardContent>
           </Card>
           
-          <Card className="bg-warning/10 border-warning/20">
+          <Card 
+            className="bg-warning/10 border-warning/20 cursor-pointer hover:bg-warning/20 transition-colors"
+            onClick={() => lateCount > 0 && setAttendanceDialogType('late')}
+          >
             <CardContent className="p-4 text-center">
               <Clock className="h-6 w-6 mx-auto mb-2 text-warning" />
               <p className="text-2xl font-bold text-warning">{lateCount}</p>
               <p className="text-xs text-muted-foreground">أيام التأخير</p>
+              {lateCount > 0 && <p className="text-xs text-warning mt-1">اضغط للتفاصيل</p>}
             </CardContent>
           </Card>
           
@@ -574,6 +584,15 @@ export default function StudentDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Attendance History Dialog */}
+      <AttendanceHistoryDialog
+        open={attendanceDialogType !== null}
+        onOpenChange={() => setAttendanceDialogType(null)}
+        studentName={student?.name || ''}
+        attendanceRecords={studentAttendance}
+        type={attendanceDialogType || 'absent'}
+      />
     </TeacherLayout>
   );
 }
