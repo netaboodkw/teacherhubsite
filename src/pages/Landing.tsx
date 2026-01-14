@@ -8,7 +8,7 @@ import {
   Smartphone, Cloud, CheckCircle, Star, Gift, Building2, Camera, Eye
 } from 'lucide-react';
 import heroBg from '@/assets/hero-bg.jpg';
-import logo from '@/assets/logo.png';
+import { useSiteLogo } from '@/hooks/useSiteLogo';
 import featureDashboard from '@/assets/feature-dashboard.png';
 import featureGrades from '@/assets/feature-grades.png';
 import featureAttendance from '@/assets/feature-attendance.png';
@@ -84,6 +84,8 @@ const highlights = [
 ];
 
 export default function Landing() {
+  const { logoUrl } = useSiteLogo();
+  
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       {/* Hero Section */}
@@ -99,7 +101,7 @@ export default function Landing() {
         
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto py-12">
           <div className="inline-flex items-center justify-center w-32 h-32 rounded-3xl bg-background/90 backdrop-blur-sm mb-8 shadow-2xl p-2 animate-logo-float">
-            <img src={logo} alt="Teacher Hub" className="w-full h-full object-contain" />
+            <img src={logoUrl} alt="Teacher Hub" className="w-full h-full object-contain" />
           </div>
           
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-primary-foreground mb-6">
@@ -345,7 +347,7 @@ export default function Landing() {
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <img src={logo} alt="Teacher Hub" className="w-12 h-12 object-contain" />
+              <img src={logoUrl} alt="Teacher Hub" className="w-12 h-12 object-contain" />
               <span className="font-bold text-xl">Teacher Hub</span>
             </div>
             <p className="text-sm text-muted-foreground">

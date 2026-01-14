@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import logo from '@/assets/logo.png';
+import { useSiteLogo } from '@/hooks/useSiteLogo';
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -44,6 +44,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const { signOut } = useAuth();
+  const { logoUrl } = useSiteLogo();
 
   const handleLogout = async () => {
     const { error } = await signOut();
@@ -79,7 +80,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           )}>
             {!collapsed && (
               <div className="flex items-center gap-3">
-                <img src={logo} alt="Teacher Hub" className="w-10 h-10 object-contain" />
+                <img src={logoUrl} alt="Teacher Hub" className="w-10 h-10 object-contain" />
                 <div>
                   <h1 className="font-bold text-lg text-foreground">لوحة الإدارة</h1>
                   <p className="text-xs text-muted-foreground">إدارة النظام</p>
@@ -87,7 +88,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
               </div>
             )}
             {collapsed && (
-              <img src={logo} alt="Teacher Hub" className="w-10 h-10 object-contain" />
+              <img src={logoUrl} alt="Teacher Hub" className="w-10 h-10 object-contain" />
             )}
           </div>
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,9 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Shield, Database, Bell, Loader2, Save, CheckCircle, LayoutGrid, CreditCard, Key, Eye, EyeOff, ExternalLink } from 'lucide-react';
+import { Settings, Shield, Database, Bell, Loader2, Save, CheckCircle, LayoutGrid, CreditCard, Key, Eye, EyeOff, ExternalLink, Image, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSystemSettings, useUpdateSystemSetting } from '@/hooks/useSystemSettings';
+import { supabase } from '@/integrations/supabase/client';
+import defaultLogo from '@/assets/logo.png';
 
 export default function AdminSettingsPage() {
   const [saving, setSaving] = useState(false);
@@ -37,6 +39,10 @@ export default function AdminSettingsPage() {
   });
   const [showApiKey, setShowApiKey] = useState(false);
 
+  // Logo settings
+  const [siteLogo, setSiteLogo] = useState<string>('');
+  const [logoUploading, setLogoUploading] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   // Load settings from database
   useEffect(() => {
     if (systemSettings) {
@@ -56,12 +62,72 @@ export default function AdminSettingsPage() {
         myfatoorah_test_mode: myfatoorahTestMode?.value === true || myfatoorahTestMode?.value === 'true' || myfatoorahTestMode?.value === undefined,
         payment_enabled: paymentEnabled?.value === true || paymentEnabled?.value === 'true',
       });
+
+      // Load logo setting
+      const logoUrl = systemSettings.find(s => s.key === 'site_logo');
+      if (logoUrl?.value) {
+        setSiteLogo(logoUrl.value as string);
+      }
     }
   }, [systemSettings]);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('يرجى اختيار ملف صورة');
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('حجم الصورة يجب أن يكون أقل من 2 ميجابايت');
+      return;
+    }
+
+    setLogoUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `site-logo-${Date.now()}.${fileExt}`;
+      const filePath = `logos/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      setSiteLogo(publicUrl);
+      toast.success('تم رفع الشعار بنجاح');
+    } catch (error: any) {
+      console.error('Error uploading logo:', error);
+      toast.error('فشل في رفع الشعار');
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setSiteLogo('');
+  };
 
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Save logo setting
+      await updateSystemSetting.mutateAsync({
+        key: 'site_logo',
+        value: siteLogo
+      });
+
       // Save template setting to database
       await updateSystemSetting.mutateAsync({
         key: 'allow_edit_linked_templates',
@@ -101,6 +167,84 @@ export default function AdminSettingsPage() {
         </div>
 
         <div className="grid gap-6">
+          {/* Logo Settings - NEW */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Image className="h-5 w-5" />
+                شعار الموقع
+              </CardTitle>
+              <CardDescription>تخصيص شعار المنصة الذي يظهر في جميع الصفحات</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-start gap-6">
+                {/* Logo Preview */}
+                <div className="flex-shrink-0">
+                  <div className="w-24 h-24 rounded-xl border-2 border-dashed border-border flex items-center justify-center bg-muted/30 overflow-hidden">
+                    <img 
+                      src={siteLogo || defaultLogo} 
+                      alt="شعار الموقع" 
+                      className="w-full h-full object-contain p-2"
+                    />
+                  </div>
+                </div>
+                
+                {/* Upload Controls */}
+                <div className="flex-1 space-y-3">
+                  <div>
+                    <Label>رفع شعار جديد</Label>
+                    <p className="text-sm text-muted-foreground">
+                      يفضل أن تكون الصورة مربعة بحجم 512×512 بكسل على الأقل
+                    </p>
+                  </div>
+                  
+                  <input
+                    ref={logoInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    className="hidden"
+                  />
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => logoInputRef.current?.click()}
+                      disabled={logoUploading}
+                    >
+                      {logoUploading ? (
+                        <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                      ) : (
+                        <Upload className="h-4 w-4 ml-2" />
+                      )}
+                      {logoUploading ? 'جاري الرفع...' : 'اختيار صورة'}
+                    </Button>
+                    
+                    {siteLogo && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleRemoveLogo}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {siteLogo && (
+                    <p className="text-xs text-emerald-600 flex items-center gap-1">
+                      <CheckCircle className="h-3 w-3" />
+                      تم تحميل شعار مخصص
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* General Settings */}
           <Card>
             <CardHeader>
