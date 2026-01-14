@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, BellOff, Volume2, VolumeX, Vibrate, Clock, Smartphone } from 'lucide-react';
+import { Bell, BellOff, Volume2, VolumeX, Vibrate, Clock, Smartphone, Play, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { ReminderSettings } from '@/hooks/usePeriodReminder';
+import { soundOptions, previewSound, type SoundType } from '@/lib/notificationSounds';
 
 interface PeriodReminderSettingsProps {
   settings: ReminderSettings;
@@ -149,6 +150,47 @@ export function PeriodReminderSettings({
                   onCheckedChange={(checked) => onSettingsChange({ soundEnabled: checked })}
                 />
               </div>
+
+              {/* اختيار نوع الصوت */}
+              {settings.soundEnabled && (
+                <div className="space-y-3 pr-2 border-r-2 border-primary/20">
+                  <Label className="flex items-center gap-2">
+                    <Music className="w-4 h-4" />
+                    نوع صوت التنبيه
+                  </Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {soundOptions.map((sound) => (
+                      <button
+                        key={sound.id}
+                        onClick={() => onSettingsChange({ soundType: sound.id })}
+                        className={cn(
+                          "flex items-center gap-2 p-3 rounded-lg border-2 transition-all text-right",
+                          settings.soundType === sound.id
+                            ? "border-primary bg-primary/10"
+                            : "border-border hover:border-primary/50 hover:bg-muted/50"
+                        )}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm truncate">{sound.nameAr}</div>
+                          <div className="text-xs text-muted-foreground truncate">{sound.description}</div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            previewSound(sound.id);
+                          }}
+                        >
+                          <Play className="w-4 h-4" />
+                        </Button>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* إعدادات الاهتزاز */}
               <div className="flex items-center justify-between">
