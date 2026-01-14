@@ -12,12 +12,47 @@ import { cn } from '@/lib/utils';
 import { useProfile } from '@/hooks/useProfile';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
+// Color mapping for Tailwind class names to hex colors
+const colorClassToHex: { [key: string]: string } = {
+  'bg-blue-200': '#bfdbfe',
+  'bg-blue-500': '#3b82f6',
+  'bg-yellow-200': '#fef08a',
+  'bg-yellow-500': '#eab308',
+  'bg-teal-200': '#99f6e4',
+  'bg-teal-500': '#14b8a6',
+  'bg-green-200': '#bbf7d0',
+  'bg-green-500': '#22c55e',
+  'bg-red-200': '#fecaca',
+  'bg-red-500': '#ef4444',
+  'bg-purple-200': '#e9d5ff',
+  'bg-purple-500': '#a855f7',
+  'bg-pink-200': '#fbcfe8',
+  'bg-pink-500': '#ec4899',
+  'bg-orange-200': '#fed7aa',
+  'bg-orange-500': '#f97316',
+  'bg-indigo-200': '#c7d2fe',
+  'bg-indigo-500': '#6366f1',
+  'bg-cyan-200': '#a5f3fc',
+  'bg-cyan-500': '#06b6d4',
+  'bg-primary': '#00b8d4',
+};
+
+// Helper function to get hex color from class name or hex value
+const getHexColor = (color: string | null | undefined): string => {
+  if (!color) return '#888888';
+  // If it's already a hex color
+  if (color.startsWith('#')) return color;
+  // If it's a Tailwind class name
+  return colorClassToHex[color] || '#888888';
+};
+
 // Helper function to convert hex to rgba
 const hexToRgba = (hex: string, alpha: number): string => {
-  if (!hex || hex.length < 7) return `rgba(100, 100, 100, ${alpha})`;
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
+  const hexColor = getHexColor(hex);
+  if (!hexColor || hexColor.length < 7) return `rgba(136, 136, 136, ${alpha})`;
+  const r = parseInt(hexColor.slice(1, 3), 16);
+  const g = parseInt(hexColor.slice(3, 5), 16);
+  const b = parseInt(hexColor.slice(5, 7), 16);
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
@@ -278,10 +313,8 @@ export default function TeacherSchedule() {
                             {cellClassrooms.length > 0 ? (
                               <div className={viewMode === 'compact' ? "space-y-1" : "space-y-1.5"}>
                                 {cellClassrooms.map(classroom => {
-                                  const bgColor = classroom.color 
-                                    ? hexToRgba(classroom.color, 0.2) 
-                                    : 'rgba(100, 100, 100, 0.1)';
-                                  const borderColor = classroom.color || '#888';
+                                  const hexColor = getHexColor(classroom.color);
+                                  const bgColor = hexToRgba(classroom.color, 0.25);
                                   
                                   return (
                                     <div
@@ -292,8 +325,8 @@ export default function TeacherSchedule() {
                                       )}
                                       style={{ 
                                         backgroundColor: bgColor,
-                                        borderRight: `4px solid ${borderColor}`,
-                                        boxShadow: `inset 0 0 0 1px ${hexToRgba(borderColor, 0.2)}`
+                                        borderRight: `4px solid ${hexColor}`,
+                                        boxShadow: `inset 0 0 0 1px ${hexToRgba(classroom.color, 0.3)}`
                                       }}
                                     >
                                       <div className={cn(
@@ -336,22 +369,25 @@ export default function TeacherSchedule() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-3">
-                {filteredClassrooms.map(classroom => (
-                  <div
-                    key={classroom.id}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg border"
-                    style={{ 
-                      borderColor: classroom.color || '#666',
-                      backgroundColor: hexToRgba(classroom.color, 0.1)
-                    }}
-                  >
+                {filteredClassrooms.map(classroom => {
+                  const hexColor = getHexColor(classroom.color);
+                  return (
                     <div
-                      className="w-4 h-4 rounded"
-                      style={{ backgroundColor: classroom.color || '#666' }}
-                    />
-                    <span className="text-sm font-medium">{classroom.name}</span>
-                  </div>
-                ))}
+                      key={classroom.id}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg border"
+                      style={{ 
+                        borderColor: hexColor,
+                        backgroundColor: hexToRgba(classroom.color, 0.15)
+                      }}
+                    >
+                      <div
+                        className="w-4 h-4 rounded"
+                        style={{ backgroundColor: hexColor }}
+                      />
+                      <span className="text-sm font-medium">{classroom.name}</span>
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -432,22 +468,25 @@ export default function TeacherSchedule() {
                   return (
                     <td key={day.key} style={{ padding: '3px' }}>
                       {cellClassrooms.length > 0 ? (
-                        cellClassrooms.map(classroom => (
-                          <div
-                            key={classroom.id}
-                            style={{ 
-                              padding: '3px',
-                              marginBottom: '2px',
-                              backgroundColor: hexToRgba(classroom.color, 0.2),
-                              borderRight: `3px solid ${classroom.color || '#666'}`,
-                              borderRadius: '3px',
-                              fontSize: '8px'
-                            }}
-                          >
-                            <div style={{ fontWeight: 'bold' }}>{classroom.name}</div>
-                            <div style={{ fontSize: '7px', color: '#666' }}>{classroom.subject}</div>
-                          </div>
-                        ))
+                        cellClassrooms.map(classroom => {
+                          const hexColor = getHexColor(classroom.color);
+                          return (
+                            <div
+                              key={classroom.id}
+                              style={{ 
+                                padding: '3px',
+                                marginBottom: '2px',
+                                backgroundColor: hexToRgba(classroom.color, 0.25),
+                                borderRight: `3px solid ${hexColor}`,
+                                borderRadius: '3px',
+                                fontSize: '8px'
+                              }}
+                            >
+                              <div style={{ fontWeight: 'bold' }}>{classroom.name}</div>
+                              <div style={{ fontSize: '7px', color: '#666' }}>{classroom.subject}</div>
+                            </div>
+                          );
+                        })
                       ) : (
                         <span style={{ color: '#999' }}>-</span>
                       )}
