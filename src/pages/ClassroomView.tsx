@@ -34,8 +34,9 @@ import { toast } from 'sonner';
 import { 
   ArrowRight, User, Plus, Minus, MessageSquare, Save, Loader2, 
   Move, Check, X, Clock, FileText, ClipboardCheck,
-  MoreVertical, Archive, Settings, UserPlus, GripVertical, HeartPulse, StickyNote
+  MoreVertical, Archive, Settings, UserPlus, GripVertical, HeartPulse, StickyNote, Shuffle
 } from 'lucide-react';
+import { RandomStudentPicker } from '@/components/classroom/RandomStudentPicker';
 
 interface StudentPosition {
   student_id: string;
@@ -263,6 +264,7 @@ export default function ClassroomView() {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<number>(1);
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+  const [randomPickerOpen, setRandomPickerOpen] = useState(false);
 
   // Create a map of students who have notes
   const studentsWithNotes = useMemo(() => {
@@ -627,6 +629,9 @@ export default function ClassroomView() {
               {activeTab === 'notes' && (
                 <>
                   {/* Mobile: Show icons only */}
+                  <Button variant="outline" size="icon" className="sm:hidden" onClick={() => setRandomPickerOpen(true)}>
+                    <Shuffle className="h-4 w-4" />
+                  </Button>
                   <Button variant="outline" size="icon" className="sm:hidden" onClick={() => setActiveTab('arrange')}>
                     <Move className="h-4 w-4" />
                   </Button>
@@ -635,6 +640,10 @@ export default function ClassroomView() {
                   </Button>
                   
                   {/* Desktop: Show full buttons */}
+                  <Button variant="outline" size="sm" className="hidden sm:flex" onClick={() => setRandomPickerOpen(true)}>
+                    <Shuffle className="h-4 w-4 ml-1" />
+                    اختيار عشوائي
+                  </Button>
                   <Button variant="outline" size="sm" className="hidden sm:flex" onClick={() => setActiveTab('arrange')}>
                     <Move className="h-4 w-4 ml-1" />
                     ترتيب الطلاب
@@ -1119,6 +1128,13 @@ export default function ClassroomView() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Random Student Picker */}
+      <RandomStudentPicker
+        students={students}
+        open={randomPickerOpen}
+        onOpenChange={setRandomPickerOpen}
+      />
     </div>
   );
 }
