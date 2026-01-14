@@ -39,6 +39,7 @@ import {
 import { RandomStudentPicker } from '@/components/classroom/RandomStudentPicker';
 import { ClassroomTimer } from '@/components/classroom/ClassroomTimer';
 import { ClassroomStatsBanner } from '@/components/classroom/ClassroomStatsBanner';
+import { StudentBadges, WeeklyAchievementsManager, WeeklyLeaderboard } from '@/components/classroom/StudentBadges';
 
 interface StudentPosition {
   student_id: string;
@@ -69,6 +70,7 @@ interface DraggableStudentProps {
   onTap: (student: SelectedStudent) => void;
   getShortName: (name: string) => string;
   containerRef: React.RefObject<HTMLDivElement>;
+  classroomId: string;
 }
 
 function DraggableStudent({ 
@@ -78,7 +80,8 @@ function DraggableStudent({
   onPositionChange, 
   onTap, 
   getShortName,
-  containerRef 
+  containerRef,
+  classroomId
 }: DraggableStudentProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -726,6 +729,24 @@ export default function ClassroomView() {
           classroomName={classroom.name}
         />
 
+        {/* Weekly Achievements Manager - calculates and awards badges */}
+        <WeeklyAchievementsManager
+          students={students}
+          behaviorNotes={behaviorNotes}
+          classroomId={classroomId || ''}
+        />
+
+        {/* Weekly Leaderboard - shows top students */}
+        {activeTab === 'notes' && (
+          <div className="mb-4">
+            <WeeklyLeaderboard
+              students={students}
+              behaviorNotes={behaviorNotes}
+              classroomId={classroomId || ''}
+            />
+          </div>
+        )}
+
         {/* Quick Action Buttons - Timer & Random Picker */}
         {activeTab === 'notes' && (
           <div className="flex items-center justify-center gap-3 mb-4">
@@ -878,6 +899,7 @@ export default function ClassroomView() {
                       onTap={handleStudentTap}
                       getShortName={getShortName}
                       containerRef={arrangeContainerRef}
+                      classroomId={classroomId || ''}
                     />
                   );
                 })}
@@ -969,6 +991,10 @@ export default function ClassroomView() {
                       <p className="text-sm text-center font-medium truncate w-full leading-tight max-w-[90px]">
                         {getShortName(student.name)}
                       </p>
+                      {/* Student Badges */}
+                      <div className="mt-1">
+                        <StudentBadges studentId={student.id} classroomId={classroomId || ''} />
+                      </div>
                     </div>
                   );
                 })}
