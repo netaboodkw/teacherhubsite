@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Shield, Database, Bell, Loader2, Save, CheckCircle, LayoutGrid, CreditCard, Key, Eye, EyeOff, ExternalLink, Image, Upload, X } from 'lucide-react';
+import { Settings, Shield, Database, Bell, Loader2, Save, CheckCircle, LayoutGrid, CreditCard, Key, Eye, EyeOff, ExternalLink, Image, Upload, X, FileText } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { useSystemSettings, useUpdateSystemSetting } from '@/hooks/useSystemSettings';
 import { supabase } from '@/integrations/supabase/client';
@@ -43,6 +44,12 @@ export default function AdminSettingsPage() {
   const [siteLogo, setSiteLogo] = useState<string>('');
   const [logoUploading, setLogoUploading] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
+
+  // Terms settings
+  const [termsSettings, setTermsSettings] = useState({
+    terms_enabled: false,
+    terms_content: '',
+  });
   // Load settings from database
   useEffect(() => {
     if (systemSettings) {
@@ -68,6 +75,14 @@ export default function AdminSettingsPage() {
       if (logoUrl?.value) {
         setSiteLogo(logoUrl.value as string);
       }
+
+      // Load terms settings
+      const termsEnabled = systemSettings.find(s => s.key === 'terms_enabled');
+      const termsContent = systemSettings.find(s => s.key === 'terms_content');
+      setTermsSettings({
+        terms_enabled: termsEnabled?.value === true || termsEnabled?.value === 'true',
+        terms_content: (termsContent?.value as string) || '',
+      });
     }
   }, [systemSettings]);
 
@@ -146,6 +161,16 @@ export default function AdminSettingsPage() {
       await updateSystemSetting.mutateAsync({
         key: 'payment_enabled',
         value: paymentSettings.payment_enabled
+      });
+
+      // Save terms settings
+      await updateSystemSetting.mutateAsync({
+        key: 'terms_enabled',
+        value: termsSettings.terms_enabled
+      });
+      await updateSystemSetting.mutateAsync({
+        key: 'terms_content',
+        value: termsSettings.terms_content
       });
 
       toast.success('تم حفظ الإعدادات بنجاح');
@@ -291,6 +316,51 @@ export default function AdminSettingsPage() {
                   onCheckedChange={(checked) => setSettings(prev => ({ ...prev, requireEmailVerification: checked }))}
                 />
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Terms & Conditions Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                الشروط والأحكام
+              </CardTitle>
+              <CardDescription>تحديد شروط وأحكام التسجيل للمستخدمين الجدد</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>تفعيل الشروط والأحكام</Label>
+                  <p className="text-sm text-muted-foreground">
+                    إظهار شروط وأحكام يجب الموافقة عليها عند التسجيل
+                  </p>
+                </div>
+                <Switch
+                  checked={termsSettings.terms_enabled}
+                  onCheckedChange={(checked) => setTermsSettings(prev => ({ ...prev, terms_enabled: checked }))}
+                />
+              </div>
+
+              {termsSettings.terms_enabled && (
+                <>
+                  <Separator />
+                  <div className="space-y-2">
+                    <Label htmlFor="termsContent">نص الشروط والأحكام</Label>
+                    <Textarea
+                      id="termsContent"
+                      placeholder="اكتب هنا شروط وأحكام التسجيل..."
+                      value={termsSettings.terms_content}
+                      onChange={(e) => setTermsSettings(prev => ({ ...prev, terms_content: e.target.value }))}
+                      className="min-h-[200px]"
+                      dir="rtl"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      سيظهر هذا النص للمستخدمين عند التسجيل ويجب عليهم الموافقة عليه
+                    </p>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 

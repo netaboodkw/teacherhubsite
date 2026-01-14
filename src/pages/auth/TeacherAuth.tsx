@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useEducationLevels } from '@/hooks/useEducationLevels';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useSystemSettings } from '@/hooks/useSystemSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,8 +12,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import { Loader2, ArrowLeft, Mail, Lock, User, Building2, BookOpen, GraduationCap, Eye, EyeOff, Phone, LogOut, AlertTriangle } from 'lucide-react';
+import { Loader2, ArrowLeft, Mail, Lock, User, Building2, BookOpen, GraduationCap, Eye, EyeOff, Phone, LogOut, AlertTriangle, FileText } from 'lucide-react';
 import heroBg from '@/assets/hero-bg.jpg';
 import logo from '@/assets/logo.png';
 
@@ -21,6 +25,12 @@ export default function TeacherAuth() {
   const { user, signIn, signUp, signOut } = useAuth();
   const { data: userRole } = useUserRole();
   const { data: educationLevels = [] } = useEducationLevels();
+  const { data: systemSettings } = useSystemSettings();
+  
+  // Terms settings
+  const termsEnabled = systemSettings?.find(s => s.key === 'terms_enabled')?.value === true || 
+                       systemSettings?.find(s => s.key === 'terms_enabled')?.value === 'true';
+  const termsContent = (systemSettings?.find(s => s.key === 'terms_content')?.value as string) || '';
   
   // Check if user is logged in with a different role
   const isLoggedInWithDifferentRole = user && userRole && userRole.role !== 'user';
@@ -43,6 +53,8 @@ export default function TeacherAuth() {
   const [registerLoading, setRegisterLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showTermsDialog, setShowTermsDialog] = useState(false);
 
   const handleSwitchAccount = async () => {
     await signOut();
@@ -126,6 +138,11 @@ export default function TeacherAuth() {
     
     if (!educationLevelId) {
       toast.error('يرجى اختيار المرحلة الدراسية');
+      return;
+    }
+
+    if (termsEnabled && !acceptedTerms) {
+      toast.error('يرجى الموافقة على الشروط والأحكام');
       return;
     }
     
@@ -438,10 +455,48 @@ export default function TeacherAuth() {
                       </div>
                     </div>
                     
+                    {/* Terms and Conditions */}
+                    {termsEnabled && termsContent && (
+                      <div className="flex items-start space-x-2 space-x-reverse">
+                        <Checkbox
+                          id="terms"
+                          checked={acceptedTerms}
+                          onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+                          className="mt-1"
+                        />
+                        <div className="flex-1">
+                          <Label htmlFor="terms" className="text-sm cursor-pointer">
+                            أوافق على{' '}
+                            <Dialog open={showTermsDialog} onOpenChange={setShowTermsDialog}>
+                              <DialogTrigger asChild>
+                                <button type="button" className="text-primary hover:underline inline-flex items-center gap-1">
+                                  <FileText className="h-3 w-3" />
+                                  الشروط والأحكام
+                                </button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-2xl max-h-[80vh]">
+                                <DialogHeader>
+                                  <DialogTitle className="flex items-center gap-2">
+                                    <FileText className="h-5 w-5" />
+                                    الشروط والأحكام
+                                  </DialogTitle>
+                                </DialogHeader>
+                                <ScrollArea className="h-[60vh] mt-4">
+                                  <div className="prose prose-sm dark:prose-invert whitespace-pre-wrap" dir="rtl">
+                                    {termsContent}
+                                  </div>
+                                </ScrollArea>
+                              </DialogContent>
+                            </Dialog>
+                          </Label>
+                        </div>
+                      </div>
+                    )}
+                    
                     <Button 
                       type="submit" 
                       className="w-full gradient-hero h-11"
-                      disabled={registerLoading}
+                      disabled={registerLoading || (termsEnabled && !acceptedTerms)}
                     >
                       {registerLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
