@@ -429,15 +429,15 @@ export default function AIContentCreatorPage() {
                       <div className="absolute inset-0 flex flex-col pointer-events-none">
                         {/* Top Section - Logo and App Name */}
                         <div className="pt-5 px-3 text-center">
-                          <div className="inline-flex flex-col items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
+                          <div className="inline-flex flex-col items-center gap-2">
                             {isCustomLogo && (
                               <img 
                                 src={logoUrl} 
                                 alt="شعار" 
-                                className="w-8 h-8 object-contain rounded-lg"
+                                className="w-12 h-12 object-contain drop-shadow-lg"
                               />
                             )}
-                            <p className="text-white text-[10px] font-semibold">
+                            <p className="text-white text-xs font-bold drop-shadow-lg">
                               منصة المعلم الذكي
                             </p>
                           </div>
@@ -462,7 +462,7 @@ export default function AIContentCreatorPage() {
                           
                           {/* Website */}
                           <p className="text-white/60 text-[9px] text-center mt-3 font-medium tracking-wider">
-                            teacher-hub.app
+                            teacherhub.site
                           </p>
                         </div>
                       </div>
