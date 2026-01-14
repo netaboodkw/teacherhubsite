@@ -587,6 +587,7 @@ export type Database = {
       }
       otp_codes: {
         Row: {
+          attempts: number | null
           code: string
           created_at: string
           expires_at: string
@@ -595,6 +596,7 @@ export type Database = {
           verified: boolean | null
         }
         Insert: {
+          attempts?: number | null
           code: string
           created_at?: string
           expires_at: string
@@ -603,6 +605,7 @@ export type Database = {
           verified?: boolean | null
         }
         Update: {
+          attempts?: number | null
           code?: string
           created_at?: string
           expires_at?: string
@@ -1131,6 +1134,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          is_sensitive: boolean | null
           key: string
           updated_at: string
           value: Json
@@ -1139,6 +1143,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_sensitive?: boolean | null
           key: string
           updated_at?: string
           value?: Json
@@ -1147,6 +1152,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_sensitive?: boolean | null
           key?: string
           updated_at?: string
           value?: Json
