@@ -261,39 +261,46 @@ serve(async (req) => {
     
     if (selectedFeature) {
       finalPrompt = `
-Create a stunning visual background design for a mobile app social media post. 
-DO NOT include any text or letters in the image - this is just a background.
+Create a beautiful, warm, and creative illustration for a teacher's app promotional post.
+DO NOT include any text, letters, or words in the image - only visuals.
 
-DESIGN REQUIREMENTS:
-- Create a beautiful abstract gradient background
-- Main colors: Cyan (#5BC0CE, #7DD3E1), Purple (#C9A8D6), with subtle Orange (#F5C78E) accents
-- Add a large, prominent white icon representing: ${selectedFeature.icon}
-- The icon should be centered and clearly visible
-- Add subtle decorative elements: floating circles, dots, soft light effects, abstract shapes
-- Style: Modern, clean, minimalist, professional, suitable for education/school app
-- Aspect ratio: ${aspectRatio} (vertical, for Instagram stories)
-- The design should have space at top and bottom for text overlay later
-- Make it look like premium app marketing material
-- Use soft gradients and modern glassmorphism effects
-- NO TEXT, NO LETTERS, NO WORDS - only visual elements and icons
+STYLE - CHOOSE ONE OF THESE CREATIVE APPROACHES:
+- 3D Clay/Plasticine style: Soft, rounded, cute 3D objects with a handmade feel
+- Paper craft/Origami style: Layered paper cutouts with subtle shadows
+- Watercolor illustration: Soft, artistic watercolor splashes and elements
+- Isometric 3D: Clean geometric 3D objects from an isometric view
 
-Make it visually stunning and suitable for Instagram/social media marketing.
+VISUAL ELEMENTS FOR "${selectedFeature.title}":
+- Main visual element representing: ${selectedFeature.icon}
+- Make it look friendly, approachable, and educational
+- Use pastel colors: Soft teal (#7DD3E1, #A8DDE6), Lavender (#DCC6E8), Soft peach (#FDDCB8)
+- Add small decorative elements related to education: books, pencils, stars, hearts
+- Include subtle patterns: dots, soft geometric shapes, organic curves
+
+COMPOSITION:
+- Aspect ratio: ${aspectRatio} (vertical for stories)
+- Leave space at top for logo and at bottom for text overlay
+- Center the main illustration element
+- Background should be a soft gradient or subtle pattern (not plain)
+
+MOOD: Warm, friendly, professional, inspiring, suitable for educators
+NO TEXT, NO LETTERS, NO WORDS - only beautiful illustrations
 `.trim();
     } else if (prompt) {
       finalPrompt = `
-Create a visual background design for social media with these specifications:
-DO NOT include any text or letters - this is just a visual background.
+Create a creative illustration with these specifications:
+DO NOT include any text or letters - this is just a visual illustration.
 
 USER REQUEST: ${prompt}
 
-DESIGN:
-- Color scheme: Cyan (#5BC0CE, #7DD3E1), Purple (#C9A8D6), Orange (#F5C78E)
-- Aspect ratio: ${aspectRatio}
-- Style: Modern, clean, professional, suitable for social media
-- Add decorative elements and icons based on the request
-- NO TEXT, NO LETTERS, NO WORDS - only visual elements
+STYLE: 
+- Use one of: 3D clay style, paper craft, watercolor, or isometric 3D
+- Make it warm, friendly, and approachable
+- Pastel color palette: Soft teal, lavender, peach tones
+- Educational and professional feel
 
-Make it visually stunning and marketing-ready.
+Aspect ratio: ${aspectRatio}
+NO TEXT, NO LETTERS, NO WORDS - only beautiful visual elements
 `.trim();
     } else {
       return new Response(
