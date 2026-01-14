@@ -1,4 +1,4 @@
-import { Menu, Bell, Search } from 'lucide-react';
+import { Menu, Search } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useProfile } from '@/hooks/useProfile';
 import { useAdminProfile } from '@/hooks/useAdminProfile';
 import { useIsAdmin } from '@/hooks/useUserRole';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -55,10 +56,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
         {/* Right side */}
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
-          </Button>
+          <NotificationBell />
           
           <div className="flex items-center gap-3 pr-3 border-r border-border">
             <div className="hidden sm:block text-left">

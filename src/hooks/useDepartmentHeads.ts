@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { createNotification } from './useSupervisionNotifications';
 
 export interface DepartmentHead {
   id: string;
@@ -101,6 +102,13 @@ export function useInviteDepartmentHead() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('يجب تسجيل الدخول أولاً');
 
+      // Get teacher name
+      const { data: teacherProfile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('user_id', user.id)
+        .single();
+
       // Check if invitation already exists
       const { data: existing } = await supabase
         .from('teacher_department_head_invitations')
@@ -123,6 +131,24 @@ export function useInviteDepartmentHead() {
         .single();
 
       if (error) throw error;
+
+      // Find department head by email and send notification
+      const { data: dhProfile } = await supabase
+        .from('department_heads')
+        .select('user_id')
+        .eq('email', email.toLowerCase().trim())
+        .maybeSingle();
+
+      if (dhProfile) {
+        await createNotification(
+          dhProfile.user_id,
+          'invitation_sent',
+          'دعوة إشراف جديدة',
+          `المعلم ${teacherProfile?.full_name || 'معلم'} أرسل لك دعوة للإشراف على فصوله`,
+          data.id
+        );
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -141,12 +167,48 @@ export function useDeleteInvitation() {
 
   return useMutation({
     mutationFn: async (invitationId: string) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('يجب تسجيل الدخول أولاً');
+
+      // Get invitation details first
+      const { data: invitation } = await supabase
+        .from('teacher_department_head_invitations')
+        .select('department_head_email, status')
+        .eq('id', invitationId)
+        .single();
+
+      // Get teacher name
+      const { data: teacherProfile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('user_id', user.id)
+        .single();
+
       const { error } = await supabase
         .from('teacher_department_head_invitations')
         .delete()
         .eq('id', invitationId);
 
       if (error) throw error;
+
+      // Send notification to department head
+      if (invitation) {
+        const { data: dhProfile } = await supabase
+          .from('department_heads')
+          .select('user_id')
+          .eq('email', invitation.department_head_email)
+          .maybeSingle();
+
+        if (dhProfile) {
+          await createNotification(
+            dhProfile.user_id,
+            'invitation_deleted',
+            invitation.status === 'accepted' ? 'إلغاء الإشراف' : 'إلغاء الدعوة',
+            `المعلم ${teacherProfile?.full_name || 'معلم'} ألغى ${invitation.status === 'accepted' ? 'إشرافك على فصوله' : 'الدعوة'}`,
+            invitationId
+          );
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teacher_invitations'] });
@@ -167,6 +229,20 @@ export function useRespondToInvitation() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('يجب تسجيل الدخول أولاً');
 
+      // Get invitation details
+      const { data: invitation } = await supabase
+        .from('teacher_department_head_invitations')
+        .select('teacher_id')
+        .eq('id', invitationId)
+        .single();
+
+      // Get department head name
+      const { data: dhProfile } = await supabase
+        .from('department_heads')
+        .select('full_name')
+        .eq('user_id', user.id)
+        .single();
+
       const { data, error } = await supabase
         .from('teacher_department_head_invitations')
         .update({
@@ -178,6 +254,18 @@ export function useRespondToInvitation() {
         .single();
 
       if (error) throw error;
+
+      // Send notification to teacher
+      if (invitation) {
+        await createNotification(
+          invitation.teacher_id,
+          status === 'accepted' ? 'invitation_accepted' : 'invitation_rejected',
+          status === 'accepted' ? 'تم قبول دعوتك' : 'تم رفض دعوتك',
+          `رئيس القسم ${dhProfile?.full_name || ''} ${status === 'accepted' ? 'قبل' : 'رفض'} دعوتك للإشراف`,
+          invitationId
+        );
+      }
+
       return data;
     },
     onSuccess: (_, variables) => {
