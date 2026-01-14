@@ -26,6 +26,7 @@ import SubscribersPage from "./pages/admin/SubscribersPage";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import TeacherTemplates from "./pages/teacher/TeacherTemplates";
 import TeacherSubscription from "./pages/teacher/TeacherSubscription";
+import TeacherSchedule from "./pages/teacher/TeacherSchedule";
 import SubscriptionSuccess from "./pages/teacher/SubscriptionSuccess";
 import SubscriptionError from "./pages/teacher/SubscriptionError";
 
@@ -94,6 +95,7 @@ const App = () => (
           <Route path="/teacher/classrooms/new" element={<ProtectedRoute><NewClassroom /></ProtectedRoute>} />
           <Route path="/teacher/classrooms/:classroomId" element={<ProtectedRoute><ClassroomView /></ProtectedRoute>} />
           <Route path="/teacher/classrooms/:classroomId/edit" element={<ProtectedRoute><EditClassroom /></ProtectedRoute>} />
+          <Route path="/teacher/schedule" element={<ProtectedRoute><TeacherSchedule /></ProtectedRoute>} />
           <Route path="/teacher/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
           <Route path="/teacher/students/:studentId" element={<ProtectedRoute><StudentDetail /></ProtectedRoute>} />
           <Route path="/teacher/students/new" element={<ProtectedRoute><NewStudent /></ProtectedRoute>} />

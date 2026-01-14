@@ -14,6 +14,7 @@ import {
   LogOut,
   LayoutGrid,
   CreditCard,
+  CalendarDays,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -29,6 +30,7 @@ interface TeacherSidebarProps {
 const navItems = [
   { href: '/teacher', icon: LayoutDashboard, label: 'لوحة التحكم' },
   { href: '/teacher/classrooms', icon: GraduationCap, label: 'الصفوف' },
+  { href: '/teacher/schedule', icon: CalendarDays, label: 'جدول الحصص' },
   { href: '/teacher/students', icon: Users, label: 'الطلاب' },
   { href: '/teacher/attendance', icon: ClipboardCheck, label: 'الحضور' },
   { href: '/teacher/grades', icon: BookOpen, label: 'الدرجات' },
