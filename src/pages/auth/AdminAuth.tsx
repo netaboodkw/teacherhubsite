@@ -46,7 +46,7 @@ export default function AdminAuth() {
     setLoading(true);
 
     try {
-      const { error } = await signIn(email, password);
+      const { error, data } = await signIn(email, password);
       
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
@@ -57,8 +57,13 @@ export default function AdminAuth() {
         return;
       }
       
-      toast.success('مرحباً بك!');
-      navigate('/admin');
+      // Wait for session to be confirmed
+      if (data?.session) {
+        toast.success('مرحباً بك!');
+        setTimeout(() => {
+          navigate('/admin', { replace: true });
+        }, 100);
+      }
     } catch (error: any) {
       toast.error(error.message || 'حدث خطأ أثناء تسجيل الدخول');
     } finally {
