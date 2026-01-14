@@ -5,64 +5,50 @@ import { Badge } from '@/components/ui/badge';
 import { 
   GraduationCap, Users, ClipboardCheck, BarChart3, Sparkles, ArrowLeft, 
   FileSpreadsheet, Calendar, UserPlus, Shield, Bell, Printer, 
-  Smartphone, Cloud, CheckCircle, Star, Gift, Building2, Camera, Eye,
-  Zap, Award, TrendingUp, Heart
+  Smartphone, Cloud, CheckCircle, Star, Gift, Building2, Camera,
+  Zap, Award, TrendingUp, Heart, LogIn
 } from 'lucide-react';
 import heroBg from '@/assets/hero-bg.jpg';
 import { useSiteLogo } from '@/hooks/useSiteLogo';
 import { useSubscriptionSettings } from '@/hooks/useSubscription';
-import featureDashboard from '@/assets/feature-dashboard.png';
-import featureGrades from '@/assets/feature-grades.png';
-import featureAttendance from '@/assets/feature-attendance.png';
+import defaultLogo from '@/assets/logo.png';
 
 const features = [
   {
     icon: Users,
     title: 'إدارة الطلاب',
     description: 'أضف طلابك بسهولة مع إمكانية الاستيراد الذكي من الصور والملفات',
-    gradient: 'from-primary to-secondary',
+    gradient: 'from-[#7DD3E1] to-[#5BC0CE]',
   },
   {
     icon: Camera,
     title: 'صور الطلاب',
     description: 'أضف صوراً لكل طالب لسهولة التعرف عليهم ومتابعتهم',
-    gradient: 'from-secondary to-success',
+    gradient: 'from-[#F5C78E] to-[#E8B77D]',
   },
   {
     icon: ClipboardCheck,
     title: 'تتبع الحضور',
     description: 'سجل الحضور والغياب بضغطة واحدة مع تقارير شاملة',
-    gradient: 'from-success to-primary',
+    gradient: 'from-[#C9A8D6] to-[#B897C5]',
   },
   {
     icon: BarChart3,
     title: 'الدرجات والتقارير',
     description: 'تابع أداء طلابك وأنشئ تقارير مفصلة قابلة للطباعة',
-    gradient: 'from-primary to-accent',
+    gradient: 'from-[#7DD3E1] to-[#C9A8D6]',
   },
   {
     icon: FileSpreadsheet,
     title: 'قوالب درجات مرنة',
     description: 'أنشئ قوالب تقييم مخصصة تناسب مادتك ومرحلتك الدراسية',
-    gradient: 'from-warning to-destructive',
+    gradient: 'from-[#F5C78E] to-[#F5A8A8]',
   },
   {
     icon: Sparkles,
     title: 'الفصل التفاعلي',
     description: 'رتّب مقاعد الطلاب وسجل الملاحظات السلوكية الإيجابية والسلبية',
-    gradient: 'from-accent to-primary',
-  },
-  {
-    icon: Eye,
-    title: 'متابعة رئيس القسم',
-    description: 'يمكن لرئيس القسم متابعة أداء المعلمين والطلاب بشكل مستمر',
-    gradient: 'from-secondary to-primary',
-  },
-  {
-    icon: Calendar,
-    title: 'جدولة الحصص',
-    description: 'نظم جدول حصصك الأسبوعي مع تنبيهات ذكية',
-    gradient: 'from-primary to-secondary',
+    gradient: 'from-[#5BC0CE] to-[#7DD3E1]',
   },
 ];
 
@@ -81,65 +67,69 @@ const stats = [
 ];
 
 export default function Landing() {
-  const { logoUrl } = useSiteLogo();
+  const { logoUrl, isCustomLogo } = useSiteLogo();
   const { data: subscriptionSettings } = useSubscriptionSettings();
   
   const trialDays = subscriptionSettings?.trial_days ?? 10;
+  
+  // Use the uploaded logo directly
+  const displayLogo = isCustomLogo ? logoUrl : defaultLogo;
   
   return (
     <div className="min-h-screen bg-background overflow-x-hidden" dir="rtl">
       {/* Hero Section */}
       <div className="relative min-h-screen flex items-center justify-center">
-        {/* Background with gradient overlay */}
+        {/* Background with gradient overlay - matching logo colors */}
         <div 
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `url(${heroBg})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
+          className="absolute inset-0 bg-gradient-to-br from-[#7DD3E1] via-[#5BC0CE] to-[#4AA8B8]"
         />
-        <div className="absolute inset-0 gradient-hero opacity-90" />
         
-        {/* Animated background shapes */}
+        {/* Animated background shapes with logo colors */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-20 right-10 w-72 h-72 bg-white/10 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-20 left-10 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-          <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+          <div className="absolute top-20 right-10 w-72 h-72 bg-[#F5C78E]/30 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-20 left-10 w-96 h-96 bg-[#C9A8D6]/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-white/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        </div>
+
+        {/* Login Button - Top Right */}
+        <div className="absolute top-6 left-6 z-20">
+          <Link to="/auth/teacher">
+            <Button 
+              size="lg" 
+              className="bg-white/95 text-[#5BC0CE] hover:bg-white hover:text-[#4AA8B8] font-bold shadow-lg border-0 h-12 px-6 transition-all hover:scale-105"
+            >
+              <LogIn className="ml-2 h-5 w-5" />
+              تسجيل الدخول
+            </Button>
+          </Link>
         </div>
         
         <div className="relative z-10 text-center px-4 max-w-5xl mx-auto py-16">
           {/* Logo - Large and prominent */}
-          <div className="inline-flex items-center justify-center w-44 h-44 md:w-52 md:h-52 rounded-[2rem] bg-white backdrop-blur-sm mb-10 shadow-2xl p-4 animate-logo-float ring-4 ring-white/40">
+          <div className="inline-flex items-center justify-center w-48 h-48 md:w-60 md:h-60 rounded-[2rem] bg-white backdrop-blur-sm mb-10 shadow-2xl p-6 ring-4 ring-white/40">
             <img 
-              src={logoUrl} 
+              src={displayLogo} 
               alt="Teacher Hub" 
               className="w-full h-full object-contain drop-shadow-md"
               onError={(e) => {
-                // Fallback to default logo on error
-                e.currentTarget.src = '/logo.png';
+                e.currentTarget.src = defaultLogo;
               }}
             />
           </div>
-          
-          {/* Title with gradient */}
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-6 drop-shadow-lg">
-            Teacher Hub
-          </h1>
           
           {/* Subtitle */}
           <p className="text-2xl md:text-3xl text-white/95 mb-4 font-medium">
             منصة المعلم الذكي
           </p>
           
-          <p className="text-lg md:text-xl text-white/85 mb-8 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg md:text-xl text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">
             نظام متكامل لإدارة الفصول الدراسية، تتبع الحضور والدرجات، 
             وتقارير احترافية بضغطة زر
           </p>
 
-          {/* Free Trial Badge */}
+          {/* Free Trial Badge - Fixed hover colors */}
           <div className="mb-10">
-            <Badge className="text-xl px-8 py-4 bg-white text-primary shadow-xl border-0 hover:scale-105 transition-transform">
+            <Badge className="text-xl px-8 py-4 bg-white text-[#5BC0CE] shadow-xl border-0 hover:bg-white hover:text-[#4AA8B8] transition-all cursor-default">
               <Gift className="w-6 h-6 ml-3 animate-bounce" />
               تجربة مجانية لمدة {trialDays} يوم!
             </Badge>
@@ -150,7 +140,7 @@ export default function Landing() {
             {highlights.map((item, i) => (
               <div 
                 key={i} 
-                className="flex items-center gap-2 text-white bg-white/15 backdrop-blur-sm px-5 py-2.5 rounded-full border border-white/20 hover:bg-white/25 transition-colors"
+                className="flex items-center gap-2 text-white bg-white/15 backdrop-blur-sm px-5 py-2.5 rounded-full border border-white/25 hover:bg-white/25 transition-colors"
               >
                 <item.icon className="w-4 h-4" />
                 <span className="text-sm font-medium">{item.text}</span>
@@ -158,19 +148,13 @@ export default function Landing() {
             ))}
           </div>
           
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-lg mx-auto">
-            <Link to="/auth/teacher" className="flex-1">
-              <Button size="lg" className="w-full bg-white text-primary hover:bg-white/90 h-16 text-lg font-bold shadow-xl hover:scale-105 transition-all">
+          {/* CTA Button - Focus on Teachers */}
+          <div className="flex flex-col items-center gap-4 max-w-md mx-auto">
+            <Link to="/auth/teacher" className="w-full">
+              <Button size="lg" className="w-full bg-white text-[#5BC0CE] hover:bg-white/95 hover:text-[#4AA8B8] h-16 text-lg font-bold shadow-xl hover:scale-105 transition-all border-0">
                 <GraduationCap className="ml-3 h-6 w-6" />
                 ابدأ الآن مجاناً
                 <ArrowLeft className="mr-auto h-5 w-5" />
-              </Button>
-            </Link>
-            <Link to="/auth/department-head" className="flex-1">
-              <Button size="lg" variant="outline" className="w-full bg-white/10 backdrop-blur-sm border-2 border-white text-white hover:bg-white/20 h-16 text-lg">
-                <Building2 className="ml-3 h-6 w-6" />
-                رؤساء الأقسام
               </Button>
             </Link>
           </div>
@@ -185,7 +169,7 @@ export default function Landing() {
       </div>
 
       {/* Stats Section */}
-      <div className="py-16 px-4 gradient-hero">
+      <div className="py-16 px-4 bg-gradient-to-br from-[#5BC0CE] to-[#4AA8B8]">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {stats.map((stat, i) => (
@@ -199,79 +183,11 @@ export default function Landing() {
         </div>
       </div>
 
-      {/* Screenshots Section */}
-      <div className="py-20 px-4 bg-muted/30">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge variant="secondary" className="mb-4 text-sm px-4 py-1.5">
-              <Sparkles className="w-4 h-4 ml-2" />
-              شاهد المنصة
-            </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">
-              واجهة احترافية سهلة الاستخدام
-            </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              صُممت خصيصاً للمعلم العربي بتجربة استخدام سلسة وممتعة
-            </p>
-          </div>
-          
-          <div className="grid gap-8">
-            {/* Main Dashboard Screenshot */}
-            <div className="relative group">
-              <div className="absolute inset-0 gradient-primary rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity" />
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white/50">
-                <img src={featureDashboard} alt="لوحة التحكم الرئيسية" className="w-full h-auto" />
-              </div>
-              <div className="text-center mt-6">
-                <h3 className="text-xl font-bold text-foreground">لوحة تحكم شاملة</h3>
-                <p className="text-muted-foreground">كل ما تحتاجه في مكان واحد</p>
-              </div>
-            </div>
-            
-            <div className="grid md:grid-cols-2 gap-8">
-              {/* Grades Screenshot */}
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative rounded-2xl overflow-hidden shadow-xl border-2 border-border">
-                  <img src={featureGrades} alt="إدخال الدرجات" className="w-full h-auto" />
-                  <div className="p-5 bg-card">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-                        <BarChart3 className="w-5 h-5 text-white" />
-                      </div>
-                      <h3 className="font-bold text-lg">إدخال الدرجات</h3>
-                    </div>
-                    <p className="text-muted-foreground">أدخل درجات طلابك بسرعة وسهولة</p>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Attendance Screenshot */}
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-br from-secondary/20 to-success/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative rounded-2xl overflow-hidden shadow-xl border-2 border-border">
-                  <img src={featureAttendance} alt="تسجيل الحضور" className="w-full h-auto" />
-                  <div className="p-5 bg-card">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 rounded-xl gradient-secondary flex items-center justify-center">
-                        <ClipboardCheck className="w-5 h-5 text-white" />
-                      </div>
-                      <h3 className="font-bold text-lg">تسجيل الحضور</h3>
-                    </div>
-                    <p className="text-muted-foreground">سجل حضور وغياب طلابك بضغطة واحدة</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Features Section */}
       <div className="py-20 px-4 bg-background">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <Badge variant="secondary" className="mb-4 text-sm px-4 py-1.5">
+            <Badge variant="secondary" className="mb-4 text-sm px-4 py-1.5 bg-[#7DD3E1]/20 text-[#4AA8B8] border-0">
               <Award className="w-4 h-4 ml-2" />
               المميزات
             </Badge>
@@ -283,7 +199,7 @@ export default function Landing() {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, index) => (
               <Card 
                 key={index} 
@@ -305,75 +221,12 @@ export default function Landing() {
         </div>
       </div>
 
-      {/* For Department Heads Section */}
-      <div className="py-20 px-4 bg-muted/20">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <Badge className="mb-6 bg-secondary text-secondary-foreground border-0 text-sm px-4 py-1.5">
-                <Building2 className="w-4 h-4 ml-2" />
-                لرؤساء الأقسام
-              </Badge>
-              <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">
-                تابع فريقك بكل سهولة
-              </h2>
-              <p className="text-muted-foreground text-lg mb-8 leading-relaxed">
-                أدوات متقدمة لمتابعة أداء المعلمين وتقارير شاملة عن جميع الصفوف تحت إشرافك
-              </p>
-              <ul className="space-y-4 mb-8">
-                {[
-                  'عرض تقارير شاملة لجميع المعلمين',
-                  'متابعة درجات الطلاب في جميع المواد',
-                  'إحصائيات ورسوم بيانية تفصيلية',
-                  'تصدير البيانات بسهولة',
-                ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full gradient-secondary flex items-center justify-center flex-shrink-0">
-                      <CheckCircle className="w-4 h-4 text-white" />
-                    </div>
-                    <span className="text-foreground">{item}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link to="/auth/department-head">
-                <Button size="lg" className="gradient-secondary text-white border-0 h-14 px-8 hover:opacity-90 transition-opacity">
-                  <Building2 className="ml-2 h-5 w-5" />
-                  سجل كرئيس قسم
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-            <div className="hidden md:block">
-              <Card className="p-8 bg-card shadow-2xl border-0">
-                <div className="space-y-5">
-                  {[
-                    { icon: Users, title: '25 معلم', subtitle: 'تحت إشرافك', color: 'from-primary to-secondary' },
-                    { icon: TrendingUp, title: 'تقارير تفصيلية', subtitle: 'لجميع الصفوف', color: 'from-secondary to-success' },
-                    { icon: Star, title: 'تقييم الأداء', subtitle: 'متابعة مستمرة', color: 'from-warning to-destructive' },
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center gap-4 p-5 bg-muted/50 rounded-xl hover:bg-muted transition-colors">
-                      <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center shadow-lg`}>
-                        <item.icon className="w-7 h-7 text-white" />
-                      </div>
-                      <div>
-                        <div className="font-bold text-lg text-foreground">{item.title}</div>
-                        <div className="text-muted-foreground">{item.subtitle}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Final CTA Section */}
-      <div className="py-24 px-4 gradient-hero relative overflow-hidden">
+      <div className="py-24 px-4 bg-gradient-to-br from-[#7DD3E1] via-[#5BC0CE] to-[#4AA8B8] relative overflow-hidden">
         {/* Background decorations */}
         <div className="absolute inset-0">
-          <div className="absolute top-10 right-20 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
-          <div className="absolute bottom-10 left-20 w-60 h-60 bg-white/5 rounded-full blur-3xl" />
+          <div className="absolute top-10 right-20 w-40 h-40 bg-[#F5C78E]/20 rounded-full blur-2xl" />
+          <div className="absolute bottom-10 left-20 w-60 h-60 bg-[#C9A8D6]/15 rounded-full blur-3xl" />
         </div>
         
         <div className="max-w-4xl mx-auto text-center relative z-10">
@@ -391,10 +244,56 @@ export default function Landing() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/auth/teacher">
-              <Button size="lg" className="bg-white text-primary hover:bg-white/90 h-16 px-12 text-lg font-bold shadow-xl hover:scale-105 transition-all">
+              <Button size="lg" className="bg-white text-[#5BC0CE] hover:bg-white/95 hover:text-[#4AA8B8] h-16 px-12 text-lg font-bold shadow-xl hover:scale-105 transition-all border-0">
                 <UserPlus className="ml-3 h-6 w-6" />
                 سجل مجاناً الآن
                 <ArrowLeft className="mr-3 h-5 w-5" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* For Department Heads Section - Moved to bottom */}
+      <div className="py-16 px-4 bg-muted/30">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-10">
+            <Badge className="mb-4 bg-[#C9A8D6]/20 text-[#8B6B99] border-0 text-sm px-4 py-1.5">
+              <Building2 className="w-4 h-4 ml-2" />
+              لرؤساء الأقسام
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
+              تابع فريقك بكل سهولة
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-8">
+              أدوات متقدمة لمتابعة أداء المعلمين وتقارير شاملة عن جميع الصفوف تحت إشرافك
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-6 mb-10">
+            {[
+              { icon: Users, title: 'متابعة المعلمين', description: 'عرض تقارير شاملة لجميع المعلمين' },
+              { icon: TrendingUp, title: 'تقارير تفصيلية', description: 'إحصائيات ورسوم بيانية شاملة' },
+              { icon: Star, title: 'تقييم الأداء', description: 'متابعة مستمرة لأداء الفريق' },
+            ].map((item, i) => (
+              <Card key={i} className="border-0 shadow-md hover:shadow-lg transition-shadow bg-card">
+                <CardContent className="p-6 text-center">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#C9A8D6] to-[#B897C5] flex items-center justify-center mx-auto mb-4 shadow-md">
+                    <item.icon className="w-7 h-7 text-white" />
+                  </div>
+                  <h3 className="font-bold text-lg mb-2 text-foreground">{item.title}</h3>
+                  <p className="text-muted-foreground text-sm">{item.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          
+          <div className="text-center">
+            <Link to="/auth/department-head">
+              <Button size="lg" className="bg-gradient-to-r from-[#C9A8D6] to-[#B897C5] text-white border-0 h-14 px-8 hover:opacity-90 transition-opacity shadow-lg">
+                <Building2 className="ml-2 h-5 w-5" />
+                سجل كرئيس قسم
+                <ArrowLeft className="mr-2 h-4 w-4" />
               </Button>
             </Link>
           </div>
@@ -406,8 +305,8 @@ export default function Landing() {
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-muted p-2">
-                <img src={logoUrl} alt="Teacher Hub" className="w-full h-full object-contain" />
+              <div className="w-16 h-16 rounded-xl bg-muted p-2">
+                <img src={displayLogo} alt="Teacher Hub" className="w-full h-full object-contain" />
               </div>
               <div>
                 <span className="font-bold text-xl text-foreground">Teacher Hub</span>
