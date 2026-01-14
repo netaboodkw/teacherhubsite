@@ -815,6 +815,60 @@ export type Database = {
           },
         ]
       }
+      student_achievements: {
+        Row: {
+          achievement_type: string
+          classroom_id: string
+          created_at: string
+          id: string
+          points: number | null
+          rank: number | null
+          student_id: string
+          user_id: string
+          week_end: string
+          week_start: string
+        }
+        Insert: {
+          achievement_type: string
+          classroom_id: string
+          created_at?: string
+          id?: string
+          points?: number | null
+          rank?: number | null
+          student_id: string
+          user_id: string
+          week_end: string
+          week_start: string
+        }
+        Update: {
+          achievement_type?: string
+          classroom_id?: string
+          created_at?: string
+          id?: string
+          points?: number | null
+          rank?: number | null
+          student_id?: string
+          user_id?: string
+          week_end?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_achievements_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_achievements_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_positions: {
         Row: {
           classroom_id: string
