@@ -82,7 +82,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, aspectRatio, autoGenerate } = await req.json();
+    const { prompt, aspectRatio, autoGenerate, logoUrl } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -100,6 +100,10 @@ serve(async (req) => {
     if (autoGenerate) {
       selectedFeature = appFeatures[Math.floor(Math.random() * appFeatures.length)];
       
+      const logoInstruction = logoUrl 
+        ? `IMPORTANT: Include the actual platform logo from this URL: ${logoUrl} - Place it prominently at the top or bottom of the image.`
+        : `Logo area: Small white circle or rounded rectangle at bottom with a simple education/teacher icon inside.`;
+
       finalPrompt = `
 Create a professional Arabic social media story/post image for a teacher app called "منصة المعلم الذكي" (Teacher Hub).
 
@@ -107,6 +111,7 @@ CRITICAL REQUIREMENTS:
 1. Arabic text MUST be clear, readable, and correctly written (right-to-left)
 2. Include the app name "منصة المعلم الذكي" at the top or bottom
 3. Include "teacher-hub.app" website URL in small text
+4. ${logoInstruction}
 
 CONTENT:
 - Main Title (Arabic, large, bold, white): "${selectedFeature.title}"
@@ -122,7 +127,6 @@ DESIGN:
 - Use vector/flat design style, no photos
 
 BRANDING:
-- Logo area: Small white circle or rounded rectangle at bottom with app icon placeholder
 - Website: "teacher-hub.app" in small white text
 - Colors: Cyan (#5BC0CE, #7DD3E1), Purple (#C9A8D6), Orange accents (#F5C78E)
 
@@ -135,6 +139,10 @@ Make it visually stunning and suitable for Instagram/social media marketing.
       );
     } else {
       // For custom prompts, add branding requirements
+      const logoInstruction = logoUrl 
+        ? `Include the platform logo from: ${logoUrl}`
+        : `Include a simple education/teacher icon`;
+
       finalPrompt = `
 Create an Arabic social media image with these specifications:
 
@@ -145,6 +153,7 @@ USER REQUEST: ${prompt}
 BRANDING TO INCLUDE:
 - App name "منصة المعلم الذكي" somewhere visible
 - Website "teacher-hub.app" in small text
+- ${logoInstruction}
 - Color scheme: Cyan (#5BC0CE, #7DD3E1), Purple (#C9A8D6), Orange (#F5C78E)
 - Aspect ratio: ${aspectRatio}
 - Style: Modern, clean, professional, suitable for social media

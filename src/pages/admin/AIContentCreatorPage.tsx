@@ -11,6 +11,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
+import { useSiteLogo } from '@/hooks/useSiteLogo';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -52,6 +54,7 @@ const aspectRatioSizes: Record<AspectRatio, { width: number; height: number }> =
 
 export default function AIContentCreatorPage() {
   const { user } = useAuth();
+  const { logoUrl, isCustomLogo } = useSiteLogo();
   const queryClient = useQueryClient();
   const [contentType, setContentType] = useState<ContentType>('screenshot');
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('9:16');
@@ -65,6 +68,7 @@ export default function AIContentCreatorPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<SavedContent | null>(null);
   const [generatedFeature, setGeneratedFeature] = useState<{ title: string; description: string } | null>(null);
+  const [includeLogo, setIncludeLogo] = useState(true);
 
   const defaultPrompts: Record<ContentType, string> = {
     screenshot: 'تصميم واجهة تطبيق تعليمي عصري بألوان زرقاء وبيضاء، يعرض لوحة تحكم المعلم مع إحصائيات الطلاب والحضور والدرجات. التصميم احترافي ونظيف مع أيقونات واضحة وخطوط عربية جميلة.',
@@ -122,6 +126,7 @@ export default function AIContentCreatorPage() {
           prompt: autoGenerate ? '' : prompt,
           aspectRatio,
           autoGenerate,
+          logoUrl: includeLogo && isCustomLogo ? logoUrl : null,
         },
       });
 
@@ -275,6 +280,35 @@ export default function AIContentCreatorPage() {
                     </Label>
                   </div>
                 </RadioGroup>
+              </div>
+
+              {/* Logo Option */}
+              <div className="space-y-3">
+                <Label className="text-base font-medium">إضافة الشعار</Label>
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    {isCustomLogo ? (
+                      <img src={logoUrl} alt="شعار المنصة" className="w-10 h-10 object-contain rounded" />
+                    ) : (
+                      <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
+                        <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm font-medium">
+                        {isCustomLogo ? 'شعار المنصة' : 'لم يتم تحميل شعار'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {isCustomLogo ? 'سيتم إضافته للصور المُنشأة' : 'يمكنك تحميله من الإعدادات'}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={includeLogo}
+                    onCheckedChange={setIncludeLogo}
+                    disabled={!isCustomLogo}
+                  />
+                </div>
               </div>
 
               {/* Prompt */}
