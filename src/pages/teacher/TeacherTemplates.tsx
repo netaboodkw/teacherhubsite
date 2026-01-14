@@ -29,6 +29,7 @@ import { Plus, Loader2, Edit, Trash2, Copy, FileText, LayoutGrid, Calculator, Si
 import { GradingStructureData, GradingGroup, GradingColumn } from '@/hooks/useGradingStructures';
 import { DraggableStructureEditor } from '@/components/teacher/DraggableStructureEditor';
 import { AITemplateCreator } from '@/components/teacher/AITemplateCreator';
+import { TemplatePreview } from '@/components/teacher/TemplatePreview';
 
 // ألوان المجموعات - باستيل
 const GROUP_COLORS = [
@@ -1288,6 +1289,9 @@ export default function TeacherTemplates() {
               structure={formData.structure}
               onChange={(structure) => setFormData({ ...formData, structure })}
             />
+
+            {/* معاينة الجدول */}
+            <TemplatePreview structure={formData.structure} />
           </div>
 
           <DialogFooter>
