@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, BellOff, Volume2, VolumeX, Vibrate, Clock, Smartphone, Play, Music } from 'lucide-react';
+import { Bell, BellOff, Volume2, VolumeX, Vibrate, Clock, Smartphone, Play, Music, Repeat, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -223,6 +223,58 @@ export function PeriodReminderSettings({
                   disabled={!isVibrationSupported}
                 />
               </div>
+
+              {/* تكرار التنبيه */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "p-2 rounded-lg",
+                    settings.repeatUntilDismissed ? "bg-primary/10" : "bg-muted"
+                  )}>
+                    <Repeat className={cn(
+                      "w-5 h-5",
+                      settings.repeatUntilDismissed ? "text-primary" : "text-muted-foreground"
+                    )} />
+                  </div>
+                  <div>
+                    <Label htmlFor="repeat-enabled" className="text-base font-medium">
+                      تكرار التنبيه
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      استمرار الصوت حتى الإيقاف يدوياً
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="repeat-enabled"
+                  checked={settings.repeatUntilDismissed}
+                  onCheckedChange={(checked) => onSettingsChange({ repeatUntilDismissed: checked })}
+                />
+              </div>
+
+              {/* الفاصل الزمني للتكرار */}
+              {settings.repeatUntilDismissed && (
+                <div className="space-y-2 pr-2 border-r-2 border-primary/20">
+                  <Label className="flex items-center gap-2">
+                    <Timer className="w-4 h-4" />
+                    الفاصل الزمني للتكرار
+                  </Label>
+                  <Select
+                    value={String(settings.repeatIntervalSeconds)}
+                    onValueChange={(value) => onSettingsChange({ repeatIntervalSeconds: Number(value) })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="30">كل 30 ثانية</SelectItem>
+                      <SelectItem value="60">كل دقيقة</SelectItem>
+                      <SelectItem value="120">كل دقيقتين</SelectItem>
+                      <SelectItem value="180">كل 3 دقائق</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               {/* إذن الإشعارات */}
               <Card className={cn(

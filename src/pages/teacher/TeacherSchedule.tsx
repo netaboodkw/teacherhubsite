@@ -117,6 +117,8 @@ export default function TeacherSchedule() {
     upcomingPeriod,
     notificationPermission,
     requestPermission,
+    isRepeating,
+    stopRepeating,
   } = usePeriodReminder(currentSchedule, classrooms || [], true);
 
   // Build the schedule grid
@@ -210,7 +212,11 @@ export default function TeacherSchedule() {
           </div>
 
           {/* Upcoming Period Alert */}
-          <UpcomingPeriodAlert upcomingPeriod={upcomingPeriod} />
+          <UpcomingPeriodAlert 
+            upcomingPeriod={upcomingPeriod} 
+            isRepeating={isRepeating}
+            onStopRepeating={stopRepeating}
+          />
 
           {/* Filters */}
           <div className="flex flex-wrap gap-3">

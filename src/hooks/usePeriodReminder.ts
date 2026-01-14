@@ -13,6 +13,8 @@ export interface ReminderSettings {
   soundEnabled: boolean;
   vibrationEnabled: boolean;
   soundType: SoundType; // نوع الصوت المختار
+  repeatUntilDismissed: boolean; // تكرار الصوت حتى الإيقاف
+  repeatIntervalSeconds: number; // الفاصل الزمني للتكرار بالثواني
 }
 
 const DEFAULT_SETTINGS: ReminderSettings = {
@@ -21,6 +23,8 @@ const DEFAULT_SETTINGS: ReminderSettings = {
   soundEnabled: true,
   vibrationEnabled: true,
   soundType: 'classic',
+  repeatUntilDismissed: false,
+  repeatIntervalSeconds: 60,
 };
 
 // حفظ الإعدادات
@@ -118,7 +122,9 @@ export function usePeriodReminder(
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(
     'Notification' in window ? Notification.permission : 'denied'
   );
+  const [isRepeating, setIsRepeating] = useState(false);
   const lastNotifiedPeriodRef = useRef<string | null>(null);
+  const repeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { successFeedback } = useHapticFeedback();
 
   // تحديث الإعدادات
@@ -135,6 +141,49 @@ export function usePeriodReminder(
     const granted = await requestNotificationPermission();
     setNotificationPermission(granted ? 'granted' : 'denied');
     return granted;
+  }, []);
+
+  // بدء تكرار الصوت
+  const startRepeating = useCallback(() => {
+    if (repeatIntervalRef.current) return; // تجنب التكرار المزدوج
+    
+    setIsRepeating(true);
+    
+    // تشغيل الصوت فوراً
+    if (settings.soundEnabled) {
+      playNotificationSound(settings.soundType, false);
+    }
+    if (settings.vibrationEnabled) {
+      vibrateDevice([200, 100, 200]);
+    }
+    
+    // تكرار كل فترة محددة
+    repeatIntervalRef.current = setInterval(() => {
+      if (settings.soundEnabled) {
+        playNotificationSound(settings.soundType, false);
+      }
+      if (settings.vibrationEnabled) {
+        vibrateDevice([200, 100, 200]);
+      }
+    }, settings.repeatIntervalSeconds * 1000);
+  }, [settings]);
+
+  // إيقاف تكرار الصوت
+  const stopRepeating = useCallback(() => {
+    if (repeatIntervalRef.current) {
+      clearInterval(repeatIntervalRef.current);
+      repeatIntervalRef.current = null;
+    }
+    setIsRepeating(false);
+  }, []);
+
+  // تنظيف عند إلغاء التحميل
+  useEffect(() => {
+    return () => {
+      if (repeatIntervalRef.current) {
+        clearInterval(repeatIntervalRef.current);
+      }
+    };
   }, []);
 
   // التحقق من الحصص القادمة
@@ -180,14 +229,16 @@ export function usePeriodReminder(
           if (lastNotifiedPeriodRef.current !== periodKey) {
             lastNotifiedPeriodRef.current = periodKey;
 
-            // تشغيل الصوت
-            if (settings.soundEnabled) {
-              playNotificationSound(settings.soundType, false);
-            }
-
-            // تشغيل الاهتزاز
-            if (settings.vibrationEnabled) {
-              vibrateDevice([100, 50, 100]);
+            // تشغيل الصوت (مع التكرار إذا مفعّل)
+            if (settings.repeatUntilDismissed) {
+              startRepeating();
+            } else {
+              if (settings.soundEnabled) {
+                playNotificationSound(settings.soundType, false);
+              }
+              if (settings.vibrationEnabled) {
+                vibrateDevice([100, 50, 100]);
+              }
             }
 
             // إرسال إشعار
@@ -226,14 +277,16 @@ export function usePeriodReminder(
           if (lastNotifiedPeriodRef.current !== periodKey) {
             lastNotifiedPeriodRef.current = periodKey;
 
-            // صوت بداية الحصة
-            if (settings.soundEnabled) {
-              playNotificationSound(settings.soundType, true);
-            }
-
-            // اهتزاز أطول لبداية الحصة
-            if (settings.vibrationEnabled) {
-              vibrateDevice([200, 100, 200, 100, 200]);
+            // صوت بداية الحصة (مع التكرار إذا مفعّل)
+            if (settings.repeatUntilDismissed) {
+              startRepeating();
+            } else {
+              if (settings.soundEnabled) {
+                playNotificationSound(settings.soundType, true);
+              }
+              if (settings.vibrationEnabled) {
+                vibrateDevice([200, 100, 200, 100, 200]);
+              }
             }
 
             // إشعار بداية الحصة
@@ -265,7 +318,7 @@ export function usePeriodReminder(
     const interval = setInterval(checkUpcoming, 30000);
 
     return () => clearInterval(interval);
-  }, [enabled, settings, schedule, classrooms, successFeedback]);
+  }, [enabled, settings, schedule, classrooms, successFeedback, startRepeating]);
 
   return {
     settings,
@@ -273,5 +326,7 @@ export function usePeriodReminder(
     upcomingPeriod,
     notificationPermission,
     requestPermission,
+    isRepeating,
+    stopRepeating,
   };
 }
