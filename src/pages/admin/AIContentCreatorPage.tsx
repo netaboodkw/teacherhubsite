@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Wand2, Download, Image as ImageIcon, Quote, Smartphone, Save, FolderOpen, Trash2, X, Sparkles, Check } from 'lucide-react';
+import { Loader2, Wand2, Download, Image as ImageIcon, Quote, Smartphone, Save, FolderOpen, Trash2, X, Sparkles, Check, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -176,6 +176,28 @@ export default function AIContentCreatorPage() {
       toast.error('حدث خطأ غير متوقع');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  // Refresh marketing text for selected feature without generating new image
+  const handleRefreshText = async () => {
+    if (!selectedFeature) return;
+    
+    try {
+      const { data } = await supabase.functions.invoke('generate-ai-content', {
+        body: { getFeatures: true },
+      });
+      
+      if (data?.features) {
+        const updatedFeature = data.features.find((f: AppFeature) => f.id === selectedFeature.id);
+        if (updatedFeature) {
+          setSelectedFeature(updatedFeature);
+          toast.success('تم تحديث النص التسويقي');
+        }
+      }
+    } catch (err) {
+      console.error('Error refreshing text:', err);
+      toast.error('حدث خطأ أثناء تحديث النص');
     }
   };
 
@@ -388,6 +410,12 @@ export default function AIContentCreatorPage() {
                 <span>المعاينة</span>
                 {generatedImage && (
                   <div className="flex gap-2">
+                    {selectedFeature && (
+                      <Button variant="outline" size="sm" onClick={handleRefreshText}>
+                        <RefreshCw className="w-4 h-4 ml-2" />
+                        نص جديد
+                      </Button>
+                    )}
                     <Button variant="outline" size="sm" onClick={() => setShowSaveDialog(true)}>
                       <Save className="w-4 h-4 ml-2" />
                       حفظ
