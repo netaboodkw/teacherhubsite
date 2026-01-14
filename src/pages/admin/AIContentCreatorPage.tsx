@@ -120,6 +120,14 @@ const colorPaletteOptions = [
 ];
 
 const designStyleOptions = [
+  // Educational styles
+  { value: 'classroom', label: 'فصل دراسي', icon: '🏫', description: 'صفوف ومقاعد دراسية' },
+  { value: 'cartoon', label: 'كرتوني', icon: '🎬', description: 'شخصيات كرتونية مرحة' },
+  { value: 'chalkboard', label: 'سبورة', icon: '📝', description: 'طباشير وسبورة خضراء' },
+  { value: 'notebook', label: 'دفتر ملاحظات', icon: '📓', description: 'أوراق ودفاتر مدرسية' },
+  { value: 'kids', label: 'أطفال', icon: '👧', description: 'رسومات أطفال ملونة' },
+  { value: 'stickers', label: 'ملصقات', icon: '🏷️', description: 'ملصقات ونجوم ملونة' },
+  // Artistic styles
   { value: 'clay3d', label: 'طين 3D', icon: '🎨', description: 'أشكال ثلاثية الأبعاد ناعمة' },
   { value: 'watercolor', label: 'ألوان مائية', icon: '🖌️', description: 'رسم فني بألوان مائية' },
   { value: 'origami', label: 'أوريغامي', icon: '📄', description: 'فن طي الورق الياباني' },
@@ -128,6 +136,8 @@ const designStyleOptions = [
   { value: 'retro', label: 'ريترو', icon: '📻', description: 'طراز كلاسيكي قديم' },
   { value: 'neon', label: 'نيون', icon: '✨', description: 'إضاءة نيون متوهجة' },
   { value: 'minimal', label: 'بسيط', icon: '⬜', description: 'تصميم نظيف ومينيمال' },
+  { value: 'doodle', label: 'رسم يدوي', icon: '✏️', description: 'خربشات ورسومات يدوية' },
+  { value: 'flat', label: 'فلات ديزاين', icon: '🔷', description: 'تصميم مسطح عصري' },
 ];
 
 interface TextSuggestion {

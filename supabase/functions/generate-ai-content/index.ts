@@ -48,7 +48,33 @@ const colorPalettes = {
 };
 
 // Design style configurations
-const designStyles = {
+const designStyles: Record<string, { name: string; description: string }> = {
+  // Educational styles
+  classroom: {
+    name: "Classroom/School",
+    description: "Traditional classroom setting with desks, chairs, blackboard, and school supplies. Warm and nostalgic school atmosphere with neat rows of desks.",
+  },
+  cartoon: {
+    name: "Cartoon Characters",
+    description: "Cute animated cartoon characters like teachers, students, books with faces, and educational mascots. Pixar/Disney inspired friendly characters with expressive faces.",
+  },
+  chalkboard: {
+    name: "Chalkboard/Blackboard",
+    description: "Green or black chalkboard background with white and colored chalk drawings. Hand-drawn educational diagrams, equations, and doodles like a real teacher's board.",
+  },
+  notebook: {
+    name: "Notebook/Paper",
+    description: "Notebook paper with lined or grid patterns, sticky notes, paper clips, and handwritten elements. School supplies arranged on a desk.",
+  },
+  kids: {
+    name: "Kids Drawing",
+    description: "Childlike crayon or marker drawings with bright colors. Simple, playful illustrations as if drawn by a creative child with thick lines and fun shapes.",
+  },
+  stickers: {
+    name: "Stickers & Badges",
+    description: "Colorful reward stickers, gold stars, trophy badges, and achievement stamps. Motivational elements teachers use to encourage students.",
+  },
+  // Artistic styles
   clay3d: {
     name: "3D Clay/Plasticine",
     description: "Soft, rounded, cute 3D objects with a handmade clay or plasticine feel. Think Claymation style with smooth, tactile surfaces.",
@@ -80,6 +106,14 @@ const designStyles = {
   minimal: {
     name: "Minimalist",
     description: "Clean, simple design with lots of white space. Single-line icons, basic shapes, and subtle gradients.",
+  },
+  doodle: {
+    name: "Hand-drawn Doodles",
+    description: "Casual hand-drawn sketches and doodles with pen or pencil. Informal, creative scribbles like notebook margins filled with fun drawings.",
+  },
+  flat: {
+    name: "Flat Design",
+    description: "Modern flat design with bold colors, clean shapes, and no shadows or gradients. Contemporary and minimalistic vector-style graphics.",
   },
 };
 
