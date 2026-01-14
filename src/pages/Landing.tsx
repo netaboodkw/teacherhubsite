@@ -162,7 +162,7 @@ export default function Landing() {
 
         {/* Login Button */}
         <div className="absolute top-6 left-6 z-20">
-          <Link to="/auth/teacher">
+          <Link to="/auth/teacher?tab=login">
             <Button size="lg" className="bg-white/95 text-[#5BC0CE] hover:bg-white hover:text-[#4AA8B8] font-bold shadow-lg border-0 h-12 px-6 transition-all hover:scale-105">
               <LogIn className="ml-2 h-5 w-5" />
               تسجيل الدخول

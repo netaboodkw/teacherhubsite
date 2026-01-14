@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useEducationLevels } from '@/hooks/useEducationLevels';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -22,10 +22,14 @@ import logo from '@/assets/logo.png';
 
 export default function TeacherAuth() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, signIn, signUp, signOut } = useAuth();
   const { data: userRole } = useUserRole();
   const { data: educationLevels = [] } = useEducationLevels();
   const { data: systemSettings } = useSystemSettings();
+  
+  // Get initial tab from URL params (default to register)
+  const initialTab = searchParams.get('tab') === 'login' ? 'login' : 'register';
   
   // Terms settings - Always require terms acceptance
   const termsContent = (systemSettings?.find(s => s.key === 'terms_content')?.value as string) || 'الشروط والأحكام الخاصة باستخدام منصة Teacher Hub.\n\nباستخدامك للمنصة فإنك توافق على:\n1. الحفاظ على سرية بيانات الطلاب\n2. استخدام المنصة للأغراض التعليمية فقط\n3. عدم مشاركة حسابك مع الآخرين\n4. الالتزام بقوانين دولة الكويت';
@@ -247,7 +251,7 @@ export default function TeacherAuth() {
                 </Alert>
               )}
               
-              <Tabs defaultValue="register" className="w-full">
+              <Tabs defaultValue={initialTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-6">
                   <TabsTrigger value="register">حساب جديد</TabsTrigger>
                   <TabsTrigger value="login">تسجيل الدخول</TabsTrigger>
