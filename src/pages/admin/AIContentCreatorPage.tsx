@@ -54,7 +54,7 @@ export default function AIContentCreatorPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [contentType, setContentType] = useState<ContentType>('screenshot');
-  const [aspectRatio, setAspectRatio] = useState<AspectRatio>('3:4');
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>('9:16');
   const [prompt, setPrompt] = useState('');
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -64,6 +64,7 @@ export default function AIContentCreatorPage() {
   const [showLibrary, setShowLibrary] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<SavedContent | null>(null);
+  const [generatedFeature, setGeneratedFeature] = useState<{ title: string; description: string } | null>(null);
 
   const defaultPrompts: Record<ContentType, string> = {
     screenshot: 'تصميم واجهة تطبيق تعليمي عصري بألوان زرقاء وبيضاء، يعرض لوحة تحكم المعلم مع إحصائيات الطلاب والحضور والدرجات. التصميم احترافي ونظيف مع أيقونات واضحة وخطوط عربية جميلة.',
@@ -105,24 +106,22 @@ export default function AIContentCreatorPage() {
     },
   });
 
-  const handleGenerate = async () => {
-    if (!prompt.trim()) {
+  const handleGenerate = async (autoGenerate = false) => {
+    if (!autoGenerate && !prompt.trim()) {
       toast.error('يرجى كتابة وصف للمحتوى المطلوب');
       return;
     }
 
     setIsGenerating(true);
     setGeneratedImage(null);
+    setGeneratedFeature(null);
 
     try {
-      const { width, height } = aspectRatioSizes[aspectRatio];
-      
       const { data, error } = await supabase.functions.invoke('generate-ai-content', {
         body: {
-          prompt: prompt,
-          width,
-          height,
+          prompt: autoGenerate ? '' : prompt,
           aspectRatio,
+          autoGenerate,
         },
       });
 
@@ -140,6 +139,9 @@ export default function AIContentCreatorPage() {
 
       if (data?.imageUrl) {
         setGeneratedImage(data.imageUrl);
+        if (data.feature) {
+          setGeneratedFeature(data.feature);
+        }
         toast.success('تم إنشاء المحتوى بنجاح!');
       } else {
         toast.error('لم يتم إنشاء الصورة، يرجى المحاولة مرة أخرى');
@@ -300,25 +302,57 @@ export default function AIContentCreatorPage() {
                 </p>
               </div>
 
-              {/* Generate Button */}
-              <Button
-                onClick={handleGenerate}
-                disabled={isGenerating || !prompt.trim()}
-                className="w-full"
-                size="lg"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 ml-2 animate-spin" />
-                    جاري الإنشاء...
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="w-4 h-4 ml-2" />
-                    إنشاء المحتوى
-                  </>
-                )}
-              </Button>
+              {/* Generate Buttons */}
+              <div className="space-y-3">
+                <Button
+                  onClick={() => handleGenerate(true)}
+                  disabled={isGenerating}
+                  className="w-full"
+                  size="lg"
+                  variant="default"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                      جاري الإنشاء...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-4 h-4 ml-2" />
+                      🎲 توليد ميزة عشوائية
+                    </>
+                  )}
+                </Button>
+                
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">أو</span>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => handleGenerate(false)}
+                  disabled={isGenerating || !prompt.trim()}
+                  className="w-full"
+                  size="lg"
+                  variant="outline"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                      جاري الإنشاء...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-4 h-4 ml-2" />
+                      إنشاء من الوصف
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
@@ -357,11 +391,19 @@ export default function AIContentCreatorPage() {
                     <p className="text-sm text-muted-foreground">جاري إنشاء الصورة...</p>
                   </div>
                 ) : generatedImage ? (
-                  <img
-                    src={generatedImage}
-                    alt="محتوى منشأ بالذكاء الاصطناعي"
-                    className="w-full h-full object-cover"
-                  />
+                  <div className="relative w-full h-full">
+                    <img
+                      src={generatedImage}
+                      alt="محتوى منشأ بالذكاء الاصطناعي"
+                      className="w-full h-full object-cover"
+                    />
+                    {generatedFeature && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                        <h3 className="text-white font-bold text-lg">{generatedFeature.title}</h3>
+                        <p className="text-white/80 text-sm">{generatedFeature.description}</p>
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <div className="text-center space-y-3 p-6">
                     <ImageIcon className="w-12 h-12 text-muted-foreground/50 mx-auto" />
