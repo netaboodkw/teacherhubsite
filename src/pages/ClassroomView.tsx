@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { RandomStudentPicker } from '@/components/classroom/RandomStudentPicker';
 import { ClassroomTimer } from '@/components/classroom/ClassroomTimer';
+import { ClassroomStatsBanner } from '@/components/classroom/ClassroomStatsBanner';
 
 interface StudentPosition {
   student_id: string;
@@ -716,6 +717,15 @@ export default function ClassroomView() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Stats Banner - Motivational Message, Engagement, Best Student */}
+        {activeTab === 'notes' && (
+          <ClassroomStatsBanner 
+            students={students}
+            behaviorNotes={behaviorNotes}
+            classroomName={classroom.name}
+          />
+        )}
 
         {/* Quick Action Buttons - Timer & Random Picker */}
         {activeTab === 'notes' && (
