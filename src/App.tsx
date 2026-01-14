@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 
 // Landing & Auth
 import Landing from "./pages/Landing";
@@ -61,6 +62,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <InstallPrompt />
       <BrowserRouter>
         <Routes>
           {/* Public Routes */}
