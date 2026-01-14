@@ -1,13 +1,16 @@
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useClassrooms } from '@/hooks/useClassrooms';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { GraduationCap, Users, ClipboardCheck, BookOpen } from 'lucide-react';
+import { GraduationCap, Users, ClipboardCheck, BookOpen, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ClassroomCard } from '@/components/dashboard/ClassroomCard';
 import { TodaySchedule } from '@/components/dashboard/TodaySchedule';
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { format } from 'date-fns';
+import { ar } from 'date-fns/locale';
 
 export default function TeacherDashboard() {
   const { data: classrooms, isLoading: classroomsLoading } = useClassrooms();
@@ -30,6 +33,44 @@ export default function TeacherDashboard() {
     },
     enabled: classroomIds.length > 0,
   });
+
+  // Fetch subscription status
+  const { data: subscription } = useQuery({
+    queryKey: ['teacher-subscription-dashboard'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      
+      const { data, error } = await supabase
+        .from('teacher_subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Determine if we should show the alert
+  const showSubscriptionAlert = useMemo(() => {
+    if (!subscription) return false;
+    // Don't show alert for active paid subscriptions
+    if (subscription.status === 'active' && !subscription.trial_ends_at) return false;
+    // Show for trial or expired
+    return subscription.status === 'trial' || subscription.status === 'expired';
+  }, [subscription]);
+
+  const subscriptionEndDate = useMemo(() => {
+    if (!subscription) return null;
+    if (subscription.status === 'trial' && subscription.trial_ends_at) {
+      return format(new Date(subscription.trial_ends_at), 'dd MMMM yyyy', { locale: ar });
+    }
+    if (subscription.subscription_ends_at) {
+      return format(new Date(subscription.subscription_ends_at), 'dd MMMM yyyy', { locale: ar });
+    }
+    return null;
+  }, [subscription]);
 
   const stats = [
     {
@@ -69,6 +110,31 @@ export default function TeacherDashboard() {
   return (
     <TeacherLayout>
       <div className="space-y-6">
+        {/* تنبيه الاشتراك - يظهر فقط للتجريبي أو المنتهي */}
+        {showSubscriptionAlert && (
+          <Alert variant={subscription?.status === 'expired' ? 'destructive' : 'default'} className="border-orange-200 bg-orange-50">
+            <AlertTriangle className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="text-orange-800">
+              {subscription?.status === 'trial' ? (
+                <>
+                  أنت حالياً في <strong>الفترة التجريبية</strong>
+                  {subscriptionEndDate && <> - تنتهي في <strong>{subscriptionEndDate}</strong></>}
+                  <Link to="/teacher/subscription" className="mr-2 underline font-medium">
+                    اشترك الآن
+                  </Link>
+                </>
+              ) : (
+                <>
+                  انتهى اشتراكك. 
+                  <Link to="/teacher/subscription" className="mr-2 underline font-medium">
+                    جدد اشتراكك للاستمرار
+                  </Link>
+                </>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div>
           <h1 className="text-2xl font-bold">مرحباً بك</h1>
           <p className="text-muted-foreground">إدارة صفوفك وطلابك</p>
