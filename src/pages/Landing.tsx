@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { 
   GraduationCap, Users, ClipboardCheck, BarChart3, Sparkles, ArrowLeft, 
   FileSpreadsheet, Calendar, UserPlus, Shield, Bell, Printer, 
-  Smartphone, Cloud, CheckCircle, Star, Gift, Building2, Camera, Eye
+  Smartphone, Cloud, CheckCircle, Star, Gift, Building2, Camera, Eye,
+  Zap, Award, TrendingUp, Heart
 } from 'lucide-react';
 import heroBg from '@/assets/hero-bg.jpg';
 import { useSiteLogo } from '@/hooks/useSiteLogo';
@@ -19,206 +20,238 @@ const features = [
     icon: Users,
     title: 'إدارة الطلاب',
     description: 'أضف طلابك بسهولة مع إمكانية الاستيراد الذكي من الصور والملفات',
-    color: 'bg-blue-500',
+    gradient: 'from-primary to-secondary',
   },
   {
     icon: Camera,
     title: 'صور الطلاب',
     description: 'أضف صوراً لكل طالب لسهولة التعرف عليهم ومتابعتهم',
-    color: 'bg-teal-500',
+    gradient: 'from-secondary to-success',
   },
   {
     icon: ClipboardCheck,
     title: 'تتبع الحضور',
     description: 'سجل الحضور والغياب بضغطة واحدة مع تقارير شاملة',
-    color: 'bg-green-500',
+    gradient: 'from-success to-primary',
   },
   {
     icon: BarChart3,
     title: 'الدرجات والتقارير',
     description: 'تابع أداء طلابك وأنشئ تقارير مفصلة قابلة للطباعة',
-    color: 'bg-purple-500',
+    gradient: 'from-primary to-accent',
   },
   {
     icon: FileSpreadsheet,
     title: 'قوالب درجات مرنة',
     description: 'أنشئ قوالب تقييم مخصصة تناسب مادتك ومرحلتك الدراسية',
-    color: 'bg-orange-500',
+    gradient: 'from-warning to-destructive',
   },
   {
     icon: Sparkles,
     title: 'الفصل التفاعلي',
     description: 'رتّب مقاعد الطلاب وسجل الملاحظات السلوكية الإيجابية والسلبية',
-    color: 'bg-pink-500',
+    gradient: 'from-accent to-primary',
   },
   {
     icon: Eye,
     title: 'متابعة رئيس القسم',
     description: 'يمكن لرئيس القسم متابعة أداء المعلمين والطلاب بشكل مستمر',
-    color: 'bg-amber-500',
+    gradient: 'from-secondary to-primary',
   },
   {
     icon: Calendar,
     title: 'جدولة الحصص',
     description: 'نظم جدول حصصك الأسبوعي مع تنبيهات ذكية',
-    color: 'bg-cyan-500',
-  },
-  {
-    icon: Printer,
-    title: 'طباعة التقارير',
-    description: 'اطبع كشوفات الدرجات والحضور بتصميم احترافي',
-    color: 'bg-indigo-500',
-  },
-  {
-    icon: Smartphone,
-    title: 'متوافق مع الجوال',
-    description: 'استخدم التطبيق من أي جهاز - جوال أو تابلت أو حاسوب',
-    color: 'bg-rose-500',
+    gradient: 'from-primary to-secondary',
   },
 ];
 
 const highlights = [
-  { icon: CheckCircle, text: 'سهل الاستخدام' },
-  { icon: Cloud, text: 'بياناتك محفوظة بأمان' },
+  { icon: Zap, text: 'سريع وسهل' },
+  { icon: Cloud, text: 'بياناتك آمنة' },
   { icon: Shield, text: 'خصوصية تامة' },
-  { icon: Bell, text: 'تنبيهات ذكية' },
+  { icon: Smartphone, text: 'يعمل على كل الأجهزة' },
+];
+
+const stats = [
+  { value: '500+', label: 'معلم مسجل', icon: GraduationCap },
+  { value: '2000+', label: 'صف دراسي', icon: Building2 },
+  { value: '50,000+', label: 'طالب وطالبة', icon: Users },
+  { value: '98%', label: 'رضا المستخدمين', icon: Heart },
 ];
 
 export default function Landing() {
   const { logoUrl } = useSiteLogo();
   const { data: subscriptionSettings } = useSubscriptionSettings();
   
-  // Get trial days from settings, default to 10 if not set
   const trialDays = subscriptionSettings?.trial_days ?? 10;
   
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
+    <div className="min-h-screen bg-background overflow-x-hidden" dir="rtl">
       {/* Hero Section */}
-      <div 
-        className="relative min-h-[90vh] flex items-center justify-center"
-        style={{
-          backgroundImage: `url(${heroBg})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/90 via-primary/80 to-background" />
+      <div className="relative min-h-screen flex items-center justify-center">
+        {/* Background with gradient overlay */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${heroBg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
+        <div className="absolute inset-0 gradient-hero opacity-90" />
         
-        <div className="relative z-10 text-center px-4 max-w-4xl mx-auto py-12">
-          <div className="inline-flex items-center justify-center w-32 h-32 rounded-3xl bg-background/90 backdrop-blur-sm mb-8 shadow-2xl p-2 animate-logo-float">
+        {/* Animated background shapes */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-20 right-10 w-72 h-72 bg-white/10 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-20 left-10 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        </div>
+        
+        <div className="relative z-10 text-center px-4 max-w-5xl mx-auto py-16">
+          {/* Logo */}
+          <div className="inline-flex items-center justify-center w-36 h-36 rounded-3xl bg-white/95 backdrop-blur-sm mb-8 shadow-2xl p-3 animate-logo-float ring-4 ring-white/30">
             <img src={logoUrl} alt="Teacher Hub" className="w-full h-full object-contain" />
           </div>
           
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-primary-foreground mb-6">
+          {/* Title with gradient */}
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-6 drop-shadow-lg">
             Teacher Hub
           </h1>
           
-          <p className="text-xl md:text-2xl text-primary-foreground/90 mb-4 leading-relaxed">
-            المنصة الأولى لإدارة الفصول الدراسية في الخليج
+          {/* Subtitle */}
+          <p className="text-2xl md:text-3xl text-white/95 mb-4 font-medium">
+            منصة المعلم الذكي
           </p>
           
-          <p className="text-lg text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
-            نظام متكامل لإدارة الطلاب، تتبع الحضور والدرجات، 
-            وتسجيل الملاحظات السلوكية بكل سهولة واحترافية
+          <p className="text-lg md:text-xl text-white/85 mb-8 max-w-2xl mx-auto leading-relaxed">
+            نظام متكامل لإدارة الفصول الدراسية، تتبع الحضور والدرجات، 
+            وتقارير احترافية بضغطة زر
           </p>
 
           {/* Free Trial Badge */}
-          <div className="mb-8">
-            <Badge className="text-lg px-6 py-3 bg-background text-foreground shadow-lg">
-              <Gift className="w-5 h-5 ml-2" />
-              اشتراك مجاني لمدة {trialDays} يوم!
+          <div className="mb-10">
+            <Badge className="text-xl px-8 py-4 bg-white text-primary shadow-xl border-0 hover:scale-105 transition-transform">
+              <Gift className="w-6 h-6 ml-3 animate-bounce" />
+              تجربة مجانية لمدة {trialDays} يوم!
             </Badge>
           </div>
 
           {/* Highlights */}
-          <div className="flex flex-wrap justify-center gap-4 mb-10">
+          <div className="flex flex-wrap justify-center gap-3 mb-12">
             {highlights.map((item, i) => (
-              <div key={i} className="flex items-center gap-2 text-primary-foreground/90 bg-background/10 backdrop-blur-sm px-4 py-2 rounded-full">
+              <div 
+                key={i} 
+                className="flex items-center gap-2 text-white bg-white/15 backdrop-blur-sm px-5 py-2.5 rounded-full border border-white/20 hover:bg-white/25 transition-colors"
+              >
                 <item.icon className="w-4 h-4" />
-                <span className="text-sm">{item.text}</span>
+                <span className="text-sm font-medium">{item.text}</span>
               </div>
             ))}
           </div>
           
-          {/* Login Buttons */}
-          <div className="flex flex-col gap-4 max-w-lg mx-auto">
-            <Link to="/auth/teacher" className="w-full">
-              <Button size="lg" className="w-full bg-background text-foreground hover:bg-background/90 h-14 text-lg shadow-xl">
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-lg mx-auto">
+            <Link to="/auth/teacher" className="flex-1">
+              <Button size="lg" className="w-full bg-white text-primary hover:bg-white/90 h-16 text-lg font-bold shadow-xl hover:scale-105 transition-all">
                 <GraduationCap className="ml-3 h-6 w-6" />
-                دخول المعلمين
+                ابدأ الآن مجاناً
                 <ArrowLeft className="mr-auto h-5 w-5" />
               </Button>
             </Link>
-            <Link to="/auth/department-head" className="w-full">
-              <Button size="lg" className="w-full bg-background/20 backdrop-blur-sm border-2 border-background text-primary-foreground hover:bg-background/30 h-14 text-lg">
+            <Link to="/auth/department-head" className="flex-1">
+              <Button size="lg" variant="outline" className="w-full bg-white/10 backdrop-blur-sm border-2 border-white text-white hover:bg-white/20 h-16 text-lg">
                 <Building2 className="ml-3 h-6 w-6" />
-                دخول رؤساء الأقسام
-                <ArrowLeft className="mr-auto h-5 w-5" />
+                رؤساء الأقسام
               </Button>
             </Link>
+          </div>
+        </div>
+        
+        {/* Scroll indicator */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+          <div className="w-8 h-12 rounded-full border-2 border-white/50 flex items-start justify-center p-2">
+            <div className="w-1.5 h-3 bg-white/70 rounded-full animate-pulse" />
           </div>
         </div>
       </div>
 
       {/* Stats Section */}
-      <div className="py-12 px-4 bg-muted/30">
-        <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            <div className="space-y-2">
-              <div className="text-4xl font-bold text-primary">100+</div>
-              <div className="text-sm text-muted-foreground">معلم مسجل</div>
-            </div>
-            <div className="space-y-2">
-              <div className="text-4xl font-bold text-primary">500+</div>
-              <div className="text-sm text-muted-foreground">صف دراسي</div>
-            </div>
-            <div className="space-y-2">
-              <div className="text-4xl font-bold text-primary">10,000+</div>
-              <div className="text-sm text-muted-foreground">طالب</div>
-            </div>
-            <div className="space-y-2">
-              <div className="text-4xl font-bold text-primary">{trialDays}</div>
-              <div className="text-sm text-muted-foreground">يوم تجربة مجانية</div>
-            </div>
+      <div className="py-16 px-4 gradient-hero">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {stats.map((stat, i) => (
+              <div key={i} className="text-center p-6 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 hover:bg-white/20 transition-colors">
+                <stat.icon className="w-10 h-10 text-white mx-auto mb-3 opacity-80" />
+                <div className="text-4xl md:text-5xl font-bold text-white mb-2">{stat.value}</div>
+                <div className="text-white/80 font-medium">{stat.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
       {/* Screenshots Section */}
-      <div className="py-16 px-4 bg-muted/20">
+      <div className="py-20 px-4 bg-muted/30">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <Badge variant="secondary" className="mb-4">شاهد التطبيق</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              تجربة استخدام احترافية
+          <div className="text-center mb-16">
+            <Badge variant="secondary" className="mb-4 text-sm px-4 py-1.5">
+              <Sparkles className="w-4 h-4 ml-2" />
+              شاهد المنصة
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">
+              واجهة احترافية سهلة الاستخدام
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              واجهة سهلة وبسيطة مصممة خصيصاً للمعلم العربي
+              صُممت خصيصاً للمعلم العربي بتجربة استخدام سلسة وممتعة
             </p>
           </div>
           
           <div className="grid gap-8">
-            {/* Dashboard Screenshot */}
-            <div className="rounded-2xl overflow-hidden shadow-2xl border">
-              <img src={featureDashboard} alt="لوحة التحكم الرئيسية" className="w-full h-auto" />
+            {/* Main Dashboard Screenshot */}
+            <div className="relative group">
+              <div className="absolute inset-0 gradient-primary rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity" />
+              <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white/50">
+                <img src={featureDashboard} alt="لوحة التحكم الرئيسية" className="w-full h-auto" />
+              </div>
+              <div className="text-center mt-6">
+                <h3 className="text-xl font-bold text-foreground">لوحة تحكم شاملة</h3>
+                <p className="text-muted-foreground">كل ما تحتاجه في مكان واحد</p>
+              </div>
             </div>
             
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 gap-8">
               {/* Grades Screenshot */}
-              <div className="rounded-xl overflow-hidden shadow-xl border">
-                <img src={featureGrades} alt="إدخال الدرجات" className="w-full h-auto" />
-                <div className="p-4 bg-card text-center">
-                  <h3 className="font-bold">إدخال الدرجات</h3>
-                  <p className="text-sm text-muted-foreground">تتبع درجات طلابك بسهولة</p>
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative rounded-2xl overflow-hidden shadow-xl border-2 border-border">
+                  <img src={featureGrades} alt="إدخال الدرجات" className="w-full h-auto" />
+                  <div className="p-5 bg-card">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
+                        <BarChart3 className="w-5 h-5 text-white" />
+                      </div>
+                      <h3 className="font-bold text-lg">إدخال الدرجات</h3>
+                    </div>
+                    <p className="text-muted-foreground">أدخل درجات طلابك بسرعة وسهولة</p>
+                  </div>
                 </div>
               </div>
               
               {/* Attendance Screenshot */}
-              <div className="rounded-xl overflow-hidden shadow-xl border">
-                <img src={featureAttendance} alt="تسجيل الحضور" className="w-full h-auto" />
-                <div className="p-4 bg-card text-center">
-                  <h3 className="font-bold">تسجيل الحضور</h3>
-                  <p className="text-sm text-muted-foreground">سجل الحضور بضغطة واحدة</p>
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-br from-secondary/20 to-success/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative rounded-2xl overflow-hidden shadow-xl border-2 border-border">
+                  <img src={featureAttendance} alt="تسجيل الحضور" className="w-full h-auto" />
+                  <div className="p-5 bg-card">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 rounded-xl gradient-secondary flex items-center justify-center">
+                        <ClipboardCheck className="w-5 h-5 text-white" />
+                      </div>
+                      <h3 className="font-bold text-lg">تسجيل الحضور</h3>
+                    </div>
+                    <p className="text-muted-foreground">سجل حضور وغياب طلابك بضغطة واحدة</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -227,27 +260,36 @@ export default function Landing() {
       </div>
 
       {/* Features Section */}
-      <div className="py-20 px-4">
+      <div className="py-20 px-4 bg-background">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <Badge variant="secondary" className="mb-4">المميزات</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              كل ما يحتاجه المعلم في مكان واحد
+            <Badge variant="secondary" className="mb-4 text-sm px-4 py-1.5">
+              <Award className="w-4 h-4 ml-2" />
+              المميزات
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">
+              كل ما يحتاجه المعلم
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              نوفر لك جميع الأدوات اللازمة لإدارة صفك الدراسي باحترافية وسهولة
+              أدوات متكاملة تساعدك على إدارة صفك بكفاءة واحترافية
             </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, index) => (
-              <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 group">
-                <CardContent className="p-6 text-center">
-                  <div className={`w-16 h-16 rounded-2xl ${feature.color} flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform`}>
+              <Card 
+                key={index} 
+                className="border-0 shadow-lg hover:shadow-2xl transition-all hover:-translate-y-2 group bg-card overflow-hidden"
+              >
+                <CardContent className="p-6 text-center relative">
+                  {/* Gradient background on hover */}
+                  <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity`} />
+                  
+                  <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform shadow-lg`}>
                     <feature.icon className="w-8 h-8 text-white" />
                   </div>
-                  <h3 className="font-bold text-lg mb-2">{feature.title}</h3>
-                  <p className="text-muted-foreground text-sm">{feature.description}</p>
+                  <h3 className="font-bold text-lg mb-3 text-foreground">{feature.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -256,38 +298,37 @@ export default function Landing() {
       </div>
 
       {/* For Department Heads Section */}
-      <div className="py-20 px-4 bg-gradient-to-br from-primary/5 to-primary/10">
+      <div className="py-20 px-4 bg-muted/20">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <Badge className="mb-4 bg-green-500">لرؤساء الأقسام</Badge>
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                تابع معلميك وطلابك بكل سهولة
+              <Badge className="mb-6 bg-secondary text-secondary-foreground border-0 text-sm px-4 py-1.5">
+                <Building2 className="w-4 h-4 ml-2" />
+                لرؤساء الأقسام
+              </Badge>
+              <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">
+                تابع فريقك بكل سهولة
               </h2>
-              <p className="text-muted-foreground text-lg mb-8">
-                كرئيس قسم، يمكنك الاطلاع على أداء المعلمين ومتابعة درجات الطلاب 
-                وإنشاء تقارير شاملة لجميع الصفوف تحت إشرافك
+              <p className="text-muted-foreground text-lg mb-8 leading-relaxed">
+                أدوات متقدمة لمتابعة أداء المعلمين وتقارير شاملة عن جميع الصفوف تحت إشرافك
               </p>
-              <ul className="space-y-4">
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span>عرض تقارير شاملة لجميع المعلمين</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span>متابعة درجات الطلاب في جميع المواد</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span>إحصائيات ورسوم بيانية تفصيلية</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span>تصدير البيانات بسهولة</span>
-                </li>
+              <ul className="space-y-4 mb-8">
+                {[
+                  'عرض تقارير شاملة لجميع المعلمين',
+                  'متابعة درجات الطلاب في جميع المواد',
+                  'إحصائيات ورسوم بيانية تفصيلية',
+                  'تصدير البيانات بسهولة',
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-full gradient-secondary flex items-center justify-center flex-shrink-0">
+                      <CheckCircle className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-foreground">{item}</span>
+                  </li>
+                ))}
               </ul>
-              <Link to="/auth/department-head" className="inline-block mt-8">
-                <Button size="lg" variant="outline" className="h-12">
+              <Link to="/auth/department-head">
+                <Button size="lg" className="gradient-secondary text-white border-0 h-14 px-8 hover:opacity-90 transition-opacity">
                   <Building2 className="ml-2 h-5 w-5" />
                   سجل كرئيس قسم
                   <ArrowLeft className="mr-2 h-4 w-4" />
@@ -295,29 +336,23 @@ export default function Landing() {
               </Link>
             </div>
             <div className="hidden md:block">
-              <Card className="p-6 bg-card shadow-2xl">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
-                    <Users className="w-8 h-8 text-primary" />
-                    <div>
-                      <div className="font-bold">15 معلم</div>
-                      <div className="text-sm text-muted-foreground">تحت إشرافك</div>
+              <Card className="p-8 bg-card shadow-2xl border-0">
+                <div className="space-y-5">
+                  {[
+                    { icon: Users, title: '25 معلم', subtitle: 'تحت إشرافك', color: 'from-primary to-secondary' },
+                    { icon: TrendingUp, title: 'تقارير تفصيلية', subtitle: 'لجميع الصفوف', color: 'from-secondary to-success' },
+                    { icon: Star, title: 'تقييم الأداء', subtitle: 'متابعة مستمرة', color: 'from-warning to-destructive' },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-4 p-5 bg-muted/50 rounded-xl hover:bg-muted transition-colors">
+                      <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center shadow-lg`}>
+                        <item.icon className="w-7 h-7 text-white" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-lg text-foreground">{item.title}</div>
+                        <div className="text-muted-foreground">{item.subtitle}</div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
-                    <BarChart3 className="w-8 h-8 text-green-500" />
-                    <div>
-                      <div className="font-bold">تقارير تفصيلية</div>
-                      <div className="text-sm text-muted-foreground">لجميع الصفوف</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
-                    <Star className="w-8 h-8 text-yellow-500" />
-                    <div>
-                      <div className="font-bold">تقييم الأداء</div>
-                      <div className="text-sm text-muted-foreground">متابعة مستمرة</div>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </Card>
             </div>
@@ -325,22 +360,33 @@ export default function Landing() {
         </div>
       </div>
 
-      {/* CTA Section */}
-      <div className="py-20 px-4 bg-primary text-primary-foreground">
-        <div className="max-w-3xl mx-auto text-center">
-          <Gift className="w-16 h-16 mx-auto mb-6 opacity-80" />
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            ابدأ الآن مجاناً لمدة {trialDays} يوم!
+      {/* Final CTA Section */}
+      <div className="py-24 px-4 gradient-hero relative overflow-hidden">
+        {/* Background decorations */}
+        <div className="absolute inset-0">
+          <div className="absolute top-10 right-20 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
+          <div className="absolute bottom-10 left-20 w-60 h-60 bg-white/5 rounded-full blur-3xl" />
+        </div>
+        
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm mb-8">
+            <Gift className="w-10 h-10 text-white" />
+          </div>
+          <h2 className="text-4xl md:text-6xl font-bold mb-6 text-white">
+            ابدأ رحلتك الآن!
           </h2>
-          <p className="text-lg opacity-90 mb-8">
-            انضم لآلاف المعلمين الذين يستخدمون Teacher Hub لإدارة صفوفهم بكفاءة.
-            لا حاجة لبطاقة ائتمان، سجل الآن واستمتع بجميع المميزات.
+          <p className="text-xl text-white/90 mb-4">
+            انضم لمئات المعلمين الذين يديرون صفوفهم بكفاءة
+          </p>
+          <p className="text-lg text-white/80 mb-10">
+            تجربة مجانية لمدة <span className="font-bold text-white">{trialDays} يوم</span> - بدون بطاقة ائتمان
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/auth/teacher">
-              <Button size="lg" className="bg-background text-foreground hover:bg-background/90 h-14 px-10 text-lg">
-                <UserPlus className="ml-2 h-5 w-5" />
-                سجل كمعلم مجاناً
+              <Button size="lg" className="bg-white text-primary hover:bg-white/90 h-16 px-12 text-lg font-bold shadow-xl hover:scale-105 transition-all">
+                <UserPlus className="ml-3 h-6 w-6" />
+                سجل مجاناً الآن
+                <ArrowLeft className="mr-3 h-5 w-5" />
               </Button>
             </Link>
           </div>
@@ -348,15 +394,20 @@ export default function Landing() {
       </div>
 
       {/* Footer */}
-      <footer className="py-12 px-4 border-t bg-muted/30">
+      <footer className="py-12 px-4 border-t bg-card">
         <div className="max-w-5xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <img src={logoUrl} alt="Teacher Hub" className="w-12 h-12 object-contain" />
-              <span className="font-bold text-xl">Teacher Hub</span>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl bg-muted p-2">
+                <img src={logoUrl} alt="Teacher Hub" className="w-full h-full object-contain" />
+              </div>
+              <div>
+                <span className="font-bold text-xl text-foreground">Teacher Hub</span>
+                <p className="text-sm text-muted-foreground">منصة المعلم الذكي</p>
+              </div>
             </div>
             <p className="text-sm text-muted-foreground">
-              © 2024 Teacher Hub. جميع الحقوق محفوظة
+              © {new Date().getFullYear()} Teacher Hub. جميع الحقوق محفوظة
             </p>
           </div>
         </div>
