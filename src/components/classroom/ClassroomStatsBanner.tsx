@@ -1,7 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Sparkles, TrendingUp, Trophy, User } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface BehaviorNote {
   id: string;
@@ -20,6 +22,7 @@ interface Student {
 interface ClassroomStatsBannerProps {
   students: Student[];
   behaviorNotes: BehaviorNote[];
+  classroomId: string;
   classroomName: string;
 }
 
@@ -42,7 +45,9 @@ const motivationalMessages = [
   "بالعلم نبني المستقبل! 🏗️",
 ];
 
-export function ClassroomStatsBanner({ students, behaviorNotes, classroomName }: ClassroomStatsBannerProps) {
+export function ClassroomStatsBanner({ students, behaviorNotes, classroomId, classroomName }: ClassroomStatsBannerProps) {
+  const { user } = useAuth();
+  
   // Get today's date in YYYY-MM-DD format
   const today = useMemo(() => {
     return new Date().toISOString().split('T')[0];
@@ -110,6 +115,45 @@ export function ClassroomStatsBanner({ students, behaviorNotes, classroomName }:
       points: maxPoints,
     };
   }, [behaviorNotes, students, today]);
+
+  // Save stats to database
+  const saveStats = useCallback(async () => {
+    if (!user || !classroomId || students.length === 0) return;
+
+    try {
+      const statsData = {
+        classroom_id: classroomId,
+        user_id: user.id,
+        date: today,
+        best_student_id: bestStudentToday?.id || null,
+        best_student_points: bestStudentToday?.points || 0,
+        positive_notes_count: todayStats.positiveNotes,
+        negative_notes_count: todayStats.negativeNotes,
+        total_students: students.length,
+        engagement_rate: todayStats.engagementRate,
+      };
+
+      // Upsert the stats (insert or update if exists)
+      const { error } = await supabase
+        .from('daily_classroom_stats')
+        .upsert(statsData, {
+          onConflict: 'classroom_id,date',
+        });
+
+      if (error) {
+        console.error('Error saving classroom stats:', error);
+      }
+    } catch (err) {
+      console.error('Error saving classroom stats:', err);
+    }
+  }, [user, classroomId, today, bestStudentToday, todayStats, students.length]);
+
+  // Save stats whenever they change
+  useEffect(() => {
+    if (todayStats.totalNotes > 0 || bestStudentToday) {
+      saveStats();
+    }
+  }, [todayStats, bestStudentToday, saveStats]);
 
   const getShortName = (fullName: string) => {
     const parts = fullName.split(' ');
