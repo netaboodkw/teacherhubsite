@@ -30,20 +30,43 @@ export function ClassroomTimer({ open, onOpenChange }: ClassroomTimerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Audio context ref to reuse
+  const audioContextRef = useRef<AudioContext | null>(null);
+
+  // Get or create audio context
+  const getAudioContext = () => {
+    if (!audioContextRef.current) {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      audioContextRef.current = new AudioContextClass();
+    }
+    return audioContextRef.current;
+  };
+
+  // Initialize audio context on user interaction
+  const initAudioContext = async () => {
+    try {
+      const ctx = getAudioContext();
+      if (ctx.state === 'suspended') {
+        await ctx.resume();
+      }
+    } catch (e) {
+      console.log('Audio context init:', e);
+    }
+  };
+
   // Create audio context for alarm sound
   const playAlarmSound = async () => {
     if (!soundEnabled) return;
     
     try {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      const audioContext = new AudioContextClass();
+      const audioContext = getAudioContext();
       
-      // Resume audio context if suspended (required by browsers)
+      // Resume audio context if suspended
       if (audioContext.state === 'suspended') {
         await audioContext.resume();
       }
       
-      const playBeep = (frequency: number, startTime: number, duration: number) => {
+      const playBeep = (frequency: number, startTime: number, duration: number, volume: number = 0.5) => {
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
         
@@ -53,7 +76,7 @@ export function ClassroomTimer({ open, onOpenChange }: ClassroomTimerProps) {
         oscillator.frequency.value = frequency;
         oscillator.type = 'sine';
         
-        gainNode.gain.setValueAtTime(0.5, startTime);
+        gainNode.gain.setValueAtTime(volume, startTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
         
         oscillator.start(startTime);
@@ -62,41 +85,31 @@ export function ClassroomTimer({ open, onOpenChange }: ClassroomTimerProps) {
 
       // Play a series of beeps
       const now = audioContext.currentTime;
-      for (let i = 0; i < 5; i++) {
-        playBeep(880, now + i * 0.25, 0.15);
-        playBeep(1100, now + i * 0.25 + 0.08, 0.12);
+      
+      // First pattern - rapid beeps
+      for (let i = 0; i < 3; i++) {
+        playBeep(880, now + i * 0.2, 0.15, 0.6);
       }
       
-      // Final longer beep after a short pause
-      setTimeout(async () => {
-        try {
-          const finalContext = new AudioContextClass();
-          if (finalContext.state === 'suspended') {
-            await finalContext.resume();
-          }
-          
-          const oscillator = finalContext.createOscillator();
-          const gainNode = finalContext.createGain();
-          
-          oscillator.connect(gainNode);
-          gainNode.connect(finalContext.destination);
-          
-          oscillator.frequency.value = 1200;
-          oscillator.type = 'sine';
-          
-          gainNode.gain.setValueAtTime(0.7, finalContext.currentTime);
-          gainNode.gain.exponentialRampToValueAtTime(0.01, finalContext.currentTime + 1);
-          
-          oscillator.start();
-          oscillator.stop(finalContext.currentTime + 1);
-        } catch (e) {
-          console.error('Final beep error:', e);
-        }
-      }, 1500);
+      // Second pattern - higher pitch
+      for (let i = 0; i < 3; i++) {
+        playBeep(1100, now + 0.8 + i * 0.2, 0.15, 0.6);
+      }
+      
+      // Final long beep
+      playBeep(1320, now + 1.6, 0.8, 0.7);
+      
     } catch (error) {
       console.error('Error playing alarm sound:', error);
     }
   };
+
+  // Watch for timer completion
+  useEffect(() => {
+    if (isFinished && soundEnabled) {
+      playAlarmSound();
+    }
+  }, [isFinished, soundEnabled]);
 
   useEffect(() => {
     if (isRunning && timeLeft > 0) {
@@ -105,7 +118,6 @@ export function ClassroomTimer({ open, onOpenChange }: ClassroomTimerProps) {
           if (prev <= 1) {
             setIsRunning(false);
             setIsFinished(true);
-            playAlarmSound();
             return 0;
           }
           return prev - 1;
@@ -118,9 +130,10 @@ export function ClassroomTimer({ open, onOpenChange }: ClassroomTimerProps) {
         clearInterval(intervalRef.current);
       }
     };
-  }, [isRunning, soundEnabled]);
+  }, [isRunning]);
 
   const handleSelectTime = (seconds: number) => {
+    initAudioContext(); // Initialize audio on user interaction
     setSelectedTime(seconds);
     setTimeLeft(seconds);
     setIsRunning(false);
@@ -128,6 +141,7 @@ export function ClassroomTimer({ open, onOpenChange }: ClassroomTimerProps) {
   };
 
   const handleCustomTime = () => {
+    initAudioContext(); // Initialize audio on user interaction
     const mins = parseInt(customMinutes) || 0;
     const secs = parseInt(customSeconds) || 0;
     const totalSeconds = mins * 60 + secs;
@@ -141,6 +155,7 @@ export function ClassroomTimer({ open, onOpenChange }: ClassroomTimerProps) {
   };
 
   const toggleTimer = () => {
+    initAudioContext(); // Initialize audio on user interaction
     if (timeLeft === 0 && selectedTime) {
       setTimeLeft(selectedTime);
       setIsFinished(false);
