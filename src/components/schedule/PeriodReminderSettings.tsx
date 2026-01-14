@@ -56,19 +56,19 @@ export function PeriodReminderSettings({
           <span className="hidden sm:inline">التذكير</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col p-0" dir="rtl">
-        <DialogHeader className="p-6 pb-2">
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="sm:max-w-md w-[95vw] max-h-[85vh] overflow-hidden flex flex-col p-0" dir="rtl">
+        <DialogHeader className="p-4 pb-2 shrink-0 border-b">
+          <DialogTitle className="flex items-center gap-2 text-base">
             <Bell className="w-5 h-5" />
-            إعدادات التذكير بالحصص
+            إعدادات التذكير
           </DialogTitle>
-          <DialogDescription>
-            احصل على تنبيه قبل بداية كل حصة مع صوت واهتزاز
+          <DialogDescription className="text-xs">
+            تنبيه قبل بداية كل حصة
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6 pb-6">
-          <div className="space-y-5">
+        <ScrollArea className="flex-1 overflow-auto" style={{ maxHeight: 'calc(85vh - 80px)' }}>
+          <div className="p-4 space-y-4">
             {/* تفعيل/تعطيل التذكير */}
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
@@ -339,6 +339,8 @@ export function PeriodReminderSettings({
                 </div>
               </>
             )}
+            {/* مساحة إضافية للتمرير */}
+            <div className="h-4" />
           </div>
         </ScrollArea>
       </DialogContent>
