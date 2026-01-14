@@ -248,10 +248,10 @@ export default function TeacherAuth() {
                 </Alert>
               )}
               
-              <Tabs defaultValue="login" className="w-full">
+              <Tabs defaultValue="register" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="login">تسجيل الدخول</TabsTrigger>
                   <TabsTrigger value="register">حساب جديد</TabsTrigger>
+                  <TabsTrigger value="login">تسجيل الدخول</TabsTrigger>
                 </TabsList>
                 
                 {/* Login Tab */}
@@ -351,7 +351,7 @@ export default function TeacherAuth() {
                         <Input
                           id="phone"
                           type="tel"
-                          placeholder="0512345678"
+                          placeholder="96512345678"
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
                           className="pr-10"
@@ -511,10 +511,7 @@ export default function TeacherAuth() {
           </Card>
           
           <p className="text-center text-sm text-muted-foreground mt-6">
-            للدخول كمشرف؟{' '}
-            <Link to="/auth/admin" className="text-primary hover:underline">
-              صفحة المشرف
-            </Link>
+            منصة كويتية 🇰🇼 صُممت للمعلم العربي
           </p>
         </div>
       </div>
