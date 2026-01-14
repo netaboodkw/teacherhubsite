@@ -631,12 +631,6 @@ export default function ClassroomView() {
               {activeTab === 'notes' && (
                 <>
                   {/* Mobile: Show icons only */}
-                  <Button variant="outline" size="icon" className="sm:hidden" onClick={() => setTimerOpen(true)}>
-                    <Timer className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="icon" className="sm:hidden" onClick={() => setRandomPickerOpen(true)}>
-                    <Shuffle className="h-4 w-4" />
-                  </Button>
                   <Button variant="outline" size="icon" className="sm:hidden" onClick={() => setActiveTab('arrange')}>
                     <Move className="h-4 w-4" />
                   </Button>
@@ -645,14 +639,6 @@ export default function ClassroomView() {
                   </Button>
                   
                   {/* Desktop: Show full buttons */}
-                  <Button variant="outline" size="sm" className="hidden sm:flex" onClick={() => setTimerOpen(true)}>
-                    <Timer className="h-4 w-4 ml-1" />
-                    مؤقت
-                  </Button>
-                  <Button variant="outline" size="sm" className="hidden sm:flex" onClick={() => setRandomPickerOpen(true)}>
-                    <Shuffle className="h-4 w-4 ml-1" />
-                    اختيار عشوائي
-                  </Button>
                   <Button variant="outline" size="sm" className="hidden sm:flex" onClick={() => setActiveTab('arrange')}>
                     <Move className="h-4 w-4 ml-1" />
                     ترتيب الطلاب
@@ -730,6 +716,28 @@ export default function ClassroomView() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Quick Action Buttons - Timer & Random Picker */}
+        {activeTab === 'notes' && (
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <Button 
+              onClick={() => setTimerOpen(true)}
+              className="gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg hover:shadow-xl transition-all"
+              size="lg"
+            >
+              <Timer className="h-5 w-5" />
+              مؤقت
+            </Button>
+            <Button 
+              onClick={() => setRandomPickerOpen(true)}
+              className="gap-2 bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transition-all"
+              size="lg"
+            >
+              <Shuffle className="h-5 w-5" />
+              اختيار عشوائي
+            </Button>
+          </div>
+        )}
 
         {/* Mode-specific instructions */}
         <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4 text-xs sm:text-sm text-muted-foreground">
