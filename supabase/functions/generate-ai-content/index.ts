@@ -5,55 +5,67 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Platform brand colors from Landing page
+const brandColors = {
+  primary: "#5BC0CE",      // Cyan/Teal
+  primaryLight: "#7DD3E1", // Light Cyan
+  secondary: "#4AA8B8",    // Darker Teal
+  purple: "#C9A8D6",       // Soft Purple
+  orange: "#F5C78E",       // Warm Orange
+  green: "#10B981",        // Success Green
+};
+
 // App features for generating content
 const appFeatures = [
   {
     title: "إدارة الحضور الذكية",
-    description: "تسجيل حضور الطلاب بنقرة واحدة مع تقارير تفصيلية",
-    icon: "calendar-check",
-    color: "#3B82F6"
+    description: "سجّل حضور طلابك بنقرة واحدة فقط!",
+    icon: "calendar with checkmark",
   },
   {
     title: "متابعة الدرجات",
-    description: "رصد درجات الطلاب مع تحليلات الأداء الأكاديمي",
-    icon: "chart-bar",
-    color: "#10B981"
+    description: "رصد درجات طلابك مع تحليلات الأداء",
+    icon: "bar chart going up",
   },
   {
     title: "لوحة تحكم شاملة",
-    description: "نظرة عامة على جميع الفصول والطلاب في مكان واحد",
-    icon: "dashboard",
-    color: "#8B5CF6"
+    description: "كل فصولك وطلابك في مكان واحد",
+    icon: "dashboard with widgets",
   },
   {
-    title: "تقارير تفصيلية",
-    description: "إنشاء تقارير PDF احترافية لأولياء الأمور",
-    icon: "file-text",
-    color: "#F59E0B"
+    title: "تقارير احترافية",
+    description: "تقارير PDF جاهزة للطباعة والمشاركة",
+    icon: "document with charts",
   },
   {
     title: "ملاحظات سلوكية",
-    description: "توثيق السلوك الإيجابي والسلبي للطلاب",
-    icon: "message-circle",
-    color: "#EC4899"
+    description: "وثّق السلوك الإيجابي والسلبي للطلاب",
+    icon: "speech bubbles with thumbs up/down",
   },
   {
     title: "جدول الحصص",
-    description: "تنظيم الجدول الدراسي مع تنبيهات ذكية",
-    icon: "clock",
-    color: "#06B6D4"
+    description: "نظّم جدولك مع تنبيهات ذكية",
+    icon: "clock with schedule",
   },
   {
     title: "إدارة الفصول",
-    description: "إنشاء وتنظيم الفصول الدراسية بسهولة",
-    icon: "users",
-    color: "#84CC16"
+    description: "أنشئ ونظّم فصولك الدراسية بسهولة",
+    icon: "group of students",
   },
   {
     title: "اختيار طالب عشوائي",
-    description: "أداة تفاعلية لتحفيز مشاركة الطلاب",
-    icon: "shuffle",
-    color: "#F97316"
+    description: "حفّز مشاركة طلابك بأداة تفاعلية",
+    icon: "dice or shuffle arrows",
+  },
+  {
+    title: "استيراد الطلاب",
+    description: "استورد بيانات طلابك من Excel أو بالصور",
+    icon: "upload with spreadsheet",
+  },
+  {
+    title: "قوالب التقييم",
+    description: "صمم نظام تقييمك حسب مادتك ومرحلتك",
+    icon: "template with checkboxes",
   }
 ];
 
@@ -61,7 +73,6 @@ interface FeatureType {
   title: string;
   description: string;
   icon: string;
-  color: string;
 }
 
 serve(async (req) => {
@@ -88,24 +99,34 @@ serve(async (req) => {
     
     if (autoGenerate) {
       selectedFeature = appFeatures[Math.floor(Math.random() * appFeatures.length)];
+      
       finalPrompt = `
-Generate an image for a professional social media post about a teacher app feature:
+Create a professional Arabic social media story/post image for a teacher app called "منصة المعلم الذكي" (Teacher Hub).
 
-Title: "${selectedFeature.title}"
-Description: "${selectedFeature.description}"
+CRITICAL REQUIREMENTS:
+1. Arabic text MUST be clear, readable, and correctly written (right-to-left)
+2. Include the app name "منصة المعلم الذكي" at the top or bottom
+3. Include "teacher-hub.app" website URL in small text
 
-Design requirements:
-- Aspect ratio: ${aspectRatio}
-- Gradient background from dark blue (#1E3A8A) to light blue (#3B82F6)
-- Large Arabic title text in white, bold font at the center
-- Smaller description text below the title
-- Large decorative icon representing ${selectedFeature.icon}
-- Modern, clean, minimalist design
-- Use vector graphics and icons only, no photos
-- Suitable for Instagram Stories
-- Professional and attractive layout
+CONTENT:
+- Main Title (Arabic, large, bold, white): "${selectedFeature.title}"
+- Description (Arabic, smaller, white/light): "${selectedFeature.description}"
+- Icon: A simple ${selectedFeature.icon} icon in white
 
-The design should reflect the quality of an educational teacher app.
+DESIGN:
+- Aspect ratio: ${aspectRatio} (vertical, for Instagram stories)
+- Background: Beautiful gradient from ${brandColors.primary} (cyan) to ${brandColors.primaryLight} (light cyan) with subtle ${brandColors.purple} (purple) accent
+- Style: Modern, clean, minimalist, professional
+- Add subtle decorative elements like circles, dots, or waves in lighter shades
+- The design should look like a premium app marketing material
+- Use vector/flat design style, no photos
+
+BRANDING:
+- Logo area: Small white circle or rounded rectangle at bottom with app icon placeholder
+- Website: "teacher-hub.app" in small white text
+- Colors: Cyan (#5BC0CE, #7DD3E1), Purple (#C9A8D6), Orange accents (#F5C78E)
+
+Make it visually stunning and suitable for Instagram/social media marketing.
 `.trim();
     } else if (!prompt) {
       return new Response(
@@ -113,10 +134,26 @@ The design should reflect the quality of an educational teacher app.
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     } else {
-      finalPrompt = `Generate an image: ${prompt}`;
+      // For custom prompts, add branding requirements
+      finalPrompt = `
+Create an Arabic social media image with these specifications:
+
+CRITICAL: Arabic text must be clear and readable (right-to-left).
+
+USER REQUEST: ${prompt}
+
+BRANDING TO INCLUDE:
+- App name "منصة المعلم الذكي" somewhere visible
+- Website "teacher-hub.app" in small text
+- Color scheme: Cyan (#5BC0CE, #7DD3E1), Purple (#C9A8D6), Orange (#F5C78E)
+- Aspect ratio: ${aspectRatio}
+- Style: Modern, clean, professional, suitable for social media
+
+Make it visually stunning and marketing-ready.
+`.trim();
     }
 
-    console.log("Calling Lovable AI with prompt:", finalPrompt.substring(0, 150) + "...");
+    console.log("Calling Lovable AI with feature:", selectedFeature?.title || "custom prompt");
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
