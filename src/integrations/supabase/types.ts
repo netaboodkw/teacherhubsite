@@ -1301,6 +1301,38 @@ export type Database = {
       }
     }
     Views: {
+      shared_templates_public: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          is_active: boolean | null
+          share_code: string | null
+          template_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          share_code?: string | null
+          template_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          share_code?: string | null
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_templates_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "teacher_grading_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teachers_view: {
         Row: {
           avatar_url: string | null

@@ -143,11 +143,14 @@ export default function TeachersPage() {
     setAdding(true);
     try {
       const emailFromPhone = `${newTeacher.phone}@phone.teacherhub.app`;
-      const passwordFromPhone = `phone_${newTeacher.phone}_secure_2024`;
+      // Generate cryptographically secure random password
+      const randomBytes = new Uint8Array(16);
+      crypto.getRandomValues(randomBytes);
+      const randomPassword = Array.from(randomBytes, b => b.toString(16).padStart(2, '0')).join('');
 
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: emailFromPhone,
-        password: passwordFromPhone,
+        password: randomPassword,
         options: {
           emailRedirectTo: window.location.origin,
         }

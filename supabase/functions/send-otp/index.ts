@@ -6,6 +6,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const MAX_ATTEMPTS = 5;
+const OTP_EXPIRY_MINUTES = 3;
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -58,9 +61,24 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     if (action === "send") {
+      // Check rate limiting - max 3 OTP requests per phone per 15 minutes
+      const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+      const { data: recentOtps } = await supabase
+        .from('otp_codes')
+        .select('id')
+        .eq('phone', formattedPhone)
+        .gte('created_at', fifteenMinutesAgo);
+
+      if (recentOtps && recentOtps.length >= 3) {
+        return new Response(
+          JSON.stringify({ error: "تم إرسال الكثير من الرسائل. يرجى الانتظار 15 دقيقة." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       // Generate 6-digit OTP
       const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 minutes expiry
+      const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000).toISOString();
 
       // Delete any existing OTPs for this phone
       await supabase
@@ -68,14 +86,15 @@ serve(async (req) => {
         .delete()
         .eq('phone', formattedPhone);
 
-      // Store OTP in database
+      // Store OTP in database with attempt counter
       const { error: insertError } = await supabase
         .from('otp_codes')
         .insert({
           phone: formattedPhone,
           code: generatedOtp,
           expires_at: expiresAt,
-          verified: false
+          verified: false,
+          attempts: 0
         });
 
       if (insertError) {
@@ -92,7 +111,7 @@ serve(async (req) => {
       const formData = new URLSearchParams();
       formData.append("To", formattedPhone);
       formData.append("From", twilioPhone);
-      formData.append("Body", `رمز التحقق الخاص بك هو: ${generatedOtp}\nصالح لمدة 5 دقائق.`);
+      formData.append("Body", `رمز التحقق الخاص بك هو: ${generatedOtp}\nصالح لمدة ${OTP_EXPIRY_MINUTES} دقائق.`);
 
       const twilioResponse = await fetch(twilioUrl, {
         method: "POST",
@@ -138,6 +157,20 @@ serve(async (req) => {
         );
       }
 
+      // Check max attempts
+      if (otpRecord.attempts >= MAX_ATTEMPTS) {
+        // Delete the OTP after max attempts
+        await supabase
+          .from('otp_codes')
+          .delete()
+          .eq('id', otpRecord.id);
+
+        return new Response(
+          JSON.stringify({ error: "تم تجاوز الحد الأقصى للمحاولات. يرجى طلب رمز جديد." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       // Check if expired
       if (new Date() > new Date(otpRecord.expires_at)) {
         // Delete expired OTP
@@ -154,8 +187,18 @@ serve(async (req) => {
 
       // Check if OTP matches
       if (otpRecord.code !== otp) {
+        // Increment attempt counter
+        await supabase
+          .from('otp_codes')
+          .update({ attempts: (otpRecord.attempts || 0) + 1 })
+          .eq('id', otpRecord.id);
+
+        const remainingAttempts = MAX_ATTEMPTS - (otpRecord.attempts || 0) - 1;
+        
         return new Response(
-          JSON.stringify({ error: "رمز التحقق غير صحيح" }),
+          JSON.stringify({ 
+            error: `رمز التحقق غير صحيح. المحاولات المتبقية: ${remainingAttempts}` 
+          }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
