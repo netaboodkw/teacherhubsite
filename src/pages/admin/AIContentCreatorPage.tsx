@@ -347,6 +347,28 @@ export default function AIContentCreatorPage() {
     
     setIsExporting(true);
     try {
+      // Load Tajawal font to ensure it's available for canvas
+      const fontFace = new FontFace('Tajawal', 'url(https://fonts.gstatic.com/s/tajawal/v9/Iura6YBj_oCad4k1nzGBC45I.woff2)', {
+        weight: '400',
+        style: 'normal'
+      });
+      const boldFontFace = new FontFace('Tajawal', 'url(https://fonts.gstatic.com/s/tajawal/v9/Iurf6YBj_oCad4k1l_6gLrZjiLlJ-G0.woff2)', {
+        weight: '700',
+        style: 'normal'
+      });
+      
+      try {
+        const [loadedFont, loadedBoldFont] = await Promise.all([
+          fontFace.load(),
+          boldFontFace.load()
+        ]);
+        document.fonts.add(loadedFont);
+        document.fonts.add(loadedBoldFont);
+        await document.fonts.ready;
+      } catch (fontErr) {
+        console.warn('Could not load Tajawal font, using fallback:', fontErr);
+      }
+
       // Target 2K resolution - maintain exact aspect ratios
       const targetWidth = aspectRatio === '9:16' ? 1080 : 1620; // 9:16 or 3:4
       const targetHeight = aspectRatio === '9:16' ? 1920 : 2160; // Full HD for story, 2K for post
