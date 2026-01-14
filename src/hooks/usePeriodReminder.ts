@@ -1,4 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 import { useHapticFeedback } from './useHapticFeedback';
 import type { PeriodTime, EducationSchedule } from '@/lib/periodSchedules';
 import type { Classroom } from '@/hooks/useClassrooms';
@@ -27,6 +30,12 @@ const DEFAULT_SETTINGS: ReminderSettings = {
   repeatIntervalSeconds: 60,
 };
 
+// التحقق إذا كان التطبيق يعمل كـ native
+const isNativePlatform = () => {
+  const platform = Capacitor.getPlatform();
+  return platform === 'ios' || platform === 'android';
+};
+
 // حفظ الإعدادات
 export const saveReminderSettings = (settings: ReminderSettings): void => {
   try {
@@ -49,19 +58,60 @@ export const getReminderSettings = (): ReminderSettings => {
   return DEFAULT_SETTINGS;
 };
 
-// اهتزاز الجهاز
-const vibrateDevice = (pattern: number | number[]) => {
+// اهتزاز الجهاز (Native أو Web)
+const vibrateDevice = async (pattern: number | number[]) => {
   try {
-    if ('vibrate' in navigator) {
+    if (isNativePlatform()) {
+      // استخدام Capacitor Haptics للأجهزة الأصلية
+      await Haptics.vibrate();
+    } else if ('vibrate' in navigator) {
+      // استخدام Web Vibration API للمتصفح
       navigator.vibrate(pattern);
     }
   } catch (error) {
-    console.log('Vibration not supported');
+    console.log('Vibration not supported:', error);
+  }
+};
+
+// اهتزاز قوي للتنبيهات المهمة
+const vibrateHeavy = async () => {
+  try {
+    if (isNativePlatform()) {
+      await Haptics.impact({ style: ImpactStyle.Heavy });
+    } else if ('vibrate' in navigator) {
+      navigator.vibrate([200, 100, 200]);
+    }
+  } catch (error) {
+    console.log('Heavy vibration error:', error);
+  }
+};
+
+// اهتزاز تنبيه
+const vibrateNotification = async () => {
+  try {
+    if (isNativePlatform()) {
+      await Haptics.notification({ type: NotificationType.Warning });
+    } else if ('vibrate' in navigator) {
+      navigator.vibrate([100, 50, 100]);
+    }
+  } catch (error) {
+    console.log('Notification vibration error:', error);
   }
 };
 
 // طلب إذن الإشعارات
 export const requestNotificationPermission = async (): Promise<boolean> => {
+  if (isNativePlatform()) {
+    try {
+      const permStatus = await LocalNotifications.requestPermissions();
+      return permStatus.display === 'granted';
+    } catch (error) {
+      console.error('Error requesting native notification permission:', error);
+      return false;
+    }
+  }
+  
+  // Web Notifications
   if (!('Notification' in window)) {
     return false;
   }
@@ -78,18 +128,88 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
   return false;
 };
 
-// إرسال إشعار
-const sendNotification = (title: string, body: string, icon?: string) => {
+// إرسال إشعار (Native أو Web)
+const sendNotification = async (title: string, body: string, id?: number) => {
+  if (isNativePlatform()) {
+    try {
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            title,
+            body,
+            id: id || Date.now(),
+            schedule: { at: new Date(Date.now() + 100) }, // شبه فوري
+            sound: 'beep.wav',
+            actionTypeId: '',
+            extra: null
+          }
+        ]
+      });
+    } catch (error) {
+      console.error('Native notification error:', error);
+    }
+    return;
+  }
+  
+  // Web Notification
   if ('Notification' in window && Notification.permission === 'granted') {
     try {
       new Notification(title, {
         body,
-        icon: icon || '/logo.png',
+        icon: '/logo.png',
         tag: 'period-reminder',
       });
     } catch (error) {
-      console.log('Notification error:', error);
+      console.log('Web notification error:', error);
     }
+  }
+};
+
+// جدولة إشعار مستقبلي (للتطبيقات الأصلية فقط)
+export const scheduleNotification = async (
+  title: string,
+  body: string,
+  scheduleAt: Date,
+  id: number
+): Promise<boolean> => {
+  if (!isNativePlatform()) {
+    return false;
+  }
+  
+  try {
+    await LocalNotifications.schedule({
+      notifications: [
+        {
+          title,
+          body,
+          id,
+          schedule: { at: scheduleAt },
+          sound: 'beep.wav',
+          actionTypeId: '',
+          extra: null
+        }
+      ]
+    });
+    return true;
+  } catch (error) {
+    console.error('Error scheduling notification:', error);
+    return false;
+  }
+};
+
+// إلغاء جميع الإشعارات المجدولة
+export const cancelAllScheduledNotifications = async (): Promise<void> => {
+  if (!isNativePlatform()) return;
+  
+  try {
+    const pending = await LocalNotifications.getPending();
+    if (pending.notifications.length > 0) {
+      await LocalNotifications.cancel({
+        notifications: pending.notifications
+      });
+    }
+  } catch (error) {
+    console.error('Error cancelling notifications:', error);
   }
 };
 
@@ -123,9 +243,15 @@ export function usePeriodReminder(
     'Notification' in window ? Notification.permission : 'denied'
   );
   const [isRepeating, setIsRepeating] = useState(false);
+  const [isNative, setIsNative] = useState(false);
   const lastNotifiedPeriodRef = useRef<string | null>(null);
   const repeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { successFeedback } = useHapticFeedback();
+
+  // التحقق من المنصة
+  useEffect(() => {
+    setIsNative(isNativePlatform());
+  }, []);
 
   // تحديث الإعدادات
   const updateSettings = useCallback((newSettings: Partial<ReminderSettings>) => {
@@ -154,7 +280,7 @@ export function usePeriodReminder(
       playNotificationSound(settings.soundType, false);
     }
     if (settings.vibrationEnabled) {
-      vibrateDevice([200, 100, 200]);
+      vibrateHeavy();
     }
     
     // تكرار كل فترة محددة
@@ -163,7 +289,7 @@ export function usePeriodReminder(
         playNotificationSound(settings.soundType, false);
       }
       if (settings.vibrationEnabled) {
-        vibrateDevice([200, 100, 200]);
+        vibrateHeavy();
       }
     }, settings.repeatIntervalSeconds * 1000);
   }, [settings]);
@@ -237,7 +363,7 @@ export function usePeriodReminder(
                 playNotificationSound(settings.soundType, false);
               }
               if (settings.vibrationEnabled) {
-                vibrateDevice([100, 50, 100]);
+                vibrateNotification();
               }
             }
 
@@ -285,7 +411,7 @@ export function usePeriodReminder(
                 playNotificationSound(settings.soundType, true);
               }
               if (settings.vibrationEnabled) {
-                vibrateDevice([200, 100, 200, 100, 200]);
+                vibrateHeavy();
               }
             }
 
@@ -328,5 +454,6 @@ export function usePeriodReminder(
     requestPermission,
     isRepeating,
     stopRepeating,
+    isNative,
   };
 }
