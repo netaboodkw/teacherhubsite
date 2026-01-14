@@ -31,11 +31,17 @@ export function ClassroomTimer({ open, onOpenChange }: ClassroomTimerProps) {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Create audio context for alarm sound
-  const playAlarmSound = () => {
+  const playAlarmSound = async () => {
     if (!soundEnabled) return;
     
     try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const audioContext = new AudioContextClass();
+      
+      // Resume audio context if suspended (required by browsers)
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
       
       const playBeep = (frequency: number, startTime: number, duration: number) => {
         const oscillator = audioContext.createOscillator();
@@ -56,29 +62,37 @@ export function ClassroomTimer({ open, onOpenChange }: ClassroomTimerProps) {
 
       // Play a series of beeps
       const now = audioContext.currentTime;
-      for (let i = 0; i < 3; i++) {
-        playBeep(800, now + i * 0.3, 0.2);
-        playBeep(1000, now + i * 0.3 + 0.1, 0.15);
+      for (let i = 0; i < 5; i++) {
+        playBeep(880, now + i * 0.25, 0.15);
+        playBeep(1100, now + i * 0.25 + 0.08, 0.12);
       }
       
-      // Final longer beep
-      setTimeout(() => {
-        const finalContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const oscillator = finalContext.createOscillator();
-        const gainNode = finalContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(finalContext.destination);
-        
-        oscillator.frequency.value = 1200;
-        oscillator.type = 'sine';
-        
-        gainNode.gain.setValueAtTime(0.6, finalContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, finalContext.currentTime + 0.8);
-        
-        oscillator.start();
-        oscillator.stop(finalContext.currentTime + 0.8);
-      }, 1000);
+      // Final longer beep after a short pause
+      setTimeout(async () => {
+        try {
+          const finalContext = new AudioContextClass();
+          if (finalContext.state === 'suspended') {
+            await finalContext.resume();
+          }
+          
+          const oscillator = finalContext.createOscillator();
+          const gainNode = finalContext.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(finalContext.destination);
+          
+          oscillator.frequency.value = 1200;
+          oscillator.type = 'sine';
+          
+          gainNode.gain.setValueAtTime(0.7, finalContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, finalContext.currentTime + 1);
+          
+          oscillator.start();
+          oscillator.stop(finalContext.currentTime + 1);
+        } catch (e) {
+          console.error('Final beep error:', e);
+        }
+      }, 1500);
     } catch (error) {
       console.error('Error playing alarm sound:', error);
     }
