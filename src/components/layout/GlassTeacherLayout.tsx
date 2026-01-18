@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
 const navItems = [
   { href: '/teacher', icon: LayoutDashboard, label: 'لوحة التحكم' },
@@ -78,7 +79,8 @@ export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
             <img src={logoUrl} alt="Logo" className="w-8 h-8 object-contain" />
             <h1 className="text-lg font-semibold text-foreground">Teacher Hub</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <ThemeToggle size="sm" />
             <NotificationBell />
             <Link to="/teacher/settings">
               <Button variant="ghost" size="icon" className="rounded-full">
