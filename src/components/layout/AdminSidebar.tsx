@@ -32,22 +32,24 @@ interface AdminSidebarProps {
   onClose: () => void;
 }
 
-// Gradient nav icon - matching mobile design
+import { GlassIcon } from '@/components/ui/glass-icon';
+
+// Nav icon wrapper - uses GlassIcon for active state
 interface NavIconProps {
   icon: LucideIcon;
   active?: boolean;
 }
 
-const NavIcon = ({ icon: Icon, active }: NavIconProps) => (
-  <div className={cn(
-    "flex items-center justify-center w-10 h-10 rounded-2xl transition-all duration-200 flex-shrink-0",
-    active 
-      ? "bg-gradient-to-br from-sky-300 via-blue-400 to-teal-400 text-white shadow-lg shadow-blue-400/30" 
-      : "text-muted-foreground"
-  )}>
-    <Icon className="w-5 h-5" />
-  </div>
-);
+const NavIcon = ({ icon: Icon, active }: NavIconProps) => {
+  if (active) {
+    return <GlassIcon icon={Icon} variant="default" size="sm" className="flex-shrink-0" />;
+  }
+  return (
+    <div className="flex items-center justify-center w-10 h-10 text-muted-foreground flex-shrink-0">
+      <Icon className="w-5 h-5" />
+    </div>
+  );
+};
 
 const navItems = [
   { href: '/admin', icon: LayoutDashboard, label: 'الرئيسية' },

@@ -26,22 +26,24 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
-// Gradient glass icon - blue to teal gradient (matching reference design)
+import { GlassIcon } from '@/components/ui/glass-icon';
+
+// Nav icon wrapper - uses GlassIcon for active state
 interface NavIconProps {
   icon: LucideIcon;
   active?: boolean;
 }
 
-const NavIcon = ({ icon: Icon, active }: NavIconProps) => (
-  <div className={cn(
-    "flex items-center justify-center w-10 h-10 rounded-2xl transition-all duration-200",
-    active 
-      ? "bg-gradient-to-br from-sky-300 via-blue-400 to-teal-400 text-white shadow-lg shadow-blue-400/30" 
-      : "text-muted-foreground group-hover:text-foreground"
-  )}>
-    <Icon className="w-5 h-5" />
-  </div>
-);
+const NavIcon = ({ icon: Icon, active }: NavIconProps) => {
+  if (active) {
+    return <GlassIcon icon={Icon} variant="default" size="sm" />;
+  }
+  return (
+    <div className="flex items-center justify-center w-10 h-10 text-muted-foreground group-hover:text-foreground transition-colors">
+      <Icon className="w-5 h-5" />
+    </div>
+  );
+};
 
 const navItems = [
   { href: '/teacher', icon: LayoutDashboard, label: 'لوحة التحكم' },

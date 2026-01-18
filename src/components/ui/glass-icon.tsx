@@ -3,43 +3,70 @@ import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
 import { cva, type VariantProps } from 'class-variance-authority';
 
+/**
+ * GlassIcon - Unified icon component using design system tokens
+ * 
+ * Variants:
+ * - default: Primary gradient (for navigation/active states)
+ * - secondary: Muted background (for inactive/secondary states)
+ * - accent: Accent color (for special highlights)
+ * - success: Success state
+ * - destructive: Error/danger state  
+ * - warning: Warning state
+ * - muted: Very subtle background
+ * - ghost: No background, just icon color
+ * - outline: Border only, no background
+ */
 const glassIconVariants = cva(
   [
     "relative inline-flex items-center justify-center",
-    "rounded-2xl transition-all duration-200",
+    "rounded-xl transition-all duration-200",
   ].join(" "),
   {
     variants: {
       variant: {
+        // Primary - Uses design system gradient
         default: [
-          "bg-gradient-to-br from-sky-300 via-blue-400 to-teal-400 text-white",
-          "shadow-lg shadow-blue-400/30",
+          "gradient-primary text-primary-foreground",
+          "shadow-md",
         ].join(" "),
+        // Secondary - Muted background
         secondary: [
           "bg-muted text-muted-foreground",
         ].join(" "),
+        // Accent - Uses accent color
         accent: [
-          "bg-gradient-to-br from-violet-300 via-purple-400 to-fuchsia-400 text-white",
-          "shadow-lg shadow-purple-400/30",
+          "bg-accent text-accent-foreground",
+          "shadow-md",
         ].join(" "),
+        // Success state
         success: [
-          "bg-gradient-to-br from-emerald-300 via-green-400 to-teal-400 text-white",
-          "shadow-lg shadow-green-400/30",
+          "bg-success text-success-foreground",
+          "shadow-md",
         ].join(" "),
+        // Destructive/Error state
         destructive: [
-          "bg-gradient-to-br from-red-300 via-rose-400 to-pink-400 text-white",
-          "shadow-lg shadow-rose-400/30",
+          "bg-destructive text-destructive-foreground",
+          "shadow-md",
         ].join(" "),
+        // Warning state
         warning: [
-          "bg-gradient-to-br from-amber-300 via-orange-400 to-yellow-400 text-white",
-          "shadow-lg shadow-orange-400/30",
+          "bg-warning text-warning-foreground",
+          "shadow-md",
         ].join(" "),
+        // Very muted/subtle
         muted: [
-          "bg-muted/80 text-muted-foreground",
+          "bg-muted/60 text-muted-foreground",
         ].join(" "),
+        // Ghost - no background
         ghost: [
           "bg-transparent text-foreground/70",
           "hover:bg-muted/40",
+        ].join(" "),
+        // Outline - border only
+        outline: [
+          "bg-transparent border border-border text-foreground",
+          "hover:bg-muted/20",
         ].join(" "),
       },
       size: {
@@ -50,37 +77,10 @@ const glassIconVariants = cva(
         xl: "p-4",
       },
       glow: {
-        true: "",
+        true: "shadow-glow",
         false: "",
       },
     },
-    compoundVariants: [
-      {
-        variant: "default",
-        glow: true,
-        className: "shadow-[0_0_20px_rgba(59,130,246,0.4)]",
-      },
-      {
-        variant: "success",
-        glow: true,
-        className: "shadow-[0_0_20px_rgba(16,185,129,0.4)]",
-      },
-      {
-        variant: "destructive",
-        glow: true,
-        className: "shadow-[0_0_20px_rgba(244,63,94,0.4)]",
-      },
-      {
-        variant: "warning",
-        glow: true,
-        className: "shadow-[0_0_20px_rgba(245,158,11,0.4)]",
-      },
-      {
-        variant: "accent",
-        glow: true,
-        className: "shadow-[0_0_20px_rgba(168,85,247,0.4)]",
-      },
-    ],
     defaultVariants: {
       variant: "default",
       size: "default",
