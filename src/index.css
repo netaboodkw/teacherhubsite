@@ -493,6 +493,112 @@
     to { opacity: 1; transform: scale(1); }
   }
 
+  /* iOS Page Transitions */
+  @keyframes ios-slide-in {
+    0% {
+      opacity: 0;
+      transform: translateX(30px) scale(0.98);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+  }
+
+  @keyframes ios-slide-out {
+    0% {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateX(-20px) scale(0.98);
+    }
+  }
+
+  @keyframes ios-slide-in-rtl {
+    0% {
+      opacity: 0;
+      transform: translateX(-30px) scale(0.98);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+  }
+
+  @keyframes ios-slide-out-rtl {
+    0% {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateX(20px) scale(0.98);
+    }
+  }
+
+  @keyframes ios-fade-scale {
+    0% {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes ios-modal-in {
+    0% {
+      opacity: 0;
+      transform: translateY(100%) scale(0.9);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes ios-modal-out {
+    0% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(100%) scale(0.9);
+    }
+  }
+
+  .animate-ios-slide-in {
+    animation: ios-slide-in 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+  }
+
+  .animate-ios-slide-out {
+    animation: ios-slide-out 0.2s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+  }
+
+  [dir="rtl"] .animate-ios-slide-in {
+    animation: ios-slide-in-rtl 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+  }
+
+  [dir="rtl"] .animate-ios-slide-out {
+    animation: ios-slide-out-rtl 0.2s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+  }
+
+  .animate-ios-fade-scale {
+    animation: ios-fade-scale 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+  }
+
+  .animate-ios-modal-in {
+    animation: ios-modal-in 0.4s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+  }
+
+  .animate-ios-modal-out {
+    animation: ios-modal-out 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+  }
+
   /* iOS Spring Animations */
   @keyframes spring-bounce {
     0% { transform: scale(0.9); }
