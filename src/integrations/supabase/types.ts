@@ -690,6 +690,45 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          fingerprint_reminder: boolean
+          id: string
+          push_enabled: boolean
+          reminder_minutes_before: number
+          schedule_reminder: boolean
+          sound_enabled: boolean
+          updated_at: string
+          user_id: string
+          vibration_enabled: boolean
+        }
+        Insert: {
+          created_at?: string
+          fingerprint_reminder?: boolean
+          id?: string
+          push_enabled?: boolean
+          reminder_minutes_before?: number
+          schedule_reminder?: boolean
+          sound_enabled?: boolean
+          updated_at?: string
+          user_id: string
+          vibration_enabled?: boolean
+        }
+        Update: {
+          created_at?: string
+          fingerprint_reminder?: boolean
+          id?: string
+          push_enabled?: boolean
+          reminder_minutes_before?: number
+          schedule_reminder?: boolean
+          sound_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+          vibration_enabled?: boolean
+        }
+        Relationships: []
+      }
       otp_codes: {
         Row: {
           attempts: number | null
@@ -785,6 +824,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      push_notification_tokens: {
+        Row: {
+          created_at: string
+          device_name: string | null
+          id: string
+          is_active: boolean
+          platform: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_name?: string | null
+          id?: string
+          is_active?: boolean
+          platform: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_name?: string | null
+          id?: string
+          is_active?: boolean
+          platform?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       shared_templates: {
         Row: {

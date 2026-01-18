@@ -23,7 +23,8 @@ import {
   BarChart3, 
   CreditCard,
   Fingerprint,
-  Settings
+  Settings,
+  Bell
 } from 'lucide-react';
 
 // Nav icon with unique color per tab
@@ -58,6 +59,7 @@ const moreItems = [
   { href: '/teacher/attendance', icon: ClipboardCheck, label: 'الحضور', color: 'text-green-500', bgColor: 'bg-green-500/15' },
   { href: '/teacher/templates', icon: LayoutGrid, label: 'قوالب الدرجات', color: 'text-orange-500', bgColor: 'bg-orange-500/15' },
   { href: '/teacher/reports', icon: BarChart3, label: 'التقارير', color: 'text-indigo-500', bgColor: 'bg-indigo-500/15' },
+  { href: '/teacher/notifications', icon: Bell, label: 'الإشعارات', color: 'text-red-500', bgColor: 'bg-red-500/15' },
   { href: '/teacher/subscription', icon: CreditCard, label: 'الاشتراك', color: 'text-teal-500', bgColor: 'bg-teal-500/15' },
   { href: '/teacher/settings', icon: Settings, label: 'الإعدادات', color: 'text-slate-500', bgColor: 'bg-slate-500/15' },
 ];

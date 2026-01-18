@@ -30,6 +30,7 @@ import TeacherTemplates from "./pages/teacher/TeacherTemplates";
 import TeacherSubscription from "./pages/teacher/TeacherSubscription";
 import TeacherSchedule from "./pages/teacher/TeacherSchedule";
 import TeacherFingerprint from "./pages/teacher/Fingerprint";
+import NotificationSettings from "./pages/teacher/NotificationSettings";
 import SubscriptionSuccess from "./pages/teacher/SubscriptionSuccess";
 import SubscriptionError from "./pages/teacher/SubscriptionError";
 
@@ -115,6 +116,7 @@ const App = () => (
             <Route path="/teacher/payments" element={<Navigate to="/teacher/subscription" replace />} />
             <Route path="/teacher/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             <Route path="/teacher/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/teacher/notifications" element={<ProtectedRoute><NotificationSettings /></ProtectedRoute>} />
 
             {/* Department Head Routes */}
             <Route path="/department-head" element={<ProtectedRoute><DHDashboardNew /></ProtectedRoute>} />
