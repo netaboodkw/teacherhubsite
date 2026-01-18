@@ -4,9 +4,12 @@ import { useStudents } from '@/hooks/useStudents';
 import { useClassroom, useArchiveClassroom } from '@/hooks/useClassrooms';
 import { useBehaviorNotesByClassroom } from '@/hooks/useBehaviorNotes';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { GlassButton } from '@/components/ui/glass-button';
 import { Card, CardContent } from '@/components/ui/card';
+import { GlassCard, GlassCardContent } from '@/components/ui/glass-card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -40,8 +43,12 @@ import {
 import { RandomStudentPicker } from '@/components/classroom/RandomStudentPicker';
 import { ClassroomTimer } from '@/components/classroom/ClassroomTimer';
 import { ClassroomStatsBanner } from '@/components/classroom/ClassroomStatsBanner';
+import { GlassClassroomStatsBanner } from '@/components/classroom/GlassClassroomStatsBanner';
 import { StudentBadges, WeeklyAchievementsManager, WeeklyLeaderboard } from '@/components/classroom/StudentBadges';
+import { GlassWeeklyLeaderboard } from '@/components/classroom/GlassWeeklyLeaderboard';
+import { GlassDraggableStudent, GlassAttendanceStudent, GlassStudentIcon } from '@/components/classroom/GlassStudentCard';
 import { getCurrentPeriod, getScheduleByEducationLevel } from '@/lib/periodSchedules';
+import { cn } from '@/lib/utils';
 
 interface StudentPosition {
   student_id: string;
@@ -259,6 +266,7 @@ export default function ClassroomView() {
   const { data: behaviorNotes = [] } = useBehaviorNotesByClassroom(classroomId);
   const archiveClassroom = useArchiveClassroom();
   const arrangeContainerRef = useRef<HTMLDivElement>(null);
+  const { isLiquidGlass } = useTheme();
   
   const [studentPositions, setStudentPositions] = useState<Map<string, { x: number; y: number }>>(new Map());
   const [selectedStudent, setSelectedStudent] = useState<SelectedStudent | null>(null);
@@ -622,30 +630,34 @@ export default function ClassroomView() {
     );
   }
 
+  const ActionButton = isLiquidGlass ? GlassButton : Button;
+  const ContentCard = isLiquidGlass ? GlassCard : Card;
+  const ContentCardContent = isLiquidGlass ? GlassCardContent : CardContent;
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       {/* Header - Mobile Optimized */}
-      <div className="bg-card border-b sticky top-0 z-10">
+      <div className={cn("sticky top-0 z-10", isLiquidGlass ? "glass-card border-b border-border/30" : "bg-card border-b")}>
         <div className="px-3 py-3 sm:px-4 sm:py-4">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
               <div className="flex items-center shrink-0">
                 <TooltipProvider>
                   <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" onClick={() => navigate('/teacher')}>
+                <TooltipTrigger asChild>
+                      <ActionButton variant="ghost" size="icon" onClick={() => navigate('/teacher')}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                      </Button>
+                      </ActionButton>
                     </TooltipTrigger>
                     <TooltipContent>الرئيسية</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
                 <TooltipProvider>
                   <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" onClick={() => navigate('/teacher/classrooms')}>
+                <TooltipTrigger asChild>
+                      <ActionButton variant="ghost" size="icon" onClick={() => navigate('/teacher/classrooms')}>
                         <ArrowRight className="h-5 w-5" />
-                      </Button>
+                      </ActionButton>
                     </TooltipTrigger>
                     <TooltipContent>الفصول</TooltipContent>
                   </Tooltip>
@@ -661,28 +673,28 @@ export default function ClassroomView() {
               {activeTab === 'notes' && (
                 <>
                   {/* Mobile: Show icons only */}
-                  <Button variant="outline" size="icon" className="sm:hidden" onClick={() => setActiveTab('arrange')}>
+                  <ActionButton variant="outline" size="icon" className="sm:hidden" onClick={() => setActiveTab('arrange')}>
                     <Move className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="icon" className="sm:hidden" onClick={() => setActiveTab('attendance')}>
+                  </ActionButton>
+                  <ActionButton variant="outline" size="icon" className="sm:hidden" onClick={() => setActiveTab('attendance')}>
                     <ClipboardCheck className="h-4 w-4" />
-                  </Button>
+                  </ActionButton>
                   
                   {/* Desktop: Show full buttons */}
-                  <Button variant="outline" size="sm" className="hidden sm:flex" onClick={() => setActiveTab('arrange')}>
+                  <ActionButton variant="outline" size="sm" className="hidden sm:flex" onClick={() => setActiveTab('arrange')}>
                     <Move className="h-4 w-4 ml-1" />
                     ترتيب الطلاب
-                  </Button>
-                  <Button variant="outline" size="sm" className="hidden sm:flex" onClick={() => setActiveTab('attendance')}>
+                  </ActionButton>
+                  <ActionButton variant="outline" size="sm" className="hidden sm:flex" onClick={() => setActiveTab('attendance')}>
                     <ClipboardCheck className="h-4 w-4 ml-1" />
                     تسجيل الحضور
-                  </Button>
+                  </ActionButton>
                   
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="icon">
+                      <ActionButton variant="outline" size="icon">
                         <MoreVertical className="h-4 w-4" />
-                      </Button>
+                      </ActionButton>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => navigate(`/teacher/students/new?classroomId=${classroomId}`)}>
@@ -708,27 +720,27 @@ export default function ClassroomView() {
               
               {activeTab === 'arrange' && (
                 <>
-                  <Button variant="outline" size="sm" onClick={() => setActiveTab('notes')}>
+                  <ActionButton variant="outline" size="sm" onClick={() => setActiveTab('notes')}>
                     <X className="h-4 w-4 sm:ml-1" />
                     <span className="hidden sm:inline">إلغاء</span>
-                  </Button>
-                  <Button size="sm" onClick={savePositions} disabled={saving}>
+                  </ActionButton>
+                  <ActionButton size="sm" onClick={savePositions} disabled={saving}>
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 sm:ml-1" />}
                     <span className="hidden sm:inline">حفظ</span>
-                  </Button>
+                  </ActionButton>
                 </>
               )}
               
               {activeTab === 'attendance' && (
                 <>
-                  <Button variant="outline" size="sm" onClick={() => setActiveTab('notes')}>
+                  <ActionButton variant="outline" size="sm" onClick={() => setActiveTab('notes')}>
                     <X className="h-4 w-4 sm:ml-1" />
                     <span className="hidden sm:inline">إلغاء</span>
-                  </Button>
-                  <Button size="sm" onClick={saveAttendance} disabled={saving}>
+                  </ActionButton>
+                  <ActionButton size="sm" onClick={saveAttendance} disabled={saving}>
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 sm:ml-1" />}
                     <span className="hidden sm:inline">حفظ</span>
-                  </Button>
+                  </ActionButton>
                 </>
               )}
             </div>
@@ -741,42 +753,51 @@ export default function ClassroomView() {
         {/* Quick Action Buttons - Timer & Random Picker & Stats - Above Board */}
         {activeTab === 'notes' && (
           <div className="flex items-center justify-center gap-3 mb-4">
-            <Button 
+            <ActionButton 
               onClick={() => setTimerOpen(true)}
-              className="gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg hover:shadow-xl transition-all"
+              className={isLiquidGlass ? "gap-2" : "gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg hover:shadow-xl transition-all"}
               size="lg"
             >
               <Timer className="h-5 w-5" />
               مؤقت
-            </Button>
-            <Button 
+            </ActionButton>
+            <ActionButton 
               onClick={() => setRandomPickerOpen(true)}
-              className="gap-2 bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transition-all"
+              className={isLiquidGlass ? "gap-2" : "gap-2 bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transition-all"}
               size="lg"
             >
               <Shuffle className="h-5 w-5" />
               اختيار عشوائي
-            </Button>
+            </ActionButton>
           </div>
         )}
 
         {/* Board */}
-        <Card className="mb-3 sm:mb-4 bg-muted/50">
-          <CardContent className="p-3 sm:p-4 text-center">
-            <div className="bg-background border-2 border-dashed rounded-lg py-3 sm:py-4">
+        <ContentCard className={cn("mb-3 sm:mb-4", isLiquidGlass ? "" : "bg-muted/50")}>
+          <ContentCardContent className="p-3 sm:p-4 text-center">
+            <div className={cn("border-2 border-dashed rounded-lg py-3 sm:py-4", isLiquidGlass ? "bg-background/50 backdrop-blur-sm" : "bg-background")}>
               <p className="text-muted-foreground font-medium text-sm sm:text-base">السبورة</p>
             </div>
-          </CardContent>
-        </Card>
+          </ContentCardContent>
+        </ContentCard>
 
         {/* Stats Banner - Motivational Message, Engagement, Best Student - Conditional */}
         {classroom.show_stats_banner !== false && (
-          <ClassroomStatsBanner 
-            students={students}
-            behaviorNotes={behaviorNotes}
-            classroomId={classroomId || ''}
-            classroomName={classroom.name}
-          />
+          isLiquidGlass ? (
+            <GlassClassroomStatsBanner 
+              students={students}
+              behaviorNotes={behaviorNotes}
+              classroomId={classroomId || ''}
+              classroomName={classroom.name}
+            />
+          ) : (
+            <ClassroomStatsBanner 
+              students={students}
+              behaviorNotes={behaviorNotes}
+              classroomId={classroomId || ''}
+              classroomName={classroom.name}
+            />
+          )
         )}
 
         {/* Weekly Achievements Manager - calculates and awards badges */}
@@ -791,11 +812,19 @@ export default function ClassroomView() {
         {/* Weekly Leaderboard - shows top students */}
         {activeTab === 'notes' && classroom.show_leaderboard !== false && (
           <div className="mb-4">
-            <WeeklyLeaderboard
-              students={students}
-              behaviorNotes={behaviorNotes}
-              classroomId={classroomId || ''}
-            />
+            {isLiquidGlass ? (
+              <GlassWeeklyLeaderboard
+                students={students}
+                behaviorNotes={behaviorNotes}
+                classroomId={classroomId || ''}
+              />
+            ) : (
+              <WeeklyLeaderboard
+                students={students}
+                behaviorNotes={behaviorNotes}
+                classroomId={classroomId || ''}
+              />
+            )}
           </div>
         )}
 
@@ -921,8 +950,8 @@ export default function ClassroomView() {
         )}
 
         {/* Students Grid */}
-        <Card className="overflow-hidden">
-          <CardContent className="p-3 sm:p-4">
+        <ContentCard className="overflow-hidden">
+          <ContentCardContent className="p-3 sm:p-4">
             {loadingStudents || loadingPositions ? (
               <div className="flex items-center justify-center h-64">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -1060,8 +1089,8 @@ export default function ClassroomView() {
                 })}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </ContentCardContent>
+        </ContentCard>
       </div>
 
       {/* Student Note Dialog */}
