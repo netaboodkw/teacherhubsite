@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Shield, Database, Bell, Loader2, Save, CheckCircle, LayoutGrid, CreditCard, Key, Eye, EyeOff, ExternalLink, Image, Upload, X, FileText } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Settings, Shield, Database, Bell, Loader2, Save, CheckCircle, LayoutGrid, CreditCard, Key, Eye, EyeOff, ExternalLink, Image, Upload, X, FileText, Palette } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { useSystemSettings, useUpdateSystemSetting } from '@/hooks/useSystemSettings';
@@ -50,6 +51,10 @@ export default function AdminSettingsPage() {
     terms_enabled: false,
     terms_content: '',
   });
+
+  // Theme settings
+  const [appThemeStyle, setAppThemeStyle] = useState<'default' | 'liquid-glass'>('default');
+
   // Load settings from database
   useEffect(() => {
     if (systemSettings) {
@@ -83,6 +88,14 @@ export default function AdminSettingsPage() {
         terms_enabled: termsEnabled?.value === true || termsEnabled?.value === 'true',
         terms_content: (termsContent?.value as string) || '',
       });
+
+      // Load theme setting
+      const themeSetting = systemSettings.find(s => s.key === 'app_theme_style');
+      if (themeSetting?.value === 'liquid-glass') {
+        setAppThemeStyle('liquid-glass');
+      } else {
+        setAppThemeStyle('default');
+      }
     }
   }, [systemSettings]);
 
@@ -172,6 +185,16 @@ export default function AdminSettingsPage() {
         key: 'terms_content',
         value: termsSettings.terms_content
       });
+
+      // Save theme setting
+      await updateSystemSetting.mutateAsync({
+        key: 'app_theme_style',
+        value: appThemeStyle
+      });
+
+      // Apply theme immediately
+      document.documentElement.classList.remove('theme-default', 'theme-liquid-glass');
+      document.documentElement.classList.add(`theme-${appThemeStyle}`);
 
       toast.success('تم حفظ الإعدادات بنجاح');
     } catch (error) {
@@ -267,6 +290,65 @@ export default function AdminSettingsPage() {
                   )}
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Theme Settings - NEW */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="h-5 w-5" />
+                ثيم التطبيق
+              </CardTitle>
+              <CardDescription>اختيار المظهر العام للتطبيق</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <RadioGroup
+                value={appThemeStyle}
+                onValueChange={(value: 'default' | 'liquid-glass') => setAppThemeStyle(value)}
+                className="grid grid-cols-1 md:grid-cols-2 gap-4"
+              >
+                <div className="flex items-start space-x-3 space-x-reverse">
+                  <RadioGroupItem value="default" id="theme-default" className="mt-1" />
+                  <Label htmlFor="theme-default" className="flex-1 cursor-pointer">
+                    <div className="font-medium">الثيم الافتراضي</div>
+                    <p className="text-sm text-muted-foreground">
+                      تصميم كلاسيكي بألوان TeacherHub المميزة
+                    </p>
+                    <div className="mt-2 flex gap-1">
+                      <div className="w-6 h-6 rounded-full bg-[hsl(195,85%,50%)]" />
+                      <div className="w-6 h-6 rounded-full bg-[hsl(170,60%,45%)]" />
+                      <div className="w-6 h-6 rounded-full bg-[hsl(320,50%,70%)]" />
+                    </div>
+                  </Label>
+                </div>
+                
+                <div className="flex items-start space-x-3 space-x-reverse">
+                  <RadioGroupItem value="liquid-glass" id="theme-liquid-glass" className="mt-1" />
+                  <Label htmlFor="theme-liquid-glass" className="flex-1 cursor-pointer">
+                    <div className="font-medium flex items-center gap-2">
+                      Liquid Glass
+                      <Badge variant="secondary" className="text-xs">iOS 26</Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      تصميم زجاجي شفاف متوافق مع iOS 26
+                    </p>
+                    <div className="mt-2 flex gap-1">
+                      <div className="w-6 h-6 rounded-full bg-[hsl(211,100%,50%)]" />
+                      <div className="w-6 h-6 rounded-full bg-[hsl(174,72%,46%)]" />
+                      <div className="w-6 h-6 rounded-full bg-[hsl(280,65%,60%)]" />
+                    </div>
+                  </Label>
+                </div>
+              </RadioGroup>
+
+              {appThemeStyle === 'liquid-glass' && (
+                <div className="p-3 bg-primary/10 border border-primary/30 rounded-lg">
+                  <p className="text-sm text-primary">
+                    ✨ ثيم Liquid Glass يوفر تجربة بصرية متقدمة مع تأثيرات الزجاج الشفاف والعمق
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

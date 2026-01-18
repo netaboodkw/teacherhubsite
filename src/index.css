@@ -1,5 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -24,10 +25,13 @@
   animation: logo-float 4s ease-in-out infinite;
 }
 
-/* TeacherHub Design System - Education-focused color palette */
+/* ============================================
+   DEFAULT THEME - TeacherHub Design System
+   ============================================ */
 
 @layer base {
-  :root {
+  :root,
+  .theme-default {
     --background: 195 30% 97%;
     --foreground: 210 50% 15%;
 
@@ -89,18 +93,23 @@
     --gradient-hero: linear-gradient(135deg, hsl(195 85% 55%) 0%, hsl(185 75% 50%) 35%, hsl(170 60% 45%) 70%, hsl(155 70% 45%) 100%);
 
     /* Shadows */
+    --shadow-2xs: 0 1px 2px 0 hsl(0 0% 0% / 0.03);
+    --shadow-xs: 0 1px 2px 0 hsl(0 0% 0% / 0.04);
     --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
     --shadow: 0 1px 3px 0 hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
     --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -2px hsl(0 0% 0% / 0.1);
     --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.1), 0 4px 6px -4px hsl(0 0% 0% / 0.1);
     --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.1), 0 8px 10px -6px hsl(0 0% 0% / 0.1);
+    --shadow-2xl: 0 25px 50px -12px hsl(0 0% 0% / 0.25);
     --shadow-glow: 0 0 20px hsl(195 85% 50% / 0.3);
 
     /* Font */
     --font-sans: 'Inter', 'Cairo', ui-sans-serif, system-ui, sans-serif;
   }
 
-  .dark {
+  .theme-default.dark,
+  .dark .theme-default,
+  .dark:not(.theme-liquid-glass) {
     --background: 210 50% 8%;
     --foreground: 195 30% 95%;
 
@@ -154,6 +163,184 @@
   }
 }
 
+/* ============================================
+   LIQUID GLASS THEME - iOS 26 Inspired
+   ============================================ */
+
+@layer base {
+  .theme-liquid-glass {
+    /* Light mode - Ethereal, translucent feel */
+    --background: 220 20% 97%;
+    --foreground: 220 15% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 15%;
+
+    /* Primary - iOS Blue */
+    --primary: 211 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Soft Gray */
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 15% 25%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 10% 45%;
+
+    /* Accent - iOS Teal */
+    --accent: 174 72% 46%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 211 100% 50%;
+
+    --radius: 1rem;
+
+    --sidebar-background: 220 20% 98%;
+    --sidebar-foreground: 220 15% 15%;
+    --sidebar-primary: 211 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 220 15% 25%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 211 100% 50%;
+
+    --chart-1: 211 100% 50%;
+    --chart-2: 174 72% 46%;
+    --chart-3: 280 65% 60%;
+    --chart-4: 38 92% 50%;
+    --chart-5: 142 71% 45%;
+
+    /* Liquid Glass specific variables */
+    --glass-blur: 24px;
+    --glass-saturation: 180%;
+    --glass-opacity: 0.7;
+    --glass-border-opacity: 0.2;
+    --glass-shadow: 0 8px 32px 0 hsl(220 30% 15% / 0.12);
+    --glass-inner-shadow: inset 0 1px 1px 0 hsl(0 0% 100% / 0.3);
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(211 100% 55%) 0%, hsl(211 100% 45%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(220 14% 98%) 0%, hsl(220 14% 94%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(174 72% 50%) 0%, hsl(174 72% 40%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(211 100% 55%) 0%, hsl(220 20% 97%) 50%, hsl(174 72% 50%) 100%);
+    --gradient-glass: linear-gradient(135deg, hsl(0 0% 100% / 0.4) 0%, hsl(0 0% 100% / 0.1) 100%);
+
+    /* Enhanced shadows for depth */
+    --shadow-2xs: 0 1px 2px 0 hsl(220 30% 15% / 0.02);
+    --shadow-xs: 0 1px 3px 0 hsl(220 30% 15% / 0.04);
+    --shadow-sm: 0 2px 4px 0 hsl(220 30% 15% / 0.06);
+    --shadow: 0 4px 8px -2px hsl(220 30% 15% / 0.08);
+    --shadow-md: 0 8px 16px -4px hsl(220 30% 15% / 0.1);
+    --shadow-lg: 0 16px 32px -8px hsl(220 30% 15% / 0.12);
+    --shadow-xl: 0 24px 48px -12px hsl(220 30% 15% / 0.16);
+    --shadow-2xl: 0 32px 64px -16px hsl(220 30% 15% / 0.2);
+    --shadow-glow: 0 0 24px hsl(211 100% 50% / 0.25);
+
+    /* iOS-like font stack */
+    --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter', 'Cairo', system-ui, sans-serif;
+  }
+
+  .theme-liquid-glass.dark,
+  .dark.theme-liquid-glass {
+    /* Dark mode - Deep, rich translucent feel */
+    --background: 220 20% 8%;
+    --foreground: 220 10% 95%;
+
+    --card: 220 20% 12%;
+    --card-foreground: 220 10% 95%;
+
+    --popover: 220 20% 12%;
+    --popover-foreground: 220 10% 95%;
+
+    /* Primary - iOS Blue (brighter for dark mode) */
+    --primary: 211 100% 60%;
+    --primary-foreground: 220 20% 8%;
+
+    /* Secondary */
+    --secondary: 220 20% 18%;
+    --secondary-foreground: 220 10% 90%;
+
+    --muted: 220 20% 16%;
+    --muted-foreground: 220 10% 55%;
+
+    /* Accent - iOS Teal */
+    --accent: 174 72% 50%;
+    --accent-foreground: 220 20% 8%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 71% 50%;
+    --success-foreground: 220 20% 8%;
+
+    --warning: 38 92% 55%;
+    --warning-foreground: 220 20% 8%;
+
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 211 100% 60%;
+
+    --sidebar-background: 220 20% 10%;
+    --sidebar-foreground: 220 10% 95%;
+    --sidebar-primary: 211 100% 60%;
+    --sidebar-primary-foreground: 220 20% 8%;
+    --sidebar-accent: 220 20% 18%;
+    --sidebar-accent-foreground: 220 10% 90%;
+    --sidebar-border: 220 20% 20%;
+    --sidebar-ring: 211 100% 60%;
+
+    --chart-1: 211 100% 60%;
+    --chart-2: 174 72% 50%;
+    --chart-3: 280 65% 65%;
+    --chart-4: 38 92% 55%;
+    --chart-5: 142 71% 50%;
+
+    /* Liquid Glass dark mode specifics */
+    --glass-blur: 24px;
+    --glass-saturation: 180%;
+    --glass-opacity: 0.6;
+    --glass-border-opacity: 0.15;
+    --glass-shadow: 0 8px 32px 0 hsl(220 30% 5% / 0.3);
+    --glass-inner-shadow: inset 0 1px 1px 0 hsl(0 0% 100% / 0.1);
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(211 100% 65%) 0%, hsl(211 100% 50%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(220 20% 18%) 0%, hsl(220 20% 14%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(174 72% 55%) 0%, hsl(174 72% 45%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(211 100% 60%) 0%, hsl(220 20% 10%) 50%, hsl(174 72% 50%) 100%);
+    --gradient-glass: linear-gradient(135deg, hsl(0 0% 100% / 0.08) 0%, hsl(0 0% 100% / 0.02) 100%);
+
+    /* Enhanced shadows for dark mode */
+    --shadow-2xs: 0 1px 2px 0 hsl(220 30% 5% / 0.1);
+    --shadow-xs: 0 1px 3px 0 hsl(220 30% 5% / 0.15);
+    --shadow-sm: 0 2px 4px 0 hsl(220 30% 5% / 0.2);
+    --shadow: 0 4px 8px -2px hsl(220 30% 5% / 0.25);
+    --shadow-md: 0 8px 16px -4px hsl(220 30% 5% / 0.3);
+    --shadow-lg: 0 16px 32px -8px hsl(220 30% 5% / 0.35);
+    --shadow-xl: 0 24px 48px -12px hsl(220 30% 5% / 0.4);
+    --shadow-2xl: 0 32px 64px -16px hsl(220 30% 5% / 0.5);
+    --shadow-glow: 0 0 24px hsl(211 100% 60% / 0.3);
+  }
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
 @layer base {
   * {
     @apply border-border;
@@ -167,7 +354,92 @@
   [dir="rtl"] {
     font-family: 'Cairo', 'Inter', ui-sans-serif, system-ui, sans-serif;
   }
+
+  .theme-liquid-glass [dir="rtl"] {
+    font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  }
 }
+
+/* ============================================
+   LIQUID GLASS COMPONENT STYLES
+   ============================================ */
+
+@layer components {
+  /* Glass Card Styles */
+  .theme-liquid-glass .glass-card {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--card) / 0.7),
+      hsl(var(--card) / 0.5)
+    );
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid hsl(var(--border) / 0.2);
+    box-shadow: 0 8px 32px 0 hsl(220 30% 15% / 0.12), inset 0 1px 1px 0 hsl(0 0% 100% / 0.3);
+  }
+
+  .theme-liquid-glass .glass-card-elevated {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, hsl(var(--card) / 0.7), hsl(var(--card) / 0.5));
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid hsl(var(--border) / 0.2);
+    box-shadow: var(--shadow-lg), inset 0 1px 1px 0 hsl(0 0% 100% / 0.3);
+  }
+
+  .theme-liquid-glass .glass-card-interactive {
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    background: linear-gradient(135deg, hsl(var(--card) / 0.7), hsl(var(--card) / 0.5));
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid hsl(var(--border) / 0.2);
+    box-shadow: 0 8px 32px 0 hsl(220 30% 15% / 0.12), inset 0 1px 1px 0 hsl(0 0% 100% / 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .theme-liquid-glass .glass-card-interactive:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-xl), inset 0 1px 1px 0 hsl(0 0% 100% / 0.3);
+  }
+
+  .theme-liquid-glass .glass-card-interactive:active {
+    transform: translateY(0) scale(0.99);
+  }
+
+  /* Glass Button Styles */
+  .theme-liquid-glass .glass-button-primary {
+    position: relative;
+    overflow: hidden;
+    background: var(--gradient-primary);
+    backdrop-filter: blur(8px) saturate(150%);
+    -webkit-backdrop-filter: blur(8px) saturate(150%);
+  }
+
+  .theme-liquid-glass .glass-button-secondary {
+    position: relative;
+    background: hsl(var(--secondary) / 0.6);
+    backdrop-filter: blur(12px) saturate(150%);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+    border: 1px solid hsl(var(--border) / 0.3);
+  }
+
+  .theme-liquid-glass .glass-button-destructive {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, hsl(var(--destructive)) 0%, hsl(var(--destructive) / 0.8) 100%);
+    backdrop-filter: blur(8px) saturate(150%);
+    -webkit-backdrop-filter: blur(8px) saturate(150%);
+  }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
 
 @layer utilities {
   .gradient-primary {
@@ -220,9 +492,55 @@
     from { opacity: 0; transform: scale(0.95); }
     to { opacity: 1; transform: scale(1); }
   }
+
+  /* iOS Spring Animations */
+  @keyframes spring-bounce {
+    0% { transform: scale(0.9); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+  }
+
+  .animate-spring {
+    animation: spring-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Safe area utilities */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .safe-all {
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
 }
 
-/* Print Styles */
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
 @media print {
   * {
     -webkit-print-color-adjust: exact !important;
