@@ -1,11 +1,13 @@
 import { useSystemSetting } from './useSystemSettings';
-import defaultLogo from '@/assets/logo.png';
+
+// Use a reliable fallback logo
+const DEFAULT_LOGO = '/logo.png';
 
 export function useSiteLogo() {
   const { data: logoSetting, isLoading } = useSystemSetting('site_logo');
   
   // Parse the logo URL properly - could be string directly or nested in value
-  let logoUrl = defaultLogo;
+  let logoUrl = DEFAULT_LOGO;
   
   if (logoSetting?.value) {
     const value = logoSetting.value;
@@ -18,6 +20,6 @@ export function useSiteLogo() {
   return {
     logoUrl,
     isLoading,
-    isCustomLogo: logoUrl !== defaultLogo,
+    isCustomLogo: logoUrl !== DEFAULT_LOGO,
   };
 }

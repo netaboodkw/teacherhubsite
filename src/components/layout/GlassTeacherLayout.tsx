@@ -27,23 +27,20 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
-// Glass Icon component for navigation items
-interface NavGlassIconProps {
+// Simplified nav icon - just icon with minimal styling
+interface NavIconProps {
   icon: LucideIcon;
   active?: boolean;
-  className?: string;
 }
 
-const NavGlassIcon = ({ icon: Icon, active, className }: NavGlassIconProps) => (
+const NavIcon = ({ icon: Icon, active }: NavIconProps) => (
   <div className={cn(
-    "p-2 rounded-xl transition-all duration-300",
-    "backdrop-blur-sm backdrop-saturate-150",
+    "flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-200",
     active 
-      ? "bg-primary/20 text-primary shadow-[0_2px_12px_hsl(var(--primary)/0.25)] border border-primary/30" 
-      : "bg-muted/40 text-muted-foreground border border-border/20 hover:bg-muted/60",
-    className
+      ? "bg-primary/15 text-primary" 
+      : "text-muted-foreground group-hover:text-foreground"
   )}>
-    <Icon className="w-5 h-5 flex-shrink-0" />
+    <Icon className="w-5 h-5" />
   </div>
 );
 
@@ -158,7 +155,7 @@ export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
+          <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
             {navItems.map((item) => {
               const active = isActive(item.href);
               const linkContent = (
@@ -166,16 +163,16 @@ export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
                   key={item.href}
                   to={item.href}
                   className={cn(
-                    "flex items-center gap-3 px-2 py-2 rounded-2xl text-sm font-medium",
-                    "transition-all duration-300 ease-out",
+                    "group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium",
+                    "transition-all duration-200",
                     collapsed && "justify-center px-2",
                     active 
                       ? "bg-primary/10 text-primary" 
-                      : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                   )}
                 >
-                  <NavGlassIcon icon={item.icon} active={active} />
-                  {!collapsed && <span>{item.label}</span>}
+                  <NavIcon icon={item.icon} active={active} />
+                  {!collapsed && <span className="truncate">{item.label}</span>}
                 </Link>
               );
 
@@ -185,7 +182,7 @@ export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
                     <TooltipTrigger asChild>
                       {linkContent}
                     </TooltipTrigger>
-                    <TooltipContent side="left" className="rounded-xl bg-background/80 backdrop-blur-xl border-border/30">
+                    <TooltipContent side="left" className="rounded-xl bg-popover border-border">
                       <p>{item.label}</p>
                     </TooltipContent>
                   </Tooltip>
@@ -198,17 +195,19 @@ export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
 
           {/* Bottom Actions */}
           <div className="p-3 border-t border-border/30">
-            <Link to="/teacher/settings">
-              <GlassButton 
-                variant="ghost" 
-                className={cn(
-                  "w-full justify-start gap-3 rounded-2xl",
-                  collapsed && "justify-center"
-                )}
-              >
-                <NavGlassIcon icon={Settings} active={location.pathname.includes('/settings')} className="!p-1.5" />
-                {!collapsed && <span>الإعدادات</span>}
-              </GlassButton>
+            <Link 
+              to="/teacher/settings"
+              className={cn(
+                "group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium",
+                "transition-all duration-200",
+                collapsed && "justify-center px-2",
+                location.pathname.includes('/settings')
+                  ? "bg-primary/10 text-primary" 
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+              )}
+            >
+              <NavIcon icon={Settings} active={location.pathname.includes('/settings')} />
+              {!collapsed && <span>الإعدادات</span>}
             </Link>
           </div>
         </aside>
