@@ -2,22 +2,21 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { GlassBottomNav } from './GlassBottomNav';
 import { GlassTopBar } from './GlassAppShell';
-import { Menu, Bell, User, LucideIcon } from 'lucide-react';
+import { Menu, Bell, User, LucideIcon, School } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GlassButton } from '@/components/ui/glass-button';
 import { useSiteLogo } from '@/hooks/useSiteLogo';
 import { Link, useLocation } from 'react-router-dom';
 import { FadeTransition } from '@/components/transitions/PageTransition';
-import { 
-  LayoutDashboard, 
-  GraduationCap, 
-  CalendarDays, 
+import {
+  LayoutDashboard,
+  CalendarDays,
   Fingerprint,
-  Users, 
-  ClipboardCheck, 
-  BookOpen, 
-  LayoutGrid, 
-  BarChart3, 
+  Users,
+  ClipboardCheck,
+  BookOpen,
+  LayoutGrid,
+  BarChart3,
   CreditCard,
   Settings,
   ChevronLeft,
@@ -46,7 +45,7 @@ const NavIcon = ({ icon: Icon, active }: NavIconProps) => (
 
 const navItems = [
   { href: '/teacher', icon: LayoutDashboard, label: 'لوحة التحكم' },
-  { href: '/teacher/classrooms', icon: GraduationCap, label: 'الصفوف' },
+  { href: '/teacher/classrooms', icon: School, label: 'الصفوف' },
   { href: '/teacher/schedule', icon: CalendarDays, label: 'جدول الحصص' },
   { href: '/teacher/fingerprint', icon: Fingerprint, label: 'البصمة' },
   { href: '/teacher/students', icon: Users, label: 'الطلاب' },
