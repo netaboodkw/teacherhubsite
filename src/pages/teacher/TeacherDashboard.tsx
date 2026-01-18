@@ -150,27 +150,56 @@ export default function TeacherDashboard() {
     </Link>
   );
 
-  // Glass classroom card
-  const GlassClassroomCard = ({ classroom }: { classroom: any }) => (
-    <Link to={`/teacher/classrooms/${classroom.id}`}>
-      <GlassCard variant="interactive" className="h-full">
-        <GlassCardHeader className="pb-2">
-          <div className="flex items-center gap-3">
-            <div 
-              className="w-3 h-3 rounded-full" 
-              style={{ backgroundColor: classroom.color || 'hsl(var(--primary))' }}
-            />
+  // Get hex color from classroom color
+  const getHexColor = (color: string | null | undefined): string => {
+    if (!color) return '#00b8d4';
+    if (color.startsWith('#')) return color;
+    const colorMap: { [key: string]: string } = {
+      'bg-blue-500': '#3b82f6',
+      'bg-yellow-500': '#eab308',
+      'bg-teal-500': '#14b8a6',
+      'bg-green-500': '#22c55e',
+      'bg-red-500': '#ef4444',
+      'bg-purple-500': '#a855f7',
+      'bg-pink-500': '#ec4899',
+      'bg-orange-500': '#f97316',
+      'bg-indigo-500': '#6366f1',
+      'bg-cyan-500': '#06b6d4',
+      'bg-primary': '#00b8d4',
+    };
+    return colorMap[color] || '#00b8d4';
+  };
+
+  // Glass classroom card with proper coloring
+  const GlassClassroomCardLocal = ({ classroom }: { classroom: any }) => {
+    const hexColor = getHexColor(classroom.color);
+    return (
+      <Link to={`/teacher/classrooms/${classroom.id}`}>
+        <GlassCard 
+          variant="interactive" 
+          className="h-full relative overflow-hidden"
+          style={{
+            backgroundColor: `${hexColor}10`,
+            borderColor: `${hexColor}30`,
+          }}
+        >
+          {/* Color indicator */}
+          <div 
+            className="absolute top-0 right-0 w-1.5 h-full rounded-r-xl"
+            style={{ backgroundColor: hexColor }}
+          />
+          <GlassCardHeader className="pb-2 pr-4">
             <GlassCardTitle className="text-base truncate">
               {classroom.name}
             </GlassCardTitle>
-          </div>
-        </GlassCardHeader>
-        <GlassCardContent>
-          <p className="text-sm text-muted-foreground truncate">{classroom.subject}</p>
-        </GlassCardContent>
-      </GlassCard>
-    </Link>
-  );
+          </GlassCardHeader>
+          <GlassCardContent className="pr-4">
+            <p className="text-sm text-muted-foreground truncate">{classroom.subject}</p>
+          </GlassCardContent>
+        </GlassCard>
+      </Link>
+    );
+  };
 
   return (
     <TeacherLayout>
@@ -272,7 +301,7 @@ export default function TeacherDashboard() {
               <div className="grid gap-4 md:grid-cols-2">
                 {classrooms?.slice(0, 6).map((classroom) => (
                   isGlass 
-                    ? <GlassClassroomCard key={classroom.id} classroom={classroom} />
+                    ? <GlassClassroomCardLocal key={classroom.id} classroom={classroom} />
                     : <ClassroomCard key={classroom.id} classroom={classroom} basePath="/teacher" />
                 ))}
               </div>
