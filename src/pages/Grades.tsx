@@ -8,6 +8,7 @@ import { useClassroomGradingStructure, GradingStructureData, GradingColumn, Grad
 import { useProfile } from '@/hooks/useProfile';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import { useTheme } from '@/contexts/ThemeContext';
 import { PrintableGradesTable } from '@/components/grades/PrintableGradesTable';
 import { BulkGradeEntry } from '@/components/grades/BulkGradeEntry';
 import { MobileGradesView } from '@/components/grades/MobileGradesView';
@@ -15,18 +16,22 @@ import { PrintOptionsDialog, PrintOptions } from '@/components/grades/PrintOptio
 import { exportGradesToExcel } from '@/lib/exportExcel';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { GlassButton } from '@/components/ui/glass-button';
 import { Input } from '@/components/ui/input';
+import { GlassInput } from '@/components/ui/glass-input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ChevronRight, ChevronLeft, Plus, Loader2, Table, Settings, ChevronDown, ChevronUp, Printer, MessageSquare, Calendar, Clock, X, Users, Smartphone, FileSpreadsheet } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { GlassCard } from '@/components/ui/glass-card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 const WEEKS_COUNT = 18; // عدد الأسابيع في الفصل الدراسي
 
@@ -667,6 +672,7 @@ export default function Grades() {
   const [forceMobileView, setForceMobileView] = useState(false);
   const isMobile = useIsMobile();
   const { successFeedback, errorFeedback } = useHapticFeedback();
+  const { isLiquidGlass } = useTheme();
   
   // Print ref
   const printRef = useRef<HTMLDivElement>(null);
@@ -1010,6 +1016,9 @@ export default function Grades() {
   // Check if we have a grading structure
   const hasStructure = gradingStructure?.structure?.groups && gradingStructure.structure.groups.length > 0;
 
+  const ActionButton = isLiquidGlass ? GlassButton : Button;
+  const InfoCard = isLiquidGlass ? GlassCard : Card;
+
   return (
     <TeacherLayout>
       <div className="space-y-6 animate-fade-in print:hidden">
@@ -1018,10 +1027,13 @@ export default function Grades() {
           {/* Controls - Right side in RTL */}
           <div className="flex items-center gap-3 order-first lg:order-first">
             <Select value={selectedClassroom} onValueChange={setSelectedClassroom}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className={cn(
+                "w-48",
+                isLiquidGlass && "rounded-xl bg-background/50 backdrop-blur-md border-border/50"
+              )}>
                 <SelectValue placeholder="اختر الصف" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className={isLiquidGlass ? "rounded-xl backdrop-blur-xl bg-background/90" : ""}>
                 {classrooms.map((c) => (
                   <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                 ))}
@@ -1030,7 +1042,7 @@ export default function Grades() {
             {hasStructure && students.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
                 {/* زر الطباعة والتصدير */}
-                <Button 
+                <ActionButton 
                   variant="outline" 
                   size="sm"
                   onClick={() => setPrintOptionsOpen(true)}
@@ -1038,10 +1050,10 @@ export default function Grades() {
                 >
                   <Printer className="h-4 w-4 ml-1" />
                   <span className="hidden sm:inline">طباعة / تصدير</span>
-                </Button>
+                </ActionButton>
                 
                 {!isMobile && (
-                  <Button 
+                  <ActionButton 
                     variant={forceMobileView ? "default" : "outline"}
                     size="sm"
                     onClick={() => setForceMobileView(!forceMobileView)}
@@ -1049,7 +1061,7 @@ export default function Grades() {
                   >
                     <Smartphone className="h-4 w-4" />
                     <span className="hidden sm:inline">عرض الهاتف</span>
-                  </Button>
+                  </ActionButton>
                 )}
                 {!isMobile && !forceMobileView && (
                   <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
@@ -1071,7 +1083,10 @@ export default function Grades() {
             <h1 className="text-2xl lg:text-3xl font-bold text-foreground">سجل الدرجات</h1>
             {hasStructure && (
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant="secondary" className="text-sm">
+                <Badge variant="secondary" className={cn(
+                  "text-sm",
+                  isLiquidGlass && "bg-primary/10 text-primary border-0"
+                )}>
                   {gradingStructure.name_ar}
                 </Badge>
               </div>
@@ -1086,18 +1101,23 @@ export default function Grades() {
 
         {/* Structure Info Card */}
         {hasStructure && (
-          <Card className="bg-muted/30 border-dashed">
-            <CardContent className="py-3">
+          <InfoCard className={cn(
+            isLiquidGlass ? "glass-card p-4" : "bg-muted/30 border-dashed"
+          )}>
+            {isLiquidGlass ? (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Table className="h-5 w-5 text-primary" />
+                  <div className="p-2 rounded-xl bg-primary/10">
+                    <Table className="h-5 w-5 text-primary" />
+                  </div>
                   <div>
                     <span className="font-medium">{gradingStructure.name_ar}</span>
-                    <div className="flex gap-2 mt-1">
+                    <div className="flex gap-2 mt-1 flex-wrap">
                       {gradingStructure.structure.groups.map(group => (
                         <Badge 
                           key={group.id} 
                           variant="outline"
+                          className="rounded-lg"
                           style={{ borderColor: group.border, backgroundColor: group.color }}
                         >
                           {group.name_ar} ({group.columns.length})
@@ -1107,16 +1127,40 @@ export default function Grades() {
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            ) : (
+              <CardContent className="py-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Table className="h-5 w-5 text-primary" />
+                    <div>
+                      <span className="font-medium">{gradingStructure.name_ar}</span>
+                      <div className="flex gap-2 mt-1">
+                        {gradingStructure.structure.groups.map(group => (
+                          <Badge 
+                            key={group.id} 
+                            variant="outline"
+                            style={{ borderColor: group.border, backgroundColor: group.color }}
+                          >
+                            {group.name_ar} ({group.columns.length})
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            )}
+          </InfoCard>
         )}
 
         {/* No Structure Warning */}
         {!hasStructure && selectedClassroomData && !structureLoading && (
-          <Card className="border-warning/50 bg-warning/5">
-            <CardContent className="py-4">
+          isLiquidGlass ? (
+            <GlassCard className="glass-card p-4 border-warning/30">
               <div className="flex items-center gap-3">
-                <Settings className="h-5 w-5 text-warning" />
+                <div className="p-2 rounded-xl bg-warning/10">
+                  <Settings className="h-5 w-5 text-warning" />
+                </div>
                 <div className="flex-1">
                   <p className="font-medium text-warning">لم يتم تعيين نظام درجات لهذا الصف</p>
                   <p className="text-sm text-muted-foreground">
@@ -1124,8 +1168,22 @@ export default function Grades() {
                   </p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </GlassCard>
+          ) : (
+            <Card className="border-warning/50 bg-warning/5">
+              <CardContent className="py-4">
+                <div className="flex items-center gap-3">
+                  <Settings className="h-5 w-5 text-warning" />
+                  <div className="flex-1">
+                    <p className="font-medium text-warning">لم يتم تعيين نظام درجات لهذا الصف</p>
+                    <p className="text-sm text-muted-foreground">
+                      يتم استخدام النظام الافتراضي. يمكن للمشرف تعيين نظام درجات مخصص من إعدادات النظام.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )
         )}
 
         {/* Loading State */}
