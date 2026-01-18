@@ -27,41 +27,41 @@ import {
   Bell
 } from 'lucide-react';
 
-// Nav icon with unique color per tab
+// Gradient glass icon - matching the reference design
 interface NavIconProps {
   icon: LucideIcon;
   active?: boolean;
-  color?: string;
-  bgColor?: string;
 }
 
-const NavIcon = ({ icon: Icon, active, color, bgColor }: NavIconProps) => (
+const NavIcon = ({ icon: Icon, active }: NavIconProps) => (
   <div className={cn(
     "flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200",
-    active ? bgColor : "text-muted-foreground"
+    active 
+      ? "bg-gradient-to-br from-blue-400 via-blue-500 to-teal-400 text-white shadow-lg shadow-blue-500/25" 
+      : "text-muted-foreground"
   )}>
-    <Icon className={cn("w-5 h-5", active && color)} />
+    <Icon className="w-5 h-5" />
   </div>
 );
 
-// Main tabs with unique colors
+// Main tabs
 const mainTabs = [
-  { href: '/teacher', icon: LayoutDashboard, label: 'الرئيسية', color: 'text-cyan-500', bgColor: 'bg-cyan-500/15' },
-  { href: '/teacher/classrooms', icon: School, label: 'الصفوف', color: 'text-violet-500', bgColor: 'bg-violet-500/15' },
-  { href: '/teacher/students', icon: Users, label: 'الطلاب', color: 'text-emerald-500', bgColor: 'bg-emerald-500/15' },
-  { href: '/teacher/grades', icon: BookOpen, label: 'الدرجات', color: 'text-amber-500', bgColor: 'bg-amber-500/15' },
+  { href: '/teacher', icon: LayoutDashboard, label: 'الرئيسية' },
+  { href: '/teacher/classrooms', icon: School, label: 'الصفوف' },
+  { href: '/teacher/students', icon: Users, label: 'الطلاب' },
+  { href: '/teacher/grades', icon: BookOpen, label: 'الدرجات' },
 ];
 
-// Additional items with unique colors
+// Additional items
 const moreItems = [
-  { href: '/teacher/schedule', icon: CalendarDays, label: 'جدول الحصص', color: 'text-blue-500', bgColor: 'bg-blue-500/15' },
-  { href: '/teacher/fingerprint', icon: Fingerprint, label: 'البصمة', color: 'text-pink-500', bgColor: 'bg-pink-500/15' },
-  { href: '/teacher/attendance', icon: ClipboardCheck, label: 'الحضور', color: 'text-green-500', bgColor: 'bg-green-500/15' },
-  { href: '/teacher/templates', icon: LayoutGrid, label: 'قوالب الدرجات', color: 'text-orange-500', bgColor: 'bg-orange-500/15' },
-  { href: '/teacher/reports', icon: BarChart3, label: 'التقارير', color: 'text-indigo-500', bgColor: 'bg-indigo-500/15' },
-  { href: '/teacher/notifications', icon: Bell, label: 'الإشعارات', color: 'text-red-500', bgColor: 'bg-red-500/15' },
-  { href: '/teacher/subscription', icon: CreditCard, label: 'الاشتراك', color: 'text-teal-500', bgColor: 'bg-teal-500/15' },
-  { href: '/teacher/settings', icon: Settings, label: 'الإعدادات', color: 'text-slate-500', bgColor: 'bg-slate-500/15' },
+  { href: '/teacher/schedule', icon: CalendarDays, label: 'جدول الحصص' },
+  { href: '/teacher/fingerprint', icon: Fingerprint, label: 'البصمة' },
+  { href: '/teacher/attendance', icon: ClipboardCheck, label: 'الحضور' },
+  { href: '/teacher/templates', icon: LayoutGrid, label: 'قوالب الدرجات' },
+  { href: '/teacher/reports', icon: BarChart3, label: 'التقارير' },
+  { href: '/teacher/notifications', icon: Bell, label: 'الإشعارات' },
+  { href: '/teacher/subscription', icon: CreditCard, label: 'الاشتراك' },
+  { href: '/teacher/settings', icon: Settings, label: 'الإعدادات' },
 ];
 
 interface GlassBottomNavProps {
@@ -104,10 +104,10 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
                 "active:scale-95"
               )}
             >
-              <NavIcon icon={tab.icon} active={active} color={tab.color} bgColor={tab.bgColor} />
+              <NavIcon icon={tab.icon} active={active} />
               <span className={cn(
                 "text-[10px]",
-                active ? `font-semibold ${tab.color}` : "font-medium text-muted-foreground"
+                active ? "font-semibold text-primary" : "font-medium text-muted-foreground"
               )}>
                 {tab.label}
               </span>
@@ -125,10 +125,10 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
                 "active:scale-95"
               )}
             >
-              <NavIcon icon={MoreHorizontal} active={isMoreActive} color="text-purple-500" bgColor="bg-purple-500/15" />
+              <NavIcon icon={MoreHorizontal} active={isMoreActive} />
               <span className={cn(
                 "text-[10px]",
-                isMoreActive ? "font-semibold text-purple-500" : "font-medium text-muted-foreground"
+                isMoreActive ? "font-semibold text-primary" : "font-medium text-muted-foreground"
               )}>
                 المزيد
               </span>
@@ -159,15 +159,13 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
                       "flex flex-col items-center justify-center gap-2 p-3",
                       "rounded-xl transition-all duration-200",
                       "active:scale-95",
-                      active
-                        ? `${item.bgColor}`
-                        : "hover:bg-muted/50"
+                      active ? "bg-primary/10" : "hover:bg-muted/50"
                     )}
                   >
-                    <NavIcon icon={item.icon} active={active} color={item.color} bgColor={item.bgColor} />
+                    <NavIcon icon={item.icon} active={active} />
                     <span className={cn(
                       "text-xs text-center",
-                      active ? `font-semibold ${item.color}` : "font-medium text-muted-foreground"
+                      active ? "font-semibold text-primary" : "font-medium text-muted-foreground"
                     )}>
                       {item.label}
                     </span>
