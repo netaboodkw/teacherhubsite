@@ -4,6 +4,8 @@ import { TeacherSidebar } from './TeacherSidebar';
 import { Header } from './Header';
 import { useUserRole, getUserRoleRedirectPath } from '@/hooks/useUserRole';
 import { Loader2 } from 'lucide-react';
+import { useThemeStyle } from '@/contexts/ThemeContext';
+import { GlassTeacherLayout } from './GlassTeacherLayout';
 
 interface TeacherLayoutProps {
   children: ReactNode;
@@ -12,6 +14,7 @@ interface TeacherLayoutProps {
 export function TeacherLayout({ children }: TeacherLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { data: userRole, isLoading } = useUserRole();
+  const themeStyle = useThemeStyle();
 
   if (isLoading) {
     return (
@@ -26,6 +29,11 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
   if (userRole?.role === 'admin' || userRole?.role === 'department_head') {
     const redirectPath = getUserRoleRedirectPath(userRole.role);
     return <Navigate to={redirectPath} replace />;
+  }
+
+  // Use Liquid Glass layout when theme is enabled
+  if (themeStyle === 'liquid-glass') {
+    return <GlassTeacherLayout>{children}</GlassTeacherLayout>;
   }
 
   return (
