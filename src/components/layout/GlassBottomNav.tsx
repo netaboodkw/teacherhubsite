@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
 import { 
   LayoutDashboard, 
-  GraduationCap, 
+  School, 
   Users, 
   BookOpen,
   MoreHorizontal
@@ -26,40 +26,40 @@ import {
   Settings
 } from 'lucide-react';
 
-// Simplified nav icon for bottom nav
+// Nav icon with unique color per tab
 interface NavIconProps {
   icon: LucideIcon;
   active?: boolean;
+  color?: string;
+  bgColor?: string;
 }
 
-const NavIcon = ({ icon: Icon, active }: NavIconProps) => (
+const NavIcon = ({ icon: Icon, active, color, bgColor }: NavIconProps) => (
   <div className={cn(
     "flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200",
-    active 
-      ? "bg-primary/15 text-primary" 
-      : "text-muted-foreground"
+    active ? bgColor : "text-muted-foreground"
   )}>
-    <Icon className="w-5 h-5" />
+    <Icon className={cn("w-5 h-5", active && color)} />
   </div>
 );
 
-// Main tabs shown in bottom navigation (max 5)
+// Main tabs with unique colors
 const mainTabs = [
-  { href: '/teacher', icon: LayoutDashboard, label: 'الرئيسية' },
-  { href: '/teacher/classrooms', icon: GraduationCap, label: 'الصفوف' },
-  { href: '/teacher/students', icon: Users, label: 'الطلاب' },
-  { href: '/teacher/grades', icon: BookOpen, label: 'الدرجات' },
+  { href: '/teacher', icon: LayoutDashboard, label: 'الرئيسية', color: 'text-cyan-500', bgColor: 'bg-cyan-500/15' },
+  { href: '/teacher/classrooms', icon: School, label: 'الصفوف', color: 'text-violet-500', bgColor: 'bg-violet-500/15' },
+  { href: '/teacher/students', icon: Users, label: 'الطلاب', color: 'text-emerald-500', bgColor: 'bg-emerald-500/15' },
+  { href: '/teacher/grades', icon: BookOpen, label: 'الدرجات', color: 'text-amber-500', bgColor: 'bg-amber-500/15' },
 ];
 
-// Additional items shown in "More" sheet
+// Additional items with unique colors
 const moreItems = [
-  { href: '/teacher/schedule', icon: CalendarDays, label: 'جدول الحصص' },
-  { href: '/teacher/fingerprint', icon: Fingerprint, label: 'البصمة' },
-  { href: '/teacher/attendance', icon: ClipboardCheck, label: 'الحضور' },
-  { href: '/teacher/templates', icon: LayoutGrid, label: 'قوالب الدرجات' },
-  { href: '/teacher/reports', icon: BarChart3, label: 'التقارير' },
-  { href: '/teacher/subscription', icon: CreditCard, label: 'الاشتراك' },
-  { href: '/teacher/settings', icon: Settings, label: 'الإعدادات' },
+  { href: '/teacher/schedule', icon: CalendarDays, label: 'جدول الحصص', color: 'text-blue-500', bgColor: 'bg-blue-500/15' },
+  { href: '/teacher/fingerprint', icon: Fingerprint, label: 'البصمة', color: 'text-pink-500', bgColor: 'bg-pink-500/15' },
+  { href: '/teacher/attendance', icon: ClipboardCheck, label: 'الحضور', color: 'text-green-500', bgColor: 'bg-green-500/15' },
+  { href: '/teacher/templates', icon: LayoutGrid, label: 'قوالب الدرجات', color: 'text-orange-500', bgColor: 'bg-orange-500/15' },
+  { href: '/teacher/reports', icon: BarChart3, label: 'التقارير', color: 'text-indigo-500', bgColor: 'bg-indigo-500/15' },
+  { href: '/teacher/subscription', icon: CreditCard, label: 'الاشتراك', color: 'text-teal-500', bgColor: 'bg-teal-500/15' },
+  { href: '/teacher/settings', icon: Settings, label: 'الإعدادات', color: 'text-slate-500', bgColor: 'bg-slate-500/15' },
 ];
 
 interface GlassBottomNavProps {
@@ -99,14 +99,13 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
               className={cn(
                 "flex flex-col items-center justify-center gap-0.5 min-w-[56px] py-1",
                 "rounded-xl transition-all duration-200",
-                "active:scale-95",
-                active ? "text-primary" : "text-muted-foreground"
+                "active:scale-95"
               )}
             >
-              <NavIcon icon={tab.icon} active={active} />
+              <NavIcon icon={tab.icon} active={active} color={tab.color} bgColor={tab.bgColor} />
               <span className={cn(
                 "text-[10px]",
-                active ? "font-semibold text-primary" : "font-medium"
+                active ? `font-semibold ${tab.color}` : "font-medium text-muted-foreground"
               )}>
                 {tab.label}
               </span>
@@ -121,14 +120,13 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
               className={cn(
                 "flex flex-col items-center justify-center gap-0.5 min-w-[56px] py-1",
                 "rounded-xl transition-all duration-200",
-                "active:scale-95",
-                isMoreActive ? "text-primary" : "text-muted-foreground"
+                "active:scale-95"
               )}
             >
-              <NavIcon icon={MoreHorizontal} active={isMoreActive} />
+              <NavIcon icon={MoreHorizontal} active={isMoreActive} color="text-purple-500" bgColor="bg-purple-500/15" />
               <span className={cn(
                 "text-[10px]",
-                isMoreActive ? "font-semibold text-primary" : "font-medium"
+                isMoreActive ? "font-semibold text-purple-500" : "font-medium text-muted-foreground"
               )}>
                 المزيد
               </span>
@@ -160,14 +158,14 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
                       "rounded-xl transition-all duration-200",
                       "active:scale-95",
                       active
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                        ? `${item.bgColor}`
+                        : "hover:bg-muted/50"
                     )}
                   >
-                    <NavIcon icon={item.icon} active={active} />
+                    <NavIcon icon={item.icon} active={active} color={item.color} bgColor={item.bgColor} />
                     <span className={cn(
                       "text-xs text-center",
-                      active ? "font-semibold" : "font-medium"
+                      active ? `font-semibold ${item.color}` : "font-medium text-muted-foreground"
                     )}>
                       {item.label}
                     </span>
