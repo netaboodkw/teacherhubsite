@@ -1,15 +1,19 @@
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { StudentCard } from '@/components/students/StudentCard';
+import { GlassStudentCard } from '@/components/students/GlassStudentCard';
 import { ImportStudentsDialog } from '@/components/students/ImportStudentsDialog';
 import { EmptyState } from '@/components/common/EmptyState';
 import { useStudents } from '@/hooks/useStudents';
 import { useClassrooms } from '@/hooks/useClassrooms';
 import { Users, Plus, Search, Filter, Loader2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { GlassButton } from '@/components/ui/glass-button';
 import { Input } from '@/components/ui/input';
+import { GlassInput } from '@/components/ui/glass-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function Students() {
   const navigate = useNavigate();
@@ -18,6 +22,7 @@ export default function Students() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClassroom, setSelectedClassroom] = useState('all');
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const { isLiquidGlass } = useTheme();
 
   const filteredStudents = students.filter(s => {
     const matchesSearch = s.name.includes(searchTerm) || s.student_id.includes(searchTerm);
@@ -41,6 +46,9 @@ export default function Students() {
     );
   }
 
+  const SearchInput = isLiquidGlass ? GlassInput : Input;
+  const ActionButton = isLiquidGlass ? GlassButton : Button;
+
   return (
     <TeacherLayout>
       <div className="space-y-6 animate-fade-in">
@@ -51,18 +59,18 @@ export default function Students() {
             <p className="text-muted-foreground mt-1">{students.length} طالب مسجل</p>
           </div>
           <div className="flex gap-2">
-            <Button 
+            <ActionButton 
               variant="outline"
               onClick={() => setImportDialogOpen(true)}
             >
               <Upload className="w-4 h-4 ml-2" />
               استيراد
-            </Button>
+            </ActionButton>
             <Link to="/teacher/students/new">
-              <Button className="gradient-hero shadow-md hover:shadow-lg transition-shadow">
+              <ActionButton className={isLiquidGlass ? "" : "gradient-hero shadow-md hover:shadow-lg transition-shadow"}>
                 <Plus className="w-4 h-4 ml-2" />
                 طالب جديد
-              </Button>
+              </ActionButton>
             </Link>
           </div>
         </div>
@@ -70,8 +78,8 @@ export default function Students() {
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <SearchInput
               placeholder="بحث عن طالب..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -79,11 +87,11 @@ export default function Students() {
             />
           </div>
           <Select value={selectedClassroom} onValueChange={setSelectedClassroom}>
-            <SelectTrigger className="w-full sm:w-48">
+            <SelectTrigger className={`w-full sm:w-48 ${isLiquidGlass ? 'rounded-xl bg-background/50 backdrop-blur-md border-border/50' : ''}`}>
               <Filter className="w-4 h-4 ml-2" />
               <SelectValue placeholder="جميع الصفوف" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className={isLiquidGlass ? 'rounded-xl backdrop-blur-xl bg-background/90' : ''}>
               <SelectItem value="all">جميع الصفوف</SelectItem>
               {classrooms.map((classroom) => (
                 <SelectItem key={classroom.id} value={classroom.id}>
@@ -98,16 +106,24 @@ export default function Students() {
         {filteredStudents.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredStudents.map((student) => (
-              <div key={student.id} className="flex flex-col gap-1">
-                {/* Classroom name outside the card */}
-                <span className="text-xs text-muted-foreground px-1 truncate">
-                  {getClassroomName(student.classroom_id)}
-                </span>
-                <StudentCard 
+              isLiquidGlass ? (
+                <GlassStudentCard 
+                  key={student.id}
                   student={student} 
+                  classroomName={getClassroomName(student.classroom_id)}
                   onClick={() => navigate(`/teacher/students/${student.id}`)}
                 />
-              </div>
+              ) : (
+                <div key={student.id} className="flex flex-col gap-1">
+                  <span className="text-xs text-muted-foreground px-1 truncate">
+                    {getClassroomName(student.classroom_id)}
+                  </span>
+                  <StudentCard 
+                    student={student} 
+                    onClick={() => navigate(`/teacher/students/${student.id}`)}
+                  />
+                </div>
+              )
             ))}
           </div>
         ) : (
