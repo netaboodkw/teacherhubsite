@@ -56,11 +56,24 @@ export function ClassroomCard({ classroom, basePath = '', showEditButton = false
 
   return (
     <Link to={linkPath}>
-      <div className="group relative overflow-hidden rounded-2xl bg-card p-5 shadow-sm border border-border hover:shadow-lg hover:border-primary/20 transition-all duration-300 min-h-[140px]">
+      <div 
+        className="group relative overflow-hidden rounded-2xl p-5 shadow-sm border hover:shadow-lg transition-all duration-300 min-h-[140px]"
+        style={{ 
+          backgroundColor: `${hexColor}15`,
+          borderColor: `${hexColor}40`,
+        }}
+      >
         {/* Color indicator */}
         <div 
           className="absolute top-0 right-0 w-2 h-full"
           style={{ backgroundColor: hexColor }}
+        />
+        {/* Subtle glow effect */}
+        <div 
+          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"
+          style={{ 
+            background: `radial-gradient(ellipse at top right, ${hexColor}20, transparent 70%)` 
+          }}
         />
         
         <div className="pr-4">

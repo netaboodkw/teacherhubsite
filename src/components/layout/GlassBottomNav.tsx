@@ -153,11 +153,12 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
               "bg-background/80 backdrop-blur-xl backdrop-saturate-150",
               "border-t border-border/30",
               "rounded-t-3xl",
-              "pb-[env(safe-area-inset-bottom)]"
+              "pb-[env(safe-area-inset-bottom)]",
+              "font-inherit"
             )}
           >
             <SheetHeader className="pb-4">
-              <SheetTitle className="text-center text-foreground">المزيد من الخيارات</SheetTitle>
+              <SheetTitle className="text-center text-foreground font-semibold">المزيد من الخيارات</SheetTitle>
             </SheetHeader>
             <div className="grid grid-cols-4 gap-3 py-4">
               {moreItems.map((item) => {
@@ -177,7 +178,10 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
                     )}
                   >
                     <BottomNavGlassIcon icon={item.icon} active={active} />
-                    <span className="text-xs font-medium text-center">
+                    <span className={cn(
+                      "text-xs text-center",
+                      active ? "font-semibold" : "font-medium"
+                    )}>
                       {item.label}
                     </span>
                   </Link>
