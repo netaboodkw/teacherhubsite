@@ -1,17 +1,22 @@
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { ClassroomCard } from '@/components/dashboard/ClassroomCard';
+import { GlassClassroomCard } from '@/components/dashboard/GlassClassroomCard';
 import { EmptyState } from '@/components/common/EmptyState';
 import { useClassrooms } from '@/hooks/useClassrooms';
 import { GraduationCap, Plus, Search, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { GlassButton } from '@/components/ui/glass-button';
 import { Input } from '@/components/ui/input';
+import { GlassInput } from '@/components/ui/glass-input';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function Classrooms() {
   const { data: classrooms = [], isLoading } = useClassrooms();
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
+  const { isLiquidGlass } = useTheme();
 
   const filteredClassrooms = classrooms.filter(c => 
     c.name.includes(searchTerm) || c.subject.includes(searchTerm)
@@ -27,6 +32,9 @@ export default function Classrooms() {
     );
   }
 
+  const SearchInput = isLiquidGlass ? GlassInput : Input;
+  const ActionButton = isLiquidGlass ? GlassButton : Button;
+
   return (
     <TeacherLayout>
       <div className="space-y-6 animate-fade-in">
@@ -37,17 +45,17 @@ export default function Classrooms() {
             <p className="text-muted-foreground mt-1">إدارة جميع صفوفك الدراسية</p>
           </div>
           <Link to="/teacher/classrooms/new">
-            <Button className="gradient-hero shadow-md hover:shadow-lg transition-shadow">
+            <ActionButton className={isLiquidGlass ? "" : "gradient-hero shadow-md hover:shadow-lg transition-shadow"}>
               <Plus className="w-4 h-4 ml-2" />
               صف جديد
-            </Button>
+            </ActionButton>
           </Link>
         </div>
 
         {/* Search */}
         <div className="relative max-w-md">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <SearchInput
             placeholder="بحث عن صف..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -59,7 +67,21 @@ export default function Classrooms() {
         {filteredClassrooms.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredClassrooms.map((classroom) => (
-              <ClassroomCard key={classroom.id} classroom={classroom} basePath="/teacher" showEditButton />
+              isLiquidGlass ? (
+                <GlassClassroomCard 
+                  key={classroom.id} 
+                  classroom={classroom} 
+                  basePath="/teacher" 
+                  showEditButton 
+                />
+              ) : (
+                <ClassroomCard 
+                  key={classroom.id} 
+                  classroom={classroom} 
+                  basePath="/teacher" 
+                  showEditButton 
+                />
+              )
             ))}
           </div>
         ) : (
