@@ -1,9 +1,8 @@
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useClassrooms } from '@/hooks/useClassrooms';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { GraduationCap, Users, ClipboardCheck, BookOpen, AlertTriangle } from 'lucide-react';
+import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
+import { GraduationCap, Users, ClipboardCheck, BookOpen, AlertTriangle, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { ClassroomCard } from '@/components/dashboard/ClassroomCard';
 import { TodaySchedule } from '@/components/dashboard/TodaySchedule';
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -11,9 +10,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { useThemeStyle } from '@/contexts/ThemeContext';
+import { GlassButton } from '@/components/ui/glass-button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ClassroomCard } from '@/components/dashboard/ClassroomCard';
 
 export default function TeacherDashboard() {
   const { data: classrooms, isLoading: classroomsLoading } = useClassrooms();
+  const themeStyle = useThemeStyle();
+  const isGlass = themeStyle === 'liquid-glass';
   
   // Get student count directly from active classrooms instead of fetching all students
   const classroomIds = useMemo(() => classrooms?.map(c => c.id) || [], [classrooms]);
@@ -107,12 +112,72 @@ export default function TeacherDashboard() {
     },
   ];
 
+  // Glass theme stat card
+  const GlassStatCard = ({ stat }: { stat: typeof stats[0] }) => (
+    <Link to={stat.href}>
+      <GlassCard variant="interactive" className="h-full">
+        <GlassCardHeader className="flex flex-row items-center justify-between pb-2">
+          <GlassCardTitle className="text-sm font-medium text-muted-foreground">
+            {stat.title}
+          </GlassCardTitle>
+          <div className={`p-2 rounded-xl ${stat.bgColor}`}>
+            <stat.icon className={`h-5 w-5 ${stat.color}`} />
+          </div>
+        </GlassCardHeader>
+        <GlassCardContent>
+          <div className="text-3xl font-bold">{stat.value}</div>
+        </GlassCardContent>
+      </GlassCard>
+    </Link>
+  );
+
+  // Default theme stat card
+  const DefaultStatCard = ({ stat }: { stat: typeof stats[0] }) => (
+    <Link to={stat.href}>
+      <Card className="hover:shadow-md transition-shadow cursor-pointer">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            {stat.title}
+          </CardTitle>
+          <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+            <stat.icon className={`h-5 w-5 ${stat.color}`} />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="text-3xl font-bold">{stat.value}</div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+
+  // Glass classroom card
+  const GlassClassroomCard = ({ classroom }: { classroom: any }) => (
+    <Link to={`/teacher/classrooms/${classroom.id}`}>
+      <GlassCard variant="interactive" className="h-full">
+        <GlassCardHeader className="pb-2">
+          <div className="flex items-center gap-3">
+            <div 
+              className="w-3 h-3 rounded-full" 
+              style={{ backgroundColor: classroom.color || 'hsl(var(--primary))' }}
+            />
+            <GlassCardTitle className="text-base truncate">
+              {classroom.name}
+            </GlassCardTitle>
+          </div>
+        </GlassCardHeader>
+        <GlassCardContent>
+          <p className="text-sm text-muted-foreground truncate">{classroom.subject}</p>
+        </GlassCardContent>
+      </GlassCard>
+    </Link>
+  );
+
   return (
     <TeacherLayout>
       <div className="space-y-6">
         {/* تنبيه الاشتراك - يظهر فقط للتجريبي أو المنتهي */}
         {showSubscriptionAlert && (
-          <Alert variant={subscription?.status === 'expired' ? 'destructive' : 'default'} className="border-orange-200 bg-orange-50">
+          <Alert variant={subscription?.status === 'expired' ? 'destructive' : 'default'} className={isGlass ? 'glass-card border-orange-200/50 bg-orange-50/50' : 'border-orange-200 bg-orange-50'}>
             <AlertTriangle className="h-4 w-4 text-orange-600" />
             <AlertDescription className="text-orange-800">
               {subscription?.status === 'trial' ? (
@@ -142,21 +207,9 @@ export default function TeacherDashboard() {
 
         <div className="grid gap-4 md:grid-cols-4">
           {stats.map((stat) => (
-            <Link key={stat.href} to={stat.href}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {stat.title}
-                  </CardTitle>
-                  <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                    <stat.icon className={`h-5 w-5 ${stat.color}`} />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{stat.value}</div>
-                </CardContent>
-              </Card>
-            </Link>
+            isGlass 
+              ? <GlassStatCard key={stat.href} stat={stat} />
+              : <DefaultStatCard key={stat.href} stat={stat} />
           ))}
         </div>
 
@@ -173,29 +226,54 @@ export default function TeacherDashboard() {
           <div className="lg:col-span-2">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">صفوفي</h2>
-              <Link to="/teacher/classrooms/new" className="text-primary hover:underline text-sm">
-                + إضافة صف
-              </Link>
+              {isGlass ? (
+                <Link to="/teacher/classrooms/new">
+                  <GlassButton variant="ghost" size="sm" className="gap-1">
+                    <Plus className="h-4 w-4" />
+                    إضافة صف
+                  </GlassButton>
+                </Link>
+              ) : (
+                <Link to="/teacher/classrooms/new" className="text-primary hover:underline text-sm">
+                  + إضافة صف
+                </Link>
+              )}
             </div>
             
             {classroomsLoading ? (
               <div className="grid gap-4 md:grid-cols-2">
                 {[1, 2, 3].map((i) => (
-                  <Card key={i} className="animate-pulse">
-                    <CardContent className="h-32" />
-                  </Card>
+                  isGlass ? (
+                    <GlassCard key={i} className="animate-pulse">
+                      <GlassCardContent className="h-32" />
+                    </GlassCard>
+                  ) : (
+                    <Card key={i} className="animate-pulse">
+                      <CardContent className="h-32" />
+                    </Card>
+                  )
                 ))}
               </div>
             ) : classrooms?.length === 0 ? (
-              <Card>
-                <CardContent className="py-8 text-center text-muted-foreground">
-                  لا توجد صفوف. أنشئ صفاً جديداً للبدء.
-                </CardContent>
-              </Card>
+              isGlass ? (
+                <GlassCard>
+                  <GlassCardContent className="py-8 text-center text-muted-foreground">
+                    لا توجد صفوف. أنشئ صفاً جديداً للبدء.
+                  </GlassCardContent>
+                </GlassCard>
+              ) : (
+                <Card>
+                  <CardContent className="py-8 text-center text-muted-foreground">
+                    لا توجد صفوف. أنشئ صفاً جديداً للبدء.
+                  </CardContent>
+                </Card>
+              )
             ) : (
               <div className="grid gap-4 md:grid-cols-2">
                 {classrooms?.slice(0, 6).map((classroom) => (
-                  <ClassroomCard key={classroom.id} classroom={classroom} basePath="/teacher" />
+                  isGlass 
+                    ? <GlassClassroomCard key={classroom.id} classroom={classroom} />
+                    : <ClassroomCard key={classroom.id} classroom={classroom} basePath="/teacher" />
                 ))}
               </div>
             )}
