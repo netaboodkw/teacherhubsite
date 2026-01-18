@@ -152,9 +152,21 @@ export default function TeacherDashboard() {
 
   // Get hex color from classroom color
   const getHexColor = (color: string | null | undefined): string => {
-    if (!color) return '#00b8d4';
+    if (!color) return '#888888';
     if (color.startsWith('#')) return color;
     const colorMap: { [key: string]: string } = {
+      // Light variants (200)
+      'bg-blue-200': '#93c5fd',
+      'bg-yellow-200': '#fef08a',
+      'bg-teal-200': '#99f6e4',
+      'bg-green-200': '#bbf7d0',
+      'bg-red-200': '#fecaca',
+      'bg-purple-200': '#e9d5ff',
+      'bg-pink-200': '#fbcfe8',
+      'bg-orange-200': '#fed7aa',
+      'bg-indigo-200': '#c7d2fe',
+      'bg-cyan-200': '#a5f3fc',
+      // Standard variants (500)
       'bg-blue-500': '#3b82f6',
       'bg-yellow-500': '#eab308',
       'bg-teal-500': '#14b8a6',
@@ -167,7 +179,7 @@ export default function TeacherDashboard() {
       'bg-cyan-500': '#06b6d4',
       'bg-primary': '#00b8d4',
     };
-    return colorMap[color] || '#00b8d4';
+    return colorMap[color] || '#888888';
   };
 
   // Glass classroom card with proper coloring
