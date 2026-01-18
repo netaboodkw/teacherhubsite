@@ -21,7 +21,7 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const [mode, setModeState] = useState<ThemeMode>('system');
-  const [style, setStyleState] = useState<ThemeStyle>('default');
+  const [style, setStyleState] = useState<ThemeStyle>('liquid-glass');
   const [isDark, setIsDark] = useState(false);
 
   // Load theme style from database
@@ -136,8 +136,9 @@ export function useTheme() {
 export function useThemeStyle(): ThemeStyle {
   const { data: themeStyleSetting } = useSystemSetting('app_theme_style');
   
-  if (themeStyleSetting?.value === 'liquid-glass') {
-    return 'liquid-glass';
+  // Default to liquid-glass if no setting is found
+  if (themeStyleSetting?.value === 'default') {
+    return 'default';
   }
-  return 'default';
+  return 'liquid-glass';
 }
