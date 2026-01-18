@@ -13,6 +13,7 @@ import {
   Eye,
   Mail,
   FileText,
+  LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -24,6 +25,23 @@ interface DepartmentHeadSidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+// Gradient nav icon - matching mobile design
+interface NavIconProps {
+  icon: LucideIcon;
+  active?: boolean;
+}
+
+const NavIcon = ({ icon: Icon, active }: NavIconProps) => (
+  <div className={cn(
+    "flex items-center justify-center w-10 h-10 rounded-2xl transition-all duration-200 flex-shrink-0",
+    active 
+      ? "bg-gradient-to-br from-sky-300 via-blue-400 to-teal-400 text-white shadow-lg shadow-blue-400/30" 
+      : "text-muted-foreground"
+  )}>
+    <Icon className="w-5 h-5" />
+  </div>
+);
 
 const navItems = [
   { href: '/department-head', icon: LayoutDashboard, label: 'لوحة التحكم' },
@@ -113,22 +131,22 @@ export function DepartmentHeadSidebar({ isOpen, onClose }: DepartmentHeadSidebar
               const isActive = location.pathname === item.href ||
                 (item.href !== '/department-head' && location.pathname.startsWith(item.href));
               const linkContent = (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  onClick={onClose}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200",
-                    collapsed && "justify-center px-2",
-                    isActive 
-                      ? "bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-md" 
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  )}
-                >
-                  <item.icon className="w-5 h-5 flex-shrink-0" />
-                  {!collapsed && <span>{item.label}</span>}
-                </Link>
-              );
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    onClick={onClose}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium font-cairo transition-all duration-200",
+                      collapsed && "justify-center px-2",
+                      isActive 
+                        ? "bg-blue-50/50 dark:bg-blue-950/30" 
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    <NavIcon icon={item.icon} active={isActive} />
+                    {!collapsed && <span className={cn(isActive && "text-foreground font-semibold")}>{item.label}</span>}
+                  </Link>
+                );
 
               if (collapsed) {
                 return (
@@ -136,7 +154,7 @@ export function DepartmentHeadSidebar({ isOpen, onClose }: DepartmentHeadSidebar
                     <TooltipTrigger asChild>
                       {linkContent}
                     </TooltipTrigger>
-                    <TooltipContent side="left">
+                    <TooltipContent side="left" className="font-cairo">
                       <p>{item.label}</p>
                     </TooltipContent>
                   </Tooltip>
@@ -154,21 +172,21 @@ export function DepartmentHeadSidebar({ isOpen, onClose }: DepartmentHeadSidebar
                 <TooltipTrigger asChild>
                   <button
                     onClick={handleLogout}
-                    className="flex items-center justify-center w-full px-2 py-3 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 transition-all"
+                    className="flex items-center justify-center w-full px-2 py-2.5 rounded-xl transition-all"
                   >
-                    <LogOut className="w-5 h-5" />
+                    <NavIcon icon={LogOut} active={false} />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="left">
+                <TooltipContent side="left" className="font-cairo">
                   <p>تسجيل الخروج</p>
                 </TooltipContent>
               </Tooltip>
             ) : (
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-3 w-full px-3 py-3 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 transition-all"
+                className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium font-cairo text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
               >
-                <LogOut className="w-5 h-5" />
+                <NavIcon icon={LogOut} active={false} />
                 <span>تسجيل الخروج</span>
               </button>
             )}

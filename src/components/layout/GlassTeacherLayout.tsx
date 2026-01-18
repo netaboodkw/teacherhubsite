@@ -162,16 +162,16 @@ export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
                   key={item.href}
                   to={item.href}
                   className={cn(
-                    "group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium",
+                    "group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium font-cairo",
                     "transition-all duration-200",
                     collapsed && "justify-center px-2",
                     active 
-                      ? "bg-primary/10 text-primary" 
+                      ? "bg-blue-50/50 dark:bg-blue-950/30" 
                       : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                   )}
                 >
                   <NavIcon icon={item.icon} active={active} />
-                  {!collapsed && <span className="truncate">{item.label}</span>}
+                  {!collapsed && <span className={cn("truncate", active && "text-foreground font-semibold")}>{item.label}</span>}
                 </Link>
               );
 
@@ -181,7 +181,7 @@ export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
                     <TooltipTrigger asChild>
                       {linkContent}
                     </TooltipTrigger>
-                    <TooltipContent side="left" className="rounded-xl bg-popover border-border">
+                    <TooltipContent side="left" className="rounded-xl bg-popover border-border font-cairo">
                       <p>{item.label}</p>
                     </TooltipContent>
                   </Tooltip>
@@ -197,16 +197,16 @@ export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
             <Link 
               to="/teacher/settings"
               className={cn(
-                "group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium",
+                "group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium font-cairo",
                 "transition-all duration-200",
                 collapsed && "justify-center px-2",
                 location.pathname.includes('/settings')
-                  ? "bg-primary/10 text-primary" 
+                  ? "bg-blue-50/50 dark:bg-blue-950/30" 
                   : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               )}
             >
               <NavIcon icon={Settings} active={location.pathname.includes('/settings')} />
-              {!collapsed && <span>الإعدادات</span>}
+              {!collapsed && <span className={cn(location.pathname.includes('/settings') && "text-foreground font-semibold")}>الإعدادات</span>}
             </Link>
           </div>
         </aside>
