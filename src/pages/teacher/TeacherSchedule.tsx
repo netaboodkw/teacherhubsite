@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Calendar, Clock, Filter, GraduationCap, Printer, Maximize2, Minimize2 } from 'lucide-react';
+import { PageHeader } from '@/components/common/PageHeader';
 import { educationSchedules, getScheduleByEducationLevel, weekDays, type EducationSchedule } from '@/lib/periodSchedules';
 import { cn } from '@/lib/utils';
 import { useProfile } from '@/hooks/useProfile';
@@ -170,17 +171,11 @@ export default function TeacherSchedule() {
     <TeacherLayout>
       <div className="p-4 lg:p-6 space-y-6">
         {/* Header */}
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl gradient-hero">
-                <Calendar className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">جدول الحصص</h1>
-                <p className="text-muted-foreground">عرض الجدول الأسبوعي لجميع الصفوف</p>
-              </div>
-            </div>
+        <PageHeader
+          icon={Calendar}
+          title="جدول الحصص"
+          subtitle="عرض الجدول الأسبوعي لجميع الصفوف"
+          actions={
             <div className="flex items-center gap-2">
               <PeriodReminderSettings
                 settings={reminderSettings}
@@ -209,10 +204,12 @@ export default function TeacherSchedule() {
                 <span className="sm:hidden">طباعة</span>
               </Button>
             </div>
-          </div>
+          }
+        />
 
+        <div className="space-y-4">
           {/* Upcoming Period Alert */}
-          <UpcomingPeriodAlert 
+          <UpcomingPeriodAlert
             upcomingPeriod={upcomingPeriod} 
             isRepeating={isRepeating}
             onStopRepeating={stopRepeating}
@@ -565,6 +562,7 @@ export default function TeacherSchedule() {
             </div>
           </div>
         )}
+        </div>
 
         <div style={{ textAlign: 'center', marginTop: '20px', paddingTop: '10px', borderTop: '1px solid #ccc', fontSize: '9px', color: '#666' }}>
           تم الطباعة بتاريخ: {new Date().toLocaleDateString('ar-SA')}

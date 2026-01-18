@@ -17,7 +17,8 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { User, School, Mail, Users, Loader2, Save, GraduationCap, Phone, BookOpen, Volume2, Vibrate, CreditCard, Clock, AlertTriangle, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette } from 'lucide-react';
+import { User, School, Mail, Users, Loader2, Save, GraduationCap, Phone, BookOpen, Volume2, Vibrate, CreditCard, Clock, AlertTriangle, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Settings as SettingsIcon } from 'lucide-react';
+import { PageHeader } from '@/components/common/PageHeader';
 import { InviteDepartmentHead } from '@/components/teacher/InviteDepartmentHead';
 import { getHapticEnabled, setHapticEnabled } from '@/hooks/useHapticFeedback';
 import { useMySubscription, useSubscriptionSettings, getSubscriptionStatus } from '@/hooks/useSubscription';
@@ -119,10 +120,11 @@ export default function Settings() {
   return (
     <TeacherLayout>
       <div className="max-w-2xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">الإعدادات</h1>
-          <p className="text-muted-foreground">إدارة معلوماتك الشخصية وبيانات المدرسة</p>
-        </div>
+        <PageHeader
+          icon={SettingsIcon}
+          title="الإعدادات"
+          subtitle="إدارة معلوماتك الشخصية وبيانات المدرسة"
+        />
 
         {/* Subscription Status Card */}
         {subscriptionSettings?.enabled && (

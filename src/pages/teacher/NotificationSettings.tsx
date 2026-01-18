@@ -1,4 +1,5 @@
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
+import { PageHeader } from '@/components/common/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -61,15 +62,11 @@ export default function NotificationSettings() {
     <TeacherLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Bell className="w-6 h-6 text-primary" />
-            إعدادات الإشعارات
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            تخصيص إشعارات التذكير والتنبيهات
-          </p>
-        </div>
+        <PageHeader
+          icon={Bell}
+          title="إعدادات الإشعارات"
+          subtitle="تخصيص إشعارات التذكير والتنبيهات"
+        />
 
         {/* Platform Info */}
         <Alert>

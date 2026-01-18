@@ -2,8 +2,9 @@ import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { ClassroomCard } from '@/components/dashboard/ClassroomCard';
 import { GlassClassroomCard } from '@/components/dashboard/GlassClassroomCard';
 import { EmptyState } from '@/components/common/EmptyState';
+import { PageHeader } from '@/components/common/PageHeader';
 import { useClassrooms } from '@/hooks/useClassrooms';
-import { GraduationCap, Plus, Search, Loader2 } from 'lucide-react';
+import { School, Plus, Search, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GlassButton } from '@/components/ui/glass-button';
 import { Input } from '@/components/ui/input';
@@ -39,18 +40,19 @@ export default function Classrooms() {
     <TeacherLayout>
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-foreground">الصفوف الدراسية</h1>
-            <p className="text-muted-foreground mt-1">إدارة جميع صفوفك الدراسية</p>
-          </div>
-          <Link to="/teacher/classrooms/new">
-            <ActionButton className={isLiquidGlass ? "" : "gradient-hero shadow-md hover:shadow-lg transition-shadow"}>
-              <Plus className="w-4 h-4 ml-2" />
-              صف جديد
-            </ActionButton>
-          </Link>
-        </div>
+        <PageHeader
+          icon={School}
+          title="الصفوف الدراسية"
+          subtitle="إدارة جميع صفوفك الدراسية"
+          actions={
+            <Link to="/teacher/classrooms/new">
+              <ActionButton className={isLiquidGlass ? "" : "gradient-hero shadow-md hover:shadow-lg transition-shadow"}>
+                <Plus className="w-4 h-4 ml-2" />
+                صف جديد
+              </ActionButton>
+            </Link>
+          }
+        />
 
         {/* Search */}
         <div className="relative max-w-md">
@@ -86,7 +88,7 @@ export default function Classrooms() {
           </div>
         ) : (
           <EmptyState
-            icon={GraduationCap}
+            icon={School}
             title="لا توجد صفوف"
             description="ابدأ بإنشاء صف دراسي جديد لإدارة طلابك"
             actionLabel="إنشاء صف"
