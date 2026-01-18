@@ -6,63 +6,62 @@ import { cva, type VariantProps } from 'class-variance-authority';
 const glassIconVariants = cva(
   [
     "relative inline-flex items-center justify-center",
-    "rounded-xl transition-all duration-300",
-    "backdrop-blur-sm backdrop-saturate-150",
+    "rounded-full transition-all duration-200",
   ].join(" "),
   {
     variants: {
       variant: {
         default: [
-          "bg-primary/10 text-primary",
-          "border border-primary/20",
-          "shadow-[0_2px_8px_hsl(var(--primary)/0.15)]",
-          "hover:bg-primary/15 hover:shadow-[0_4px_12px_hsl(var(--primary)/0.2)]",
+          "bg-primary/15 text-primary",
         ].join(" "),
         secondary: [
-          "bg-secondary/40 text-secondary-foreground",
-          "border border-border/30",
-          "shadow-[0_2px_8px_hsl(0_0%_0%/0.05)]",
-          "hover:bg-secondary/50",
+          "bg-muted text-muted-foreground",
         ].join(" "),
         accent: [
-          "bg-accent/15 text-accent",
-          "border border-accent/25",
-          "shadow-[0_2px_8px_hsl(var(--accent)/0.15)]",
-          "hover:bg-accent/20",
+          "bg-accent/20 text-accent-foreground",
         ].join(" "),
         success: [
-          "bg-success/10 text-success",
-          "border border-success/20",
-          "shadow-[0_2px_8px_hsl(var(--success)/0.15)]",
-          "hover:bg-success/15",
+          "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
         ].join(" "),
         destructive: [
-          "bg-destructive/10 text-destructive",
-          "border border-destructive/20",
-          "shadow-[0_2px_8px_hsl(var(--destructive)/0.15)]",
-          "hover:bg-destructive/15",
+          "bg-destructive/15 text-destructive",
         ].join(" "),
         warning: [
-          "bg-warning/10 text-warning",
-          "border border-warning/20",
-          "shadow-[0_2px_8px_hsl(var(--warning)/0.15)]",
-          "hover:bg-warning/15",
+          "bg-amber-500/15 text-amber-600 dark:text-amber-400",
         ].join(" "),
         muted: [
-          "bg-muted/60 text-muted-foreground",
-          "border border-border/30",
+          "bg-muted/80 text-muted-foreground",
         ].join(" "),
         ghost: [
           "bg-transparent text-foreground/70",
           "hover:bg-muted/40",
         ].join(" "),
+        // Solid color variants for more vibrant looks
+        blue: [
+          "bg-blue-500/15 text-blue-600 dark:text-blue-400",
+        ].join(" "),
+        purple: [
+          "bg-purple-500/15 text-purple-600 dark:text-purple-400",
+        ].join(" "),
+        pink: [
+          "bg-pink-500/15 text-pink-600 dark:text-pink-400",
+        ].join(" "),
+        orange: [
+          "bg-orange-500/15 text-orange-600 dark:text-orange-400",
+        ].join(" "),
+        cyan: [
+          "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400",
+        ].join(" "),
+        indigo: [
+          "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
+        ].join(" "),
       },
       size: {
-        xs: "p-1 rounded-lg",
-        sm: "p-1.5 rounded-lg",
-        default: "p-2 rounded-xl",
-        lg: "p-2.5 rounded-xl",
-        xl: "p-3 rounded-2xl",
+        xs: "p-1.5",
+        sm: "p-2",
+        default: "p-2.5",
+        lg: "p-3",
+        xl: "p-4",
       },
       glow: {
         true: "",
@@ -73,27 +72,32 @@ const glassIconVariants = cva(
       {
         variant: "default",
         glow: true,
-        className: "shadow-[0_0_16px_hsl(var(--primary)/0.3)]",
-      },
-      {
-        variant: "accent",
-        glow: true,
-        className: "shadow-[0_0_16px_hsl(var(--accent)/0.3)]",
+        className: "shadow-[0_0_12px_hsl(var(--primary)/0.25)]",
       },
       {
         variant: "success",
         glow: true,
-        className: "shadow-[0_0_16px_hsl(var(--success)/0.3)]",
+        className: "shadow-[0_0_12px_rgba(16,185,129,0.25)]",
       },
       {
         variant: "destructive",
         glow: true,
-        className: "shadow-[0_0_16px_hsl(var(--destructive)/0.3)]",
+        className: "shadow-[0_0_12px_hsl(var(--destructive)/0.25)]",
       },
       {
         variant: "warning",
         glow: true,
-        className: "shadow-[0_0_16px_hsl(var(--warning)/0.3)]",
+        className: "shadow-[0_0_12px_rgba(245,158,11,0.25)]",
+      },
+      {
+        variant: "blue",
+        glow: true,
+        className: "shadow-[0_0_12px_rgba(59,130,246,0.25)]",
+      },
+      {
+        variant: "purple",
+        glow: true,
+        className: "shadow-[0_0_12px_rgba(168,85,247,0.25)]",
       },
     ],
     defaultVariants: {
@@ -140,7 +144,7 @@ GlassIcon.displayName = "GlassIcon";
 // Wrapper component for inline icon usage with glass effect
 export interface GlassIconWrapperProps extends React.HTMLAttributes<HTMLSpanElement> {
   children: React.ReactNode;
-  variant?: "default" | "secondary" | "accent" | "success" | "destructive" | "warning" | "muted" | "ghost";
+  variant?: "default" | "secondary" | "accent" | "success" | "destructive" | "warning" | "muted" | "ghost" | "blue" | "purple" | "pink" | "orange" | "cyan" | "indigo";
   size?: "xs" | "sm" | "default" | "lg" | "xl";
   glow?: boolean;
 }
