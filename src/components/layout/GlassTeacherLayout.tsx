@@ -26,7 +26,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
-// Simplified nav icon - just icon with minimal styling
+// Gradient glass icon - matching the reference design
 interface NavIconProps {
   icon: LucideIcon;
   active?: boolean;
@@ -34,9 +34,9 @@ interface NavIconProps {
 
 const NavIcon = ({ icon: Icon, active }: NavIconProps) => (
   <div className={cn(
-    "flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-200",
+    "flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200",
     active 
-      ? "bg-primary/15 text-primary" 
+      ? "bg-gradient-to-br from-blue-400 via-blue-500 to-teal-400 text-white shadow-lg shadow-blue-500/25" 
       : "text-muted-foreground group-hover:text-foreground"
   )}>
     <Icon className="w-5 h-5" />
