@@ -6,6 +6,7 @@ import { Menu, Bell, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSiteLogo } from '@/hooks/useSiteLogo';
 import { Link, useLocation } from 'react-router-dom';
+import { FadeTransition } from '@/components/transitions/PageTransition';
 import { 
   LayoutDashboard, 
   GraduationCap, 
@@ -202,9 +203,11 @@ export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
             "pb-24 lg:pb-8" // Extra padding for bottom nav on mobile
           )}
         >
-          <div className="container max-w-6xl mx-auto px-4 py-4 lg:py-6">
-            {children}
-          </div>
+          <FadeTransition>
+            <div className="container max-w-6xl mx-auto px-4 py-4 lg:py-6">
+              {children}
+            </div>
+          </FadeTransition>
         </main>
       </div>
 
