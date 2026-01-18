@@ -7,6 +7,7 @@ import { useGrades } from '@/hooks/useGrades';
 import { useAllBehaviorNotes } from '@/hooks/useBehaviorNotes';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { FileDown, FileText, BarChart3, Loader2, Calendar, Users, CheckCircle, XCircle, Clock, Filter, Trophy, Star, ThumbsUp, TrendingUp } from 'lucide-react';
+import { PageHeader } from '@/components/common/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -218,16 +219,17 @@ export default function Reports() {
     <TeacherLayout>
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-foreground">التقارير والتحليلات</h1>
-            <p className="text-muted-foreground mt-1">عرض وتحليل بيانات الحضور والغياب</p>
-          </div>
-          <div className="flex gap-3">
-            <Button variant="outline"><FileText className="w-4 h-4 ml-2" />تصدير CSV</Button>
-            <Button className="gradient-hero"><FileDown className="w-4 h-4 ml-2" />تصدير PDF</Button>
-          </div>
-        </div>
+        <PageHeader
+          icon={BarChart3}
+          title="التقارير والتحليلات"
+          subtitle="عرض وتحليل بيانات الحضور والغياب"
+          actions={
+            <>
+              <Button variant="outline"><FileText className="w-4 h-4 ml-2" />تصدير CSV</Button>
+              <Button className="gradient-hero"><FileDown className="w-4 h-4 ml-2" />تصدير PDF</Button>
+            </>
+          }
+        />
 
         {/* Filters */}
         <Card>

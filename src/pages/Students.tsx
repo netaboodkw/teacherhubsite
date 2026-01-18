@@ -18,6 +18,7 @@ import { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
 import { GlassIcon } from '@/components/ui/glass-icon';
+import { PageHeader } from '@/components/common/PageHeader';
 
 export default function Students() {
   const navigate = useNavigate();
@@ -58,31 +59,29 @@ export default function Students() {
     <TeacherLayout>
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            {isLiquidGlass && <GlassIcon icon={Users} variant="default" size="lg" />}
-            <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-foreground">الطلاب</h1>
-              <p className="text-muted-foreground mt-1">{students.length} طالب مسجل</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <ActionButton 
-              variant="outline"
-              onClick={() => setImportDialogOpen(true)}
-              className={isLiquidGlass ? "gap-2" : ""}
-            >
-              <Upload className="w-4 h-4 ml-2" />
-              استيراد
-            </ActionButton>
-            <Link to="/teacher/students/new">
-              <ActionButton className={isLiquidGlass ? "" : "gradient-hero shadow-md hover:shadow-lg transition-shadow"}>
-                <Plus className="w-4 h-4 ml-2" />
-                طالب جديد
+        <PageHeader
+          icon={Users}
+          title="الطلاب"
+          subtitle={`${students.length} طالب مسجل`}
+          actions={
+            <>
+              <ActionButton 
+                variant="outline"
+                onClick={() => setImportDialogOpen(true)}
+                className={isLiquidGlass ? "gap-2" : ""}
+              >
+                <Upload className="w-4 h-4 ml-2" />
+                استيراد
               </ActionButton>
-            </Link>
-          </div>
-        </div>
+              <Link to="/teacher/students/new">
+                <ActionButton className={isLiquidGlass ? "" : "gradient-hero shadow-md hover:shadow-lg transition-shadow"}>
+                  <Plus className="w-4 h-4 ml-2" />
+                  طالب جديد
+                </ActionButton>
+              </Link>
+            </>
+          }
+        />
 
         {/* Stats Cards */}
         {isLiquidGlass && students.length > 0 && (

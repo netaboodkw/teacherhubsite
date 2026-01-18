@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { AttendanceButton } from '@/components/attendance/AttendanceButton';
+import { PageHeader } from '@/components/common/PageHeader';
 import { useStudents } from '@/hooks/useStudents';
 import { useClassrooms } from '@/hooks/useClassrooms';
 import { useAttendance, useBulkMarkAttendance, AttendanceStatus } from '@/hooks/useAttendance';
@@ -153,19 +154,11 @@ export default function Attendance() {
     <TeacherLayout>
       <div className="p-4 lg:p-6 space-y-6 animate-fade-in">
         {/* Header */}
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl gradient-hero">
-                <ClipboardCheck className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">تسجيل الحضور</h1>
-                <p className="text-muted-foreground">تسجيل ومتابعة حضور الطلاب</p>
-              </div>
-            </div>
-            
-            {/* Classroom Selector */}
+        <PageHeader
+          icon={ClipboardCheck}
+          title="تسجيل الحضور"
+          subtitle="تسجيل ومتابعة حضور الطلاب"
+          actions={
             <Select value={selectedClassroom} onValueChange={(v) => { setSelectedClassroom(v); setLocalAttendance({}); }}>
               <SelectTrigger className={cn("w-56", isGlass && "bg-background/30 backdrop-blur-xl border-white/20")}>
                 <GraduationCap className="w-4 h-4 ml-2 text-muted-foreground" />
@@ -177,8 +170,10 @@ export default function Attendance() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-        </div>
+          }
+        />
+
+
 
         {!selectedClassroom ? (
           <ContentCard className="border-dashed">
