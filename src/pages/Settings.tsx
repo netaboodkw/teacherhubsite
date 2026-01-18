@@ -6,20 +6,25 @@ import { useEducationLevels } from '@/hooks/useEducationLevels';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { GlassButton } from '@/components/ui/glass-button';
 import { Input } from '@/components/ui/input';
+import { GlassInput } from '@/components/ui/glass-input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { GlassCard, GlassCardContent, GlassCardDescription, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { User, School, Mail, Users, Loader2, Save, GraduationCap, Phone, BookOpen, Volume2, Vibrate, CreditCard, Clock, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
+import { User, School, Mail, Users, Loader2, Save, GraduationCap, Phone, BookOpen, Volume2, Vibrate, CreditCard, Clock, AlertTriangle, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette } from 'lucide-react';
 import { InviteDepartmentHead } from '@/components/teacher/InviteDepartmentHead';
 import { getHapticEnabled, setHapticEnabled } from '@/hooks/useHapticFeedback';
 import { useMySubscription, useSubscriptionSettings, getSubscriptionStatus } from '@/hooks/useSubscription';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { useTheme, ThemeMode } from '@/contexts/ThemeContext';
+import { cn } from '@/lib/utils';
 
 export default function Settings() {
   const { profile, isLoading, refetch } = useProfile();
@@ -30,6 +35,7 @@ export default function Settings() {
   const { data: subscriptionSettings } = useSubscriptionSettings();
   const subscriptionStatus = getSubscriptionStatus(subscription, subscriptionSettings);
   const [hapticEnabled, setHapticEnabledState] = useState(getHapticEnabled());
+  const { mode, setMode, isLiquidGlass } = useTheme();
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
@@ -38,6 +44,15 @@ export default function Settings() {
     principal_name: '',
     department_head_name: '',
   });
+
+  // Aliases for components based on theme
+  const ContentCard = isLiquidGlass ? GlassCard : Card;
+  const ContentCardHeader = isLiquidGlass ? GlassCardHeader : CardHeader;
+  const ContentCardTitle = isLiquidGlass ? GlassCardTitle : CardTitle;
+  const ContentCardDescription = isLiquidGlass ? GlassCardDescription : CardDescription;
+  const ContentCardContent = isLiquidGlass ? GlassCardContent : CardContent;
+  const ActionButton = isLiquidGlass ? GlassButton : Button;
+  const TextInput = isLiquidGlass ? GlassInput : Input;
 
   // Toggle haptic feedback
   const handleHapticToggle = (enabled: boolean) => {
@@ -372,17 +387,17 @@ export default function Settings() {
           </Card>
 
           {/* App Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <ContentCard>
+            <ContentCardHeader>
+              <ContentCardTitle className="flex items-center gap-2">
                 <Volume2 className="h-5 w-5" />
                 إعدادات التطبيق
-              </CardTitle>
-              <CardDescription>
+              </ContentCardTitle>
+              <ContentCardDescription>
                 تخصيص سلوك التطبيق
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              </ContentCardDescription>
+            </ContentCardHeader>
+            <ContentCardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
@@ -398,11 +413,99 @@ export default function Settings() {
                   onCheckedChange={handleHapticToggle}
                 />
               </div>
-            </CardContent>
-          </Card>
+            </ContentCardContent>
+          </ContentCard>
+
+          {/* Theme Settings */}
+          <ContentCard>
+            <ContentCardHeader>
+              <ContentCardTitle className="flex items-center gap-2">
+                <Palette className="h-5 w-5" />
+                المظهر
+              </ContentCardTitle>
+              <ContentCardDescription>
+                اختر وضع العرض المفضل لديك
+              </ContentCardDescription>
+            </ContentCardHeader>
+            <ContentCardContent className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                {/* Light Mode */}
+                <button
+                  type="button"
+                  onClick={() => setMode('light')}
+                  className={cn(
+                    "flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all",
+                    mode === 'light'
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/50 hover:bg-muted/50"
+                  )}
+                >
+                  <div className={cn(
+                    "p-3 rounded-full",
+                    mode === 'light' ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                  )}>
+                    <Sun className="h-6 w-6" />
+                  </div>
+                  <span className={cn(
+                    "text-sm font-medium",
+                    mode === 'light' ? "text-primary" : "text-muted-foreground"
+                  )}>فاتح</span>
+                </button>
+
+                {/* Dark Mode */}
+                <button
+                  type="button"
+                  onClick={() => setMode('dark')}
+                  className={cn(
+                    "flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all",
+                    mode === 'dark'
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/50 hover:bg-muted/50"
+                  )}
+                >
+                  <div className={cn(
+                    "p-3 rounded-full",
+                    mode === 'dark' ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                  )}>
+                    <Moon className="h-6 w-6" />
+                  </div>
+                  <span className={cn(
+                    "text-sm font-medium",
+                    mode === 'dark' ? "text-primary" : "text-muted-foreground"
+                  )}>داكن</span>
+                </button>
+
+                {/* System/Auto Mode */}
+                <button
+                  type="button"
+                  onClick={() => setMode('system')}
+                  className={cn(
+                    "flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all",
+                    mode === 'system'
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/50 hover:bg-muted/50"
+                  )}
+                >
+                  <div className={cn(
+                    "p-3 rounded-full",
+                    mode === 'system' ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                  )}>
+                    <Monitor className="h-6 w-6" />
+                  </div>
+                  <span className={cn(
+                    "text-sm font-medium",
+                    mode === 'system' ? "text-primary" : "text-muted-foreground"
+                  )}>تلقائي</span>
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground text-center">
+                الوضع التلقائي يتبع إعدادات جهازك
+              </p>
+            </ContentCardContent>
+          </ContentCard>
 
           <div className="flex justify-end">
-            <Button type="submit" disabled={saving} className="min-w-32">
+            <ActionButton type="submit" disabled={saving} className="min-w-32">
               {saving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
@@ -411,7 +514,7 @@ export default function Settings() {
                   حفظ التغييرات
                 </>
               )}
-            </Button>
+            </ActionButton>
           </div>
         </form>
 

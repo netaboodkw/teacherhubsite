@@ -10,10 +10,14 @@ import { Button } from '@/components/ui/button';
 import { GlassButton } from '@/components/ui/glass-button';
 import { Input } from '@/components/ui/input';
 import { GlassInput } from '@/components/ui/glass-input';
+import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { cn } from '@/lib/utils';
+import { GlassIcon } from '@/components/ui/glass-icon';
 
 export default function Students() {
   const navigate = useNavigate();
@@ -48,20 +52,25 @@ export default function Students() {
 
   const SearchInput = isLiquidGlass ? GlassInput : Input;
   const ActionButton = isLiquidGlass ? GlassButton : Button;
+  const ContentCard = isLiquidGlass ? GlassCard : Card;
 
   return (
     <TeacherLayout>
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-foreground">الطلاب</h1>
-            <p className="text-muted-foreground mt-1">{students.length} طالب مسجل</p>
+          <div className="flex items-center gap-3">
+            {isLiquidGlass && <GlassIcon icon={Users} variant="default" size="lg" />}
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-bold text-foreground">الطلاب</h1>
+              <p className="text-muted-foreground mt-1">{students.length} طالب مسجل</p>
+            </div>
           </div>
           <div className="flex gap-2">
             <ActionButton 
               variant="outline"
               onClick={() => setImportDialogOpen(true)}
+              className={isLiquidGlass ? "gap-2" : ""}
             >
               <Upload className="w-4 h-4 ml-2" />
               استيراد
@@ -75,20 +84,62 @@ export default function Students() {
           </div>
         </div>
 
+        {/* Stats Cards */}
+        {isLiquidGlass && students.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <ContentCard className="p-4">
+              <div className="flex items-center gap-3">
+                <GlassIcon icon={Users} variant="default" size="default" />
+                <div>
+                  <p className="text-2xl font-bold text-foreground">{students.length}</p>
+                  <p className="text-xs text-muted-foreground">إجمالي الطلاب</p>
+                </div>
+              </div>
+            </ContentCard>
+            <ContentCard className="p-4">
+              <div className="flex items-center gap-3">
+                <GlassIcon icon={Filter} variant="accent" size="default" />
+                <div>
+                  <p className="text-2xl font-bold text-foreground">{classrooms.length}</p>
+                  <p className="text-xs text-muted-foreground">الصفوف</p>
+                </div>
+              </div>
+            </ContentCard>
+          </div>
+        )}
+
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            {isLiquidGlass ? (
+              <div className={cn(
+                "absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg",
+                "bg-primary/10 text-primary pointer-events-none"
+              )}>
+                <Search className="w-3.5 h-3.5" />
+              </div>
+            ) : (
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            )}
             <SearchInput
               placeholder="بحث عن طالب..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pr-10"
+              className={isLiquidGlass ? "pr-12" : "pr-10"}
             />
           </div>
           <Select value={selectedClassroom} onValueChange={setSelectedClassroom}>
-            <SelectTrigger className={`w-full sm:w-48 ${isLiquidGlass ? 'rounded-xl bg-background/50 backdrop-blur-md border-border/50' : ''}`}>
-              <Filter className="w-4 h-4 ml-2" />
+            <SelectTrigger className={cn(
+              "w-full sm:w-48",
+              isLiquidGlass && "rounded-xl bg-background/50 backdrop-blur-md border-border/50"
+            )}>
+              {isLiquidGlass ? (
+                <div className="p-1 rounded-lg bg-accent/10 text-accent ml-2">
+                  <Filter className="w-3.5 h-3.5" />
+                </div>
+              ) : (
+                <Filter className="w-4 h-4 ml-2" />
+              )}
               <SelectValue placeholder="جميع الصفوف" />
             </SelectTrigger>
             <SelectContent className={isLiquidGlass ? 'rounded-xl backdrop-blur-xl bg-background/90' : ''}>

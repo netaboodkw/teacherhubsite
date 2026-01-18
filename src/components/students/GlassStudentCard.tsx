@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { HeartPulse, Clock, UserX, ThumbsUp, ThumbsDown, GraduationCap, ChevronLeft } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { GlassIcon } from '@/components/ui/glass-icon';
 
 interface GlassStudentCardProps {
   student: Student;
@@ -88,70 +89,62 @@ export function GlassStudentCard({ student, onClick, classroomName }: GlassStude
       
       {/* Stats Row */}
       <div className="flex flex-wrap items-center gap-2 mt-auto">
-        {/* Grades */}
-        <Badge 
-          variant="secondary" 
-          className="flex items-center gap-1 text-xs bg-primary/10 text-primary border-0 px-2.5 py-1"
-        >
-          <GraduationCap className="w-3 h-3" />
-          <span className="font-medium">{totalScore}</span>
-        </Badge>
+        {/* Grades - Glass Icon Style */}
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-primary/10 border border-primary/20">
+          <GraduationCap className="w-3.5 h-3.5 text-primary" />
+          <span className="text-sm font-semibold text-primary">{totalScore}</span>
+        </div>
         
         {/* Absences */}
         {absentCount > 0 && (
-          <Badge 
-            variant="destructive" 
-            className="flex items-center gap-1 text-xs px-2.5 py-1"
-          >
-            <UserX className="w-3 h-3" />
-            {absentCount}
-          </Badge>
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-destructive/10 border border-destructive/20">
+            <UserX className="w-3.5 h-3.5 text-destructive" />
+            <span className="text-sm font-semibold text-destructive">{absentCount}</span>
+          </div>
         )}
         
         {/* Late */}
         {lateCount > 0 && (
-          <Badge 
-            variant="outline" 
-            className="flex items-center gap-1 text-xs bg-warning/10 text-warning border-warning/30 px-2.5 py-1"
-          >
-            <Clock className="w-3 h-3" />
-            {lateCount}
-          </Badge>
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-warning/10 border border-warning/20">
+            <Clock className="w-3.5 h-3.5 text-warning" />
+            <span className="text-sm font-semibold text-warning">{lateCount}</span>
+          </div>
         )}
         
-        {/* Behavior */}
+        {/* Positive Behavior */}
         {positiveNotes > 0 && (
-          <Badge 
-            variant="outline" 
-            className="flex items-center gap-1 text-xs bg-success/10 text-success border-success/30 px-2.5 py-1"
-          >
-            <ThumbsUp className="w-3 h-3" />
-            {positiveNotes}
-          </Badge>
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-success/10 border border-success/20">
+            <ThumbsUp className="w-3.5 h-3.5 text-success" />
+            <span className="text-sm font-semibold text-success">{positiveNotes}</span>
+          </div>
         )}
         
+        {/* Negative Behavior */}
         {negativeNotes > 0 && (
-          <Badge 
-            variant="outline" 
-            className="flex items-center gap-1 text-xs bg-destructive/10 text-destructive border-destructive/30 px-2.5 py-1"
-          >
-            <ThumbsDown className="w-3 h-3" />
-            {negativeNotes}
-          </Badge>
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-destructive/10 border border-destructive/20">
+            <ThumbsDown className="w-3.5 h-3.5 text-destructive" />
+            <span className="text-sm font-semibold text-destructive">{negativeNotes}</span>
+          </div>
         )}
         
         {/* Behavior points total */}
         {behaviorPoints !== 0 && (
-          <Badge 
+          <div 
             className={cn(
-              "flex items-center gap-1 text-xs mr-auto px-2.5 py-1",
+              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl mr-auto",
+              "backdrop-blur-sm",
               behaviorPoints >= 0 
-                ? "bg-success text-success-foreground" 
-                : "bg-destructive text-destructive-foreground"
+                ? "bg-success/20 border border-success/30" 
+                : "bg-destructive/20 border border-destructive/30"
             )}
           >
-            {behaviorPoints > 0 ? '+' : ''}{behaviorPoints}
-          </Badge>
+            <span className={cn(
+              "text-sm font-bold",
+              behaviorPoints >= 0 ? "text-success" : "text-destructive"
+            )}>
+              {behaviorPoints > 0 ? '+' : ''}{behaviorPoints}
+            </span>
+          </div>
         )}
       </div>
     </div>
