@@ -2,8 +2,9 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { GlassBottomNav } from './GlassBottomNav';
 import { GlassTopBar } from './GlassAppShell';
-import { Menu, Bell, User } from 'lucide-react';
+import { Menu, Bell, User, LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { GlassButton } from '@/components/ui/glass-button';
 import { useSiteLogo } from '@/hooks/useSiteLogo';
 import { Link, useLocation } from 'react-router-dom';
 import { FadeTransition } from '@/components/transitions/PageTransition';
@@ -25,6 +26,26 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+
+// Glass Icon component for navigation items
+interface NavGlassIconProps {
+  icon: LucideIcon;
+  active?: boolean;
+  className?: string;
+}
+
+const NavGlassIcon = ({ icon: Icon, active, className }: NavGlassIconProps) => (
+  <div className={cn(
+    "p-2 rounded-xl transition-all duration-300",
+    "backdrop-blur-sm backdrop-saturate-150",
+    active 
+      ? "bg-primary/20 text-primary shadow-[0_2px_12px_hsl(var(--primary)/0.25)] border border-primary/30" 
+      : "bg-muted/40 text-muted-foreground border border-border/20 hover:bg-muted/60",
+    className
+  )}>
+    <Icon className="w-5 h-5 flex-shrink-0" />
+  </div>
+);
 
 const navItems = [
   { href: '/teacher', icon: LayoutDashboard, label: 'لوحة التحكم' },
@@ -137,7 +158,7 @@ export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+          <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
             {navItems.map((item) => {
               const active = isActive(item.href);
               const linkContent = (
@@ -145,20 +166,15 @@ export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
                   key={item.href}
                   to={item.href}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-medium",
+                    "flex items-center gap-3 px-2 py-2 rounded-2xl text-sm font-medium",
                     "transition-all duration-300 ease-out",
                     collapsed && "justify-center px-2",
                     active 
-                      ? "bg-primary/15 text-primary shadow-sm" 
-                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                      ? "bg-primary/10 text-primary" 
+                      : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                   )}
                 >
-                  <div className={cn(
-                    "p-1.5 rounded-xl transition-all duration-300",
-                    active && "bg-primary/20"
-                  )}>
-                    <item.icon className="w-5 h-5 flex-shrink-0" />
-                  </div>
+                  <NavGlassIcon icon={item.icon} active={active} />
                   {!collapsed && <span>{item.label}</span>}
                 </Link>
               );
@@ -169,7 +185,7 @@ export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
                     <TooltipTrigger asChild>
                       {linkContent}
                     </TooltipTrigger>
-                    <TooltipContent side="left" className="rounded-xl">
+                    <TooltipContent side="left" className="rounded-xl bg-background/80 backdrop-blur-xl border-border/30">
                       <p>{item.label}</p>
                     </TooltipContent>
                   </Tooltip>
@@ -183,16 +199,16 @@ export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
           {/* Bottom Actions */}
           <div className="p-3 border-t border-border/30">
             <Link to="/teacher/settings">
-              <Button 
+              <GlassButton 
                 variant="ghost" 
                 className={cn(
                   "w-full justify-start gap-3 rounded-2xl",
                   collapsed && "justify-center"
                 )}
               >
-                <Settings className="w-5 h-5" />
+                <NavGlassIcon icon={Settings} active={location.pathname.includes('/settings')} className="!p-1.5" />
                 {!collapsed && <span>الإعدادات</span>}
-              </Button>
+              </GlassButton>
             </Link>
           </div>
         </aside>

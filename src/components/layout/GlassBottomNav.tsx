@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { LucideIcon } from 'lucide-react';
 import { 
   LayoutDashboard, 
   GraduationCap, 
@@ -24,6 +25,32 @@ import {
   Fingerprint,
   Settings
 } from 'lucide-react';
+
+// Glass Icon component for bottom nav
+interface BottomNavGlassIconProps {
+  icon: LucideIcon;
+  active?: boolean;
+  className?: string;
+}
+
+const BottomNavGlassIcon = ({ icon: Icon, active, className }: BottomNavGlassIconProps) => (
+  <div className={cn(
+    "relative p-2 rounded-xl transition-all duration-300",
+    "backdrop-blur-sm",
+    active 
+      ? "bg-primary/20 text-primary shadow-[0_2px_12px_hsl(var(--primary)/0.3)] border border-primary/30" 
+      : "bg-muted/30 text-muted-foreground border border-transparent",
+    className
+  )}>
+    <Icon className={cn(
+      "w-5 h-5 transition-transform duration-300",
+      active && "scale-110"
+    )} />
+    {active && (
+      <div className="absolute inset-0 rounded-xl bg-primary/10 blur-md -z-10" />
+    )}
+  </div>
+);
 
 // Main tabs shown in bottom navigation (max 5)
 const mainTabs = [
@@ -79,7 +106,7 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
               key={tab.href}
               to={tab.href}
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 min-w-[60px] min-h-[44px] px-2 py-1.5",
+                "flex flex-col items-center justify-center gap-1 min-w-[60px] min-h-[44px] px-2 py-1.5",
                 "rounded-2xl transition-all duration-300 ease-out",
                 "active:scale-95",
                 active
@@ -87,21 +114,10 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <div className={cn(
-                "relative p-1.5 rounded-xl transition-all duration-300",
-                active && "bg-primary/15"
-              )}>
-                <tab.icon className={cn(
-                  "w-5 h-5 transition-transform duration-300",
-                  active && "scale-110"
-                )} />
-                {active && (
-                  <div className="absolute inset-0 rounded-xl bg-primary/10 blur-sm" />
-                )}
-              </div>
+              <BottomNavGlassIcon icon={tab.icon} active={active} />
               <span className={cn(
                 "text-[10px] font-medium transition-all duration-300",
-                active && "font-semibold"
+                active && "font-semibold text-primary"
               )}>
                 {tab.label}
               </span>
@@ -114,7 +130,7 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
           <SheetTrigger asChild>
             <button
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 min-w-[60px] min-h-[44px] px-2 py-1.5",
+                "flex flex-col items-center justify-center gap-1 min-w-[60px] min-h-[44px] px-2 py-1.5",
                 "rounded-2xl transition-all duration-300 ease-out",
                 "active:scale-95",
                 isMoreActive
@@ -122,21 +138,10 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <div className={cn(
-                "relative p-1.5 rounded-xl transition-all duration-300",
-                isMoreActive && "bg-primary/15"
-              )}>
-                <MoreHorizontal className={cn(
-                  "w-5 h-5 transition-transform duration-300",
-                  isMoreActive && "scale-110"
-                )} />
-                {isMoreActive && (
-                  <div className="absolute inset-0 rounded-xl bg-primary/10 blur-sm" />
-                )}
-              </div>
+              <BottomNavGlassIcon icon={MoreHorizontal} active={isMoreActive} />
               <span className={cn(
                 "text-[10px] font-medium transition-all duration-300",
-                isMoreActive && "font-semibold"
+                isMoreActive && "font-semibold text-primary"
               )}>
                 المزيد
               </span>
@@ -167,18 +172,11 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
                       "rounded-2xl transition-all duration-300",
                       "active:scale-95",
                       active
-                        ? "bg-primary/15 text-primary"
-                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                     )}
                   >
-                    <div className={cn(
-                      "p-2.5 rounded-xl transition-all duration-300",
-                      active 
-                        ? "bg-primary/20" 
-                        : "bg-muted/50"
-                    )}>
-                      <item.icon className="w-5 h-5" />
-                    </div>
+                    <BottomNavGlassIcon icon={item.icon} active={active} />
                     <span className="text-xs font-medium text-center">
                       {item.label}
                     </span>
