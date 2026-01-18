@@ -6,28 +6,33 @@ import { cva, type VariantProps } from 'class-variance-authority';
 const glassIconVariants = cva(
   [
     "relative inline-flex items-center justify-center",
-    "rounded-full transition-all duration-200",
+    "rounded-2xl transition-all duration-200",
   ].join(" "),
   {
     variants: {
       variant: {
         default: [
-          "bg-primary/15 text-primary",
+          "bg-gradient-to-br from-sky-300 via-blue-400 to-teal-400 text-white",
+          "shadow-lg shadow-blue-400/30",
         ].join(" "),
         secondary: [
           "bg-muted text-muted-foreground",
         ].join(" "),
         accent: [
-          "bg-accent/20 text-accent-foreground",
+          "bg-gradient-to-br from-violet-300 via-purple-400 to-fuchsia-400 text-white",
+          "shadow-lg shadow-purple-400/30",
         ].join(" "),
         success: [
-          "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+          "bg-gradient-to-br from-emerald-300 via-green-400 to-teal-400 text-white",
+          "shadow-lg shadow-green-400/30",
         ].join(" "),
         destructive: [
-          "bg-destructive/15 text-destructive",
+          "bg-gradient-to-br from-red-300 via-rose-400 to-pink-400 text-white",
+          "shadow-lg shadow-rose-400/30",
         ].join(" "),
         warning: [
-          "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+          "bg-gradient-to-br from-amber-300 via-orange-400 to-yellow-400 text-white",
+          "shadow-lg shadow-orange-400/30",
         ].join(" "),
         muted: [
           "bg-muted/80 text-muted-foreground",
@@ -35,25 +40,6 @@ const glassIconVariants = cva(
         ghost: [
           "bg-transparent text-foreground/70",
           "hover:bg-muted/40",
-        ].join(" "),
-        // Solid color variants for more vibrant looks
-        blue: [
-          "bg-blue-500/15 text-blue-600 dark:text-blue-400",
-        ].join(" "),
-        purple: [
-          "bg-purple-500/15 text-purple-600 dark:text-purple-400",
-        ].join(" "),
-        pink: [
-          "bg-pink-500/15 text-pink-600 dark:text-pink-400",
-        ].join(" "),
-        orange: [
-          "bg-orange-500/15 text-orange-600 dark:text-orange-400",
-        ].join(" "),
-        cyan: [
-          "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400",
-        ].join(" "),
-        indigo: [
-          "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
         ].join(" "),
       },
       size: {
@@ -72,32 +58,27 @@ const glassIconVariants = cva(
       {
         variant: "default",
         glow: true,
-        className: "shadow-[0_0_12px_hsl(var(--primary)/0.25)]",
+        className: "shadow-[0_0_20px_rgba(59,130,246,0.4)]",
       },
       {
         variant: "success",
         glow: true,
-        className: "shadow-[0_0_12px_rgba(16,185,129,0.25)]",
+        className: "shadow-[0_0_20px_rgba(16,185,129,0.4)]",
       },
       {
         variant: "destructive",
         glow: true,
-        className: "shadow-[0_0_12px_hsl(var(--destructive)/0.25)]",
+        className: "shadow-[0_0_20px_rgba(244,63,94,0.4)]",
       },
       {
         variant: "warning",
         glow: true,
-        className: "shadow-[0_0_12px_rgba(245,158,11,0.25)]",
+        className: "shadow-[0_0_20px_rgba(245,158,11,0.4)]",
       },
       {
-        variant: "blue",
+        variant: "accent",
         glow: true,
-        className: "shadow-[0_0_12px_rgba(59,130,246,0.25)]",
-      },
-      {
-        variant: "purple",
-        glow: true,
-        className: "shadow-[0_0_12px_rgba(168,85,247,0.25)]",
+        className: "shadow-[0_0_20px_rgba(168,85,247,0.4)]",
       },
     ],
     defaultVariants: {
@@ -144,7 +125,7 @@ GlassIcon.displayName = "GlassIcon";
 // Wrapper component for inline icon usage with glass effect
 export interface GlassIconWrapperProps extends React.HTMLAttributes<HTMLSpanElement> {
   children: React.ReactNode;
-  variant?: "default" | "secondary" | "accent" | "success" | "destructive" | "warning" | "muted" | "ghost" | "blue" | "purple" | "pink" | "orange" | "cyan" | "indigo";
+  variant?: "default" | "secondary" | "accent" | "success" | "destructive" | "warning" | "muted" | "ghost";
   size?: "xs" | "sm" | "default" | "lg" | "xl";
   glow?: boolean;
 }
