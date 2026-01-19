@@ -301,163 +301,216 @@ export default function NotificationSettings() {
             </div>
 
             {/* Fingerprint Reminder */}
-            <div className="flex items-center justify-between py-2">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-orange-500/10">
-                  <Fingerprint className="w-5 h-5 text-orange-500" />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between py-2">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-orange-500/10">
+                    <Fingerprint className="w-5 h-5 text-orange-500" />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">تذكير البصمة</Label>
+                    <p className="text-xs text-muted-foreground">
+                      تذكير ببصمة التواجد
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-sm font-medium">تذكير البصمة</Label>
-                  <p className="text-xs text-muted-foreground">
-                    تذكير ببصمة التواجد
-                  </p>
-                </div>
+                <Switch
+                  checked={preferences.fingerprint_reminder}
+                  onCheckedChange={(checked) => updatePreferences({ fingerprint_reminder: checked })}
+                  disabled={isUpdating}
+                />
               </div>
-              <Switch
-                checked={preferences.fingerprint_reminder}
-                onCheckedChange={(checked) => updatePreferences({ fingerprint_reminder: checked })}
-                disabled={isUpdating}
-              />
+              
+              {/* Fingerprint sub-options */}
+              {preferences.fingerprint_reminder && (
+                <div className="mr-6 pr-4 border-r-2 border-orange-500/30 space-y-3 animate-in slide-in-from-top-2 duration-200">
+                  {/* Sound toggle */}
+                  <div className="flex items-center justify-between py-1.5 bg-muted/30 rounded-lg px-3">
+                    <div className="flex items-center gap-2">
+                      <Volume2 className="w-4 h-4 text-orange-500" />
+                      <span className="text-sm">الصوت</span>
+                    </div>
+                    <Switch
+                      checked={preferences.sound_enabled}
+                      onCheckedChange={(checked) => updatePreferences({ sound_enabled: checked })}
+                      disabled={isUpdating}
+                    />
+                  </div>
+                  
+                  {/* Sound selection */}
+                  {preferences.sound_enabled && (
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Music className="w-3 h-3" />
+                        نوع الصوت
+                      </Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {soundOptions.slice(0, 4).map((sound) => (
+                          <button
+                            key={sound.id}
+                            onClick={() => setSelectedSound(sound.id)}
+                            className={cn(
+                              "flex items-center gap-2 p-2 rounded-lg border transition-all text-right text-xs",
+                              selectedSound === sound.id
+                                ? "border-orange-500 bg-orange-500/10"
+                                : "border-border hover:border-orange-500/50"
+                            )}
+                          >
+                            <span className="flex-1 truncate">{sound.nameAr}</span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                previewSound(sound.id);
+                              }}
+                              className="p-1 hover:bg-orange-500/20 rounded"
+                            >
+                              <Play className="w-3 h-3" />
+                            </button>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Vibration toggle */}
+                  <div className="flex items-center justify-between py-1.5 bg-muted/30 rounded-lg px-3">
+                    <div className="flex items-center gap-2">
+                      <Vibrate className="w-4 h-4 text-orange-500" />
+                      <span className="text-sm">الاهتزاز</span>
+                    </div>
+                    <Switch
+                      checked={preferences.vibration_enabled}
+                      onCheckedChange={(checked) => updatePreferences({ vibration_enabled: checked })}
+                      disabled={isUpdating}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Schedule Reminder */}
-            <div className="flex items-center justify-between py-2">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-blue-500/10">
-                  <Calendar className="w-5 h-5 text-blue-500" />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between py-2">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-blue-500/10">
+                    <Calendar className="w-5 h-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">تذكير الحصص</Label>
+                    <p className="text-xs text-muted-foreground">
+                      تذكير قبل بداية الحصة
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-sm font-medium">تذكير الحصص</Label>
-                  <p className="text-xs text-muted-foreground">
-                    تذكير قبل بداية الحصة
-                  </p>
-                </div>
+                <Switch
+                  checked={preferences.schedule_reminder}
+                  onCheckedChange={(checked) => updatePreferences({ schedule_reminder: checked })}
+                  disabled={isUpdating}
+                />
               </div>
-              <Switch
-                checked={preferences.schedule_reminder}
-                onCheckedChange={(checked) => updatePreferences({ schedule_reminder: checked })}
-                disabled={isUpdating}
-              />
-            </div>
-
-            {/* Reminder Time */}
-            <div className="flex items-center justify-between py-2">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-green-500/10">
-                  <Clock className="w-5 h-5 text-green-500" />
+              
+              {/* Schedule sub-options */}
+              {preferences.schedule_reminder && (
+                <div className="mr-6 pr-4 border-r-2 border-blue-500/30 space-y-3 animate-in slide-in-from-top-2 duration-200">
+                  {/* Time before */}
+                  <div className="flex items-center justify-between py-1.5 bg-muted/30 rounded-lg px-3">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-blue-500" />
+                      <span className="text-sm">قبل الحصة بـ</span>
+                    </div>
+                    <Select
+                      value={preferences.reminder_minutes_before.toString()}
+                      onValueChange={(value) => updatePreferences({ reminder_minutes_before: parseInt(value) })}
+                      disabled={isUpdating}
+                    >
+                      <SelectTrigger className="w-[90px] h-8 rounded-lg text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        <SelectItem value="5" className="text-sm">5 دقائق</SelectItem>
+                        <SelectItem value="10" className="text-sm">10 دقائق</SelectItem>
+                        <SelectItem value="15" className="text-sm">15 دقيقة</SelectItem>
+                        <SelectItem value="20" className="text-sm">20 دقيقة</SelectItem>
+                        <SelectItem value="30" className="text-sm">30 دقيقة</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Sound toggle */}
+                  <div className="flex items-center justify-between py-1.5 bg-muted/30 rounded-lg px-3">
+                    <div className="flex items-center gap-2">
+                      <Volume2 className="w-4 h-4 text-blue-500" />
+                      <span className="text-sm">الصوت</span>
+                    </div>
+                    <Switch
+                      checked={preferences.sound_enabled}
+                      onCheckedChange={(checked) => updatePreferences({ sound_enabled: checked })}
+                      disabled={isUpdating}
+                    />
+                  </div>
+                  
+                  {/* Sound selection */}
+                  {preferences.sound_enabled && (
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Music className="w-3 h-3" />
+                        نوع الصوت
+                      </Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {soundOptions.slice(0, 4).map((sound) => (
+                          <button
+                            key={sound.id}
+                            onClick={() => setSelectedSound(sound.id)}
+                            className={cn(
+                              "flex items-center gap-2 p-2 rounded-lg border transition-all text-right text-xs",
+                              selectedSound === sound.id
+                                ? "border-blue-500 bg-blue-500/10"
+                                : "border-border hover:border-blue-500/50"
+                            )}
+                          >
+                            <span className="flex-1 truncate">{sound.nameAr}</span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                previewSound(sound.id);
+                              }}
+                              className="p-1 hover:bg-blue-500/20 rounded"
+                            >
+                              <Play className="w-3 h-3" />
+                            </button>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Vibration toggle */}
+                  <div className="flex items-center justify-between py-1.5 bg-muted/30 rounded-lg px-3">
+                    <div className="flex items-center gap-2">
+                      <Vibrate className="w-4 h-4 text-blue-500" />
+                      <span className="text-sm">الاهتزاز</span>
+                    </div>
+                    <Switch
+                      checked={preferences.vibration_enabled}
+                      onCheckedChange={(checked) => updatePreferences({ vibration_enabled: checked })}
+                      disabled={isUpdating}
+                    />
+                  </div>
                 </div>
-                <Label className="text-sm font-medium">وقت التذكير المسبق</Label>
-              </div>
-              <Select
-                value={preferences.reminder_minutes_before.toString()}
-                onValueChange={(value) => updatePreferences({ reminder_minutes_before: parseInt(value) })}
-                disabled={isUpdating}
-              >
-                <SelectTrigger className="w-[100px] h-9 rounded-xl text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  <SelectItem value="5" className="text-sm">5 دقائق</SelectItem>
-                  <SelectItem value="10" className="text-sm">10 دقائق</SelectItem>
-                  <SelectItem value="15" className="text-sm">15 دقيقة</SelectItem>
-                  <SelectItem value="20" className="text-sm">20 دقيقة</SelectItem>
-                  <SelectItem value="30" className="text-sm">30 دقيقة</SelectItem>
-                </SelectContent>
-              </Select>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Sound & Vibration */}
+        {/* Other Settings */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">الصوت والاهتزاز</CardTitle>
+            <CardTitle className="text-base">إعدادات إضافية</CardTitle>
             <CardDescription className="text-sm">
-              تخصيص طريقة التنبيه
+              خيارات أخرى للتنبيهات
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Sound */}
-            <div className="flex items-center justify-between py-2">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-violet-500/10">
-                  <Volume2 className="w-5 h-5 text-violet-500" />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">صوت الإشعار</Label>
-                  <p className="text-xs text-muted-foreground">
-                    تشغيل صوت عند الإشعار
-                  </p>
-                </div>
-              </div>
-              <Switch
-                checked={preferences.sound_enabled}
-                onCheckedChange={(checked) => updatePreferences({ sound_enabled: checked })}
-                disabled={isUpdating}
-              />
-            </div>
-
-            {/* اختيار نوع الصوت */}
-            {preferences.sound_enabled && (
-              <div className="space-y-3 pr-3 border-r-2 border-primary/20">
-                <Label className="flex items-center gap-2 text-sm">
-                  <Music className="w-4 h-4" />
-                  نوع صوت التنبيه
-                </Label>
-                <div className="grid grid-cols-1 gap-2">
-                  {soundOptions.map((sound) => (
-                    <button
-                      key={sound.id}
-                      onClick={() => setSelectedSound(sound.id)}
-                      className={cn(
-                        "flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-right",
-                        selectedSound === sound.id
-                          ? "border-primary bg-primary/10"
-                          : "border-border hover:border-primary/50 hover:bg-muted/50"
-                      )}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm">{sound.nameAr}</div>
-                        <div className="text-xs text-muted-foreground">{sound.description}</div>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 shrink-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          previewSound(sound.id);
-                        }}
-                      >
-                        <Play className="w-4 h-4" />
-                      </Button>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Vibration */}
-            <div className="flex items-center justify-between py-2">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-pink-500/10">
-                  <Vibrate className="w-5 h-5 text-pink-500" />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">الاهتزاز</Label>
-                  <p className="text-xs text-muted-foreground">
-                    اهتزاز الجهاز عند الإشعار
-                  </p>
-                </div>
-              </div>
-              <Switch
-                checked={preferences.vibration_enabled}
-                onCheckedChange={(checked) => updatePreferences({ vibration_enabled: checked })}
-                disabled={isUpdating}
-              />
-            </div>
-
             {/* Haptic when entering grades */}
             <div className="flex items-center justify-between py-2">
               <div className="flex items-center gap-3">
