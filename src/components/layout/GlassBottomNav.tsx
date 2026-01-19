@@ -29,15 +29,16 @@ import {
 
 import { GlassIcon } from '@/components/ui/glass-icon';
 
-// Nav icon wrapper - uses GlassIcon for active state, plain icon for inactive
+// Nav icon wrapper - uses GlassIcon for active state with color
 interface NavIconProps {
   icon: LucideIcon;
   active?: boolean;
+  colorVariant?: "default" | "blue" | "purple" | "green" | "orange" | "pink" | "cyan" | "indigo" | "amber" | "rose" | "teal" | "success";
 }
 
-const NavIcon = ({ icon: Icon, active }: NavIconProps) => {
+const NavIcon = ({ icon: Icon, active, colorVariant = "default" }: NavIconProps) => {
   if (active) {
-    return <GlassIcon icon={Icon} variant="default" size="sm" />;
+    return <GlassIcon icon={Icon} variant={colorVariant} size="sm" />;
   }
   return (
     <div className="flex items-center justify-center w-10 h-10 text-muted-foreground">
@@ -46,24 +47,24 @@ const NavIcon = ({ icon: Icon, active }: NavIconProps) => {
   );
 };
 
-// Main tabs
+// Main tabs with colors
 const mainTabs = [
-  { href: '/teacher', icon: LayoutDashboard, label: 'الرئيسية' },
-  { href: '/teacher/classrooms', icon: School, label: 'الصفوف' },
-  { href: '/teacher/students', icon: Users, label: 'الطلاب' },
-  { href: '/teacher/grades', icon: BookOpen, label: 'الدرجات' },
+  { href: '/teacher', icon: LayoutDashboard, label: 'الرئيسية', color: 'cyan' as const },
+  { href: '/teacher/classrooms', icon: School, label: 'الصفوف', color: 'purple' as const },
+  { href: '/teacher/students', icon: Users, label: 'الطلاب', color: 'blue' as const },
+  { href: '/teacher/grades', icon: BookOpen, label: 'الدرجات', color: 'indigo' as const },
 ];
 
-// Additional items
+// Additional items with colors
 const moreItems = [
-  { href: '/teacher/schedule', icon: CalendarDays, label: 'جدول الحصص' },
-  { href: '/teacher/fingerprint', icon: Fingerprint, label: 'البصمة' },
-  { href: '/teacher/attendance', icon: ClipboardCheck, label: 'الحضور' },
-  { href: '/teacher/templates', icon: LayoutGrid, label: 'قوالب الدرجات' },
-  { href: '/teacher/reports', icon: BarChart3, label: 'التقارير' },
-  { href: '/teacher/notifications', icon: Bell, label: 'الإشعارات' },
-  { href: '/teacher/subscription', icon: CreditCard, label: 'الاشتراك' },
-  { href: '/teacher/settings', icon: Settings, label: 'الإعدادات' },
+  { href: '/teacher/schedule', icon: CalendarDays, label: 'جدول الحصص', color: 'pink' as const },
+  { href: '/teacher/fingerprint', icon: Fingerprint, label: 'البصمة', color: 'rose' as const },
+  { href: '/teacher/attendance', icon: ClipboardCheck, label: 'الحضور', color: 'green' as const },
+  { href: '/teacher/templates', icon: LayoutGrid, label: 'قوالب الدرجات', color: 'purple' as const },
+  { href: '/teacher/reports', icon: BarChart3, label: 'التقارير', color: 'orange' as const },
+  { href: '/teacher/notifications', icon: Bell, label: 'الإشعارات', color: 'amber' as const },
+  { href: '/teacher/subscription', icon: CreditCard, label: 'الاشتراك', color: 'success' as const },
+  { href: '/teacher/settings', icon: Settings, label: 'الإعدادات', color: 'teal' as const },
 ];
 
 interface GlassBottomNavProps {
@@ -106,7 +107,7 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
                 "active:scale-95"
               )}
             >
-              <NavIcon icon={tab.icon} active={active} />
+              <NavIcon icon={tab.icon} active={active} colorVariant={tab.color} />
               <span className={cn(
                 "text-[10px] font-cairo",
                 active ? "font-semibold text-foreground" : "font-medium text-muted-foreground"
@@ -164,7 +165,7 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
                       active ? "bg-muted/50" : "hover:bg-muted/30"
                     )}
                   >
-                    <NavIcon icon={item.icon} active={active} />
+                    <NavIcon icon={item.icon} active={active} colorVariant={item.color} />
                     <span className={cn(
                       "text-xs text-center font-cairo",
                       active ? "font-semibold text-foreground" : "font-medium text-muted-foreground"
