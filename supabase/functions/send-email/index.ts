@@ -227,7 +227,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const emailResponse = await resend.emails.send({
-      from: "TeacherHub <onboarding@resend.dev>",
+      from: "TeacherHub <noreply@teacherhub.site>",
       to: [to],
       subject,
       html,
