@@ -171,7 +171,7 @@ const App = () => (
             <Route path="/dashboard" element={<Navigate to="/teacher" replace />} />
             <Route path="/classrooms" element={<Navigate to="/teacher/classrooms" replace />} />
             <Route path="/students" element={<Navigate to="/teacher/students" replace />} />
-            <Route path="/attendance" element={<Navigate to="/teacher/attendance" replace />} />
+            <Route path="/attendance" element={<Navigate to="/teacher/reports" replace />} />
             <Route path="/grades" element={<Navigate to="/teacher/grades" replace />} />
             <Route path="/reports" element={<Navigate to="/teacher/reports" replace />} />
             <Route path="/settings" element={<Navigate to="/teacher/settings" replace />} />
@@ -200,7 +200,7 @@ const App = () => (
             <Route path="/teacher/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
             <Route path="/teacher/students/:studentId" element={<ProtectedRoute><StudentDetail /></ProtectedRoute>} />
             <Route path="/teacher/students/new" element={<ProtectedRoute><NewStudent /></ProtectedRoute>} />
-            <Route path="/teacher/attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
+            <Route path="/teacher/attendance" element={<Navigate to="/teacher/reports" replace />} />
             <Route path="/teacher/grades" element={<ProtectedRoute><Grades /></ProtectedRoute>} />
             <Route path="/teacher/templates" element={<ProtectedRoute><TeacherTemplates /></ProtectedRoute>} />
             <Route path="/teacher/subscription" element={<ProtectedRoute><TeacherSubscription /></ProtectedRoute>} />
