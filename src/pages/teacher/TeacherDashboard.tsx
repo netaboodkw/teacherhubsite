@@ -147,7 +147,7 @@ export default function TeacherDashboard() {
       icon: GraduationCap,
       href: '/teacher/classrooms',
       color: 'text-primary',
-      bgColor: 'bg-primary/10',
+      bgColor: 'bg-primary/15',
     },
     {
       title: 'الطلاب',
@@ -155,7 +155,7 @@ export default function TeacherDashboard() {
       icon: Users,
       href: '/teacher/students',
       color: 'text-blue-500',
-      bgColor: 'bg-blue-500/10',
+      bgColor: 'bg-blue-500/15',
     },
     {
       title: 'الحضور',
@@ -163,7 +163,7 @@ export default function TeacherDashboard() {
       icon: ClipboardCheck,
       href: '/teacher/attendance',
       color: 'text-green-500',
-      bgColor: 'bg-green-500/10',
+      bgColor: 'bg-green-500/15',
     },
     {
       title: 'الدرجات',
@@ -171,43 +171,43 @@ export default function TeacherDashboard() {
       icon: BookOpen,
       href: '/teacher/grades',
       color: 'text-orange-500',
-      bgColor: 'bg-orange-500/10',
+      bgColor: 'bg-orange-500/15',
     },
   ];
 
-  // Glass theme stat card - mobile optimized
+  // Glass theme stat card - iOS native style
   const GlassStatCard = ({ stat }: { stat: typeof stats[0] }) => (
     <Link to={stat.href}>
-      <GlassCard variant="interactive" className="h-full">
-        <GlassCardHeader className="flex flex-row items-center justify-between p-3 sm:p-4 pb-1 sm:pb-2">
-          <GlassCardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
+      <GlassCard variant="interactive" className="h-full ios-card-pressable">
+        <GlassCardHeader className="flex flex-row items-center justify-between p-4 pb-2">
+          <GlassCardTitle className="text-sm font-semibold text-muted-foreground">
             {stat.title}
           </GlassCardTitle>
-          <div className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl ${stat.bgColor}`}>
-            <stat.icon className={`h-4 w-4 sm:h-5 sm:w-5 ${stat.color}`} />
+          <div className={`p-2.5 rounded-2xl ${stat.bgColor}`}>
+            <stat.icon className={`h-6 w-6 ${stat.color}`} />
           </div>
         </GlassCardHeader>
-        <GlassCardContent className="p-3 sm:p-4 pt-1 sm:pt-2">
-          <div className="text-xl sm:text-2xl lg:text-3xl font-bold">{stat.value}</div>
+        <GlassCardContent className="p-4 pt-2">
+          <div className="text-3xl font-bold">{stat.value}</div>
         </GlassCardContent>
       </GlassCard>
     </Link>
   );
 
-  // Default theme stat card - mobile optimized
+  // Default theme stat card - iOS native style
   const DefaultStatCard = ({ stat }: { stat: typeof stats[0] }) => (
     <Link to={stat.href}>
-      <Card className="hover:shadow-md transition-shadow cursor-pointer ios-card-pressable">
-        <CardHeader className="flex flex-row items-center justify-between p-3 sm:p-4 pb-1 sm:pb-2">
-          <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
+      <Card className="hover:shadow-md transition-shadow cursor-pointer ios-card-pressable h-full">
+        <CardHeader className="flex flex-row items-center justify-between p-4 pb-2">
+          <CardTitle className="text-sm font-semibold text-muted-foreground">
             {stat.title}
           </CardTitle>
-          <div className={`p-1.5 sm:p-2 rounded-lg ${stat.bgColor}`}>
-            <stat.icon className={`h-4 w-4 sm:h-5 sm:w-5 ${stat.color}`} />
+          <div className={`p-2.5 rounded-2xl ${stat.bgColor}`}>
+            <stat.icon className={`h-6 w-6 ${stat.color}`} />
           </div>
         </CardHeader>
-        <CardContent className="p-3 sm:p-4 pt-1 sm:pt-2">
-          <div className="text-xl sm:text-2xl lg:text-3xl font-bold">{stat.value}</div>
+        <CardContent className="p-4 pt-2">
+          <div className="text-3xl font-bold">{stat.value}</div>
         </CardContent>
       </Card>
     </Link>
@@ -245,31 +245,31 @@ export default function TeacherDashboard() {
     return colorMap[color] || '#888888';
   };
 
-  // Glass classroom card with proper coloring - mobile optimized
+  // Glass classroom card with proper coloring - iOS native style
   const GlassClassroomCardLocal = ({ classroom }: { classroom: any }) => {
     const hexColor = getHexColor(classroom.color);
     return (
       <Link to={`/teacher/classrooms/${classroom.id}`}>
         <GlassCard 
           variant="interactive" 
-          className="h-full relative overflow-hidden ios-card-pressable"
+          className="h-full relative overflow-hidden ios-card-pressable min-h-[100px]"
           style={{
-            backgroundColor: `${hexColor}10`,
+            backgroundColor: `${hexColor}15`,
             borderColor: `${hexColor}30`,
           }}
         >
           {/* Color indicator */}
           <div 
-            className="absolute top-0 right-0 w-1 sm:w-1.5 h-full rounded-r-xl"
+            className="absolute top-0 right-0 w-1.5 h-full rounded-r-xl"
             style={{ backgroundColor: hexColor }}
           />
-          <GlassCardHeader className="p-3 sm:p-4 pb-1 sm:pb-2 pr-3 sm:pr-4">
-            <GlassCardTitle className="text-sm sm:text-base truncate">
+          <GlassCardHeader className="p-4 pb-2 pr-5">
+            <GlassCardTitle className="text-base font-bold truncate">
               {classroom.name}
             </GlassCardTitle>
           </GlassCardHeader>
-          <GlassCardContent className="p-3 sm:p-4 pt-0 sm:pt-0 pr-3 sm:pr-4">
-            <p className="text-xs sm:text-sm text-muted-foreground truncate">{classroom.subject}</p>
+          <GlassCardContent className="p-4 pt-0 pr-5">
+            <p className="text-sm text-muted-foreground truncate">{classroom.subject}</p>
           </GlassCardContent>
         </GlassCard>
       </Link>
@@ -278,26 +278,26 @@ export default function TeacherDashboard() {
 
   return (
     <TeacherLayout>
-      <div className="space-y-4 sm:space-y-6">
+      <div className="space-y-6">
         {/* تنبيه الاشتراك - يظهر فقط للتجريبي أو المنتهي */}
         {showSubscriptionAlert && (
           <Alert variant={subscription?.status === 'expired' ? 'destructive' : 'default'} className={
-            `text-xs sm:text-sm ${isGlass ? 'glass-card border-orange-200/50 bg-orange-50/50' : 'border-orange-200 bg-orange-50'}`
+            `text-sm ${isGlass ? 'glass-card border-orange-200/50 bg-orange-50/50' : 'border-orange-200 bg-orange-50'}`
           }>
-            <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-orange-600" />
-            <AlertDescription className="text-orange-800">
+            <AlertTriangle className="h-5 w-5 text-orange-600" />
+            <AlertDescription className="text-orange-800 text-base">
               {subscription?.status === 'trial' ? (
                 <>
                   أنت في <strong>الفترة التجريبية</strong>
                   {subscriptionEndDate && <> - تنتهي <strong>{subscriptionEndDate}</strong></>}
-                  <Link to="/teacher/subscription" className="mr-2 underline font-medium">
+                  <Link to="/teacher/subscription" className="mr-3 underline font-bold">
                     اشترك الآن
                   </Link>
                 </>
               ) : (
                 <>
                   انتهى اشتراكك. 
-                  <Link to="/teacher/subscription" className="mr-2 underline font-medium">
+                  <Link to="/teacher/subscription" className="mr-3 underline font-bold">
                     جدد اشتراكك
                   </Link>
                 </>
@@ -314,7 +314,7 @@ export default function TeacherDashboard() {
         />
 
         {/* Stats Grid - 2x2 on mobile */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 md:gap-4 md:grid-cols-4">
           {stats.map((stat) => (
             isGlass 
               ? <GlassStatCard key={stat.href} stat={stat} />
@@ -323,35 +323,35 @@ export default function TeacherDashboard() {
         </div>
 
         {/* جدول اليوم وصفوفي - Stack on mobile */}
-        <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 lg:grid-cols-3">
           {/* صفوفي - Show first on mobile */}
           <div className="lg:col-span-2 order-2 lg:order-2">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h2 className="text-base sm:text-lg lg:text-xl font-semibold">صفوفي</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">صفوفي</h2>
               {isGlass ? (
                 <Link to="/teacher/classrooms/new">
-                  <GlassButton variant="ghost" size="sm" className="gap-1 text-xs sm:text-sm h-8 sm:h-9">
-                    <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                    <span className="hidden xs:inline">إضافة</span> صف
+                  <GlassButton variant="ghost" size="default" className="gap-2 text-base h-11">
+                    <Plus className="h-5 w-5" />
+                    إضافة صف
                   </GlassButton>
                 </Link>
               ) : (
-                <Link to="/teacher/classrooms/new" className="text-primary hover:underline text-xs sm:text-sm">
+                <Link to="/teacher/classrooms/new" className="text-primary hover:underline text-base font-semibold">
                   + إضافة صف
                 </Link>
               )}
             </div>
             
             {classroomsLoading ? (
-              <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
                 {[1, 2, 3, 4].map((i) => (
                   isGlass ? (
                     <GlassCard key={i} className="animate-pulse">
-                      <GlassCardContent className="h-16 sm:h-20" />
+                      <GlassCardContent className="h-24" />
                     </GlassCard>
                   ) : (
                     <Card key={i} className="animate-pulse">
-                      <CardContent className="h-16 sm:h-20" />
+                      <CardContent className="h-24" />
                     </Card>
                   )
                 ))}
@@ -359,19 +359,19 @@ export default function TeacherDashboard() {
             ) : classrooms?.length === 0 ? (
               isGlass ? (
                 <GlassCard>
-                  <GlassCardContent className="py-6 sm:py-8 text-center text-muted-foreground text-sm">
+                  <GlassCardContent className="py-10 text-center text-muted-foreground text-base">
                     لا توجد صفوف. أنشئ صفاً جديداً للبدء.
                   </GlassCardContent>
                 </GlassCard>
               ) : (
                 <Card>
-                  <CardContent className="py-6 sm:py-8 text-center text-muted-foreground text-sm">
+                  <CardContent className="py-10 text-center text-muted-foreground text-base">
                     لا توجد صفوف. أنشئ صفاً جديداً للبدء.
                   </CardContent>
                 </Card>
               )
             ) : (
-              <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
                 {classrooms?.slice(0, 6).map((classroom) => (
                   isGlass 
                     ? <GlassClassroomCardLocal key={classroom.id} classroom={classroom} />

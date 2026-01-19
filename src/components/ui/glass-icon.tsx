@@ -112,9 +112,9 @@ const glassIconVariants = cva(
       },
       size: {
         xs: "p-1.5",
-        sm: "p-2",
-        default: "p-2.5",
-        lg: "p-3",
+        sm: "p-2.5",
+        default: "p-3",
+        lg: "p-3.5",
         xl: "p-4",
       },
       glow: {
@@ -131,11 +131,11 @@ const glassIconVariants = cva(
 );
 
 const iconSizeMap = {
-  xs: "w-3 h-3",
-  sm: "w-4 h-4",
-  default: "w-5 h-5",
-  lg: "w-6 h-6",
-  xl: "w-7 h-7",
+  xs: "w-4 h-4",
+  sm: "w-5 h-5",
+  default: "w-6 h-6",
+  lg: "w-7 h-7",
+  xl: "w-8 h-8",
 };
 
 export interface GlassIconProps

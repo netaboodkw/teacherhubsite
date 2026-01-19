@@ -98,26 +98,26 @@ export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
         "pb-[env(safe-area-inset-bottom)]"
       )}
     >
-      {/* Top Bar */}
+      {/* Top Bar - iOS Native Style */}
       <header
         className={cn(
           "z-50 w-full lg:hidden",
-          "bg-background/70 backdrop-blur-xl backdrop-saturate-150",
-          "border-b border-border/30",
+          "bg-background/80 backdrop-blur-xl backdrop-saturate-150",
+          "border-b border-border/20",
           "pt-[env(safe-area-inset-top)]"
         )}
       >
-        <div className="flex items-center justify-between h-14 px-4">
+        <div className="flex items-center justify-between h-16 px-4">
           <div className="flex items-center gap-3">
-            <img src={logoUrl} alt="Logo" className="w-8 h-8 object-contain" />
-            <h1 className="text-lg font-semibold text-foreground">Teacher Hub</h1>
+            <img src={logoUrl} alt="Logo" className="w-10 h-10 object-contain" />
+            <h1 className="text-xl font-bold text-foreground">Teacher Hub</h1>
           </div>
-          <div className="flex items-center gap-1">
-            <ThemeToggle size="sm" />
+          <div className="flex items-center gap-2">
+            <ThemeToggle size="default" />
             <NotificationBell />
             <Link to="/teacher/settings">
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <User className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="rounded-full h-11 w-11">
+                <User className="h-6 w-6" />
               </Button>
             </Link>
           </div>
@@ -246,13 +246,13 @@ export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
         {/* Scrollable content */}
         <main
           className={cn(
-            "flex-1 overflow-y-auto overscroll-contain",
+            "flex-1 overflow-y-auto overscroll-contain ios-scroll",
             "min-h-0",
-            "pb-24 lg:pb-8" // Extra padding for bottom nav on mobile
+            "pb-28 lg:pb-8" // Extra padding for larger bottom nav on mobile
           )}
         >
           <FadeTransition>
-            <div className="container max-w-6xl mx-auto px-4 py-4 lg:py-6">
+            <div className="container max-w-6xl mx-auto px-4 py-5 lg:py-6">
               {children}
             </div>
           </FadeTransition>

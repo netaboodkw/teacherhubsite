@@ -47,8 +47,8 @@ export default function Classrooms() {
           iconVariant="purple"
           actions={
             <Link to="/teacher/classrooms/new">
-              <ActionButton>
-                <Plus className="w-4 h-4 ml-2" />
+              <ActionButton size="lg" className="gap-2 h-12 px-6 text-base">
+                <Plus className="w-5 h-5" />
                 صف جديد
               </ActionButton>
             </Link>
@@ -57,12 +57,12 @@ export default function Classrooms() {
 
         {/* Search */}
         <div className="relative max-w-md">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
           <SearchInput
             placeholder="بحث عن صف..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pr-10"
+            className="pr-12 h-12 text-base"
           />
         </div>
 

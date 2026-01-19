@@ -41,11 +41,11 @@ interface NavIconProps {
 
 const NavIcon = ({ icon: Icon, active, colorVariant = "default" }: NavIconProps) => {
   if (active) {
-    return <GlassIcon icon={Icon} variant={colorVariant} size="sm" />;
+    return <GlassIcon icon={Icon} variant={colorVariant} size="default" />;
   }
   return (
-    <div className="flex items-center justify-center w-10 h-10 text-muted-foreground">
-      <Icon className="w-5 h-5" />
+    <div className="flex items-center justify-center w-12 h-12 text-muted-foreground">
+      <Icon className="w-7 h-7" />
     </div>
   );
 };
@@ -107,10 +107,10 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
         className
       )}
       style={{
-        paddingBottom: 'max(env(safe-area-inset-bottom), 8px)',
+        paddingBottom: 'max(env(safe-area-inset-bottom), 12px)',
       }}
     >
-      <div className="flex items-center justify-around h-[60px] px-1">
+      <div className="flex items-center justify-around h-[80px] px-2">
         {mainTabs.map((tab) => {
           const active = isActive(tab.href);
           return (
@@ -118,16 +118,17 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
               key={tab.href}
               to={tab.href}
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5",
-                "min-w-[60px] min-h-[52px] py-1 px-2",
-                "rounded-xl transition-all duration-200",
-                "active:scale-95 touch-manipulation"
+                "flex flex-col items-center justify-center gap-1",
+                "min-w-[72px] min-h-[64px] py-2 px-3",
+                "rounded-2xl transition-all duration-200",
+                "active:scale-95 touch-manipulation",
+                active && "bg-primary/10"
               )}
             >
               <NavIcon icon={tab.icon} active={active} colorVariant={tab.color} />
               <span className={cn(
-                "text-[10px] font-cairo leading-tight",
-                active ? "font-semibold text-foreground" : "font-medium text-muted-foreground"
+                "text-xs font-cairo leading-tight",
+                active ? "font-bold text-foreground" : "font-medium text-muted-foreground"
               )}>
                 {tab.label}
               </span>
@@ -140,16 +141,17 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
           <SheetTrigger asChild>
             <button
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5",
-                "min-w-[60px] min-h-[52px] py-1 px-2",
-                "rounded-xl transition-all duration-200",
-                "active:scale-95 touch-manipulation"
+                "flex flex-col items-center justify-center gap-1",
+                "min-w-[72px] min-h-[64px] py-2 px-3",
+                "rounded-2xl transition-all duration-200",
+                "active:scale-95 touch-manipulation",
+                isMoreActive && "bg-primary/10"
               )}
             >
               <NavIcon icon={MoreHorizontal} active={isMoreActive} />
               <span className={cn(
-                "text-[10px] font-cairo leading-tight",
-                isMoreActive ? "font-semibold text-foreground" : "font-medium text-muted-foreground"
+                "text-xs font-cairo leading-tight",
+                isMoreActive ? "font-bold text-foreground" : "font-medium text-muted-foreground"
               )}>
                 المزيد
               </span>
@@ -159,17 +161,17 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
             side="bottom" 
             className={cn(
               "bg-background border-t border-border/50",
-              "rounded-t-[24px]",
+              "rounded-t-[32px]",
               "font-cairo"
             )}
             style={{
-              paddingBottom: 'max(env(safe-area-inset-bottom), 16px)',
+              paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
             }}
           >
-            <SheetHeader className="pb-4">
-              <SheetTitle className="text-center text-foreground font-semibold font-cairo">المزيد من الخيارات</SheetTitle>
+            <SheetHeader className="pb-6">
+              <SheetTitle className="text-center text-xl text-foreground font-bold font-cairo">المزيد من الخيارات</SheetTitle>
             </SheetHeader>
-            <div className="grid grid-cols-4 gap-4 py-4">
+            <div className="grid grid-cols-4 gap-3 py-4">
               {moreItems.map((item) => {
                 const active = isActive(item.href);
                 return (
@@ -178,16 +180,16 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
                     to={item.href}
                     onClick={() => setSheetOpen(false)}
                     className={cn(
-                      "flex flex-col items-center justify-center gap-2 p-3",
-                      "rounded-xl transition-all duration-200",
-                      "active:scale-95",
-                      active ? "bg-muted/50" : "hover:bg-muted/30"
+                      "flex flex-col items-center justify-center gap-2 p-4",
+                      "rounded-2xl transition-all duration-200",
+                      "active:scale-95 min-h-[90px]",
+                      active ? "bg-primary/10" : "hover:bg-muted/50"
                     )}
                   >
                     <NavIcon icon={item.icon} active={active} colorVariant={item.color} />
                     <span className={cn(
-                      "text-xs text-center font-cairo",
-                      active ? "font-semibold text-foreground" : "font-medium text-muted-foreground"
+                      "text-sm text-center font-cairo leading-tight",
+                      active ? "font-bold text-foreground" : "font-medium text-muted-foreground"
                     )}>
                       {item.label}
                     </span>
@@ -197,21 +199,21 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
             </div>
             
             {/* Logout Button */}
-            <div className="pt-4 border-t border-border/30">
+            <div className="pt-6 border-t border-border/30">
               <button
                 onClick={() => {
                   setSheetOpen(false);
                   handleLogout();
                 }}
                 className={cn(
-                  "w-full flex items-center justify-center gap-3 p-4",
-                  "rounded-xl transition-all duration-200",
+                  "w-full flex items-center justify-center gap-4 p-5",
+                  "rounded-2xl transition-all duration-200",
                   "bg-destructive/10 hover:bg-destructive/20",
                   "active:scale-95"
                 )}
               >
-                <LogOut className="w-5 h-5 text-destructive" />
-                <span className="text-sm font-semibold text-destructive font-cairo">
+                <LogOut className="w-6 h-6 text-destructive" />
+                <span className="text-base font-bold text-destructive font-cairo">
                   تسجيل الخروج
                 </span>
               </button>
