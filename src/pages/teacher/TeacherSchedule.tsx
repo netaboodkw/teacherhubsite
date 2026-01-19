@@ -562,7 +562,6 @@ export default function TeacherSchedule() {
             </div>
           </div>
         )}
-        </div>
 
         <div style={{ textAlign: 'center', marginTop: '20px', paddingTop: '10px', borderTop: '1px solid #ccc', fontSize: '9px', color: '#666' }}>
           تم الطباعة بتاريخ: {new Date().toLocaleDateString('ar-SA')}

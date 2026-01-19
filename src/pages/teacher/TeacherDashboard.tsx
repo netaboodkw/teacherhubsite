@@ -1,7 +1,7 @@
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useClassrooms } from '@/hooks/useClassrooms';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
-import { GraduationCap, Users, ClipboardCheck, BookOpen, AlertTriangle, Plus } from 'lucide-react';
+import { GraduationCap, Users, ClipboardCheck, BookOpen, AlertTriangle, Plus, LayoutDashboard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { TodaySchedule } from '@/components/dashboard/TodaySchedule';
 import { useMemo } from 'react';
@@ -14,6 +14,7 @@ import { useThemeStyle } from '@/contexts/ThemeContext';
 import { GlassButton } from '@/components/ui/glass-button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ClassroomCard } from '@/components/dashboard/ClassroomCard';
+import { PageHeader } from '@/components/common/PageHeader';
 
 export default function TeacherDashboard() {
   const { data: classrooms, isLoading: classroomsLoading } = useClassrooms();
@@ -241,10 +242,11 @@ export default function TeacherDashboard() {
           </Alert>
         )}
 
-        <div>
-          <h1 className="text-2xl font-bold">مرحباً بك</h1>
-          <p className="text-muted-foreground">إدارة صفوفك وطلابك</p>
-        </div>
+        <PageHeader
+          icon={LayoutDashboard}
+          title="مرحباً بك"
+          subtitle="إدارة صفوفك وطلابك"
+        />
 
         <div className="grid gap-4 md:grid-cols-4">
           {stats.map((stat) => (

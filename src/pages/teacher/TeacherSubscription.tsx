@@ -36,6 +36,7 @@ import {
   XCircle,
   FileText
 } from 'lucide-react';
+import { PageHeader } from '@/components/common/PageHeader';
 
 interface Payment {
   id: string;
@@ -259,22 +260,22 @@ export default function TeacherSubscription() {
         )}
 
         {/* Header */}
-        <div className="text-center space-y-4">
-          <h1 className="text-3xl font-bold">الاشتراك والمدفوعات</h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            اختر الباقة المناسبة لاحتياجاتك واستمتع بجميع مميزات النظام
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            {getStatusBadge()}
-            {/* Show trial end date next to badge */}
-            {subscriptionStatus.status === 'trial' && subscription?.trial_ends_at && (
-              <Badge variant="outline" className="gap-1">
-                <Calendar className="h-3 w-3" />
-                تنتهي في: {getTrialEndDate()}
-              </Badge>
-            )}
-          </div>
-        </div>
+        <PageHeader
+          icon={CreditCard}
+          title="الاشتراك والمدفوعات"
+          subtitle="اختر الباقة المناسبة لاحتياجاتك واستمتع بجميع مميزات النظام"
+          actions={
+            <div className="flex flex-wrap items-center gap-3">
+              {getStatusBadge()}
+              {subscriptionStatus.status === 'trial' && subscription?.trial_ends_at && (
+                <Badge variant="outline" className="gap-1">
+                  <Calendar className="h-3 w-3" />
+                  تنتهي في: {getTrialEndDate()}
+                </Badge>
+              )}
+            </div>
+          }
+        />
 
         {/* Tabs */}
         <Tabs defaultValue="packages" className="w-full">
