@@ -253,15 +253,26 @@ export default function TeacherSubscription() {
 
       if (data.paymentUrl) {
         toast.success('جاري التحويل لصفحة الدفع...');
-        // Open in new window to avoid iframe restrictions from payment gateways
-        // Use window.top to break out of iframe if embedded
-        setTimeout(() => {
-          if (window.top) {
+        
+        // Try multiple methods to redirect
+        try {
+          // First try to open in parent window (breaks out of iframe)
+          if (window.top && window.top !== window) {
             window.top.location.href = data.paymentUrl;
           } else {
-            window.open(data.paymentUrl, '_blank');
+            window.location.href = data.paymentUrl;
           }
-        }, 300);
+        } catch (e) {
+          // If cross-origin restriction, open in new tab
+          const newWindow = window.open(data.paymentUrl, '_blank');
+          if (!newWindow) {
+            // If popup blocked, show link to user
+            toast.error('تم حظر النافذة المنبثقة. سيتم نسخ رابط الدفع.', { duration: 5000 });
+            navigator.clipboard.writeText(data.paymentUrl);
+            // Fallback: direct location change
+            window.location.href = data.paymentUrl;
+          }
+        }
       } else {
         throw new Error('لم يتم استلام رابط الدفع');
       }
