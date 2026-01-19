@@ -29,7 +29,7 @@ import { ar } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useNativeNotifications } from '@/hooks/useNativeNotifications';
 import { useFingerprintScheduler } from '@/hooks/useFingerprintScheduler';
-import { getAttendancePref, setAttendancePref } from '@/components/notifications/AttendanceNotificationBanner';
+import { isBannerDisabled, setBannerDisabled } from '@/components/notifications/WelcomeAttendanceBanner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
 import { cn } from '@/lib/utils';
@@ -100,14 +100,14 @@ const FingerprintPage = () => {
   const [status, setStatus] = useState<FingerprintStatus>('waiting');
   const [fingerprintDone, setFingerprintDone] = useState(false);
   const [lastReminderTime, setLastReminderTime] = useState<Date | null>(null);
-  const [dailyNotificationEnabled, setDailyNotificationEnabled] = useState(() => getAttendancePref() === 'daily');
+  const [welcomeBannerEnabled, setWelcomeBannerEnabled] = useState(() => !isBannerDisabled());
   const [showSettings, setShowSettings] = useState(false);
   const [showStats, setShowStats] = useState(false);
 
-  const handleDailyNotificationToggle = (enabled: boolean) => {
-    setDailyNotificationEnabled(enabled);
-    setAttendancePref(enabled ? 'daily' : 'never');
-    toast.success(enabled ? 'تم تفعيل إشعار الحضور اليومي ✓' : 'تم إيقاف إشعار الحضور اليومي');
+  const handleWelcomeBannerToggle = (enabled: boolean) => {
+    setWelcomeBannerEnabled(enabled);
+    setBannerDisabled(!enabled);
+    toast.success(enabled ? 'تم تفعيل بانر الترحيب ✓' : 'تم إخفاء بانر الترحيب بشكل كامل');
   };
 
   // Show toast when settings change
@@ -379,21 +379,21 @@ const FingerprintPage = () => {
             {/* Settings Section - At Top When Open */}
             {showSettings && (
               <div className="space-y-3 animate-in slide-in-from-top duration-200">
-                {/* Daily Notification Toggle */}
+                {/* Welcome Banner Toggle */}
                 <div className="flex items-center justify-between p-4 rounded-2xl bg-primary/5 border-2 border-primary/20">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                       <Bell className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <p className="font-semibold">إشعار الحضور اليومي</p>
+                      <p className="font-semibold">بانر الترحيب والحضور</p>
                       <p className="text-xs text-muted-foreground">يظهر عند فتح التطبيق صباحاً</p>
                     </div>
                   </div>
                   <div dir="ltr">
                     <Switch
-                      checked={dailyNotificationEnabled}
-                      onCheckedChange={handleDailyNotificationToggle}
+                      checked={welcomeBannerEnabled}
+                      onCheckedChange={handleWelcomeBannerToggle}
                     />
                   </div>
                 </div>
@@ -807,13 +807,13 @@ const FingerprintPage = () => {
               {/* Daily Notification */}
               <div className="flex items-center justify-between p-4 rounded-xl bg-primary/5 border border-primary/20">
                 <div>
-                  <Label className="text-base font-semibold">إشعار الحضور اليومي</Label>
-                  <p className="text-sm text-muted-foreground">عرض إشعار عند فتح التطبيق</p>
+                  <Label className="text-base font-semibold">بانر الترحيب والحضور</Label>
+                  <p className="text-sm text-muted-foreground">عرض بانر عند فتح التطبيق</p>
                 </div>
                 <div dir="ltr">
                   <Switch
-                    checked={dailyNotificationEnabled}
-                    onCheckedChange={handleDailyNotificationToggle}
+                    checked={welcomeBannerEnabled}
+                    onCheckedChange={handleWelcomeBannerToggle}
                   />
                 </div>
               </div>

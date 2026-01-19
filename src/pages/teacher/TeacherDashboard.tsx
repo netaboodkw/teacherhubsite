@@ -2,10 +2,10 @@ import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useClassrooms } from '@/hooks/useClassrooms';
 import { useProfile } from '@/hooks/useProfile';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
-import { GraduationCap, Users, ClipboardCheck, BookOpen, AlertTriangle, Plus, LayoutDashboard } from 'lucide-react';
+import { GraduationCap, Users, ClipboardCheck, BookOpen, AlertTriangle, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { TodaySchedule } from '@/components/dashboard/TodaySchedule';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -15,10 +15,9 @@ import { useThemeStyle } from '@/contexts/ThemeContext';
 import { GlassButton } from '@/components/ui/glass-button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ClassroomCard } from '@/components/dashboard/ClassroomCard';
-import { PageHeader } from '@/components/common/PageHeader';
 
 import { NotificationPermissionPrompt } from '@/components/notifications/NotificationPermissionPrompt';
-import { AttendanceNotificationBanner, getAttendancePref, wasShownToday, markShownToday } from '@/components/notifications/AttendanceNotificationBanner';
+import { WelcomeAttendanceBanner, isBannerDisabled } from '@/components/notifications/WelcomeAttendanceBanner';
 import { useFingerprintScheduler } from '@/hooks/useFingerprintScheduler';
 import { toast } from 'sonner';
 
@@ -28,37 +27,12 @@ export default function TeacherDashboard() {
   const themeStyle = useThemeStyle();
   const isGlass = themeStyle === 'liquid-glass';
   
-  // Attendance banner state
-  const [showAttendanceBanner, setShowAttendanceBanner] = useState(false);
   const { 
     scheduleFingerprintNotifications, 
     markAttendanceTimeSet,
   } = useFingerprintScheduler();
   
-  // Check if we need to show attendance banner on first load
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      // Check user preference first
-      const pref = getAttendancePref();
-      if (pref === 'never') {
-        return;
-      }
-      
-      if (!wasShownToday()) {
-        setShowAttendanceBanner(true);
-      }
-    }, 1000); // Small delay to let the page load
-    
-    return () => clearTimeout(timeoutId);
-  }, []);
-  
-  // Handle dismiss
-  const handleAttendanceDismiss = () => {
-    markShownToday();
-    setShowAttendanceBanner(false);
-  };
-  
-  // Handle attendance time set
+  // Handle attendance time set from banner
   const handleAttendanceTimeSet = async (time: string) => {
     // Save to localStorage
     const settings = JSON.parse(localStorage.getItem('fingerprint-settings') || '{}');
@@ -73,8 +47,6 @@ export default function TeacherDashboard() {
     
     // Mark attendance time as set for today
     markAttendanceTimeSet();
-    markShownToday();
-    setShowAttendanceBanner(false);
     
     // Schedule notifications
     await scheduleFingerprintNotifications(updatedSettings);
@@ -311,6 +283,14 @@ export default function TeacherDashboard() {
           </Alert>
         )}
 
+        {/* Welcome Attendance Banner - Fixed at top of content */}
+        {!isBannerDisabled() && (
+          <WelcomeAttendanceBanner 
+            onTimeSet={handleAttendanceTimeSet}
+            className="mb-4"
+          />
+        )}
+
         <div className="mb-6">
           <h1 className="text-2xl font-bold">مرحباً {profile?.full_name?.split(' ')[0] || 'بك'} 👋</h1>
           <p className="text-muted-foreground">إدارة صفوفك وطلابك</p>
@@ -396,16 +376,6 @@ export default function TeacherDashboard() {
       
       {/* Notification Permission Prompt - shows once on first login */}
       <NotificationPermissionPrompt />
-      
-      {/* Daily Attendance Banner */}
-      {showAttendanceBanner && (
-        <div className="fixed top-0 left-0 right-0 z-50 safe-area-inset-top pt-12">
-          <AttendanceNotificationBanner
-            onTimeSet={handleAttendanceTimeSet}
-            onDismiss={handleAttendanceDismiss}
-          />
-        </div>
-      )}
     </TeacherLayout>
   );
 }
