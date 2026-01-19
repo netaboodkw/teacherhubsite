@@ -1,6 +1,5 @@
 import * as React from "react";
 import * as SwitchPrimitives from "@radix-ui/react-switch";
-import { Check, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -21,8 +20,29 @@ const Switch = React.forwardRef<
         "pointer-events-none flex h-6 w-6 items-center justify-center rounded-full bg-background shadow-lg ring-0 transition-all duration-200 data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0",
       )}
     >
-      <Check className="h-3.5 w-3.5 text-primary opacity-0 transition-opacity data-[state=checked]:opacity-100 [.peer[data-state=checked]_&]:opacity-100" />
-      <X className="h-3.5 w-3.5 text-muted-foreground absolute opacity-100 transition-opacity [.peer[data-state=checked]_&]:opacity-0" />
+      <svg 
+        className="h-3.5 w-3.5 text-primary opacity-0 transition-opacity duration-200 [.peer[data-state=checked]_&]:opacity-100" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor" 
+        strokeWidth="3" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+      >
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+      <svg 
+        className="h-3.5 w-3.5 text-muted-foreground absolute opacity-100 transition-opacity duration-200 [.peer[data-state=checked]_&]:opacity-0" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor" 
+        strokeWidth="3" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+      >
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
     </SwitchPrimitives.Thumb>
   </SwitchPrimitives.Root>
 ));
