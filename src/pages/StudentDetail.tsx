@@ -7,6 +7,7 @@ import { useBehaviorNotes, useUpdateBehaviorNote, useDeleteBehaviorNote } from '
 import { useGrades } from '@/hooks/useGrades';
 import { useAttendance } from '@/hooks/useAttendance';
 import { useClassroomGradingStructure } from '@/hooks/useGradingStructures';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -19,18 +20,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { StudentAvatarUpload } from '@/components/students/StudentAvatarUpload';
 import { AttendanceHistoryDialog } from '@/components/attendance/AttendanceHistoryDialog';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { 
   ArrowRight, Save, Loader2, User, Plus, Minus, MessageSquare, 
   Trash2, Edit2, Calendar, Clock, HeartPulse, GraduationCap,
-  UserX, ThumbsUp, ThumbsDown, BarChart3, Phone, Eye
+  UserX, ThumbsUp, ThumbsDown, Phone, Eye, X
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 export default function StudentDetail() {
   const { studentId } = useParams<{ studentId: string }>();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const { data: student, isLoading: loadingStudent } = useStudent(studentId || '');
   const { data: classroom } = useClassroom(student?.classroom_id || '');
   const { data: classrooms = [] } = useClassrooms();
@@ -38,7 +42,6 @@ export default function StudentDetail() {
   const { data: grades = [] } = useGrades(student?.classroom_id || undefined, studentId);
   const { data: allAttendance = [] } = useAttendance(student?.classroom_id || undefined);
   
-  // Get grading structure to resolve column names
   const { data: gradingStructure } = useClassroomGradingStructure(classroom ? {
     education_level_id: classroom.education_level_id,
     grade_level_id: classroom.grade_level_id,
@@ -46,19 +49,13 @@ export default function StudentDetail() {
     teacher_template_id: classroom.teacher_template_id,
   } : undefined);
   
-  // Create a map of column IDs to their Arabic names
   const columnNamesMap = useMemo(() => {
     const map: Record<string, string> = {};
     if (gradingStructure?.structure?.groups) {
       gradingStructure.structure.groups.forEach(group => {
-        // Add group name for potential group-based titles
-        if (group.id) {
-          map[group.id] = group.name_ar;
-        }
+        if (group.id) map[group.id] = group.name_ar;
         group.columns.forEach(col => {
-          // Map by column ID
           map[col.id] = col.name_ar;
-          // Also map by column ID without prefix for flexibility
           if (col.id.startsWith('col_')) {
             map[col.id.replace('col_', '')] = col.name_ar;
           }
@@ -68,51 +65,28 @@ export default function StudentDetail() {
     return map;
   }, [gradingStructure]);
   
-  // Helper to get display name for a grade
   const getGradeDisplayTitle = (gradeTitle: string): string => {
-    // Direct match in column names map
-    if (columnNamesMap[gradeTitle]) {
-      return columnNamesMap[gradeTitle];
-    }
-    
-    // Check if it starts with col_ or contains underscore patterns
+    if (columnNamesMap[gradeTitle]) return columnNamesMap[gradeTitle];
     if (gradeTitle.startsWith('col_')) {
       const withoutPrefix = gradeTitle.replace('col_', '');
-      if (columnNamesMap[withoutPrefix]) {
-        return columnNamesMap[withoutPrefix];
-      }
+      if (columnNamesMap[withoutPrefix]) return columnNamesMap[withoutPrefix];
     }
-    
-    // Check for UUID-like patterns (common in generated IDs)
     const uuidPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
     const partialUuidPattern = /^[a-f0-9]{6,}$/i;
-    
     if (uuidPattern.test(gradeTitle) || partialUuidPattern.test(gradeTitle)) {
-      // This is likely a generated ID, check if we have it mapped
-      if (columnNamesMap[gradeTitle]) {
-        return columnNamesMap[gradeTitle];
-      }
-      // Return a generic name if it's an unmapped ID
+      if (columnNamesMap[gradeTitle]) return columnNamesMap[gradeTitle];
       return 'درجة';
     }
-    
-    // Check for patterns like "col_abc123" or "group_xyz"
     if (/^(col_|group_|column_|grade_)/i.test(gradeTitle)) {
       const cleanId = gradeTitle.replace(/^(col_|group_|column_|grade_)/i, '');
-      if (columnNamesMap[cleanId]) {
-        return columnNamesMap[cleanId];
-      }
+      if (columnNamesMap[cleanId]) return columnNamesMap[cleanId];
     }
-    
-    // If title contains only alphanumeric and underscores with numbers, it's likely a code
     if (/^[a-zA-Z0-9_]+$/.test(gradeTitle) && /\d/.test(gradeTitle) && gradeTitle.length > 10) {
       return 'درجة';
     }
-    
     return gradeTitle;
   };
 
-  // Filter attendance for this student
   const studentAttendance = allAttendance.filter(a => a.student_id === studentId);
   
   const updateStudent = useUpdateStudent();
@@ -134,12 +108,9 @@ export default function StudentDetail() {
   const [editingNote, setEditingNote] = useState<typeof behaviorNotes[0] | null>(null);
   const [editNoteDescription, setEditNoteDescription] = useState('');
   const [attendanceDialogType, setAttendanceDialogType] = useState<'absent' | 'late' | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  const initials = student?.name
-    ?.split(' ')
-    .map(n => n[0])
-    .join('')
-    .slice(0, 2) || '';
+  const initials = student?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '';
 
   // Calculate statistics
   const totalScore = grades.reduce((sum, g) => sum + g.score, 0);
@@ -167,7 +138,6 @@ export default function StudentDetail() {
 
   const handleSave = async () => {
     if (!studentId) return;
-
     try {
       await updateStudent.mutateAsync({
         id: studentId,
@@ -182,20 +152,15 @@ export default function StudentDetail() {
         parent_phone: parentPhone || null,
       } as any);
       setEditMode(false);
-    } catch (error) {
-      // Error handled by hook
-    }
+    } catch (error) {}
   };
 
   const handleDelete = async () => {
     if (!studentId) return;
-
     try {
       await deleteStudent.mutateAsync(studentId);
       navigate('/teacher/students');
-    } catch (error) {
-      // Error handled by hook
-    }
+    } catch (error) {}
   };
 
   const handleEditNote = (note: typeof behaviorNotes[0]) => {
@@ -205,24 +170,16 @@ export default function StudentDetail() {
 
   const handleSaveNote = async () => {
     if (!editingNote) return;
-
     try {
-      await updateNote.mutateAsync({
-        id: editingNote.id,
-        description: editNoteDescription,
-      });
+      await updateNote.mutateAsync({ id: editingNote.id, description: editNoteDescription });
       setEditingNote(null);
-    } catch (error) {
-      // Error handled by hook
-    }
+    } catch (error) {}
   };
 
   const handleDeleteNote = async (noteId: string) => {
     try {
       await deleteNote.mutateAsync(noteId);
-    } catch (error) {
-      // Error handled by hook
-    }
+    } catch (error) {}
   };
 
   const getNoteIcon = (type: string) => {
@@ -235,36 +192,362 @@ export default function StudentDetail() {
 
   const getNoteColor = (type: string) => {
     switch (type) {
-      case 'positive': return 'bg-green-100 text-green-800 border-green-200';
-      case 'negative': return 'bg-red-100 text-red-800 border-red-200';
+      case 'positive': return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-950/30 dark:border-green-800 dark:text-green-400';
+      case 'negative': return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-950/30 dark:border-red-800 dark:text-red-400';
       default: return 'bg-muted text-muted-foreground border-border';
     }
   };
 
   if (loadingStudent) {
     return (
-      <TeacherLayout>
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      </TeacherLayout>
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
     );
   }
 
   if (!student) {
     return (
-      <TeacherLayout>
-        <div className="flex flex-col items-center justify-center min-h-[50vh] text-muted-foreground">
-          <User className="h-12 w-12 mb-4" />
-          <p>الطالب غير موجود</p>
-          <Button variant="outline" className="mt-4" onClick={() => navigate('/teacher/students')}>
-            العودة للطلاب
-          </Button>
-        </div>
-      </TeacherLayout>
+      <div className="min-h-screen flex flex-col items-center justify-center text-muted-foreground p-4">
+        <User className="h-12 w-12 mb-4" />
+        <p>الطالب غير موجود</p>
+        <Button variant="outline" className="mt-4" onClick={() => navigate('/teacher/students')}>
+          العودة للطلاب
+        </Button>
+      </div>
     );
   }
 
+  // iOS Mobile Layout
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-background" dir="rtl">
+        {/* iOS Header */}
+        <div className={cn(
+          "sticky top-0 z-20",
+          "bg-background/60 backdrop-blur-2xl backdrop-saturate-200",
+          "border-b border-border/10",
+          "pt-[env(safe-area-inset-top)]"
+        )}>
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/teacher/students')} className="h-10 w-10">
+                <ArrowRight className="h-5 w-5" />
+              </Button>
+              <div className="flex-1" />
+              {!editMode ? (
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="icon" onClick={handleStartEdit} className="h-10 w-10">
+                    <Edit2 className="h-5 w-5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => setDeleteDialogOpen(true)} className="h-10 w-10 text-destructive">
+                    <Trash2 className="h-5 w-5" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="sm" onClick={() => setEditMode(false)} className="h-10">
+                    <X className="h-5 w-5" />
+                  </Button>
+                  <Button size="sm" onClick={handleSave} disabled={updateStudent.isPending} className="h-10">
+                    {updateStudent.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-4 pb-24 space-y-4">
+          {/* Student Profile Header */}
+          <div className="flex flex-col items-center py-4">
+            <div className="relative mb-3">
+              {editMode ? (
+                <StudentAvatarUpload
+                  studentId={studentId || ''}
+                  currentAvatarUrl={avatarUrl}
+                  initials={initials}
+                  onUpload={(url) => setAvatarUrl(url)}
+                  size="lg"
+                />
+              ) : (
+                <Avatar className="w-24 h-24 border-4 border-background shadow-xl">
+                  <AvatarImage src={student.avatar_url || undefined} />
+                  <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">{initials}</AvatarFallback>
+                </Avatar>
+              )}
+              {student.special_needs && !editMode && (
+                <div className="absolute -top-1 -right-1 bg-amber-500 rounded-full p-1.5 shadow-lg">
+                  <HeartPulse className="w-4 h-4 text-white" />
+                </div>
+              )}
+              {(student as any).is_watched && !editMode && (
+                <div className="absolute -bottom-1 -right-1 bg-purple-500 rounded-full p-1.5 shadow-lg">
+                  <Eye className="w-4 h-4 text-white" />
+                </div>
+              )}
+            </div>
+            
+            {editMode ? (
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="text-center text-xl font-bold h-12 max-w-xs"
+                placeholder="اسم الطالب"
+              />
+            ) : (
+              <>
+                <h1 className="text-xl font-bold text-center">{student.name}</h1>
+                <p className="text-sm text-muted-foreground">{classroom?.name}</p>
+              </>
+            )}
+          </div>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="p-3 rounded-xl bg-primary/10 text-center">
+              <GraduationCap className="h-5 w-5 mx-auto mb-1 text-primary" />
+              <p className="text-lg font-bold text-primary">{totalScore}</p>
+              <p className="text-[10px] text-muted-foreground">الدرجات</p>
+            </div>
+            <div 
+              className="p-3 rounded-xl bg-destructive/10 text-center cursor-pointer active:scale-95 transition-transform"
+              onClick={() => absentCount > 0 && setAttendanceDialogType('absent')}
+            >
+              <UserX className="h-5 w-5 mx-auto mb-1 text-destructive" />
+              <p className="text-lg font-bold text-destructive">{absentCount}</p>
+              <p className="text-[10px] text-muted-foreground">غياب</p>
+            </div>
+            <div 
+              className="p-3 rounded-xl bg-amber-500/10 text-center cursor-pointer active:scale-95 transition-transform"
+              onClick={() => lateCount > 0 && setAttendanceDialogType('late')}
+            >
+              <Clock className="h-5 w-5 mx-auto mb-1 text-amber-600" />
+              <p className="text-lg font-bold text-amber-600">{lateCount}</p>
+              <p className="text-[10px] text-muted-foreground">تأخير</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            <div className="p-3 rounded-xl bg-green-500/10 text-center">
+              <ThumbsUp className="h-5 w-5 mx-auto mb-1 text-green-600" />
+              <p className="text-lg font-bold text-green-600">{positiveNotes}</p>
+              <p className="text-[10px] text-muted-foreground">إيجابي</p>
+            </div>
+            <div className="p-3 rounded-xl bg-red-500/10 text-center">
+              <ThumbsDown className="h-5 w-5 mx-auto mb-1 text-red-600" />
+              <p className="text-lg font-bold text-red-600">{negativeNotes}</p>
+              <p className="text-[10px] text-muted-foreground">سلبي</p>
+            </div>
+            <div className={cn(
+              "p-3 rounded-xl text-center",
+              totalPoints >= 0 ? "bg-green-500/10" : "bg-red-500/10"
+            )}>
+              <p className={cn("text-lg font-bold", totalPoints >= 0 ? "text-green-600" : "text-red-600")}>
+                {totalPoints > 0 ? '+' : ''}{totalPoints}
+              </p>
+              <p className="text-[10px] text-muted-foreground">النقاط</p>
+            </div>
+          </div>
+
+          {/* Edit Form */}
+          {editMode && (
+            <div className="space-y-4 p-4 rounded-2xl bg-muted/30 border border-border/50">
+              <div className="space-y-2">
+                <Label>رقم الطالب</Label>
+                <Input value={studentIdValue} onChange={(e) => setStudentIdValue(e.target.value)} />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>الصف</Label>
+                <Select value={classroomId} onValueChange={setClassroomId}>
+                  <SelectTrigger className="h-12 rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {classrooms.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>ملاحظات</Label>
+                <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-background">
+                <div className="flex items-center gap-2">
+                  <HeartPulse className="w-5 h-5 text-amber-500" />
+                  <span className="text-sm">احتياجات خاصة</span>
+                </div>
+                <Switch checked={specialNeeds} onCheckedChange={setSpecialNeeds} />
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-background">
+                <div className="flex items-center gap-2">
+                  <Eye className="w-5 h-5 text-purple-500" />
+                  <span className="text-sm">تحت المتابعة</span>
+                </div>
+                <Switch checked={isWatched} onCheckedChange={setIsWatched} />
+              </div>
+
+              <div className="space-y-3 p-3 rounded-xl bg-background">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Phone className="w-4 h-4" />
+                  <span className="text-sm">بيانات ولي الأمر</span>
+                </div>
+                <Input placeholder="اسم ولي الأمر" value={parentName} onChange={(e) => setParentName(e.target.value)} />
+                <Input placeholder="رقم الهاتف" value={parentPhone} onChange={(e) => setParentPhone(e.target.value)} dir="ltr" />
+              </div>
+            </div>
+          )}
+
+          {/* Student Info (View Mode) */}
+          {!editMode && (
+            <>
+              {student.notes && (
+                <div className="p-4 rounded-2xl bg-muted/30">
+                  <p className="text-sm text-muted-foreground mb-1">ملاحظات</p>
+                  <p className="text-sm">{student.notes}</p>
+                </div>
+              )}
+
+              {((student as any).parent_name || (student as any).parent_phone) && (
+                <div className="p-4 rounded-2xl bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                        <Phone className="w-4 h-4" />
+                        <span className="text-sm">ولي الأمر</span>
+                      </div>
+                      {(student as any).parent_name && <p className="font-medium">{(student as any).parent_name}</p>}
+                      {(student as any).parent_phone && <p className="text-sm text-muted-foreground" dir="ltr">{(student as any).parent_phone}</p>}
+                    </div>
+                    {(student as any).parent_phone && (
+                      <a
+                        href={`https://wa.me/965${(student as any).parent_phone.replace(/[^0-9]/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 rounded-xl bg-green-500 text-white text-sm font-medium"
+                      >
+                        واتساب
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Grades */}
+          {grades.length > 0 && !editMode && (
+            <div className="space-y-3">
+              <h3 className="font-semibold flex items-center gap-2">
+                <GraduationCap className="h-5 w-5" />
+                الدرجات
+                <Badge variant="secondary">{grades.length}</Badge>
+              </h3>
+              <div className="grid grid-cols-3 gap-2">
+                {grades.slice(0, 9).map((grade) => (
+                  <div key={grade.id} className="p-2 rounded-xl bg-card border border-border/50 text-center">
+                    <p className="text-sm font-bold text-primary">{grade.score}/{grade.max_score}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{getGradeDisplayTitle(grade.title)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Behavior Notes */}
+          {!editMode && (
+            <div className="space-y-3">
+              <h3 className="font-semibold flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                سجل السلوكيات
+                <Badge variant="secondary">{behaviorNotes.length}</Badge>
+              </h3>
+              
+              {behaviorNotes.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">لا توجد ملاحظات</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {behaviorNotes.map((note) => (
+                    <div
+                      key={note.id}
+                      className={cn("p-3 rounded-xl border", getNoteColor(note.type))}
+                    >
+                      <div className="flex items-start gap-2">
+                        <div className="mt-0.5">{getNoteIcon(note.type)}</div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm">{note.description}</p>
+                          <p className="text-[10px] opacity-70 mt-1">
+                            {format(new Date(note.date), 'dd MMM yyyy', { locale: ar })}
+                          </p>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 shrink-0"
+                          onClick={() => handleEditNote(note)}
+                        >
+                          <Edit2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Delete Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent dir="rtl" className="max-w-[90vw] rounded-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>حذف الطالب</AlertDialogTitle>
+              <AlertDialogDescription>هل أنت متأكد من حذف هذا الطالب؟</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-row-reverse gap-2">
+              <AlertDialogCancel className="h-12">إلغاء</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} className="h-12 bg-destructive">حذف</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Edit Note Dialog */}
+        <Dialog open={!!editingNote} onOpenChange={() => setEditingNote(null)}>
+          <DialogContent dir="rtl" className="max-w-[90vw] rounded-2xl">
+            <DialogHeader>
+              <DialogTitle>تعديل الملاحظة</DialogTitle>
+            </DialogHeader>
+            <Textarea value={editNoteDescription} onChange={(e) => setEditNoteDescription(e.target.value)} rows={3} />
+            <DialogFooter className="flex-row-reverse gap-2">
+              <Button variant="outline" onClick={() => setEditingNote(null)}>إلغاء</Button>
+              <Button onClick={handleSaveNote} disabled={updateNote.isPending}>حفظ</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Attendance History Dialog */}
+        <AttendanceHistoryDialog
+          open={attendanceDialogType !== null}
+          onOpenChange={() => setAttendanceDialogType(null)}
+          studentName={student?.name || ''}
+          attendanceRecords={studentAttendance}
+          type={attendanceDialogType || 'absent'}
+        />
+      </div>
+    );
+  }
+
+  // Desktop Layout
   return (
     <TeacherLayout>
       <div className="space-y-6 animate-fade-in">
@@ -277,6 +560,12 @@ export default function StudentDetail() {
             <h1 className="text-2xl font-bold text-foreground">{student.name}</h1>
             <p className="text-muted-foreground">{classroom?.name || 'الفصل'}</p>
           </div>
+          {!editMode && (
+            <Button variant="outline" onClick={handleStartEdit}>
+              <Edit2 className="h-4 w-4 ml-2" />
+              تعديل
+            </Button>
+          )}
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="icon">
@@ -286,15 +575,11 @@ export default function StudentDetail() {
             <AlertDialogContent dir="rtl">
               <AlertDialogHeader>
                 <AlertDialogTitle>حذف الطالب</AlertDialogTitle>
-                <AlertDialogDescription>
-                  هل أنت متأكد من حذف هذا الطالب؟ سيتم حذف جميع بياناته وسجلاته.
-                </AlertDialogDescription>
+                <AlertDialogDescription>هل أنت متأكد من حذف هذا الطالب؟</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter className="flex-row-reverse gap-2">
                 <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
-                  حذف
-                </AlertDialogAction>
+                <AlertDialogAction onClick={handleDelete} className="bg-destructive">حذف</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -309,39 +594,27 @@ export default function StudentDetail() {
               <p className="text-xs text-muted-foreground">مجموع الدرجات</p>
             </CardContent>
           </Card>
-          
-          <Card className="bg-success/10 border-success/20">
+          <Card className="bg-green-500/10 border-green-500/20">
             <CardContent className="p-4 text-center">
-              <User className="h-6 w-6 mx-auto mb-2 text-success" />
-              <p className="text-2xl font-bold text-success">{presentCount}</p>
+              <User className="h-6 w-6 mx-auto mb-2 text-green-600" />
+              <p className="text-2xl font-bold text-green-600">{presentCount}</p>
               <p className="text-xs text-muted-foreground">أيام الحضور</p>
             </CardContent>
           </Card>
-          
-          <Card 
-            className="bg-destructive/10 border-destructive/20 cursor-pointer hover:bg-destructive/20 transition-colors"
-            onClick={() => absentCount > 0 && setAttendanceDialogType('absent')}
-          >
+          <Card className="bg-destructive/10 border-destructive/20 cursor-pointer hover:bg-destructive/20" onClick={() => absentCount > 0 && setAttendanceDialogType('absent')}>
             <CardContent className="p-4 text-center">
               <UserX className="h-6 w-6 mx-auto mb-2 text-destructive" />
               <p className="text-2xl font-bold text-destructive">{absentCount}</p>
               <p className="text-xs text-muted-foreground">أيام الغياب</p>
-              {absentCount > 0 && <p className="text-xs text-destructive mt-1">اضغط للتفاصيل</p>}
             </CardContent>
           </Card>
-          
-          <Card 
-            className="bg-warning/10 border-warning/20 cursor-pointer hover:bg-warning/20 transition-colors"
-            onClick={() => lateCount > 0 && setAttendanceDialogType('late')}
-          >
+          <Card className="bg-amber-500/10 border-amber-500/20 cursor-pointer hover:bg-amber-500/20" onClick={() => lateCount > 0 && setAttendanceDialogType('late')}>
             <CardContent className="p-4 text-center">
-              <Clock className="h-6 w-6 mx-auto mb-2 text-warning" />
-              <p className="text-2xl font-bold text-warning">{lateCount}</p>
+              <Clock className="h-6 w-6 mx-auto mb-2 text-amber-600" />
+              <p className="text-2xl font-bold text-amber-600">{lateCount}</p>
               <p className="text-xs text-muted-foreground">أيام التأخير</p>
-              {lateCount > 0 && <p className="text-xs text-warning mt-1">اضغط للتفاصيل</p>}
             </CardContent>
           </Card>
-          
           <Card className="bg-green-500/10 border-green-500/20">
             <CardContent className="p-4 text-center">
               <ThumbsUp className="h-6 w-6 mx-auto mb-2 text-green-600" />
@@ -349,7 +622,6 @@ export default function StudentDetail() {
               <p className="text-xs text-muted-foreground">سلوكيات إيجابية</p>
             </CardContent>
           </Card>
-          
           <Card className="bg-red-500/10 border-red-500/20">
             <CardContent className="p-4 text-center">
               <ThumbsDown className="h-6 w-6 mx-auto mb-2 text-red-600" />
@@ -361,7 +633,7 @@ export default function StudentDetail() {
 
         {/* Student Info Card */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader>
             <CardTitle className="flex items-center gap-4">
               <div className="relative">
                 <StudentAvatarUpload
@@ -378,145 +650,69 @@ export default function StudentDetail() {
                 )}
               </div>
               <div>
-                <h2 className="text-xl font-bold">{student.name}</h2>
                 <p className="text-sm text-muted-foreground font-normal">{student.student_id}</p>
               </div>
             </CardTitle>
-            {!editMode && (
-              <Button variant="outline" onClick={handleStartEdit}>
-                <Edit2 className="h-4 w-4 ml-2" />
-                تعديل
-              </Button>
-            )}
           </CardHeader>
           <CardContent>
             {editMode ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">اسم الطالب</Label>
-                    <Input
-                      id="name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="اسم الطالب"
-                    />
+                    <Label>اسم الطالب</Label>
+                    <Input value={name} onChange={(e) => setName(e.target.value)} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="studentId">رقم الطالب</Label>
-                    <Input
-                      id="studentId"
-                      value={studentIdValue}
-                      onChange={(e) => setStudentIdValue(e.target.value)}
-                      placeholder="رقم الطالب"
-                    />
+                    <Label>رقم الطالب</Label>
+                    <Input value={studentIdValue} onChange={(e) => setStudentIdValue(e.target.value)} />
                   </div>
                 </div>
-
-                {/* Classroom Selection */}
                 <div className="space-y-2">
-                  <Label>الصف الدراسي</Label>
+                  <Label>الصف</Label>
                   <Select value={classroomId} onValueChange={setClassroomId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="اختر الصف" />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {classrooms.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name} - {c.subject}
-                        </SelectItem>
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  {classroomId !== student?.classroom_id && (
-                    <p className="text-xs text-amber-600">⚠️ سيتم نقل الطالب إلى الصف الجديد</p>
-                  )}
                 </div>
-
                 <div className="space-y-2">
-                  <Label htmlFor="notes">ملاحظات</Label>
-                  <Textarea
-                    id="notes"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="ملاحظات عن الطالب..."
-                    rows={3}
-                  />
+                  <Label>ملاحظات</Label>
+                  <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
                 </div>
-                
-                {/* Special Needs Toggle */}
-                <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
+                <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
                   <div className="flex items-center gap-3">
                     <HeartPulse className="w-5 h-5 text-amber-500" />
-                    <div>
-                      <Label htmlFor="special_needs" className="font-medium">احتياجات خاصة</Label>
-                      <p className="text-sm text-muted-foreground">تفعيل هذا الخيار سيظهر أيقونة القلب بجانب اسم الطالب</p>
-                    </div>
+                    <Label>احتياجات خاصة</Label>
                   </div>
-                  <Switch
-                    id="special_needs"
-                    checked={specialNeeds}
-                    onCheckedChange={setSpecialNeeds}
-                  />
+                  <Switch checked={specialNeeds} onCheckedChange={setSpecialNeeds} />
                 </div>
-
-                {/* Watch/Follow Toggle */}
-                <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
+                <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
                   <div className="flex items-center gap-3">
                     <Eye className="w-5 h-5 text-purple-500" />
-                    <div>
-                      <Label htmlFor="is_watched" className="font-medium">تحت المتابعة</Label>
-                      <p className="text-sm text-muted-foreground">تفعيل هذا الخيار سيظهر أيقونة العين بجانب اسم الطالب</p>
-                    </div>
+                    <Label>تحت المتابعة</Label>
                   </div>
-                  <Switch
-                    id="is_watched"
-                    checked={isWatched}
-                    onCheckedChange={setIsWatched}
-                  />
+                  <Switch checked={isWatched} onCheckedChange={setIsWatched} />
                 </div>
-
-                {/* Parent Information */}
-                <div className="space-y-4 p-4 rounded-lg border border-border bg-muted/30">
+                <div className="space-y-4 p-4 rounded-lg border bg-muted/30">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Phone className="w-4 h-4" />
-                    <span className="text-sm font-medium">بيانات ولي الأمر (اختياري)</span>
+                    <span className="text-sm font-medium">بيانات ولي الأمر</span>
                   </div>
-                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="parent_name">اسم ولي الأمر</Label>
-                      <Input
-                        id="parent_name"
-                        placeholder="اسم ولي الأمر"
-                        value={parentName}
-                        onChange={(e) => setParentName(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="parent_phone">رقم هاتف ولي الأمر</Label>
-                      <Input
-                        id="parent_phone"
-                        type="tel"
-                        placeholder="مثال: 96550123"
-                        value={parentPhone}
-                        onChange={(e) => setParentPhone(e.target.value)}
-                        dir="ltr"
-                        className="text-left"
-                      />
-                    </div>
+                    <Input placeholder="اسم ولي الأمر" value={parentName} onChange={(e) => setParentName(e.target.value)} />
+                    <Input placeholder="رقم الهاتف" value={parentPhone} onChange={(e) => setParentPhone(e.target.value)} dir="ltr" />
                   </div>
                 </div>
-
                 <div className="flex gap-2">
                   <Button onClick={handleSave} disabled={updateStudent.isPending}>
                     {updateStudent.isPending && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
                     <Save className="h-4 w-4 ml-2" />
-                    حفظ التغييرات
+                    حفظ
                   </Button>
-                  <Button variant="outline" onClick={() => setEditMode(false)}>
-                    إلغاء
-                  </Button>
+                  <Button variant="outline" onClick={() => setEditMode(false)}>إلغاء</Button>
                 </div>
               </div>
             ) : (
@@ -524,75 +720,35 @@ export default function StudentDetail() {
                 <div className="flex items-center gap-6">
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground">النقاط:</span>
-                    <Badge variant={totalPoints >= 0 ? 'default' : 'destructive'} className="text-lg px-3 py-1">
-                      {totalPoints}
-                    </Badge>
+                    <Badge variant={totalPoints >= 0 ? 'default' : 'destructive'}>{totalPoints}</Badge>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground">الفصل:</span>
                     <span className="font-medium">{classroom?.name}</span>
                   </div>
                 </div>
-                {student.notes && (
-                  <div>
-                    <p className="text-muted-foreground text-sm mb-1">ملاحظات:</p>
-                    <p className="text-foreground">{student.notes}</p>
-                  </div>
-                )}
-                
-                {/* Parent Info Display */}
-                {((student as any).parent_name || (student as any).parent_phone) && (
-                  <div className="p-4 rounded-lg border border-border bg-muted/30">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Phone className="w-4 h-4" />
-                          <span className="text-sm font-medium">بيانات ولي الأمر</span>
-                        </div>
-                        {(student as any).parent_name && (
-                          <p className="text-foreground">{(student as any).parent_name}</p>
-                        )}
-                        {(student as any).parent_phone && (
-                          <p className="text-muted-foreground text-sm" dir="ltr">{(student as any).parent_phone}</p>
-                        )}
-                      </div>
-                      {(student as any).parent_phone && (
-                        <a
-                          href={`https://wa.me/965${(student as any).parent_phone.replace(/[^0-9]/g, '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white transition-colors"
-                        >
-                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                          </svg>
-                          واتساب
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                )}
+                {student.notes && <p className="text-muted-foreground">{student.notes}</p>}
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Grades Summary */}
+        {/* Grades */}
         {grades.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <GraduationCap className="h-5 w-5" />
-                آخر الدرجات
-                <Badge variant="secondary" className="mr-auto">{grades.length}</Badge>
+                الدرجات
+                <Badge variant="secondary">{grades.length}</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
                 {grades.slice(0, 12).map((grade) => (
-                  <div key={grade.id} className="p-3 rounded-lg bg-muted/50 text-center space-y-1">
+                  <div key={grade.id} className="p-3 rounded-lg bg-muted/50 text-center">
                     <p className="text-lg font-bold text-primary">{grade.score}/{grade.max_score}</p>
-                    <p className="text-xs text-muted-foreground line-clamp-2" title={getGradeDisplayTitle(grade.title)}>{getGradeDisplayTitle(grade.title)}</p>
+                    <p className="text-xs text-muted-foreground truncate">{getGradeDisplayTitle(grade.title)}</p>
                   </div>
                 ))}
               </div>
@@ -606,26 +762,19 @@ export default function StudentDetail() {
             <CardTitle className="flex items-center gap-2">
               <MessageSquare className="h-5 w-5" />
               سجل السلوكيات
-              <Badge variant="secondary" className="mr-auto">{behaviorNotes.length}</Badge>
+              <Badge variant="secondary">{behaviorNotes.length}</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {loadingNotes ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : behaviorNotes.length === 0 ? (
+            {behaviorNotes.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>لا توجد ملاحظات سلوكية</p>
+                <p>لا توجد ملاحظات</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {behaviorNotes.map((note) => (
-                  <div
-                    key={note.id}
-                    className={`p-4 rounded-lg border ${getNoteColor(note.type)} flex items-start gap-3 group`}
-                  >
+                  <div key={note.id} className={cn("p-4 rounded-lg border flex items-start gap-3 group", getNoteColor(note.type))}>
                     <div className="mt-1">{getNoteIcon(note.type)}</div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium">{note.description}</p>
@@ -634,24 +783,11 @@ export default function StudentDetail() {
                           <Calendar className="h-3 w-3" />
                           {format(new Date(note.date), 'dd MMMM yyyy', { locale: ar })}
                         </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {format(new Date(note.created_at), 'HH:mm')}
-                        </span>
-                        {note.points !== 0 && (
-                          <Badge variant="outline" className="text-xs">
-                            {note.points > 0 ? '+' : ''}{note.points}
-                          </Badge>
-                        )}
+                        {note.points !== 0 && <Badge variant="outline">{note.points > 0 ? '+' : ''}{note.points}</Badge>}
                       </div>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8"
-                        onClick={() => handleEditNote(note)}
-                      >
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditNote(note)}>
                         <Edit2 className="h-4 w-4" />
                       </Button>
                       <AlertDialog>
@@ -663,18 +799,11 @@ export default function StudentDetail() {
                         <AlertDialogContent dir="rtl">
                           <AlertDialogHeader>
                             <AlertDialogTitle>حذف الملاحظة</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              هل أنت متأكد من حذف هذه الملاحظة؟
-                            </AlertDialogDescription>
+                            <AlertDialogDescription>هل أنت متأكد؟</AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter className="flex-row-reverse gap-2">
                             <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                            <AlertDialogAction 
-                              onClick={() => handleDeleteNote(note.id)} 
-                              className="bg-destructive hover:bg-destructive/90"
-                            >
-                              حذف
-                            </AlertDialogAction>
+                            <AlertDialogAction onClick={() => handleDeleteNote(note.id)} className="bg-destructive">حذف</AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
@@ -687,39 +816,21 @@ export default function StudentDetail() {
         </Card>
       </div>
 
-      {/* Edit Note Dialog */}
+      {/* Dialogs */}
       <Dialog open={!!editingNote} onOpenChange={() => setEditingNote(null)}>
         <DialogContent dir="rtl">
           <DialogHeader>
             <DialogTitle>تعديل الملاحظة</DialogTitle>
-            <DialogDescription>
-              قم بتعديل وصف الملاحظة
-            </DialogDescription>
+            <DialogDescription>قم بتعديل وصف الملاحظة</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="editDescription">الوصف</Label>
-              <Textarea
-                id="editDescription"
-                value={editNoteDescription}
-                onChange={(e) => setEditNoteDescription(e.target.value)}
-                rows={3}
-              />
-            </div>
-          </div>
+          <Textarea value={editNoteDescription} onChange={(e) => setEditNoteDescription(e.target.value)} rows={3} />
           <DialogFooter className="flex-row-reverse gap-2">
-            <Button variant="outline" onClick={() => setEditingNote(null)}>
-              إلغاء
-            </Button>
-            <Button onClick={handleSaveNote} disabled={updateNote.isPending}>
-              {updateNote.isPending && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
-              حفظ
-            </Button>
+            <Button variant="outline" onClick={() => setEditingNote(null)}>إلغاء</Button>
+            <Button onClick={handleSaveNote} disabled={updateNote.isPending}>حفظ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Attendance History Dialog */}
       <AttendanceHistoryDialog
         open={attendanceDialogType !== null}
         onOpenChange={() => setAttendanceDialogType(null)}
