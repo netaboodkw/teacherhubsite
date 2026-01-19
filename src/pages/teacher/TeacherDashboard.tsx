@@ -245,14 +245,14 @@ export default function TeacherDashboard() {
     return colorMap[color] || '#888888';
   };
 
-  // Glass classroom card with proper coloring - iOS native style
+  // Glass classroom card with proper coloring - iOS native style - Full width vertical layout
   const GlassClassroomCardLocal = ({ classroom }: { classroom: any }) => {
     const hexColor = getHexColor(classroom.color);
     return (
       <Link to={`/teacher/classrooms/${classroom.id}`}>
         <GlassCard 
           variant="interactive" 
-          className="h-full relative overflow-hidden ios-card-pressable min-h-[100px]"
+          className="relative overflow-hidden ios-card-pressable"
           style={{
             backgroundColor: `${hexColor}15`,
             borderColor: `${hexColor}30`,
@@ -263,14 +263,18 @@ export default function TeacherDashboard() {
             className="absolute top-0 right-0 w-1.5 h-full rounded-r-xl"
             style={{ backgroundColor: hexColor }}
           />
-          <GlassCardHeader className="p-4 pb-2 pr-5">
-            <GlassCardTitle className="text-base font-bold truncate">
-              {classroom.name}
-            </GlassCardTitle>
-          </GlassCardHeader>
-          <GlassCardContent className="p-4 pt-0 pr-5">
-            <p className="text-sm text-muted-foreground truncate">{classroom.subject}</p>
-          </GlassCardContent>
+          <div className="flex items-center gap-4 p-4 pr-5">
+            <div 
+              className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+              style={{ backgroundColor: `${hexColor}25` }}
+            >
+              <GraduationCap className="h-6 w-6" style={{ color: hexColor }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base font-bold truncate">{classroom.name}</h3>
+              <p className="text-sm text-muted-foreground truncate">{classroom.subject}</p>
+            </div>
+          </div>
         </GlassCard>
       </Link>
     );
@@ -343,15 +347,15 @@ export default function TeacherDashboard() {
             </div>
             
             {classroomsLoading ? (
-              <div className="grid grid-cols-2 gap-3 md:gap-4">
-                {[1, 2, 3, 4].map((i) => (
+              <div className="flex flex-col gap-3">
+                {[1, 2, 3].map((i) => (
                   isGlass ? (
                     <GlassCard key={i} className="animate-pulse">
-                      <GlassCardContent className="h-24" />
+                      <GlassCardContent className="h-20" />
                     </GlassCard>
                   ) : (
                     <Card key={i} className="animate-pulse">
-                      <CardContent className="h-24" />
+                      <CardContent className="h-20" />
                     </Card>
                   )
                 ))}
@@ -371,7 +375,7 @@ export default function TeacherDashboard() {
                 </Card>
               )
             ) : (
-              <div className="grid grid-cols-2 gap-3 md:gap-4">
+              <div className="flex flex-col gap-3">
                 {classrooms?.slice(0, 6).map((classroom) => (
                   isGlass 
                     ? <GlassClassroomCardLocal key={classroom.id} classroom={classroom} />

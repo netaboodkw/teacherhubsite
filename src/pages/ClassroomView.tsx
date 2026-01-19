@@ -29,7 +29,7 @@ import { toast } from 'sonner';
 import { 
   ArrowRight, User, Plus, Minus, MessageSquare, Save, Loader2, 
   Move, Check, X, Clock, FileText, ClipboardCheck,
-  MoreVertical, Archive, Settings, UserPlus, GripVertical, HeartPulse, StickyNote, Shuffle, Timer, Home, Sparkles
+  MoreVertical, Archive, Settings, UserPlus, GripVertical, HeartPulse, StickyNote, Shuffle, Timer, Home, Sparkles, Eye
 } from 'lucide-react';
 import { MobileRandomPicker } from '@/components/classroom/MobileRandomPicker';
 import { MobileTimer } from '@/components/classroom/MobileTimer';
@@ -442,11 +442,11 @@ export default function ClassroomView() {
 
   return (
     <div className="min-h-screen bg-background pb-24" dir="rtl">
-      {/* Header - iOS Style */}
+      {/* Header - iOS Style with Status Bar Blur */}
       <div className={cn(
         "sticky top-0 z-20",
-        "bg-background/80 backdrop-blur-xl backdrop-saturate-150",
-        "border-b border-border/20",
+        "bg-background/60 backdrop-blur-2xl backdrop-saturate-200",
+        "border-b border-border/10",
         "pt-[env(safe-area-inset-top)]"
       )}>
         <div className="px-4 py-3">
@@ -481,25 +481,14 @@ export default function ClassroomView() {
               )}
               
               {(activeTab === 'arrange' || activeTab === 'attendance') && (
-                <>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => setActiveTab('notes')}
-                    className="h-10"
-                  >
-                    <X className="h-5 w-5" />
-                  </Button>
-                  <Button 
-                    size="sm"
-                    onClick={activeTab === 'arrange' ? savePositions : saveAttendance}
-                    disabled={saving}
-                    className="h-10 gap-2"
-                  >
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                    حفظ
-                  </Button>
-                </>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setActiveTab('notes')}
+                  className="h-10"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
               )}
             </div>
           </div>
@@ -508,24 +497,25 @@ export default function ClassroomView() {
 
       {/* Main Content */}
       <div className="p-4 space-y-4">
-        {/* Quick Tools - Large Touch Targets */}
+        {/* Quick Tools - Smaller Touch Targets */}
         {activeTab === 'notes' && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="flex gap-2">
             <Button 
               onClick={() => setTimerOpen(true)}
-              className="h-16 gap-3 text-base rounded-2xl"
-              size="lg"
+              variant="outline"
+              className="flex-1 h-11 gap-2 text-sm rounded-xl"
+              size="sm"
             >
-              <Timer className="h-6 w-6" />
+              <Timer className="h-4 w-4" />
               المؤقت
             </Button>
             <Button 
               onClick={() => setRandomPickerOpen(true)}
-              variant="secondary"
-              className="h-16 gap-3 text-base rounded-2xl"
-              size="lg"
+              variant="outline"
+              className="flex-1 h-11 gap-2 text-sm rounded-xl"
+              size="sm"
             >
-              <Shuffle className="h-6 w-6" />
+              <Shuffle className="h-4 w-4" />
               اختيار عشوائي
             </Button>
           </div>
@@ -668,21 +658,23 @@ export default function ClassroomView() {
           </div>
         )}
 
-        {/* Mode Instructions */}
+        {/* Mode Instructions & Save Button */}
         {activeTab !== 'notes' && (
-          <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground bg-muted/50 rounded-xl">
-            {activeTab === 'arrange' && (
-              <>
-                <GripVertical className="h-4 w-4" />
-                <span>اسحب الطالب وضعه في المكان المطلوب</span>
-              </>
-            )}
-            {activeTab === 'attendance' && (
-              <>
-                <ClipboardCheck className="h-4 w-4" />
-                <span>اضغط على الطالب لتغيير الحالة</span>
-              </>
-            )}
+          <div className="space-y-3">
+            <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground bg-muted/50 rounded-xl">
+              {activeTab === 'arrange' && (
+                <>
+                  <GripVertical className="h-4 w-4" />
+                  <span>اسحب الطالب وضعه في المكان المطلوب</span>
+                </>
+              )}
+              {activeTab === 'attendance' && (
+                <>
+                  <ClipboardCheck className="h-4 w-4" />
+                  <span>اضغط على الطالب لتغيير الحالة</span>
+                </>
+              )}
+            </div>
           </div>
         )}
 
@@ -743,12 +735,17 @@ export default function ClassroomView() {
                       {/* Status Icons */}
                       <div className="absolute top-1 right-1 flex gap-0.5">
                         {student.special_needs && (
-                          <div className="p-1 bg-amber-100 dark:bg-amber-900/50 rounded-full">
+                          <div className="p-1 bg-amber-100 dark:bg-amber-900/50 rounded-full" title="احتياجات خاصة">
                             <HeartPulse className="h-3 w-3 text-amber-600 dark:text-amber-400" />
                           </div>
                         )}
-                        {hasNotes && (
-                          <div className="p-1 bg-blue-100 dark:bg-blue-900/50 rounded-full">
+                        {(student as any).is_watched && (
+                          <div className="p-1 bg-purple-100 dark:bg-purple-900/50 rounded-full" title="تحت المتابعة">
+                            <Eye className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                          </div>
+                        )}
+                        {student.notes && (
+                          <div className="p-1 bg-blue-100 dark:bg-blue-900/50 rounded-full" title="ملاحظات">
                             <StickyNote className="h-3 w-3 text-blue-600 dark:text-blue-400" />
                           </div>
                         )}
@@ -792,6 +789,21 @@ export default function ClassroomView() {
             )}
           </ContentCardContent>
         </ContentCard>
+
+        {/* Fixed Save Button at Bottom - Only in arrange/attendance mode */}
+        {(activeTab === 'arrange' || activeTab === 'attendance') && (
+          <div className="fixed bottom-20 left-4 right-4 z-30">
+            <Button 
+              onClick={activeTab === 'arrange' ? savePositions : saveAttendance}
+              disabled={saving}
+              className="w-full h-14 text-lg gap-3 rounded-2xl shadow-lg"
+              size="lg"
+            >
+              {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+              {activeTab === 'arrange' ? 'حفظ الترتيب' : `حفظ حضور الحصة ${selectedPeriod}`}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Mobile Note Sheet */}

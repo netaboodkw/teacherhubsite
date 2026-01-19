@@ -23,7 +23,7 @@ import { toast } from 'sonner';
 import { 
   ArrowRight, Save, Loader2, User, Plus, Minus, MessageSquare, 
   Trash2, Edit2, Calendar, Clock, HeartPulse, GraduationCap,
-  UserX, ThumbsUp, ThumbsDown, BarChart3, Phone
+  UserX, ThumbsUp, ThumbsDown, BarChart3, Phone, Eye
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -126,6 +126,7 @@ export default function StudentDetail() {
   const [classroomId, setClassroomId] = useState('');
   const [notes, setNotes] = useState('');
   const [specialNeeds, setSpecialNeeds] = useState(false);
+  const [isWatched, setIsWatched] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [parentName, setParentName] = useState('');
   const [parentPhone, setParentPhone] = useState('');
@@ -156,6 +157,7 @@ export default function StudentDetail() {
       setClassroomId(student.classroom_id);
       setNotes(student.notes || '');
       setSpecialNeeds(student.special_needs || false);
+      setIsWatched((student as any).is_watched || false);
       setAvatarUrl(student.avatar_url);
       setParentName((student as any).parent_name || '');
       setParentPhone((student as any).parent_phone || '');
@@ -174,6 +176,7 @@ export default function StudentDetail() {
         classroom_id: classroomId,
         notes: notes || null,
         special_needs: specialNeeds,
+        is_watched: isWatched,
         avatar_url: avatarUrl,
         parent_name: parentName || null,
         parent_phone: parentPhone || null,
@@ -446,14 +449,30 @@ export default function StudentDetail() {
                   <div className="flex items-center gap-3">
                     <HeartPulse className="w-5 h-5 text-amber-500" />
                     <div>
-                      <Label htmlFor="special_needs" className="font-medium">احتياجات خاصة / يحتاج متابعة</Label>
-                      <p className="text-sm text-muted-foreground">تفعيل هذا الخيار سيظهر أيقونة خاصة بجانب اسم الطالب</p>
+                      <Label htmlFor="special_needs" className="font-medium">احتياجات خاصة</Label>
+                      <p className="text-sm text-muted-foreground">تفعيل هذا الخيار سيظهر أيقونة القلب بجانب اسم الطالب</p>
                     </div>
                   </div>
                   <Switch
                     id="special_needs"
                     checked={specialNeeds}
                     onCheckedChange={setSpecialNeeds}
+                  />
+                </div>
+
+                {/* Watch/Follow Toggle */}
+                <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
+                  <div className="flex items-center gap-3">
+                    <Eye className="w-5 h-5 text-purple-500" />
+                    <div>
+                      <Label htmlFor="is_watched" className="font-medium">تحت المتابعة</Label>
+                      <p className="text-sm text-muted-foreground">تفعيل هذا الخيار سيظهر أيقونة العين بجانب اسم الطالب</p>
+                    </div>
+                  </div>
+                  <Switch
+                    id="is_watched"
+                    checked={isWatched}
+                    onCheckedChange={setIsWatched}
                   />
                 </div>
 

@@ -98,12 +98,12 @@ export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
         "pb-[env(safe-area-inset-bottom)]"
       )}
     >
-      {/* Top Bar - iOS Native Style */}
+      {/* Top Bar - iOS Native Style with Enhanced Status Bar Blur */}
       <header
         className={cn(
           "z-50 w-full lg:hidden",
-          "bg-background/80 backdrop-blur-xl backdrop-saturate-150",
-          "border-b border-border/20",
+          "bg-background/60 backdrop-blur-2xl backdrop-saturate-200",
+          "border-b border-border/10",
           "pt-[env(safe-area-inset-top)]"
         )}
       >

@@ -1205,6 +1205,7 @@ export type Database = {
           classroom_id: string
           created_at: string
           id: string
+          is_watched: boolean
           name: string
           notes: string | null
           parent_name: string | null
@@ -1219,6 +1220,7 @@ export type Database = {
           classroom_id: string
           created_at?: string
           id?: string
+          is_watched?: boolean
           name: string
           notes?: string | null
           parent_name?: string | null
@@ -1233,6 +1235,7 @@ export type Database = {
           classroom_id?: string
           created_at?: string
           id?: string
+          is_watched?: boolean
           name?: string
           notes?: string | null
           parent_name?: string | null
