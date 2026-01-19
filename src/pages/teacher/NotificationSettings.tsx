@@ -94,86 +94,113 @@ export default function NotificationSettings() {
           iconVariant="amber"
         />
 
-        {/* Enable Notifications - Prominent Card */}
+        {/* تنبيه إذا الإشعارات غير مفعلة */}
+        {isNative && permissionStatus !== 'granted' && (
+          <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
+            <XCircle className="h-5 w-5" />
+            <AlertTitle className="font-semibold">الإشعارات غير مفعّلة!</AlertTitle>
+            <AlertDescription className="mt-2 space-y-3">
+              <p className="text-sm">
+                لن تتمكن من استلام تذكيرات الحصص والبصمة بدون تفعيل الإشعارات.
+              </p>
+              
+              {permissionStatus === 'denied' ? (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">لتفعيل الإشعارات:</p>
+                  <ol className="list-decimal list-inside space-y-1 text-sm mr-2">
+                    <li>افتح إعدادات الجهاز</li>
+                    <li>ابحث عن "Teacher Hub"</li>
+                    <li>اضغط على "الإشعارات"</li>
+                    <li>فعّل "السماح بالإشعارات"</li>
+                  </ol>
+                  <Button 
+                    variant="outline"
+                    onClick={handleEnableNotifications}
+                    disabled={requesting}
+                    className="mt-2 w-full"
+                  >
+                    {requesting ? (
+                      <Loader2 className="w-4 h-4 animate-spin ml-2" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4 ml-2" />
+                    )}
+                    إعادة المحاولة
+                  </Button>
+                </div>
+              ) : (
+                <Button 
+                  onClick={handleEnableNotifications}
+                  disabled={requesting}
+                  className="w-full"
+                >
+                  {requesting ? (
+                    <Loader2 className="w-4 h-4 animate-spin ml-2" />
+                  ) : (
+                    <Bell className="w-4 h-4 ml-2" />
+                  )}
+                  تفعيل الإشعارات الآن
+                </Button>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* حالة الإشعارات */}
         <Card className={cn(
           "border-2 transition-colors",
           permissionStatus === 'granted' 
             ? "border-green-500/30 bg-green-500/5" 
-            : "border-primary/50 bg-primary/5"
+            : "border-orange-500/30 bg-orange-500/5"
         )}>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className={cn(
                   "p-2.5 rounded-xl",
-                  permissionStatus === 'granted' ? "bg-green-500/20" : "bg-primary/20"
+                  permissionStatus === 'granted' ? "bg-green-500/20" : "bg-orange-500/20"
                 )}>
                   {permissionStatus === 'granted' ? (
                     <CheckCircle2 className="w-6 h-6 text-green-500" />
                   ) : (
-                    <BellRing className="w-6 h-6 text-primary" />
+                    <XCircle className="w-6 h-6 text-orange-500" />
                   )}
                 </div>
                 <div>
                   <CardTitle className="text-base">
-                    {permissionStatus === 'granted' ? 'الإشعارات مفعّلة' : 'تفعيل الإشعارات'}
+                    {permissionStatus === 'granted' ? 'الإشعارات مفعّلة ✓' : 'الإشعارات غير مفعّلة'}
                   </CardTitle>
                   <CardDescription className="text-sm">
                     {permissionStatus === 'granted' 
-                      ? 'ستتلقى التذكيرات والتنبيهات' 
-                      : 'فعّل لاستلام التذكيرات المهمة'}
+                      ? 'ستتلقى التذكيرات والتنبيهات على جهازك' 
+                      : 'لن تستلم أي تذكيرات أو تنبيهات'}
                   </CardDescription>
                 </div>
               </div>
               
-              {permissionStatus !== 'granted' && (
-                <Button 
-                  onClick={handleEnableNotifications} 
-                  disabled={requesting}
-                  size="sm"
-                  className="rounded-xl h-10 px-4"
-                >
-                  {requesting ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Bell className="w-4 h-4 ml-1.5" />
-                      تفعيل
-                    </>
-                  )}
-                </Button>
+              {permissionStatus === 'granted' && (
+                <Badge variant="default" className="bg-green-500 rounded-lg">
+                  <CheckCircle2 className="w-3 h-3 ml-1" />
+                  مفعّل
+                </Badge>
               )}
             </div>
           </CardHeader>
           
-          {/* Platform & Token Info */}
+          {/* معلومات النظام */}
           <CardContent className="pt-0">
             <div className="flex flex-wrap items-center gap-2 text-sm">
               <Badge variant="secondary" className="rounded-lg">
                 <Smartphone className="w-3 h-3 ml-1" />
-                {platform === 'ios' ? 'iOS' : platform === 'android' ? 'Android' : 'متصفح ويب'}
-              </Badge>
-              
-              <Badge 
-                variant={permissionStatus === 'granted' ? 'default' : permissionStatus === 'denied' ? 'destructive' : 'secondary'}
-                className="rounded-lg"
-              >
-                {permissionStatus === 'granted' ? (
-                  <><CheckCircle2 className="w-3 h-3 ml-1" /> مفعّل</>
-                ) : permissionStatus === 'denied' ? (
-                  <><XCircle className="w-3 h-3 ml-1" /> مرفوض</>
-                ) : (
-                  'في الانتظار'
-                )}
+                {platform === 'ios' ? 'iOS' : platform === 'android' ? 'Android' : 'تطبيق'}
               </Badge>
             </div>
             
-            {/* Push Token Display */}
+            {/* Push Token - للمطورين فقط */}
             {pushToken && (
               <div className="mt-3 p-3 bg-muted/50 rounded-xl">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground mb-1">Push Token</p>
+                    <p className="text-xs text-muted-foreground mb-1">Device Token</p>
                     <p className="text-xs font-mono text-foreground truncate" dir="ltr">
                       {pushToken}
                     </p>
@@ -344,34 +371,6 @@ export default function NotificationSettings() {
           </CardContent>
         </Card>
 
-        {/* iOS/Web Instructions */}
-        {platform === 'web' && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Smartphone className="w-5 h-5" />
-                للحصول على أفضل تجربة
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                لاستلام الإشعارات بشكل موثوق على iPhone:
-              </p>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                <li>افتح Safari على جهاز iPhone</li>
-                <li>اذهب إلى هذا الموقع</li>
-                <li>اضغط على زر المشاركة ↑</li>
-                <li>اختر "إضافة إلى الشاشة الرئيسية"</li>
-              </ol>
-              <Alert className="mt-3">
-                <Info className="h-4 w-4" />
-                <AlertDescription className="text-xs">
-                  للإشعارات الكاملة، استخدم التطبيق الأصلي عبر Xcode.
-                </AlertDescription>
-              </Alert>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </TeacherLayout>
   );
