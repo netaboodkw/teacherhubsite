@@ -17,15 +17,24 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
 
-// Pastel colors for classroom selection
+// Colors for classroom selection (hex values for proper display)
 const colorOptions = [
-  { value: 'bg-blue-200', label: 'أزرق فاتح' },
-  { value: 'bg-green-200', label: 'أخضر فاتح' },
-  { value: 'bg-purple-200', label: 'بنفسجي فاتح' },
-  { value: 'bg-orange-200', label: 'برتقالي فاتح' },
-  { value: 'bg-pink-200', label: 'وردي فاتح' },
-  { value: 'bg-yellow-200', label: 'أصفر فاتح' },
-  { value: 'bg-teal-200', label: 'فيروزي فاتح' },
+  { value: '#3b82f6', label: 'أزرق', bg: 'bg-blue-500' },
+  { value: '#22c55e', label: 'أخضر', bg: 'bg-green-500' },
+  { value: '#a855f7', label: 'بنفسجي', bg: 'bg-purple-500' },
+  { value: '#f97316', label: 'برتقالي', bg: 'bg-orange-500' },
+  { value: '#ec4899', label: 'وردي', bg: 'bg-pink-500' },
+  { value: '#eab308', label: 'أصفر', bg: 'bg-yellow-500' },
+  { value: '#14b8a6', label: 'فيروزي', bg: 'bg-teal-500' },
+  { value: '#ef4444', label: 'أحمر', bg: 'bg-red-500' },
+  { value: '#6366f1', label: 'نيلي', bg: 'bg-indigo-500' },
+  { value: '#06b6d4', label: 'سماوي', bg: 'bg-cyan-500' },
+  { value: '#84cc16', label: 'ليموني', bg: 'bg-lime-500' },
+  { value: '#f43f5e', label: 'قرمزي', bg: 'bg-rose-500' },
+  { value: '#8b5cf6', label: 'بنفسجي غامق', bg: 'bg-violet-500' },
+  { value: '#0ea5e9', label: 'أزرق فاتح', bg: 'bg-sky-500' },
+  { value: '#10b981', label: 'زمردي', bg: 'bg-emerald-500' },
+  { value: '#f59e0b', label: 'كهرماني', bg: 'bg-amber-500' },
 ];
 
 export default function NewClassroom() {
@@ -45,7 +54,7 @@ export default function NewClassroom() {
     sectionName: '', // e.g. "أول", "ثاني", "أ", "ب"
     subject: '', // e.g. "رياضيات", "علوم"
     schedule: '',
-    color: 'bg-primary',
+    color: '#3b82f6',
     education_level_id: '',
     grade_level_id: '',
     teacher_template_id: '',
@@ -381,17 +390,18 @@ export default function NewClassroom() {
 
             <div className="space-y-2">
               <Label>لون الفصل</Label>
-              <div className="flex gap-3 flex-wrap">
+              <div className="flex gap-2 flex-wrap">
                 {colorOptions.map((color) => (
                   <button
                     key={color.value}
                     type="button"
                     onClick={() => setFormData({ ...formData, color: color.value })}
-                    className={`w-10 h-10 rounded-full ${color.value} transition-all ${
+                    className={`w-9 h-9 rounded-full transition-all ${
                       formData.color === color.value 
                         ? 'ring-2 ring-offset-2 ring-primary scale-110' 
                         : 'hover:scale-105'
                     }`}
+                    style={{ backgroundColor: color.value }}
                     title={color.label}
                   />
                 ))}

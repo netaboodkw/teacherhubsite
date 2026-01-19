@@ -15,6 +15,27 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
 
+// Helper function to convert Tailwind class colors to hex
+const getHexColor = (color: string | null | undefined): string => {
+  if (!color) return '#3b82f6';
+  if (color.startsWith('#')) return color;
+  
+  const colorMap: { [key: string]: string } = {
+    'bg-blue-200': '#93c5fd', 'bg-blue-500': '#3b82f6',
+    'bg-green-200': '#bbf7d0', 'bg-green-500': '#22c55e',
+    'bg-purple-200': '#e9d5ff', 'bg-purple-500': '#a855f7',
+    'bg-orange-200': '#fed7aa', 'bg-orange-500': '#f97316',
+    'bg-pink-200': '#fbcfe8', 'bg-pink-500': '#ec4899',
+    'bg-yellow-200': '#fef08a', 'bg-yellow-500': '#eab308',
+    'bg-teal-200': '#99f6e4', 'bg-teal-500': '#14b8a6',
+    'bg-red-200': '#fecaca', 'bg-red-500': '#ef4444',
+    'bg-indigo-200': '#c7d2fe', 'bg-indigo-500': '#6366f1',
+    'bg-cyan-200': '#a5f3fc', 'bg-cyan-500': '#06b6d4',
+    'bg-primary': '#00b8d4',
+  };
+  return colorMap[color] || '#3b82f6';
+};
+
 export default function Classrooms() {
   const { data: classrooms = [], isLoading } = useClassrooms();
   const [searchTerm, setSearchTerm] = useState('');
@@ -94,9 +115,9 @@ export default function Classrooms() {
               {/* Color Indicator */}
               <div 
                 className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0"
-                style={{ backgroundColor: classroom.color + '20' }}
+                style={{ backgroundColor: getHexColor(classroom.color) + '20' }}
               >
-                <School className="w-7 h-7" style={{ color: classroom.color }} />
+                <School className="w-7 h-7" style={{ color: getHexColor(classroom.color) }} />
               </div>
               
               <div className="flex-1 min-w-0">
@@ -246,9 +267,9 @@ export default function Classrooms() {
               >
                 <div 
                   className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: classroom.color + '20' }}
+                  style={{ backgroundColor: getHexColor(classroom.color) + '20' }}
                 >
-                  <School className="w-6 h-6" style={{ color: classroom.color }} />
+                  <School className="w-6 h-6" style={{ color: getHexColor(classroom.color) }} />
                 </div>
                 
                 <div className="flex-1 min-w-0">
