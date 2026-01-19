@@ -196,13 +196,13 @@ export default function DepartmentHeadAuth() {
   if (isMobile) {
     return (
       <div 
-        className={`fixed inset-0 z-[100] bg-background flex flex-col select-none overflow-hidden transition-all duration-300 ease-out ${
+        className={`fixed inset-0 z-[100] bg-background flex flex-col select-none transition-all duration-300 ease-out ${
           isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'
         }`} 
         dir="rtl"
       >
         {/* Background Gradient */}
-        <div className={`absolute inset-0 bg-gradient-to-br ${gradientColor} opacity-10`} />
+        <div className={`absolute inset-0 bg-gradient-to-br ${gradientColor} opacity-10 pointer-events-none`} />
         
         {/* Animated Background Shapes */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -226,9 +226,15 @@ export default function DepartmentHeadAuth() {
           </button>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto overscroll-contain">
-          <div className="min-h-full flex flex-col items-center px-4 sm:px-6 pt-14 pb-8">
+        {/* Scrollable Content - iOS optimized */}
+        <div 
+          className="flex-1 overflow-y-auto"
+          style={{
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehavior: 'contain',
+          }}
+        >
+          <div className="flex flex-col items-center px-4 sm:px-6 pt-14 pb-8">
             {/* Logo with Badge */}
             <div className="relative w-24 h-24 mb-4">
               <img 
