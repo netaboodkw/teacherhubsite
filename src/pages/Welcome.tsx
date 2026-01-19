@@ -159,15 +159,13 @@ export default function Welcome() {
           className={`mb-10 transition-all duration-500 ${isAnimating ? 'opacity-0 scale-90' : 'opacity-100 scale-100'}`}
         >
           {slide.isLogo ? (
-            <div className="w-36 h-36 rounded-[22%] bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 p-3 shadow-[0_8px_30px_rgba(0,0,0,0.2),0_4px_10px_rgba(0,0,0,0.1),inset_0_2px_0_rgba(255,255,255,0.7)] border border-white/30 overflow-hidden animate-pulse-slow">
-              <div className="w-full h-full rounded-[18%] overflow-hidden bg-white dark:bg-gray-800 flex items-center justify-center">
-                <img 
-                  src={displayLogo} 
-                  alt="Teacher Hub" 
-                  className="w-[85%] h-[85%] object-contain"
-                  onError={(e) => { e.currentTarget.src = defaultLogo; }}
-                />
-              </div>
+            <div className="w-44 h-44 flex items-center justify-center">
+              <img 
+                src={displayLogo} 
+                alt="Teacher Hub" 
+                className="w-full h-full object-contain drop-shadow-2xl"
+                onError={(e) => { e.currentTarget.src = defaultLogo; }}
+              />
             </div>
           ) : (
             <div className={`w-32 h-32 rounded-full bg-gradient-to-br ${slide.color} flex items-center justify-center shadow-2xl`}>
