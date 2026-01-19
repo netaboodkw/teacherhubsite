@@ -6,16 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
@@ -50,7 +40,6 @@ import {
   Gift,
   FileText,
   Zap,
-  ExternalLink,
   ShieldCheck
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -83,7 +72,6 @@ export default function TeacherSubscription() {
   const [discountCode, setDiscountCode] = useState('');
   const [appliedDiscount, setAppliedDiscount] = useState<DiscountCode | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showPaymentConfirmDialog, setShowPaymentConfirmDialog] = useState(false);
 
   // Enable realtime updates for subscription status
   useSubscriptionRealtime();
@@ -168,13 +156,13 @@ export default function TeacherSubscription() {
       toast.error('الرجاء اختيار باقة');
       return;
     }
-    setShowPaymentConfirmDialog(true);
+    // Go directly to payment without confirmation dialog
+    handlePurchase();
   };
 
   const handlePurchase = async () => {
     if (!selectedPackage) return;
 
-    setShowPaymentConfirmDialog(false);
     setIsProcessing(true);
     
     try {
@@ -636,50 +624,30 @@ export default function TeacherSubscription() {
                 </CardContent>
                 <CardFooter className="bg-muted/30 pt-6 flex-col gap-4">
                   {/* Payment Methods Logos */}
-                  <div className="flex items-center justify-center gap-2 sm:gap-3 w-full flex-wrap">
-                    <div className="flex items-center gap-2 px-2 sm:px-3 py-2 bg-background rounded-lg border">
+                  <div className="flex items-center justify-center gap-3 w-full flex-wrap">
+                    <div className="flex items-center px-3 py-2 bg-background rounded-lg border">
                       <img 
-                        src="https://cdn.jsdelivr.net/gh/nicepay-dev/nicepay-images@main/visa.png" 
+                        src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" 
                         alt="Visa" 
-                        className="h-4 sm:h-5 object-contain"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.parentElement!.innerHTML = '<span class="text-xs font-bold text-blue-700">VISA</span>';
-                        }}
+                        className="h-5 object-contain"
                       />
                     </div>
-                    <div className="flex items-center gap-2 px-2 sm:px-3 py-2 bg-background rounded-lg border">
+                    <div className="flex items-center px-3 py-2 bg-background rounded-lg border">
                       <img 
-                        src="https://cdn.jsdelivr.net/gh/nicepay-dev/nicepay-images@main/mastercard.png" 
+                        src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" 
                         alt="Mastercard" 
-                        className="h-4 sm:h-5 object-contain"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.parentElement!.innerHTML = '<span class="text-xs font-bold text-orange-600">Mastercard</span>';
-                        }}
+                        className="h-5 object-contain"
                       />
                     </div>
-                    <div className="flex items-center gap-2 px-2 sm:px-3 py-2 bg-background rounded-lg border">
+                    <div className="flex items-center px-3 py-2 bg-background rounded-lg border">
                       <img 
-                        src="https://cdn.jsdelivr.net/gh/nicepay-dev/nicepay-images@main/applepay.png" 
+                        src="https://upload.wikimedia.org/wikipedia/commons/b/b0/Apple_Pay_logo.svg" 
                         alt="Apple Pay" 
-                        className="h-4 sm:h-5 object-contain"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.parentElement!.innerHTML = '<span class="text-xs font-bold">Apple Pay</span>';
-                        }}
+                        className="h-5 object-contain"
                       />
                     </div>
-                    <div className="flex items-center gap-2 px-2 sm:px-3 py-2 bg-background rounded-lg border">
-                      <img 
-                        src="https://www.knet.com.kw/images/logo.svg" 
-                        alt="KNET" 
-                        className="h-4 sm:h-5 object-contain"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.parentElement!.innerHTML = '<span class="text-xs font-bold" style="background: linear-gradient(90deg, #1a4d8c 0%, #2eb369 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">KNET</span>';
-                        }}
-                      />
+                    <div className="flex items-center px-3 py-2 bg-background rounded-lg border">
+                      <span className="text-sm font-bold" style={{ background: 'linear-gradient(90deg, #1a4d8c 0%, #2eb369 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>KNET</span>
                     </div>
                   </div>
 
@@ -708,59 +676,6 @@ export default function TeacherSubscription() {
                 </CardFooter>
               </Card>
             )}
-
-            {/* Payment Confirmation Dialog */}
-            <AlertDialog open={showPaymentConfirmDialog} onOpenChange={setShowPaymentConfirmDialog}>
-              <AlertDialogContent className="max-w-md">
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="flex items-center gap-2 text-xl">
-                    <ExternalLink className="h-5 w-5 text-primary" />
-                    تأكيد عملية الدفع
-                  </AlertDialogTitle>
-                  <AlertDialogDescription className="text-right space-y-4 pt-4">
-                    <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">الباقة:</span>
-                        <span className="font-semibold text-foreground">{selectedPackage?.name_ar}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">المبلغ:</span>
-                        <span className="font-bold text-primary text-lg">
-                          {selectedPackage && calculateFinalPrice(selectedPackage).toFixed(2)} د.ك
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">طرق الدفع المتاحة:</span>
-                        <span className="font-medium text-foreground text-sm">كي نت - فيزا - ماستر - Apple Pay</span>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-amber-800 text-sm">
-                      <div className="flex items-start gap-2">
-                        <ExternalLink className="h-4 w-4 mt-0.5 shrink-0" />
-                        <p>
-                          سيتم تحويلك لصفحة الدفع الآمنة لإتمام العملية. 
-                          بعد الانتهاء ستعود تلقائياً للتطبيق.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-emerald-700 text-sm">
-                      <ShieldCheck className="h-4 w-4" />
-                      <span>دفع آمن ومشفر عبر MyFatoorah</span>
-                    </div>
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter className="gap-2 sm:gap-0">
-                  <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                  <AlertDialogAction onClick={handlePurchase} className="gap-2">
-                    <CreditCard className="h-4 w-4" />
-                    متابعة الدفع
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-
             {/* Empty State */}
             {activePackages.length === 0 && (
               <Card className="text-center py-16 border-dashed">
