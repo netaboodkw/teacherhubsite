@@ -15,13 +15,14 @@ import { MobileGradesView } from '@/components/grades/MobileGradesView';
 import { PrintOptionsDialog, PrintOptions } from '@/components/grades/PrintOptionsDialog';
 import { exportGradesToExcel } from '@/lib/exportExcel';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { GlassButton } from '@/components/ui/glass-button';
 import { Input } from '@/components/ui/input';
 import { GlassInput } from '@/components/ui/glass-input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronRight, ChevronLeft, Plus, Loader2, Table, Settings, ChevronDown, ChevronUp, Printer, MessageSquare, Calendar, Clock, X, Users, Smartphone, FileSpreadsheet, BookOpen } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Plus, Loader2, Table, Settings as SettingsIcon, ChevronDown, ChevronUp, Printer, MessageSquare, Calendar, Clock, X, Users, Smartphone, FileSpreadsheet, BookOpen, Vibrate } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -671,9 +672,24 @@ export default function Grades() {
   // Print settings
   const [useNormalFont, setUseNormalFont] = useState(false);
   const [forceMobileView, setForceMobileView] = useState(false);
+  const [showGradeSettings, setShowGradeSettings] = useState(false);
+  const [hapticEnabled, setHapticEnabledState] = useState(() => {
+    try {
+      const stored = localStorage.getItem('haptic_feedback_enabled');
+      return stored === null ? true : stored === 'true';
+    } catch { return true; }
+  });
   const isMobile = useIsMobile();
   const { successFeedback, errorFeedback } = useHapticFeedback();
   const { isLiquidGlass } = useTheme();
+
+  const handleHapticToggle = (enabled: boolean) => {
+    try {
+      localStorage.setItem('haptic_feedback_enabled', String(enabled));
+    } catch {}
+    setHapticEnabledState(enabled);
+    toast.success(enabled ? 'تم تفعيل الاهتزاز عند إدخال الدرجات' : 'تم إيقاف الاهتزاز');
+  };
   
   // Print ref
   const printRef = useRef<HTMLDivElement>(null);
@@ -1078,11 +1094,41 @@ export default function Grades() {
                       خط عادي
                     </label>
                   )}
+                  <ActionButton 
+                    variant={showGradeSettings ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setShowGradeSettings(!showGradeSettings)}
+                    className="gap-1"
+                  >
+                    <Vibrate className="h-4 w-4" />
+                    <span className="hidden sm:inline">الاهتزاز</span>
+                  </ActionButton>
                 </>
               )}
             </div>
           }
         />
+        
+        {/* Haptic Settings */}
+        {showGradeSettings && (
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 animate-in slide-in-from-top duration-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center">
+                <Vibrate className="w-5 h-5 text-indigo-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm">الاهتزاز عند إدخال الدرجات</p>
+                <p className="text-xs text-muted-foreground">اهتزاز وصوت عند حفظ الدرجة</p>
+              </div>
+            </div>
+            <div dir="ltr">
+              <Switch
+                checked={hapticEnabled}
+                onCheckedChange={handleHapticToggle}
+              />
+            </div>
+          </div>
+        )}
         
         {/* Template Badge */}
         {hasStructure && (
@@ -1154,7 +1200,7 @@ export default function Grades() {
             <GlassCard className="glass-card p-4 border-warning/30">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-xl bg-warning/10">
-                  <Settings className="h-5 w-5 text-warning" />
+                  <SettingsIcon className="h-5 w-5 text-warning" />
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-warning">لم يتم تعيين نظام درجات لهذا الصف</p>
@@ -1168,7 +1214,7 @@ export default function Grades() {
             <Card className="border-warning/50 bg-warning/5">
               <CardContent className="py-4">
                 <div className="flex items-center gap-3">
-                  <Settings className="h-5 w-5 text-warning" />
+                  <SettingsIcon className="h-5 w-5 text-warning" />
                   <div className="flex-1">
                     <p className="font-medium text-warning">لم يتم تعيين نظام درجات لهذا الصف</p>
                     <p className="text-sm text-muted-foreground">
