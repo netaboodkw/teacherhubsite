@@ -28,23 +28,15 @@ export const AttendanceTimeDialog = ({
   onTimeSet,
   currentTime,
 }: AttendanceTimeDialogProps) => {
+  // الوقت الافتراضي دائماً 7:00
   const [selectedTime, setSelectedTime] = useState('07:00');
 
-  // تعيين الوقت الافتراضي بناءً على الوقت الحالي
+  // إعادة تعيين الوقت الافتراضي عند فتح النافذة
   useEffect(() => {
     if (open) {
-      const hours = currentTime.getHours();
-      const minutes = currentTime.getMinutes();
-      // تقريب للأقرب نصف ساعة
-      const roundedMinutes = minutes < 15 ? 0 : minutes < 45 ? 30 : 0;
-      const roundedHours = minutes >= 45 ? hours + 1 : hours;
-      
-      // إذا كان الوقت الحالي بين 6-8 صباحاً، اقترح الوقت الحالي
-      if (hours >= 6 && hours <= 8) {
-        setSelectedTime(`${roundedHours.toString().padStart(2, '0')}:${roundedMinutes.toString().padStart(2, '0')}`);
-      }
+      setSelectedTime('07:00');
     }
-  }, [open, currentTime]);
+  }, [open]);
 
   const handleConfirm = () => {
     onTimeSet(selectedTime);
