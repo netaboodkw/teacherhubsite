@@ -60,7 +60,7 @@ export function NotificationPermissionPrompt({ onClose }: NotificationPermission
   return (
     <div 
       className={cn(
-        "fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-4",
+        "fixed inset-0 z-[300] flex items-center justify-center p-4",
         "bg-black/50 backdrop-blur-sm",
         "transition-opacity duration-300",
         isAnimating ? "opacity-100" : "opacity-0"
