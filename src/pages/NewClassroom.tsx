@@ -16,6 +16,7 @@ import { ArrowRight, GraduationCap, Loader2, LayoutGrid, Plus, AlertTriangle, Tr
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 
 // Colors for classroom selection (hex values for proper display)
 const colorOptions = [
@@ -43,6 +44,7 @@ export default function NewClassroom() {
   const { profile, isLoading: profileLoading } = useProfile();
   const { data: educationLevels } = useEducationLevels();
   const { data: teacherTemplates = [] } = useTeacherTemplates();
+  const { isOnboarding, markStepCompleted } = useOnboarding();
   
   // Teacher's education level is fixed from their profile
   const teacherEducationLevelId = profile?.education_level_id || '';
@@ -116,6 +118,12 @@ export default function NewClassroom() {
       show_leaderboard: formData.show_leaderboard,
       show_stats_banner: formData.show_stats_banner,
     });
+    
+    // Mark onboarding step as completed
+    if (isOnboarding) {
+      markStepCompleted('create-classroom');
+    }
+    
     navigate('/teacher/classrooms');
   };
 

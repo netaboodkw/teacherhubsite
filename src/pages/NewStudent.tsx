@@ -12,6 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { StudentAvatarUpload } from '@/components/students/StudentAvatarUpload';
 import { ArrowRight, Users, Loader2, HeartPulse, Phone, Eye } from 'lucide-react';
 import { toast } from 'sonner';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 
 export default function NewStudent() {
   const createStudent = useCreateStudent();
@@ -19,6 +20,7 @@ export default function NewStudent() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const preselectedClassroomId = searchParams.get('classroomId');
+  const { isOnboarding, markStepCompleted } = useOnboarding();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -70,6 +72,12 @@ export default function NewStudent() {
 
     try {
       await createStudent.mutateAsync(studentData);
+      
+      // Mark onboarding step as completed
+      if (isOnboarding) {
+        markStepCompleted('add-students');
+      }
+      
       // Navigate back to classroom if came from there, otherwise to students list
       if (preselectedClassroomId) {
         navigate(`/teacher/classrooms/${preselectedClassroomId}`);
