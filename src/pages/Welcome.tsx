@@ -95,13 +95,6 @@ export default function Welcome() {
     }
   };
 
-  const handleSkip = () => {
-    if (navigator.vibrate) {
-      navigator.vibrate(5);
-    }
-    handleComplete();
-  };
-
   // Touch handlers for swipe
   const onTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null);
@@ -154,16 +147,6 @@ export default function Welcome() {
         />
       </div>
       
-      {/* Skip Button */}
-      {!isLastSlide && (
-        <button
-          onClick={handleSkip}
-          className="absolute top-14 left-6 text-muted-foreground text-sm font-medium z-10 ios-pressable px-3 py-2 rounded-full bg-muted/30 backdrop-blur-sm"
-        >
-          تخطي
-        </button>
-      )}
-
       {/* Slide Counter */}
       <div className="absolute top-14 right-6 text-muted-foreground text-sm font-medium z-10">
         {currentSlide + 1} / {slides.length}
@@ -228,9 +211,14 @@ export default function Welcome() {
 
         {/* Continue Button */}
         <Button
-          onClick={handleNext}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleNext();
+          }}
+          type="button"
           size="lg"
-          className={`w-full h-14 text-lg font-bold rounded-2xl shadow-lg bg-gradient-to-r ${slide.color} text-white border-0 hover:opacity-90 transition-all duration-300 ios-pressable`}
+          className={`w-full h-14 text-lg font-bold rounded-2xl shadow-lg bg-gradient-to-r ${slide.color} text-white border-0 hover:opacity-90 active:scale-[0.98] transition-all duration-300`}
         >
           {isLastSlide ? (
             <>
@@ -247,8 +235,13 @@ export default function Welcome() {
 
         {/* Login Link */}
         <button
-          onClick={() => navigate('/auth/teacher?tab=login')}
-          className="w-full mt-4 text-center text-muted-foreground text-sm ios-pressable py-2"
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            navigate('/auth/teacher?tab=login');
+          }}
+          className="w-full mt-4 text-center text-muted-foreground text-sm active:opacity-70 py-2"
         >
           لديك حساب؟ <span className="text-primary font-medium">سجل دخول</span>
         </button>
