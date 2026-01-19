@@ -632,7 +632,35 @@ export default function TeacherSubscription() {
                   </div>
 
                 </CardContent>
-                <CardFooter className="bg-muted/30 pt-6 flex-col gap-3">
+                <CardFooter className="bg-muted/30 pt-6 flex-col gap-4">
+                  {/* Payment Methods Logos */}
+                  <div className="flex items-center justify-center gap-3 w-full">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-background rounded-lg border">
+                      <img 
+                        src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/200px-Visa_Inc._logo.svg.png" 
+                        alt="Visa" 
+                        className="h-5 object-contain"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-2 bg-background rounded-lg border">
+                      <img 
+                        src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/200px-Mastercard-logo.svg.png" 
+                        alt="Mastercard" 
+                        className="h-5 object-contain"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-2 bg-background rounded-lg border">
+                      <img 
+                        src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Apple_Pay_logo.svg/200px-Apple_Pay_logo.svg.png" 
+                        alt="Apple Pay" 
+                        className="h-5 object-contain"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-2 bg-background rounded-lg border">
+                      <span className="text-xs font-bold text-blue-600">KNET</span>
+                    </div>
+                  </div>
+
                   <Button 
                     className="w-full gap-2 h-12 text-base" 
                     size="lg"
@@ -648,7 +676,6 @@ export default function TeacherSubscription() {
                       <>
                         <CreditCard className="h-5 w-5" />
                         ادفع الآن
-                        <span className="text-xs opacity-75 mr-2">(كي نت - فيزا - ماستر - Apple Pay)</span>
                       </>
                     )}
                   </Button>
