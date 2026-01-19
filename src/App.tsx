@@ -11,6 +11,7 @@ import { FloatingThemeToggle } from "@/components/theme/FloatingThemeToggle";
 // Landing & Auth
 import Landing from "./pages/Landing";
 import Welcome from "./pages/Welcome";
+import PlatformRouter from "./components/routing/PlatformRouter";
 import TeacherAuth from "./pages/auth/TeacherAuth";
 import AdminAuth from "./pages/auth/AdminAuth";
 import DepartmentHeadAuth from "./pages/auth/DepartmentHeadAuth";
@@ -75,8 +76,8 @@ const App = () => (
           <FloatingThemeToggle />
           <SwipeBackOverlay />
           <Routes>
-            {/* Public Routes - Welcome is the main entry for mobile */}
-            <Route path="/" element={<Welcome />} />
+            {/* Main entry - Platform detection: Native→Welcome, Web→Landing */}
+            <Route path="/" element={<PlatformRouter />} />
             <Route path="/landing" element={<Landing />} />
             <Route path="/welcome" element={<Welcome />} />
             <Route path="/auth/teacher" element={<TeacherAuth />} />
