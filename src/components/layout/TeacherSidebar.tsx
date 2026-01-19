@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import {
@@ -9,8 +9,8 @@ import {
   BookOpen,
   BarChart3,
   Settings,
-  ChevronLeft,
-  ChevronRight,
+  PanelRightClose,
+  PanelRightOpen,
   LogOut,
   LayoutGrid,
   CreditCard,
@@ -28,6 +28,8 @@ interface TeacherSidebarProps {
   onClose: () => void;
 }
 
+const SIDEBAR_COLLAPSED_KEY = 'teacher-sidebar-collapsed';
+
 const navItems = [
   { href: '/teacher', icon: LayoutDashboard, label: 'لوحة التحكم' },
   { href: '/teacher/classrooms', icon: GraduationCap, label: 'الصفوف' },
@@ -44,9 +46,17 @@ const navItems = [
 export function TeacherSidebar({ isOpen, onClose }: TeacherSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+    return saved === 'true';
+  });
   const { signOut } = useAuth();
   const { logoUrl } = useSiteLogo();
+
+  // Persist collapsed state
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed.toString());
+  }, [collapsed]);
 
   const handleLogout = async () => {
     const { error } = await signOut();
@@ -94,24 +104,26 @@ export function TeacherSidebar({ isOpen, onClose }: TeacherSidebarProps) {
             )}
           </div>
 
-          {/* Collapse Button */}
-          <div className="hidden lg:flex justify-center py-2 border-b border-border">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setCollapsed(!collapsed)}
-              className="w-full mx-2"
-            >
-              {collapsed ? (
-                <ChevronLeft className="h-4 w-4" />
-              ) : (
-                <>
-                  <ChevronRight className="h-4 w-4 ml-2" />
-                  <span>تصغير</span>
-                </>
-              )}
-            </Button>
-          </div>
+          {/* Collapse Toggle Button */}
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setCollapsed(!collapsed)}
+                className="hidden lg:flex absolute -left-3 top-20 h-6 w-6 rounded-full border bg-background shadow-md hover:bg-muted"
+              >
+                {collapsed ? (
+                  <PanelRightOpen className="h-3.5 w-3.5" />
+                ) : (
+                  <PanelRightClose className="h-3.5 w-3.5" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">
+              <p>{collapsed ? 'توسيع القائمة' : 'تصغير القائمة'}</p>
+            </TooltipContent>
+          </Tooltip>
 
           {/* Navigation */}
           <nav className="flex-1 p-2 space-y-1">
