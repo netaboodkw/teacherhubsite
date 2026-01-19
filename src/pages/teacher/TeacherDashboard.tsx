@@ -17,44 +17,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ClassroomCard } from '@/components/dashboard/ClassroomCard';
 
 import { NotificationPermissionPrompt } from '@/components/notifications/NotificationPermissionPrompt';
-import { WelcomeAttendanceBanner, isBannerDisabled } from '@/components/notifications/WelcomeAttendanceBanner';
-import { useFingerprintScheduler } from '@/hooks/useFingerprintScheduler';
-import { toast } from 'sonner';
 
 export default function TeacherDashboard() {
   const { data: classrooms, isLoading: classroomsLoading } = useClassrooms();
   const { profile } = useProfile();
   const themeStyle = useThemeStyle();
   const isGlass = themeStyle === 'liquid-glass';
-  
-  const { 
-    scheduleFingerprintNotifications, 
-    markAttendanceTimeSet,
-  } = useFingerprintScheduler();
-  
-  // Handle attendance time set from banner
-  const handleAttendanceTimeSet = async (time: string) => {
-    // Save to localStorage
-    const settings = JSON.parse(localStorage.getItem('fingerprint-settings') || '{}');
-    const updatedSettings = {
-      ...settings,
-      attendanceTime: time,
-      reminderEnabled: settings.reminderEnabled !== false,
-      reminderMinutesBefore: settings.reminderMinutesBefore || 10,
-      soundEnabled: settings.soundEnabled !== false,
-    };
-    localStorage.setItem('fingerprint-settings', JSON.stringify(updatedSettings));
-    
-    // Mark attendance time as set for today
-    markAttendanceTimeSet();
-    
-    // Schedule notifications
-    await scheduleFingerprintNotifications(updatedSettings);
-    
-    toast.success('تم تعيين وقت الحضور وجدولة التنبيهات', {
-      description: `وقت الحضور: ${time}`,
-    });
-  };
   
   // Get student count directly from active classrooms instead of fetching all students
   const classroomIds = useMemo(() => classrooms?.map(c => c.id) || [], [classrooms]);
@@ -283,13 +251,6 @@ export default function TeacherDashboard() {
           </Alert>
         )}
 
-        {/* Welcome Attendance Banner - Fixed at top of content */}
-        {!isBannerDisabled() && (
-          <WelcomeAttendanceBanner 
-            onTimeSet={handleAttendanceTimeSet}
-            className="mb-4"
-          />
-        )}
 
         <div className="mb-6">
           <h1 className="text-2xl font-bold">مرحباً {profile?.full_name?.split(' ')[0] || 'بك'} 👋</h1>
