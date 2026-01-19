@@ -112,8 +112,11 @@ serve(async (req) => {
         throw new Error(result.Message || "فشل في جلب طرق الدفع");
       }
 
-      // Return all payment methods (not filtering by IsDirectPayment as most methods have it as false)
-      const paymentMethods = result.Data.PaymentMethods || [];
+      // Filter to show only specific payment methods: KNET (1), VISA/MASTER (2), Apple Pay KWD (24)
+      const allowedMethodIds = [1, 2, 24];
+      const paymentMethods = (result.Data.PaymentMethods || []).filter(
+        (method: any) => allowedMethodIds.includes(method.PaymentMethodId)
+      );
 
       return new Response(
         JSON.stringify({
