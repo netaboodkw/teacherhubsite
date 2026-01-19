@@ -272,6 +272,8 @@ export default function Landing() {
                     src={displayLogo} 
                     alt="Teacher Hub" 
                     className="w-full h-full object-contain"
+                    fetchPriority="high"
+                    loading="eager"
                     onError={(e) => { e.currentTarget.src = defaultLogo; }}
                   />
                 </div>
