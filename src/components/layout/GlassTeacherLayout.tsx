@@ -2,11 +2,11 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { GlassBottomNav } from './GlassBottomNav';
 import { GlassTopBar } from './GlassAppShell';
-import { Menu, Bell, User, LucideIcon, School } from 'lucide-react';
+import { Menu, Bell, User, LucideIcon, School, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GlassButton } from '@/components/ui/glass-button';
 import { useSiteLogo } from '@/hooks/useSiteLogo';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FadeTransition } from '@/components/transitions/PageTransition';
 import {
   LayoutDashboard,
@@ -25,6 +25,8 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 import { GlassIcon } from '@/components/ui/glass-icon';
 
@@ -65,7 +67,18 @@ interface GlassTeacherLayoutProps {
 export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
   const { logoUrl } = useSiteLogo();
   const location = useLocation();
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = React.useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast.success('تم تسجيل الخروج بنجاح');
+      navigate('/');
+    } catch (error) {
+      toast.error('حدث خطأ أثناء تسجيل الخروج');
+    }
+  };
 
   const isActive = (href: string) => {
     if (href === '/teacher') {
@@ -195,7 +208,7 @@ export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
           </nav>
 
           {/* Bottom Actions */}
-          <div className="p-3 border-t border-border/30">
+          <div className="p-3 border-t border-border/30 space-y-1">
             <Link 
               to="/teacher/settings"
               className={cn(
@@ -210,6 +223,22 @@ export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
               <NavIcon icon={Settings} active={location.pathname.includes('/settings')} />
               {!collapsed && <span className={cn(location.pathname.includes('/settings') && "text-foreground font-semibold")}>الإعدادات</span>}
             </Link>
+            
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              className={cn(
+                "group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium font-cairo w-full",
+                "transition-all duration-200",
+                collapsed && "justify-center px-2",
+                "text-destructive hover:bg-destructive/10"
+              )}
+            >
+              <div className="flex items-center justify-center w-10 h-10 text-destructive group-hover:text-destructive transition-colors">
+                <LogOut className="w-5 h-5" />
+              </div>
+              {!collapsed && <span>تسجيل الخروج</span>}
+            </button>
           </div>
         </aside>
 
