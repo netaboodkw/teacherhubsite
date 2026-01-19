@@ -5,7 +5,7 @@ import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/
 import { GraduationCap, Users, ClipboardCheck, BookOpen, AlertTriangle, Plus, LayoutDashboard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { TodaySchedule } from '@/components/dashboard/TodaySchedule';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -18,12 +18,59 @@ import { ClassroomCard } from '@/components/dashboard/ClassroomCard';
 import { PageHeader } from '@/components/common/PageHeader';
 import { OnboardingTour } from '@/components/onboarding/OnboardingTour';
 import { NotificationPermissionPrompt } from '@/components/notifications/NotificationPermissionPrompt';
+import { AttendanceTimeDialog } from '@/components/fingerprint/AttendanceTimeDialog';
+import { useFingerprintScheduler } from '@/hooks/useFingerprintScheduler';
+import { toast } from 'sonner';
 
 export default function TeacherDashboard() {
   const { data: classrooms, isLoading: classroomsLoading } = useClassrooms();
   const { profile } = useProfile();
   const themeStyle = useThemeStyle();
   const isGlass = themeStyle === 'liquid-glass';
+  
+  // Attendance time dialog state
+  const [showAttendanceDialog, setShowAttendanceDialog] = useState(false);
+  const { 
+    scheduleFingerprintNotifications, 
+    checkAttendanceTimeSetToday, 
+    markAttendanceTimeSet,
+    getKuwaitTime,
+  } = useFingerprintScheduler();
+  
+  // Check if we need to show attendance time dialog on first load
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (!checkAttendanceTimeSetToday()) {
+        setShowAttendanceDialog(true);
+      }
+    }, 1000); // Small delay to let the page load
+    
+    return () => clearTimeout(timeoutId);
+  }, [checkAttendanceTimeSetToday]);
+  
+  // Handle attendance time set
+  const handleAttendanceTimeSet = async (time: string) => {
+    // Save to localStorage
+    const settings = JSON.parse(localStorage.getItem('fingerprint-settings') || '{}');
+    const updatedSettings = {
+      ...settings,
+      attendanceTime: time,
+      reminderEnabled: settings.reminderEnabled !== false,
+      reminderMinutesBefore: settings.reminderMinutesBefore || 10,
+      soundEnabled: settings.soundEnabled !== false,
+    };
+    localStorage.setItem('fingerprint-settings', JSON.stringify(updatedSettings));
+    
+    // Mark attendance time as set for today
+    markAttendanceTimeSet();
+    
+    // Schedule notifications
+    await scheduleFingerprintNotifications(updatedSettings);
+    
+    toast.success('تم تعيين وقت الحضور وجدولة التنبيهات', {
+      description: `وقت الحضور: ${time}`,
+    });
+  };
   
   // Get student count directly from active classrooms instead of fetching all students
   const classroomIds = useMemo(() => classrooms?.map(c => c.id) || [], [classrooms]);
@@ -337,6 +384,14 @@ export default function TeacherDashboard() {
       
       {/* Notification Permission Prompt - shows once on first login */}
       <NotificationPermissionPrompt />
+      
+      {/* Daily Attendance Time Dialog */}
+      <AttendanceTimeDialog
+        open={showAttendanceDialog}
+        onOpenChange={setShowAttendanceDialog}
+        onTimeSet={handleAttendanceTimeSet}
+        currentTime={getKuwaitTime()}
+      />
     </TeacherLayout>
   );
 }
