@@ -380,7 +380,7 @@ export default function EditClassroom() {
 
             <div className="space-y-2">
               <Label>لون الفصل</Label>
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-2 flex-wrap items-center">
                 {colorOptions.map((color) => (
                   <button
                     key={color.value}
@@ -395,7 +395,38 @@ export default function EditClassroom() {
                     title={color.label}
                   />
                 ))}
+                {/* Custom Color Picker */}
+                <div className="relative">
+                  <input
+                    type="color"
+                    value={formData.color}
+                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    title="اختر لون مخصص"
+                  />
+                  <div 
+                    className={`w-9 h-9 rounded-full border-2 border-dashed border-muted-foreground/50 flex items-center justify-center transition-all hover:border-primary hover:scale-105 ${
+                      !colorOptions.some(c => c.value === formData.color) 
+                        ? 'ring-2 ring-offset-2 ring-primary scale-110' 
+                        : ''
+                    }`}
+                    style={{ 
+                      backgroundColor: !colorOptions.some(c => c.value === formData.color) 
+                        ? formData.color 
+                        : 'transparent' 
+                    }}
+                  >
+                    {colorOptions.some(c => c.value === formData.color) && (
+                      <Plus className="w-4 h-4 text-muted-foreground" />
+                    )}
+                  </div>
+                </div>
               </div>
+              {!colorOptions.some(c => c.value === formData.color) && (
+                <p className="text-xs text-muted-foreground">
+                  اللون المخصص: {formData.color}
+                </p>
+              )}
             </div>
 
             <div className="flex gap-3 pt-4">
