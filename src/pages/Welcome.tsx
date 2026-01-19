@@ -54,6 +54,7 @@ const WELCOME_BACK_PREF_KEY = 'teacherhub_welcome_back_pref';
 interface LastUserInfo {
   name: string | null;
   avatarUrl: string | null;
+  email: string | null;
   timestamp: number;
 }
 
@@ -126,7 +127,9 @@ export default function Welcome() {
 
   const handleReLogin = () => {
     setShowWelcomeBack(false);
-    navigate('/auth/teacher?tab=login', { replace: true });
+    // Pass email as query param for quick login (pre-fill email field)
+    const emailParam = lastUser?.email ? `&email=${encodeURIComponent(lastUser.email)}` : '';
+    navigate(`/auth/teacher?tab=login${emailParam}`, { replace: true });
   };
 
   const handleClearAndExit = () => {
@@ -362,6 +365,7 @@ export default function Welcome() {
         onOpenChange={setShowWelcomeBack}
         teacherName={lastUser?.name || null}
         avatarUrl={lastUser?.avatarUrl || null}
+        email={lastUser?.email || null}
         onReLogin={handleReLogin}
         onClearAndExit={handleClearAndExit}
         onDismiss={handleDismiss}

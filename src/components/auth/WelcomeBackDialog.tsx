@@ -8,13 +8,14 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogIn, UserX, X } from 'lucide-react';
+import { LogIn, UserX, X, Mail } from 'lucide-react';
 
 interface WelcomeBackDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   teacherName: string | null;
   avatarUrl: string | null;
+  email?: string | null;
   onReLogin: () => void;
   onClearAndExit: () => void;
   onDismiss?: () => void;
@@ -25,6 +26,7 @@ export const WelcomeBackDialog = forwardRef<HTMLDivElement, WelcomeBackDialogPro
   onOpenChange,
   teacherName,
   avatarUrl,
+  email,
   onReLogin,
   onClearAndExit,
   onDismiss,
@@ -57,6 +59,12 @@ export const WelcomeBackDialog = forwardRef<HTMLDivElement, WelcomeBackDialogPro
           <DialogDescription className="text-base">
             هل تريد الدخول مرة أخرى؟
           </DialogDescription>
+          {email && (
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-lg py-2 px-3">
+              <Mail className="w-4 h-4" />
+              <span dir="ltr">{email}</span>
+            </div>
+          )}
         </DialogHeader>
 
         <div className="space-y-3 py-4">
@@ -66,8 +74,11 @@ export const WelcomeBackDialog = forwardRef<HTMLDivElement, WelcomeBackDialogPro
             size="lg"
           >
             <LogIn className="w-5 h-5 ml-2" />
-            الدخول للوحة التحكم
+            تسجيل الدخول
           </Button>
+          <p className="text-xs text-muted-foreground">
+            سيُملأ البريد الإلكتروني تلقائياً، أدخل كلمة المرور فقط
+          </p>
           
           <Button 
             variant="outline" 
