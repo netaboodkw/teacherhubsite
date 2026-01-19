@@ -19,6 +19,7 @@ import {
   UsersRound,
   CreditCard,
   Wand2,
+  Mail,
   LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -58,6 +59,7 @@ const navItems = [
   { href: '/admin/teachers', icon: Users, label: 'المعلمون' },
   { href: '/admin/archived-classrooms', icon: Archive, label: 'الصفوف المؤرشفة' },
   { href: '/admin/subscriptions', icon: CreditCard, label: 'الاشتراكات والمدفوعات' },
+  { href: '/admin/emails', icon: Mail, label: 'إدارة الإيميلات' },
   { href: '/admin/ai-content', icon: Wand2, label: 'إنشاء محتوى AI' },
 ];
 
