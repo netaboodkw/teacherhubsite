@@ -170,56 +170,52 @@ export default function TeacherSchedule() {
   // Mobile iOS-style Layout
   if (isMobile) {
     return (
-      <TeacherLayout hideHeader hidePadding>
-        <div className="min-h-screen bg-background pb-24">
-          {/* iOS Header */}
-          <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/50">
-            <div className="px-4 pt-12 pb-4 safe-area-inset-top">
-              <div className="flex items-center justify-between mb-4">
-                <h1 className="text-2xl font-bold">جدول الحصص</h1>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant={showSettings ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setShowSettings(!showSettings)}
-                    className="rounded-full gap-1"
-                  >
-                    <Settings className={cn("h-4 w-4", showSettings && "rotate-90 transition-transform")} />
-                    {showSettings ? "إغلاق" : "التذكيرات"}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handlePrint}
-                    className="h-10 w-10 rounded-full"
-                  >
-                    <Printer className="h-5 w-5" />
-                  </Button>
-                </div>
-              </div>
-              
-              {/* Education Level Filter */}
-              {educationLevels.length > 1 && (
-                <Select value={selectedEducationLevel} onValueChange={setSelectedEducationLevel}>
-                  <SelectTrigger className="w-full h-11 rounded-xl bg-muted/50 border-0">
-                    <SelectValue placeholder="جميع المراحل" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">جميع المراحل</SelectItem>
-                    {educationLevels.map(level => (
-                      <SelectItem key={level.id} value={level.id}>
-                        {level.name_ar}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+      <TeacherLayout>
+        <div className="space-y-4 pb-20">
+          {/* Title & Actions */}
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-bold">جدول الحصص</h1>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={showSettings ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowSettings(!showSettings)}
+                className="rounded-full gap-1"
+              >
+                <Settings className={cn("h-4 w-4", showSettings && "rotate-90 transition-transform")} />
+                {showSettings ? "إغلاق" : "التذكيرات"}
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handlePrint}
+                className="h-10 w-10 rounded-full"
+              >
+                <Printer className="h-4 w-4" />
+              </Button>
             </div>
           </div>
+          
+          {/* Education Level Filter */}
+          {educationLevels.length > 1 && (
+            <Select value={selectedEducationLevel} onValueChange={setSelectedEducationLevel}>
+              <SelectTrigger className="w-full h-11 rounded-xl bg-muted/50 border-border/50">
+                <SelectValue placeholder="جميع المراحل" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border z-50">
+                <SelectItem value="all">جميع المراحل</SelectItem>
+                {educationLevels.map(level => (
+                  <SelectItem key={level.id} value={level.id}>
+                    {level.name_ar}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
 
           {/* Settings Section - At Top When Open */}
           {showSettings && (
-            <div className="px-4 pt-4 animate-in slide-in-from-top duration-200">
+            <div className="animate-in slide-in-from-top duration-200">
               <div className="rounded-2xl bg-muted/30 p-4 space-y-4">
                 {/* Enable Reminder */}
                 <div className="flex items-center justify-between">
@@ -325,80 +321,72 @@ export default function TeacherSchedule() {
 
           {/* Upcoming Period Alert */}
           {upcomingPeriod && (
-            <div className="px-4 pt-4">
-              <UpcomingPeriodAlert
-                upcomingPeriod={upcomingPeriod} 
-                isRepeating={isRepeating}
-                onStopRepeating={stopRepeating}
-              />
-            </div>
+            <UpcomingPeriodAlert
+              upcomingPeriod={upcomingPeriod} 
+              isRepeating={isRepeating}
+              onStopRepeating={stopRepeating}
+            />
           )}
 
           {/* Day Selector */}
-          <div className="px-4 pt-4">
-            <div className="flex items-center justify-between bg-card rounded-2xl p-2 border border-border/50">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigateDay('next')}
-                className="h-10 w-10 rounded-xl"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </Button>
-              
-              <div className="flex-1 flex items-center justify-center gap-3">
-                <Calendar className="h-5 w-5 text-primary" />
-                <span className="text-lg font-semibold">{selectedDay.name}</span>
-                {selectedDay.key === todayKey && (
-                  <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">
-                    اليوم
-                  </Badge>
-                )}
-              </div>
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigateDay('prev')}
-                className="h-10 w-10 rounded-xl"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
+          <div className="flex items-center justify-between bg-card rounded-2xl p-2 border border-border/50">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigateDay('next')}
+              className="h-10 w-10 rounded-xl"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+            
+            <div className="flex-1 flex items-center justify-center gap-3">
+              <Calendar className="h-5 w-5 text-primary" />
+              <span className="text-lg font-semibold">{selectedDay.name}</span>
+              {selectedDay.key === todayKey && (
+                <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">
+                  اليوم
+                </Badge>
+              )}
             </div>
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigateDay('prev')}
+              className="h-10 w-10 rounded-xl"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
           </div>
 
           {/* Days Quick Select */}
-          <div className="px-4 pt-3">
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-              {weekDays.map((day, index) => (
-                <button
-                  key={day.key}
-                  onClick={() => setSelectedDayIndex(index)}
-                  className={cn(
-                    "flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all",
-                    index === selectedDayIndex
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : day.key === todayKey
-                        ? "bg-primary/10 text-primary border border-primary/30"
-                        : "bg-muted/50 text-muted-foreground"
-                  )}
-                >
-                  {day.name}
-                </button>
-              ))}
-            </div>
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4">
+            {weekDays.map((day, index) => (
+              <button
+                key={day.key}
+                onClick={() => setSelectedDayIndex(index)}
+                className={cn(
+                  "flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all",
+                  index === selectedDayIndex
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : day.key === todayKey
+                      ? "bg-primary/10 text-primary border border-primary/30"
+                      : "bg-muted/50 text-muted-foreground"
+                )}
+              >
+                {day.name}
+              </button>
+            ))}
           </div>
 
           {/* Period Times */}
-          <div className="px-4 pt-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">{currentSchedule.levelNameAr}</span>
-            </div>
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">{currentSchedule.levelNameAr}</span>
           </div>
 
           {/* Classes List */}
-          <div className="px-4 space-y-3 pb-4">
+          <div className="space-y-3">
             {dayClasses.map(({ period, classroom }, index) => {
               const hexColor = classroom ? getHexColor(classroom.color) : null;
               const isCurrentPeriod = upcomingPeriod?.period?.period === period.period && selectedDay.key === todayKey;
@@ -474,7 +462,7 @@ export default function TeacherSchedule() {
 
           {/* Empty State */}
           {filteredClassrooms.length === 0 && (
-            <div className="px-4 py-12 text-center">
+            <div className="py-12 text-center">
               <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
                 <Calendar className="h-8 w-8 text-muted-foreground" />
               </div>
