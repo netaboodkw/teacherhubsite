@@ -29,41 +29,27 @@ const OnboardingContext = createContext<OnboardingContextType | undefined>(undef
 
 const initialSteps: OnboardingStep[] = [
   {
-    id: 'welcome',
-    title: 'مرحباً بك! 🎉',
-    description: 'دعنا نساعدك في إعداد حسابك خطوة بخطوة',
-    route: '/teacher',
-    isCompleted: false,
-  },
-  {
-    id: 'create-classroom',
-    title: 'إنشاء صفك الأول',
-    description: 'أنشئ صفاً دراسياً لتبدأ بإضافة طلابك',
-    route: '/teacher/classrooms/new',
-    action: 'أنشئ صفاً جديداً',
-    isCompleted: false,
-  },
-  {
     id: 'add-students',
-    title: 'إضافة الطلاب',
-    description: 'أضف طلابك يدوياً أو استوردهم من ملف Excel',
+    title: 'إضافة الطلاب 👥',
+    description: 'يمكنك استيراد أسماء الطلاب من صورة كشف الأسماء أو إضافتهم يدوياً',
     route: '/teacher/students',
-    action: 'أضف طلابك',
+    action: 'صفحة الطلاب',
     isCompleted: false,
   },
   {
-    id: 'explore-grades',
-    title: 'استكشف الدرجات',
-    description: 'تعرف على كيفية تسجيل الدرجات وإنشاء قوالب التقييم',
-    route: '/teacher/grades',
-    action: 'اكتشف الدرجات',
+    id: 'classroom-view',
+    title: 'إدارة الصف 🎯',
+    description: 'ادخل الصف وتفاعل مع الطلاب، سجل الحضور والغياب بضغطة زر',
+    route: '/teacher/classrooms',
+    action: 'صفحاتي',
     isCompleted: false,
   },
   {
-    id: 'complete',
-    title: 'أنت جاهز! 🚀',
-    description: 'لقد أكملت الإعداد الأولي. استمتع باستخدام المنصة!',
-    route: '/teacher',
+    id: 'grade-templates',
+    title: 'قوالب الدرجات 📊',
+    description: 'أنشئ قوالب تقييم مخصصة. ننصح باستخدام الكمبيوتر لوضوح أكبر',
+    route: '/teacher/templates',
+    action: 'القوالب',
     isCompleted: false,
   },
 ];

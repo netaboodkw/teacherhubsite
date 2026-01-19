@@ -1,26 +1,22 @@
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { 
   ChevronLeft, 
   ChevronRight, 
   X, 
-  GraduationCap, 
   Users, 
-  BookOpen, 
+  Layout,
+  FileSpreadsheet,
   CheckCircle2,
-  Sparkles,
-  ArrowLeft
+  Monitor
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 
 const stepIcons: { [key: string]: React.ReactNode } = {
-  'welcome': <Sparkles className="w-5 h-5" />,
-  'create-classroom': <GraduationCap className="w-5 h-5" />,
   'add-students': <Users className="w-5 h-5" />,
-  'explore-grades': <BookOpen className="w-5 h-5" />,
-  'complete': <CheckCircle2 className="w-5 h-5" />,
+  'classroom-view': <Layout className="w-5 h-5" />,
+  'grade-templates': <FileSpreadsheet className="w-5 h-5" />,
 };
 
 export function InteractiveOnboardingBanner() {
@@ -59,112 +55,105 @@ export function InteractiveOnboardingBanner() {
   return (
     <div 
       className={cn(
-        "fixed bottom-20 left-4 right-4 z-50 md:left-auto md:right-6 md:bottom-6 md:w-96",
-        "bg-card border border-border rounded-2xl shadow-xl",
+        "fixed bottom-20 left-3 right-3 z-50",
+        "md:left-auto md:right-6 md:bottom-6 md:max-w-sm",
+        "bg-card border border-border rounded-xl shadow-lg",
         "animate-in slide-in-from-bottom-4 duration-300"
       )}
       dir="rtl"
     >
-      {/* Progress bar */}
-      <div className="px-4 pt-3">
-        <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-          <span>الخطوة {currentStep + 1} من {steps.length}</span>
-          <span>{Math.round(progress)}%</span>
-        </div>
-        <Progress value={progress} className="h-1.5" />
+      {/* Simple progress dots */}
+      <div className="flex justify-center gap-2 pt-3">
+        {steps.map((_, index) => (
+          <div
+            key={index}
+            className={cn(
+              "h-2 w-2 rounded-full transition-all",
+              index === currentStep 
+                ? "bg-primary scale-110" 
+                : index < currentStep 
+                  ? "bg-primary/40" 
+                  : "bg-muted"
+            )}
+          />
+        ))}
       </div>
 
       {/* Content */}
-      <div className="p-4">
-        <div className="flex items-start gap-3">
+      <div className="p-3">
+        <div className="flex items-start gap-2.5">
           {/* Icon */}
-          <div className="p-2.5 rounded-xl bg-primary/10 text-primary flex-shrink-0">
-            {stepIcons[step.id] || <Sparkles className="w-5 h-5" />}
+          <div className="p-2 rounded-lg bg-primary/10 text-primary flex-shrink-0">
+            {stepIcons[step.id] || <Users className="w-5 h-5" />}
           </div>
 
           {/* Text */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-foreground text-sm">
+            <h3 className="font-semibold text-foreground text-sm leading-tight">
               {step.title}
             </h3>
-            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
               {step.description}
             </p>
+            
+            {/* Computer tip for templates */}
+            {step.id === 'grade-templates' && (
+              <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-600 dark:text-amber-400">
+                <Monitor className="w-3.5 h-3.5" />
+                <span>يُفضل استخدام الكمبيوتر</span>
+              </div>
+            )}
           </div>
 
           {/* Close button */}
           <button
             onClick={skipOnboarding}
             className="p-1 rounded-full hover:bg-muted transition-colors text-muted-foreground"
-            title="تخطي الجولة"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 mt-4">
+        {/* Actions - simplified */}
+        <div className="flex items-center gap-2 mt-3">
           {!isFirstStep && (
             <Button
               variant="ghost"
               size="sm"
               onClick={previousStep}
-              className="flex-shrink-0"
+              className="h-8 px-2 text-xs"
             >
-              <ChevronRight className="w-4 h-4 ml-1" />
-              السابق
-            </Button>
-          )}
-
-          <div className="flex-1" />
-
-          {step.action && !isLastStep && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleAction}
-              className="flex-shrink-0"
-            >
-              {step.action}
-              <ArrowLeft className="w-4 h-4 mr-1" />
+              <ChevronRight className="w-3.5 h-3.5" />
             </Button>
           )}
 
           <Button
+            variant="outline"
+            size="sm"
+            onClick={handleAction}
+            className="h-8 px-3 text-xs flex-1"
+          >
+            {step.action}
+          </Button>
+
+          <Button
             size="sm"
             onClick={handleNext}
-            className="flex-shrink-0"
+            className="h-8 px-3 text-xs"
           >
             {isLastStep ? (
               <>
-                <CheckCircle2 className="w-4 h-4 ml-1" />
-                ابدأ الآن
+                <CheckCircle2 className="w-3.5 h-3.5 ml-1" />
+                تم
               </>
             ) : (
               <>
                 التالي
-                <ChevronLeft className="w-4 h-4 mr-1" />
+                <ChevronLeft className="w-3.5 h-3.5 mr-1" />
               </>
             )}
           </Button>
         </div>
-      </div>
-
-      {/* Step indicators */}
-      <div className="flex justify-center gap-1.5 pb-3">
-        {steps.map((_, index) => (
-          <div
-            key={index}
-            className={cn(
-              "h-1.5 rounded-full transition-all duration-300",
-              index === currentStep 
-                ? "w-4 bg-primary" 
-                : index < currentStep 
-                  ? "w-1.5 bg-primary/50" 
-                  : "w-1.5 bg-muted-foreground/30"
-            )}
-          />
-        ))}
       </div>
     </div>
   );
