@@ -158,6 +158,7 @@ export default function Attendance() {
           icon={ClipboardCheck}
           title="تسجيل الحضور"
           subtitle="تسجيل ومتابعة حضور الطلاب"
+          iconVariant="green"
           actions={
             <Select value={selectedClassroom} onValueChange={(v) => { setSelectedClassroom(v); setLocalAttendance({}); }}>
               <SelectTrigger className={cn("w-56", isGlass && "bg-background/30 backdrop-blur-xl border-white/20")}>

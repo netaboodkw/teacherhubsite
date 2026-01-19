@@ -263,6 +263,7 @@ const FingerprintPage = () => {
           icon={FingerprintIcon}
           title="بصمة التواجد"
           subtitle="نظام تذكير بصمة التواجد للمعلمين - الكويت"
+          iconVariant="rose"
           actions={
             <div className="text-left">
               <p className="text-sm text-muted-foreground">التوقيت الحالي (الكويت)</p>

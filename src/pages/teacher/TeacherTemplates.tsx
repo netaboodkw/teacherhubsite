@@ -1050,6 +1050,7 @@ export default function TeacherTemplates() {
           icon={LayoutGrid}
           title="قوالب الدرجات"
           subtitle="أنشئ قوالب درجات خاصة بك وطبقها على فصولك"
+          iconVariant="purple"
           actions={
             <div className="flex gap-2 flex-wrap">
               <Button variant="outline" onClick={() => setImportDialogOpen(true)}>

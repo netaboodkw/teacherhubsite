@@ -124,6 +124,7 @@ export default function Settings() {
           icon={SettingsIcon}
           title="الإعدادات"
           subtitle="إدارة معلوماتك الشخصية وبيانات المدرسة"
+          iconVariant="teal"
         />
 
         {/* Subscription Status Card */}

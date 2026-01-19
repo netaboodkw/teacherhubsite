@@ -246,6 +246,7 @@ export default function TeacherDashboard() {
           icon={LayoutDashboard}
           title="مرحباً بك"
           subtitle="إدارة صفوفك وطلابك"
+          iconVariant="cyan"
         />
 
         <div className="grid gap-4 md:grid-cols-4">
