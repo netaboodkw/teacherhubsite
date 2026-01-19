@@ -15,6 +15,7 @@ import PlatformRouter from "./components/routing/PlatformRouter";
 import TeacherAuth from "./pages/auth/TeacherAuth";
 import AdminAuth from "./pages/auth/AdminAuth";
 import DepartmentHeadAuth from "./pages/auth/DepartmentHeadAuth";
+import ResetPassword from "./pages/auth/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 // Admin Pages
@@ -84,6 +85,7 @@ const App = () => (
             <Route path="/auth/teacher" element={<TeacherAuth />} />
             <Route path="/auth/admin" element={<AdminAuth />} />
             <Route path="/auth/department-head" element={<DepartmentHeadAuth />} />
+            <Route path="/auth/reset-password" element={<ResetPassword />} />
 
             {/* Legacy redirects */}
             <Route path="/auth" element={<Navigate to="/auth/teacher" replace />} />

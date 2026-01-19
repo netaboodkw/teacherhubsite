@@ -67,6 +67,9 @@ export default function TeacherAuth() {
   const [rememberMe, setRememberMe] = useState(() => {
     return localStorage.getItem('rememberMe') === 'true';
   });
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
   
   // Register state
   const [fullName, setFullName] = useState('');
@@ -184,6 +187,38 @@ export default function TeacherAuth() {
       handleBiometricLogin();
     }
   }, [biometricEnabled, biometricAvailable, isNative]);
+
+  // Handle forgot password
+  const handleForgotPassword = async () => {
+    const emailToReset = forgotPasswordEmail || loginEmail;
+    
+    if (!emailToReset.trim()) {
+      toast.error('يرجى إدخال البريد الإلكتروني');
+      return;
+    }
+    
+    setForgotPasswordLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(emailToReset.trim(), {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+      
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      
+      toast.success('تم إرسال رابط إعادة التعيين إلى بريدك الإلكتروني');
+      setShowForgotPassword(false);
+      setForgotPasswordEmail('');
+      
+    } catch (err: any) {
+      toast.error(err.message || 'حدث خطأ');
+    } finally {
+      setForgotPasswordLoading(false);
+    }
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -436,6 +471,18 @@ export default function TeacherAuth() {
                     </Label>
                   </div>
                   
+                  {/* Forgot Password Link */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForgotPasswordEmail(loginEmail);
+                      setShowForgotPassword(true);
+                    }}
+                    className="text-sm text-primary hover:underline w-full text-center py-2"
+                  >
+                    نسيت كلمة المرور؟
+                  </button>
+                  
                   <button
                     type="submit"
                     disabled={loginLoading}
@@ -493,6 +540,53 @@ export default function TeacherAuth() {
                             className={`flex-1 py-3 rounded-xl bg-gradient-to-r ${gradientColor} text-white font-bold`}
                           >
                             تفعيل
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Forgot Password Modal */}
+                  {showForgotPassword && (
+                    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+                      <div className="bg-background rounded-2xl p-6 max-w-sm w-full space-y-4">
+                        <div className="text-center">
+                          <Mail className="h-12 w-12 mx-auto text-primary mb-4" />
+                          <h3 className="text-lg font-bold mb-2">نسيت كلمة المرور؟</h3>
+                          <p className="text-muted-foreground text-sm">
+                            أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <Input
+                            type="email"
+                            placeholder="example@email.com"
+                            value={forgotPasswordEmail}
+                            onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                            className="h-12 rounded-xl text-center"
+                            dir="ltr"
+                            style={{ fontSize: '16px' }}
+                          />
+                        </div>
+                        <div className="flex gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setShowForgotPassword(false)}
+                            className="flex-1 py-3 rounded-xl border border-border text-muted-foreground font-medium"
+                          >
+                            إلغاء
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleForgotPassword}
+                            disabled={forgotPasswordLoading}
+                            className={`flex-1 py-3 rounded-xl bg-gradient-to-r ${gradientColor} text-white font-bold disabled:opacity-50 flex items-center justify-center`}
+                          >
+                            {forgotPasswordLoading ? (
+                              <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : (
+                              'إرسال'
+                            )}
                           </button>
                         </div>
                       </div>
@@ -838,6 +932,20 @@ export default function TeacherAuth() {
                       >
                         تذكرني (البقاء متصلاً)
                       </Label>
+                    </div>
+                    
+                    {/* Forgot Password Link - Desktop */}
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForgotPasswordEmail(loginEmail);
+                          setShowForgotPassword(true);
+                        }}
+                        className="text-sm text-primary hover:underline"
+                      >
+                        نسيت كلمة المرور؟
+                      </button>
                     </div>
                     
                     <Button
