@@ -155,15 +155,23 @@ export function TodaySchedule({ classrooms, educationLevelName }: TodayScheduleP
                   </div>
                   
                   {/* معلومات الحصة */}
-                  <div className="flex-1 min-w-0 overflow-hidden">
-                    <div className="flex items-center gap-1 flex-wrap">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
                       {item.classroom ? (
-                        <Link 
-                          to={`/teacher/classrooms/${item.classroom.id}`}
-                          className="font-medium text-xs sm:text-sm hover:text-primary truncate max-w-[100px] sm:max-w-[140px]"
-                        >
-                          {item.classroom.name}
-                        </Link>
+                        <>
+                          {/* مؤشر لون الصف */}
+                          <div 
+                            className="w-2 h-2 rounded-full shrink-0"
+                            style={{ backgroundColor: item.classroom.color || '#6366f1' }}
+                          />
+                          <Link 
+                            to={`/teacher/classrooms/${item.classroom.id}`}
+                            className="font-medium text-xs sm:text-sm hover:text-primary truncate"
+                            title={item.classroom.name}
+                          >
+                            {item.classroom.name}
+                          </Link>
+                        </>
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>
                       )}
