@@ -18,9 +18,10 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { User, School, Mail, Users, Loader2, Save, GraduationCap, Phone, BookOpen, CreditCard, Clock, AlertTriangle, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Settings as SettingsIcon, Bell, Fingerprint, Trash2 } from 'lucide-react';
+import { User, School, Mail, Users, Loader2, Save, GraduationCap, Phone, BookOpen, CreditCard, Clock, AlertTriangle, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Settings as SettingsIcon, Bell, Fingerprint, Trash2, RotateCcw } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { InviteDepartmentHead } from '@/components/teacher/InviteDepartmentHead';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 
 
 import { useMySubscription, useSubscriptionSettings, getSubscriptionStatus } from '@/hooks/useSubscription';
@@ -38,6 +39,7 @@ export default function Settings() {
   const { data: subscriptionSettings } = useSubscriptionSettings();
   const subscriptionStatus = getSubscriptionStatus(subscription, subscriptionSettings);
   const { mode, setMode, isLiquidGlass } = useTheme();
+  const { startOnboarding } = useOnboarding();
   const { 
     isAvailable: biometricAvailable, 
     isEnabled: biometricEnabled, 
@@ -428,6 +430,40 @@ export default function Settings() {
                   />
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Restart Tour */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <RotateCcw className="h-5 w-5" />
+                الجولة التعريفية
+              </CardTitle>
+              <CardDescription>
+                أعد تشغيل الجولة لتتعرف على مميزات التطبيق
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={async () => {
+                  // Reset onboarding in database
+                  if (user) {
+                    await supabase
+                      .from('profiles')
+                      .update({ onboarding_completed: false })
+                      .eq('user_id', user.id);
+                  }
+                  startOnboarding();
+                  toast.success('تم إعادة تشغيل الجولة التعريفية');
+                }}
+                className="w-full sm:w-auto"
+              >
+                <RotateCcw className="h-4 w-4 ml-2" />
+                إعادة تشغيل الجولة
+              </Button>
             </CardContent>
           </Card>
 
