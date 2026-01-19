@@ -55,10 +55,11 @@ interface Subscriber {
     courses_count: number;
     price: number;
   } | null;
-  profile: {
-    full_name: string;
+  teacher: {
+    full_name: string | null;
     phone: string | null;
     school_name: string | null;
+    education_level_name: string | null;
   } | null;
 }
 
@@ -100,18 +101,18 @@ export default function SubscribersPage() {
 
       if (error) throw error;
 
-      // Fetch profiles separately
+      // Fetch teacher info from teachers_view (includes profiles data)
       const userIds = subs.map(s => s.user_id);
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, full_name, phone, school_name')
+      const { data: teachers } = await supabase
+        .from('teachers_view')
+        .select('user_id, full_name, phone, school_name, education_level_name')
         .in('user_id', userIds);
 
-      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+      const teacherMap = new Map(teachers?.map(t => [t.user_id, t]) || []);
       
       return subs.map(s => ({
         ...s,
-        profile: profileMap.get(s.user_id) || null
+        teacher: teacherMap.get(s.user_id) || null
       })) as Subscriber[];
     },
   });
@@ -220,9 +221,9 @@ export default function SubscribersPage() {
   };
 
   const filteredSubscribers = subscribers?.filter(sub => {
-    const matchesSearch = sub.profile?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sub.profile?.phone?.includes(searchQuery) ||
-      sub.profile?.school_name?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = sub.teacher?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      sub.teacher?.phone?.includes(searchQuery) ||
+      sub.teacher?.school_name?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || sub.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -377,11 +378,11 @@ export default function SubscribersPage() {
                         <TableRow key={sub.id}>
                           <TableCell>
                             <div>
-                              <p className="font-medium">{sub.profile?.full_name || 'غير معروف'}</p>
-                              <p className="text-sm text-muted-foreground">{sub.profile?.phone}</p>
+                              <p className="font-medium">{sub.teacher?.full_name || 'غير معروف'}</p>
+                              <p className="text-sm text-muted-foreground">{sub.teacher?.phone || '-'}</p>
                             </div>
                           </TableCell>
-                          <TableCell>{sub.profile?.school_name || '-'}</TableCell>
+                          <TableCell>{sub.teacher?.school_name || '-'}</TableCell>
                           <TableCell>{sub.package?.name_ar || 'بدون باقة'}</TableCell>
                           <TableCell>{getStatusBadge(sub.status, sub.is_read_only)}</TableCell>
                           <TableCell>
