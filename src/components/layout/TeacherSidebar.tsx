@@ -63,19 +63,30 @@ export function TeacherSidebar({ isOpen, onClose }: TeacherSidebarProps) {
   }, [collapsed]);
 
   const handleLogout = async () => {
-    // Save user info for welcome back experience on native
-    const userInfo = isNative ? {
-      name: profile?.full_name || null,
-      avatarUrl: profile?.avatar_url || null,
-    } : undefined;
-    
-    const { error } = await signOut(userInfo);
-    if (error) {
-      toast.error('حدث خطأ أثناء تسجيل الخروج');
-    } else {
+    try {
+      // Save user info for welcome back experience on native
+      const userInfo = isNative ? {
+        name: profile?.full_name || null,
+        avatarUrl: profile?.avatar_url || null,
+      } : undefined;
+      
+      const { error } = await signOut(userInfo);
+      if (error) {
+        toast.error('حدث خطأ أثناء تسجيل الخروج');
+        return;
+      }
+      
       toast.success('تم تسجيل الخروج بنجاح');
-      // On native, go to welcome page; on web, go to auth
-      navigate(isNative ? '/welcome' : '/auth/teacher');
+      
+      // Force page reload to clear all state on iOS
+      if (isNative) {
+        window.location.href = '/welcome';
+      } else {
+        navigate('/auth/teacher', { replace: true });
+      }
+    } catch (err) {
+      console.error('Logout error:', err);
+      toast.error('حدث خطأ أثناء تسجيل الخروج');
     }
   };
 
