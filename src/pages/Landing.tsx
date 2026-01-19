@@ -8,7 +8,8 @@ import {
   Smartphone, Shield, Cloud, Zap, Star, Camera,
   Brain, FileSpreadsheet, Bell, TrendingUp, Award,
   ChevronDown, Play, Fingerprint, Quote, MessageCircle,
-  Clock, HelpCircle, ChevronUp
+  Clock, HelpCircle, Timer, Shuffle, Trophy, BookOpen,
+  Printer, Download, UserPlus, Calendar, Settings
 } from 'lucide-react';
 import { useSiteLogo } from '@/hooks/useSiteLogo';
 import { useSubscriptionSettings } from '@/hooks/useSubscription';
@@ -23,26 +24,57 @@ import {
 } from "@/components/ui/accordion";
 
 const features = [
+  // المميزات الذكية
   {
     icon: Brain,
     title: 'قوالب درجات ذكية',
-    description: 'صوّر كشف الدرجات وسيتم التعرف على نظام درجاتك تلقائياً - قالب فريد لكل مادة',
+    description: 'صوّر كشف الدرجات وسيتم التعرف على نظام درجاتك تلقائياً',
     highlight: true,
     badge: 'ذكاء اصطناعي',
-    color: 'from-primary to-primary/70',
+    color: 'from-primary to-secondary',
   },
   {
     icon: Camera,
     title: 'استيراد ذكي بالكاميرا',
-    description: 'صوّر كشف الأسماء بهاتفك والذكاء الاصطناعي يضيف الطلاب تلقائياً',
+    description: 'صوّر كشف الأسماء والذكاء الاصطناعي يضيف الطلاب تلقائياً',
     highlight: true,
     badge: 'جديد',
-    color: 'from-primary/80 to-accent',
+    color: 'from-secondary to-primary',
+  },
+  // إدارة الصفوف والطلاب
+  {
+    icon: GraduationCap,
+    title: 'إدارة الصفوف',
+    description: 'أنشئ صفوفك وحدد المادة والمرحلة والجدول الأسبوعي',
+    highlight: false,
+    color: 'from-primary to-primary/70',
+  },
+  {
+    icon: Users,
+    title: 'إدارة الطلاب',
+    description: 'أضف الطلاب وبيانات أولياء الأمور والملاحظات',
+    highlight: false,
+    color: 'from-secondary to-secondary/70',
+  },
+  {
+    icon: FileSpreadsheet,
+    title: 'استيراد من Excel',
+    description: 'أضف عشرات الطلاب دفعة واحدة من ملفات Excel',
+    highlight: false,
+    color: 'from-primary/80 to-secondary/80',
+  },
+  // الحضور والتذكيرات
+  {
+    icon: ClipboardCheck,
+    title: 'تسجيل الحضور',
+    description: 'سجل حضور طلابك بضغطة واحدة مع تتبع الحصص',
+    highlight: false,
+    color: 'from-secondary to-primary/70',
   },
   {
     icon: Fingerprint,
     title: 'تذكير بصمة التواجد',
-    description: 'تنبيهات يومية لتسجيل بصمة الحضور والانصراف حتى لا تنسى أبداً',
+    description: 'تنبيهات يومية لتسجيل بصمة الحضور والانصراف',
     highlight: true,
     badge: 'مميز',
     color: 'from-accent to-accent/70',
@@ -50,51 +82,89 @@ const features = [
   {
     icon: Clock,
     title: 'تذكير وقت الحصة',
-    description: 'تنبيه قبل بداية كل حصة حتى تكون مستعداً دائماً',
+    description: 'تنبيه قبل بداية كل حصة حتى تكون مستعداً',
     highlight: true,
     badge: 'مميز',
-    color: 'from-primary/60 to-accent/60',
+    color: 'from-primary to-accent',
   },
+  // الدرجات والتقييم
   {
-    icon: FileSpreadsheet,
-    title: 'استيراد من Excel',
-    description: 'أضف عشرات الطلاب دفعة واحدة من ملفات Excel',
+    icon: BookOpen,
+    title: 'تسجيل الدرجات',
+    description: 'سجل درجات الاختبارات والواجبات والمشاركة',
     highlight: false,
-    color: 'from-accent/80 to-accent/50',
-  },
-  {
-    icon: ClipboardCheck,
-    title: 'حضور بضغطة واحدة',
-    description: 'سجل حضور جميع الطلاب بضغطة زر واحدة فقط',
-    highlight: false,
-    color: 'from-primary/70 to-primary/40',
+    color: 'from-secondary/80 to-primary/60',
   },
   {
     icon: BarChart3,
-    title: 'درجات مرنة وشاملة',
-    description: 'نظام درجات قابل للتخصيص حسب احتياجاتك',
+    title: 'حساب المعدلات',
+    description: 'حساب تلقائي للمعدلات والنسب المئوية',
     highlight: false,
-    color: 'from-accent/70 to-primary/50',
+    color: 'from-primary/70 to-secondary/70',
+  },
+  // أدوات الفصل
+  {
+    icon: Timer,
+    title: 'مؤقت الأنشطة',
+    description: 'مؤقت للاختبارات والأنشطة الصفية',
+    highlight: false,
+    color: 'from-accent/80 to-primary/60',
+  },
+  {
+    icon: Shuffle,
+    title: 'اختيار طالب عشوائي',
+    description: 'اختر طالباً عشوائياً للمشاركة والإجابة',
+    highlight: false,
+    color: 'from-primary/60 to-secondary/60',
+  },
+  {
+    icon: Trophy,
+    title: 'نظام النقاط والشارات',
+    description: 'كافئ الطلاب بنقاط وشارات تحفيزية',
+    highlight: false,
+    color: 'from-secondary/70 to-accent/70',
+  },
+  // التقارير والتصدير
+  {
+    icon: TrendingUp,
+    title: 'التقارير والإحصائيات',
+    description: 'تقارير شاملة للحضور والدرجات والأداء',
+    highlight: false,
+    color: 'from-primary to-secondary/80',
+  },
+  {
+    icon: Printer,
+    title: 'طباعة الكشوفات',
+    description: 'اطبع كشوف الحضور والدرجات بسهولة',
+    highlight: false,
+    color: 'from-secondary to-primary/80',
+  },
+  {
+    icon: Download,
+    title: 'تصدير Excel/PDF',
+    description: 'صدّر بياناتك لملفات Excel و PDF',
+    highlight: false,
+    color: 'from-accent/70 to-secondary/70',
   },
 ];
 
 const stats = [
   { number: '500+', label: 'معلم نشط', color: 'text-primary' },
-  { number: '10K+', label: 'طالب مسجل', color: 'text-primary/80' },
-  { number: '99%', label: 'رضا المستخدمين', color: 'text-accent' },
+  { number: '10K+', label: 'طالب مسجل', color: 'text-secondary' },
+  { number: '99%', label: 'رضا المستخدمين', color: 'text-primary' },
 ];
 
 const highlights = [
   { icon: Zap, text: 'سريع وسهل', color: 'text-primary' },
-  { icon: Cloud, text: 'حفظ تلقائي', color: 'text-primary/80' },
-  { icon: Shield, text: 'آمن وموثوق', color: 'text-accent' },
-  { icon: Smartphone, text: 'يعمل على الهواتف', color: 'text-primary/70' },
+  { icon: Cloud, text: 'حفظ تلقائي', color: 'text-secondary' },
+  { icon: Shield, text: 'آمن وموثوق', color: 'text-primary' },
+  { icon: Smartphone, text: 'يعمل على الهواتف', color: 'text-secondary' },
 ];
 
 const steps = [
-  { number: '1', title: 'سجّل حسابك', description: 'في أقل من دقيقة', color: 'from-primary to-primary/70' },
-  { number: '2', title: 'أضف صفوفك', description: 'وطلابك بسهولة', color: 'from-primary/80 to-accent' },
-  { number: '3', title: 'ابدأ العمل', description: 'حضور ودرجات فوراً', color: 'from-accent to-accent/70' },
+  { number: '1', title: 'سجّل حسابك', description: 'في أقل من دقيقة', color: 'from-primary to-secondary' },
+  { number: '2', title: 'أضف صفوفك', description: 'وطلابك بسهولة', color: 'from-secondary to-primary' },
+  { number: '3', title: 'ابدأ العمل', description: 'حضور ودرجات فوراً', color: 'from-primary to-primary/70' },
 ];
 
 const testimonials = [
@@ -103,28 +173,28 @@ const testimonials = [
     role: 'معلم رياضيات - الكويت',
     content: 'التطبيق سهّل عليّ كثير! قبل كنت أضيع وقت كبير في تسجيل الدرجات، الحين بضغطة زر أرصد وأطبع.',
     rating: 5,
-    color: 'from-primary/60 to-primary/40',
+    color: 'from-primary to-secondary',
   },
   {
     name: 'أ. فاطمة الهاجري',
     role: 'معلمة علوم - الكويت',
     content: 'ميزة تصوير كشف الأسماء وفرت عليّ ساعات! صورت الكشف والطلاب انضافوا تلقائياً، شيء خرافي!',
     rating: 5,
-    color: 'from-primary/50 to-accent/50',
+    color: 'from-secondary to-primary',
   },
   {
     name: 'أ. عبدالله المطيري',
     role: 'معلم لغة عربية - الكويت',
     content: 'تذكير البصمة ينقذني كل يوم! ما أنسى أسجل حضوري أبداً الحين. شكراً Teacher Hub!',
     rating: 5,
-    color: 'from-accent/60 to-accent/40',
+    color: 'from-primary/80 to-secondary/80',
   },
   {
     name: 'أ. نورة الرشيدي',
     role: 'معلمة إنجليزي - الكويت',
     content: 'أفضل تطبيق لإدارة الصفوف استخدمته. سهل وبسيط وكل شي واضح. أنصح كل معلم يجربه!',
     rating: 5,
-    color: 'from-primary/40 to-accent/40',
+    color: 'from-secondary/80 to-primary/80',
   },
 ];
 
@@ -217,32 +287,32 @@ export default function Landing() {
     <div className="min-h-screen bg-background overflow-x-hidden" dir="rtl">
       {/* Hero Section */}
       <section className="relative min-h-screen flex flex-col">
-        {/* Subtle Gradient Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
+        {/* Subtle Gradient Background - Using logo colors */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
         
-        {/* Floating Shapes - More subtle */}
+        {/* Floating Shapes - Using logo colors */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div 
-            className="absolute top-20 right-10 w-72 h-72 bg-gradient-to-br from-primary/10 to-primary/5 rounded-full blur-3xl"
+            className="absolute top-20 right-10 w-72 h-72 bg-gradient-to-br from-primary/10 to-secondary/5 rounded-full blur-3xl"
             style={{ transform: `translateY(${scrollY * 0.1}px)` }}
           />
           <div 
-            className="absolute bottom-40 left-10 w-96 h-96 bg-gradient-to-br from-accent/10 to-accent/5 rounded-full blur-3xl"
+            className="absolute bottom-40 left-10 w-96 h-96 bg-gradient-to-br from-secondary/10 to-primary/5 rounded-full blur-3xl"
             style={{ transform: `translateY(${-scrollY * 0.15}px)` }}
           />
           
           {/* Decorative Grid */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.05)_1px,transparent_1px)] bg-[size:60px_60px]" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.03)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
           
-          {/* Floating Icons - More subtle */}
-          <div className="absolute top-1/4 right-1/4 opacity-20">
+          {/* Floating Icons - Using logo colors */}
+          <div className="absolute top-1/4 right-1/4 opacity-15">
             <GraduationCap className="w-16 h-16 text-primary animate-bounce" style={{ animationDuration: '3s' }} />
           </div>
-          <div className="absolute bottom-1/3 left-1/3 opacity-20">
-            <BarChart3 className="w-12 h-12 text-primary/80 animate-bounce" style={{ animationDuration: '4s', animationDelay: '0.5s' }} />
+          <div className="absolute bottom-1/3 left-1/3 opacity-15">
+            <BarChart3 className="w-12 h-12 text-secondary animate-bounce" style={{ animationDuration: '4s', animationDelay: '0.5s' }} />
           </div>
-          <div className="absolute top-1/2 right-1/3 opacity-20">
-            <Users className="w-10 h-10 text-accent animate-bounce" style={{ animationDuration: '3.5s', animationDelay: '1s' }} />
+          <div className="absolute top-1/2 right-1/3 opacity-15">
+            <Users className="w-10 h-10 text-primary animate-bounce" style={{ animationDuration: '3.5s', animationDelay: '1s' }} />
           </div>
         </div>
 
@@ -271,27 +341,28 @@ export default function Landing() {
         {/* Main Content */}
         <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
           <div className="text-center max-w-3xl mx-auto">
-            {/* Logo */}
-            <div className="inline-flex items-center justify-center w-28 h-28 md:w-40 md:h-40 rounded-3xl bg-card/80 backdrop-blur-xl mb-8 shadow-2xl border border-border/50 p-4 relative animate-fade-in">
-              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 animate-pulse" />
-              <img 
-                src={displayLogo} 
-                alt="Teacher Hub" 
-                className="w-full h-full object-contain drop-shadow-lg relative z-10"
-                onError={(e) => { e.currentTarget.src = defaultLogo; }}
-              />
+            {/* Logo - Better placement */}
+            <div className="relative inline-block mb-8 animate-logo-float">
+              <div className="w-36 h-36 md:w-48 md:h-48 relative">
+                <img 
+                  src={displayLogo} 
+                  alt="Teacher Hub" 
+                  className="w-full h-full object-contain drop-shadow-2xl"
+                  onError={(e) => { e.currentTarget.src = defaultLogo; }}
+                />
+              </div>
             </div>
             
             {/* AI Badge */}
-            <div className="inline-flex items-center gap-2 bg-primary/10 backdrop-blur-sm px-4 py-2 rounded-full border border-primary/20 mb-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-              <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+            <div className="inline-flex items-center gap-2 bg-secondary/10 backdrop-blur-sm px-4 py-2 rounded-full border border-secondary/20 mb-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+              <Sparkles className="w-4 h-4 text-secondary animate-pulse" />
               <span className="text-sm font-medium text-foreground">مدعوم بالذكاء الاصطناعي</span>
             </div>
             
             {/* Title */}
             <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6 leading-tight animate-fade-in" style={{ animationDelay: '0.2s' }}>
               <span className="block">منصة المعلم</span>
-              <span className="bg-gradient-to-l from-primary via-primary/80 to-accent bg-clip-text text-transparent">الذكي</span>
+              <span className="bg-gradient-to-l from-primary to-secondary bg-clip-text text-transparent">الذكي</span>
             </h1>
             
             <p className="text-lg md:text-2xl text-muted-foreground mb-8 leading-relaxed max-w-xl mx-auto animate-fade-in" style={{ animationDelay: '0.3s' }}>
@@ -376,15 +447,15 @@ export default function Landing() {
           isVisible('features-section') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
         }`}
       >
-        {/* Background Decoration */}
+        {/* Background Decoration - Using logo colors */}
         <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
           <div className="absolute top-20 right-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 left-20 w-80 h-80 bg-accent/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 left-20 w-80 h-80 bg-secondary/5 rounded-full blur-3xl" />
         </div>
         
         <div className="max-w-6xl mx-auto relative z-10">
           <div className="text-center mb-16">
-            <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
+            <Badge className="mb-4 bg-secondary/10 text-secondary border-secondary/20">
               <Star className="w-4 h-4 ml-2" />
               المميزات
             </Badge>
@@ -434,12 +505,12 @@ export default function Landing() {
       >
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
-            <Badge className="mb-4 bg-accent/10 text-accent border-accent/20">
+            <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
               <TrendingUp className="w-4 h-4 ml-2" />
               كيف يعمل؟
             </Badge>
             <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
-              ثلاث خطوات <span className="text-accent">بسيطة</span>
+              ثلاث خطوات <span className="text-secondary">بسيطة</span>
             </h2>
           </div>
 
@@ -475,14 +546,14 @@ export default function Landing() {
         }`}
       >
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent/5 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-secondary/5 rounded-full blur-3xl" />
         </div>
         
         <div className="max-w-4xl mx-auto relative z-10">
           <div className="bg-card/80 backdrop-blur-xl rounded-3xl p-8 md:p-12 border border-border/50 shadow-xl hover:shadow-2xl transition-shadow duration-500">
             <div className="flex flex-col md:flex-row items-center gap-8">
               <div className="flex-shrink-0">
-                <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center shadow-xl relative hover:scale-105 transition-transform duration-300">
+                <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-secondary to-primary flex items-center justify-center shadow-xl relative hover:scale-105 transition-transform duration-300">
                   <Clock className="w-16 h-16 text-white" />
                   <div className="absolute -top-2 -right-2 w-8 h-8 bg-primary rounded-full flex items-center justify-center shadow-lg animate-pulse">
                     <Bell className="w-4 h-4 text-white" />
@@ -491,7 +562,7 @@ export default function Landing() {
               </div>
               
               <div className="text-center md:text-right flex-1">
-                <Badge className="mb-4 bg-accent text-white border-0">
+                <Badge className="mb-4 bg-secondary text-white border-0">
                   <Bell className="w-3 h-3 ml-1" />
                   تذكير ذكي
                 </Badge>
@@ -503,15 +574,15 @@ export default function Landing() {
                 </p>
                 <div className="flex flex-wrap justify-center md:justify-start gap-3">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <CheckCircle2 className="w-4 h-4 text-secondary" />
                     <span>تنبيه قبل 5 دقائق</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <CheckCircle2 className="w-4 h-4 text-secondary" />
                     <span>تخصيص وقت التنبيه</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <CheckCircle2 className="w-4 h-4 text-secondary" />
                     <span>عرض تفاصيل الحصة</span>
                   </div>
                 </div>
@@ -537,9 +608,9 @@ export default function Landing() {
           <div className="bg-card/80 backdrop-blur-xl rounded-3xl p-8 md:p-12 border border-border/50 shadow-xl hover:shadow-2xl transition-shadow duration-500">
             <div className="flex flex-col md:flex-row-reverse items-center gap-8">
               <div className="flex-shrink-0">
-                <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-xl relative hover:scale-105 transition-transform duration-300">
+                <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-xl relative hover:scale-105 transition-transform duration-300">
                   <Fingerprint className="w-16 h-16 text-white" />
-                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-accent rounded-full flex items-center justify-center shadow-lg animate-pulse">
+                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-secondary rounded-full flex items-center justify-center shadow-lg animate-pulse">
                     <Bell className="w-4 h-4 text-white" />
                   </div>
                 </div>
@@ -586,7 +657,7 @@ export default function Landing() {
       >
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-20 left-20 w-64 h-64 bg-primary/3 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-20 w-80 h-80 bg-accent/3 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-20 w-80 h-80 bg-secondary/3 rounded-full blur-3xl" />
         </div>
         
         <div className="max-w-6xl mx-auto relative z-10">
@@ -650,7 +721,7 @@ export default function Landing() {
       >
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/3 left-1/4 w-72 h-72 bg-primary/3 rounded-full blur-3xl" />
-          <div className="absolute bottom-1/3 right-1/4 w-64 h-64 bg-accent/3 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/3 right-1/4 w-64 h-64 bg-secondary/3 rounded-full blur-3xl" />
         </div>
         
         <div className="max-w-3xl mx-auto relative z-10">
@@ -700,7 +771,7 @@ export default function Landing() {
         }`}
       >
         <div className="max-w-2xl mx-auto text-center">
-          <div className="inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-gradient-to-br from-primary to-accent mb-8 shadow-xl hover:scale-110 transition-transform duration-300">
+          <div className="inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-gradient-to-br from-primary to-secondary mb-8 shadow-xl hover:scale-110 transition-transform duration-300">
             <Award className="w-12 h-12 text-white" />
           </div>
           
