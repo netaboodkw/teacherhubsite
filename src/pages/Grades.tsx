@@ -35,6 +35,27 @@ import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/common/PageHeader';
 
+// Helper function to convert Tailwind class colors to hex
+const getHexColor = (color: string | null | undefined): string => {
+  if (!color) return '#3b82f6';
+  if (color.startsWith('#')) return color;
+  
+  const colorMap: { [key: string]: string } = {
+    'bg-blue-200': '#93c5fd', 'bg-blue-500': '#3b82f6',
+    'bg-green-200': '#bbf7d0', 'bg-green-500': '#22c55e',
+    'bg-purple-200': '#e9d5ff', 'bg-purple-500': '#a855f7',
+    'bg-orange-200': '#fed7aa', 'bg-orange-500': '#f97316',
+    'bg-pink-200': '#fbcfe8', 'bg-pink-500': '#ec4899',
+    'bg-yellow-200': '#fef08a', 'bg-yellow-500': '#eab308',
+    'bg-teal-200': '#99f6e4', 'bg-teal-500': '#14b8a6',
+    'bg-red-200': '#fecaca', 'bg-red-500': '#ef4444',
+    'bg-indigo-200': '#c7d2fe', 'bg-indigo-500': '#6366f1',
+    'bg-cyan-200': '#a5f3fc', 'bg-cyan-500': '#06b6d4',
+    'bg-primary': '#00b8d4',
+  };
+  return colorMap[color] || '#3b82f6';
+};
+
 const WEEKS_COUNT = 18; // عدد الأسابيع في الفصل الدراسي
 
 // Fallback simple grading view
@@ -1078,7 +1099,7 @@ export default function Grades() {
                 </div>
               </div>
               
-              {/* Classroom Selector - Dropdown */}
+              {/* Classroom Selector - Dropdown with colors */}
               <Select value={selectedClassroom || ''} onValueChange={setSelectedClassroom}>
                 <SelectTrigger className="w-full bg-muted/50 border-border/50 rounded-xl">
                   <SelectValue placeholder="اختر الصف" />
@@ -1086,7 +1107,13 @@ export default function Grades() {
                 <SelectContent className="bg-popover border-border z-50">
                   {classrooms.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
-                      {c.name}
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full shrink-0"
+                          style={{ backgroundColor: getHexColor(c.color) }}
+                        />
+                        {c.name}
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
