@@ -29,6 +29,7 @@ import {
   type SubscriptionPackage,
   type DiscountCode
 } from '@/hooks/useSubscription';
+import { useSubscriptionRealtime } from '@/hooks/useSubscriptionRealtime';
 import { supabase } from '@/integrations/supabase/client';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
@@ -84,7 +85,8 @@ export default function TeacherSubscription() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPaymentConfirmDialog, setShowPaymentConfirmDialog] = useState(false);
 
-  // Fetch payments
+  // Enable realtime updates for subscription status
+  useSubscriptionRealtime();
   const { data: payments, isLoading: paymentsLoading } = useQuery({
     queryKey: ['my-payments'],
     queryFn: async () => {
