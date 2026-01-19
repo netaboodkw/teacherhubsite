@@ -152,13 +152,13 @@ export default function Settings() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">نوع الاشتراك</span>
                     <Badge 
-                      variant={subscriptionStatus.status === 'trial' ? 'secondary' : 
+                      variant={subscriptionStatus.status === 'trial' || subscriptionStatus.status === 'pending_trial' ? 'secondary' : 
                                subscriptionStatus.status === 'active' ? 'default' :
                                subscriptionStatus.status === 'free' ? 'outline' : 'destructive'}
-                      className={subscriptionStatus.status === 'trial' ? 'bg-amber-500/20 text-amber-700 border-amber-500/30' : 
+                      className={subscriptionStatus.status === 'trial' || subscriptionStatus.status === 'pending_trial' ? 'bg-amber-500/20 text-amber-700 border-amber-500/30' : 
                                  subscriptionStatus.status === 'active' ? 'bg-green-500/20 text-green-700 border-green-500/30' : ''}
                     >
-                      {subscriptionStatus.status === 'trial' && (
+                      {(subscriptionStatus.status === 'trial' || subscriptionStatus.status === 'pending_trial') && (
                         <><Clock className="h-3 w-3 ml-1" /> فترة تجريبية</>
                       )}
                       {subscriptionStatus.status === 'active' && (
@@ -181,7 +181,7 @@ export default function Settings() {
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground flex items-center gap-1">
                           <AlertTriangle className="h-4 w-4 text-amber-500" />
-                          تنتهي الفترة التجريبية
+                          ستنتهي الفترة التجريبية في
                         </span>
                         <span className="font-medium">
                           {format(new Date(subscription.trial_ends_at), 'dd MMMM yyyy', { locale: ar })}
@@ -197,6 +197,33 @@ export default function Settings() {
                           </div>
                           <Progress 
                             value={Math.max(0, (subscriptionStatus.daysRemaining / (subscriptionSettings?.trial_days || 10)) * 100)} 
+                            className="h-2"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Pending Trial - User hasn't been assigned trial record yet */}
+                  {subscriptionStatus.status === 'pending_trial' && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-4 w-4 text-amber-500" />
+                          ستنتهي الفترة التجريبية في
+                        </span>
+                        <span className="font-medium">
+                          {format(new Date((subscriptionStatus as any).trialEndDate || Date.now() + (subscriptionSettings?.trial_days || 10) * 24 * 60 * 60 * 1000), 'dd MMMM yyyy', { locale: ar })}
+                        </span>
+                      </div>
+                      {subscriptionStatus.daysRemaining !== null && (
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span>الأيام المتبقية</span>
+                            <span>{subscriptionStatus.daysRemaining} يوم</span>
+                          </div>
+                          <Progress 
+                            value={100} 
                             className="h-2"
                           />
                         </div>

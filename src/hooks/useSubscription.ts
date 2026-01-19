@@ -499,6 +499,20 @@ export function getSubscriptionStatus(subscription: TeacherSubscription | null, 
   }
   
   if (!subscription) {
+    // If no subscription record exists but trial is enabled, treat as new user needing trial
+    if (effectiveSettings.trial_enabled) {
+      // Calculate trial end date based on settings (for display purposes)
+      const trialEndDate = new Date();
+      trialEndDate.setDate(trialEndDate.getDate() + effectiveSettings.trial_days);
+      return { 
+        hasAccess: true, 
+        isReadOnly: false, 
+        status: 'pending_trial' as const, 
+        daysRemaining: effectiveSettings.trial_days, 
+        isLocked: false,
+        trialEndDate: trialEndDate.toISOString()
+      };
+    }
     const isLocked = effectiveSettings.expiry_behavior === 'full_lockout';
     return { hasAccess: !isLocked, isReadOnly: !isLocked, status: 'none' as const, daysRemaining: null, isLocked };
   }
