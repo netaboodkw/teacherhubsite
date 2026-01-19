@@ -62,7 +62,6 @@ const mainTabs = [
 const moreItems = [
   { href: '/teacher/schedule', icon: CalendarDays, label: 'جدول الحصص', color: 'pink' as const },
   { href: '/teacher/fingerprint', icon: Fingerprint, label: 'البصمة', color: 'rose' as const },
-  { href: '/teacher/attendance', icon: ClipboardCheck, label: 'الحضور', color: 'green' as const },
   { href: '/teacher/templates', icon: LayoutGrid, label: 'قوالب الدرجات', color: 'purple' as const },
   { href: '/teacher/reports', icon: BarChart3, label: 'التقارير', color: 'orange' as const },
   { href: '/teacher/notifications', icon: Bell, label: 'الإشعارات', color: 'amber' as const },

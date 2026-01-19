@@ -54,7 +54,6 @@ const navItems = [
   { href: '/teacher/schedule', icon: CalendarDays, label: 'جدول الحصص', color: 'pink' as const },
   { href: '/teacher/fingerprint', icon: Fingerprint, label: 'البصمة', color: 'rose' as const },
   { href: '/teacher/students', icon: Users, label: 'الطلاب', color: 'blue' as const },
-  { href: '/teacher/attendance', icon: ClipboardCheck, label: 'الحضور', color: 'green' as const },
   { href: '/teacher/grades', icon: BookOpen, label: 'الدرجات', color: 'indigo' as const },
   { href: '/teacher/templates', icon: LayoutGrid, label: 'قوالب الدرجات', color: 'purple' as const },
   { href: '/teacher/reports', icon: BarChart3, label: 'التقارير', color: 'orange' as const },

@@ -601,6 +601,45 @@ export type Database = {
         }
         Relationships: []
       }
+      fingerprint_records: {
+        Row: {
+          attendance_time: string
+          created_at: string
+          date: string
+          fingerprint_window_end: string
+          fingerprint_window_start: string
+          id: string
+          recorded_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attendance_time: string
+          created_at?: string
+          date?: string
+          fingerprint_window_end: string
+          fingerprint_window_start: string
+          id?: string
+          recorded_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attendance_time?: string
+          created_at?: string
+          date?: string
+          fingerprint_window_end?: string
+          fingerprint_window_start?: string
+          id?: string
+          recorded_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       grade_levels: {
         Row: {
           created_at: string

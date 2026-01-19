@@ -16,12 +16,16 @@ import {
   CheckCircle2, 
   Timer, 
   Info,
-  ChevronLeft,
   Settings,
-  RotateCcw
+  RotateCcw,
+  TrendingUp,
+  Calendar,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { playNotificationSound, soundOptions, SoundType, previewSound } from '@/lib/notificationSounds';
-import { format, addHours, addMinutes, differenceInMinutes, differenceInSeconds } from 'date-fns';
+import { format, addHours, addMinutes, differenceInMinutes, differenceInSeconds, subMonths, addMonths } from 'date-fns';
+import { ar } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useNativeNotifications } from '@/hooks/useNativeNotifications';
 import { useFingerprintScheduler } from '@/hooks/useFingerprintScheduler';
@@ -29,6 +33,7 @@ import { getAttendancePref, setAttendancePref } from '@/components/notifications
 import { useIsMobile } from '@/hooks/use-mobile';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
 import { cn } from '@/lib/utils';
+import { useFingerprintStats, useRecordFingerprint } from '@/hooks/useFingerprintRecords';
 
 interface FingerprintSettings {
   attendanceTime: string;
@@ -71,6 +76,11 @@ const FingerprintPage = () => {
   const isMobile = useIsMobile();
   const { sendImmediateNotification, triggerHaptics } = useNativeNotifications();
   
+  // Stats month navigation
+  const [statsMonth, setStatsMonth] = useState(new Date());
+  const { stats, records, isLoading: loadingStats } = useFingerprintStats(statsMonth);
+  const recordFingerprint = useRecordFingerprint();
+  
   const [settings, setSettings] = useState<FingerprintSettings>(() => {
     const saved = localStorage.getItem('fingerprint-settings');
     if (saved) {
@@ -92,6 +102,7 @@ const FingerprintPage = () => {
   const [lastReminderTime, setLastReminderTime] = useState<Date | null>(null);
   const [dailyNotificationEnabled, setDailyNotificationEnabled] = useState(() => getAttendancePref() === 'daily');
   const [showSettings, setShowSettings] = useState(false);
+  const [showStats, setShowStats] = useState(false);
 
   const handleDailyNotificationToggle = (enabled: boolean) => {
     setDailyNotificationEnabled(enabled);
@@ -243,6 +254,21 @@ const FingerprintPage = () => {
     localStorage.setItem('fingerprint-done-date', format(currentTime, 'yyyy-MM-dd'));
     await cancelFingerprintNotifications();
     triggerHaptics('heavy');
+    
+    // Save to database
+    if (fingerprintWindow) {
+      try {
+        await recordFingerprint.mutateAsync({
+          attendanceTime: settings.attendanceTime,
+          windowStart: format(fingerprintWindow.start, 'HH:mm:ss'),
+          windowEnd: format(fingerprintWindow.end, 'HH:mm:ss'),
+          status: status === 'urgent' ? 'late' : 'on_time',
+        });
+      } catch (error) {
+        console.error('Failed to save fingerprint record:', error);
+      }
+    }
+    
     toast.success('تم تسجيل البصمة بنجاح! ✅');
   };
 
@@ -572,6 +598,78 @@ const FingerprintPage = () => {
               </GlassCard>
             )}
 
+            {/* Monthly Stats Card */}
+            <GlassCard>
+              <GlassCardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <GlassCardTitle className="text-base flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4" />
+                    إحصائيات الشهر
+                  </GlassCardTitle>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-full"
+                      onClick={() => setStatsMonth(subMonths(statsMonth, 1))}
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                    <span className="text-sm font-medium min-w-[100px] text-center">
+                      {format(statsMonth, 'MMMM yyyy', { locale: ar })}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-full"
+                      onClick={() => setStatsMonth(addMonths(statsMonth, 1))}
+                      disabled={format(statsMonth, 'yyyy-MM') === format(new Date(), 'yyyy-MM')}
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </GlassCardHeader>
+              <GlassCardContent>
+                {loadingStats ? (
+                  <div className="text-center py-4 text-muted-foreground">جاري التحميل...</div>
+                ) : stats.total === 0 ? (
+                  <div className="text-center py-4 text-muted-foreground">
+                    <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p>لا توجد سجلات لهذا الشهر</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="text-center p-3 rounded-xl bg-emerald-500/10">
+                        <p className="text-2xl font-bold text-emerald-600">{stats.onTime}</p>
+                        <p className="text-xs text-muted-foreground">في الوقت</p>
+                      </div>
+                      <div className="text-center p-3 rounded-xl bg-amber-500/10">
+                        <p className="text-2xl font-bold text-amber-600">{stats.late}</p>
+                        <p className="text-xs text-muted-foreground">متأخر</p>
+                      </div>
+                      <div className="text-center p-3 rounded-xl bg-primary/10">
+                        <p className="text-2xl font-bold text-primary">{stats.total}</p>
+                        <p className="text-xs text-muted-foreground">إجمالي</p>
+                      </div>
+                    </div>
+                    {/* Success Rate */}
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
+                      <span className="text-sm">نسبة الحضور في الوقت</span>
+                      <span className={cn(
+                        "text-lg font-bold",
+                        stats.onTimeRate >= 80 ? "text-emerald-600" : stats.onTimeRate >= 50 ? "text-amber-600" : "text-destructive"
+                      )}>
+                        {stats.onTimeRate}%
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </GlassCardContent>
+            </GlassCard>
+
             {/* Info Card */}
             <GlassCard className="bg-muted/30">
               <GlassCardContent className="pt-4">
@@ -817,6 +915,79 @@ const FingerprintPage = () => {
                 )}
               </div>
             </div>
+          </GlassCardContent>
+        </GlassCard>
+
+        {/* Monthly Stats Card - Desktop */}
+        <GlassCard>
+          <GlassCardHeader>
+            <div className="flex items-center justify-between">
+              <GlassCardTitle className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                إحصائيات البصمة الشهرية
+              </GlassCardTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9 rounded-xl"
+                  onClick={() => setStatsMonth(subMonths(statsMonth, 1))}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+                <span className="text-base font-medium min-w-[120px] text-center">
+                  {format(statsMonth, 'MMMM yyyy', { locale: ar })}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9 rounded-xl"
+                  onClick={() => setStatsMonth(addMonths(statsMonth, 1))}
+                  disabled={format(statsMonth, 'yyyy-MM') === format(new Date(), 'yyyy-MM')}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </GlassCardHeader>
+          <GlassCardContent>
+            {loadingStats ? (
+              <div className="text-center py-8 text-muted-foreground">جاري التحميل...</div>
+            ) : stats.total === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p className="text-lg">لا توجد سجلات لهذا الشهر</p>
+                <p className="text-sm">ستظهر إحصائياتك هنا عند تسجيل البصمة</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-4 gap-6">
+                <div className="text-center p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                  <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-emerald-600" />
+                  <p className="text-4xl font-bold text-emerald-600">{stats.onTime}</p>
+                  <p className="text-sm text-muted-foreground mt-1">في الوقت</p>
+                </div>
+                <div className="text-center p-6 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                  <Clock className="w-8 h-8 mx-auto mb-2 text-amber-600" />
+                  <p className="text-4xl font-bold text-amber-600">{stats.late}</p>
+                  <p className="text-sm text-muted-foreground mt-1">متأخر</p>
+                </div>
+                <div className="text-center p-6 rounded-2xl bg-primary/10 border border-primary/20">
+                  <Calendar className="w-8 h-8 mx-auto mb-2 text-primary" />
+                  <p className="text-4xl font-bold text-primary">{stats.total}</p>
+                  <p className="text-sm text-muted-foreground mt-1">إجمالي الأيام</p>
+                </div>
+                <div className="text-center p-6 rounded-2xl bg-background border">
+                  <TrendingUp className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                  <p className={cn(
+                    "text-4xl font-bold",
+                    stats.onTimeRate >= 80 ? "text-emerald-600" : stats.onTimeRate >= 50 ? "text-amber-600" : "text-destructive"
+                  )}>
+                    {stats.onTimeRate}%
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">نسبة الانضباط</p>
+                </div>
+              </div>
+            )}
           </GlassCardContent>
         </GlassCard>
 
