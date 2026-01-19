@@ -16,6 +16,7 @@ import { useSubscriptionSettings } from '@/hooks/useSubscription';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import defaultLogo from '@/assets/logo.png';
+import { IOSSplashScreen } from '@/components/onboarding/IOSSplashScreen';
 import {
   Accordion,
   AccordionContent,
@@ -54,13 +55,20 @@ const featureGroups = [
     description: 'أدوات تفاعلية لإدارة الفصل بفعالية',
     features: ['اختيار طالب عشوائي', 'مؤقت الأنشطة', 'نظام النقاط والشارات'],
   },
+  {
+    title: 'إشراف رئيس القسم',
+    icon: UserPlus,
+    color: 'from-teal-400 to-sky-400',
+    description: 'دعوة رئيس القسم لمتابعة أداء المعلمين',
+    features: ['متابعة صفوف المعلمين', 'الاطلاع على الدرجات والحضور', 'تقارير شاملة'],
+  },
 ];
 
 const stats = [
   { number: '500+', label: 'معلم نشط', icon: Users, color: 'from-sky-400 to-violet-400' },
   { number: '10K+', label: 'طالب مسجل', icon: GraduationCap, color: 'from-emerald-400 to-teal-400' },
   { number: '50K+', label: 'حصة مسجلة', icon: ClipboardCheck, color: 'from-violet-400 to-pink-400' },
-  { number: '99%', label: 'رضا المستخدمين', icon: Star, color: 'from-pink-400 to-yellow-400' },
+  { number: '20+', label: 'رئيس قسم', icon: UserPlus, color: 'from-teal-400 to-sky-400' },
 ];
 
 const highlights = [
@@ -168,6 +176,19 @@ export default function Landing() {
   const [scrollY, setScrollY] = useState(0);
   const visibleSections = useScrollAnimation();
   
+  // Check if splash screen was already shown
+  const [showSplash, setShowSplash] = useState(() => {
+    // Only show splash on mobile devices
+    const isMobile = window.innerWidth < 768;
+    const hasSeenSplash = localStorage.getItem('teacherhub_splash_seen');
+    return isMobile && !hasSeenSplash;
+  });
+  
+  const handleSplashComplete = () => {
+    localStorage.setItem('teacherhub_splash_seen', 'true');
+    setShowSplash(false);
+  };
+  
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll);
@@ -191,6 +212,11 @@ export default function Landing() {
   const displayLogo = isCustomLogo ? logoUrl : defaultLogo;
   
   const isVisible = (id: string) => visibleSections.has(id);
+  
+  // Show splash screen on mobile first visit
+  if (showSplash) {
+    return <IOSSplashScreen onComplete={handleSplashComplete} />;
+  }
   
   return (
     <div className="min-h-screen bg-background overflow-x-hidden" dir="rtl">
