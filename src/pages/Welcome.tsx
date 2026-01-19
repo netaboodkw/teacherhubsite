@@ -193,15 +193,30 @@ export default function Welcome() {
         </div>
       </div>
 
-      {/* Bottom Section */}
-      <div className="px-8 pb-12 safe-area-inset-bottom">
+      {/* Bottom Section - Stop touch propagation to prevent swipe interference */}
+      <div 
+        className="px-8 pb-12 safe-area-inset-bottom relative z-20"
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
+        onTouchEnd={(e) => e.stopPropagation()}
+      >
         {/* Progress Dots */}
         <div className="flex items-center justify-center gap-2 mb-8">
           {slides.map((_, index) => (
             <button
               key={index}
-              onClick={() => goToSlide(index)}
-              className={`h-2 rounded-full transition-all duration-300 ios-pressable ${
+              type="button"
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                goToSlide(index);
+              }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                goToSlide(index);
+              }}
+              className={`h-2 rounded-full transition-all duration-300 cursor-pointer touch-manipulation ${
                 index === currentSlide 
                   ? 'w-8 bg-primary' 
                   : index < currentSlide 
@@ -214,38 +229,47 @@ export default function Welcome() {
         </div>
 
         {/* Continue Button */}
-        <Button
+        <button
+          type="button"
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleNext();
+          }}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             handleNext();
           }}
-          type="button"
-          size="lg"
-          className={`w-full h-14 text-lg font-bold rounded-2xl shadow-lg bg-gradient-to-r ${slide.color} text-white border-0 hover:opacity-90 active:scale-[0.98] transition-all duration-300`}
+          className={`w-full h-14 text-lg font-bold rounded-2xl shadow-lg bg-gradient-to-r ${slide.color} text-white border-0 hover:opacity-90 active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 touch-manipulation cursor-pointer`}
         >
           {isLastSlide ? (
             <>
-              <Sparkles className="ml-2 h-5 w-5" />
+              <Sparkles className="h-5 w-5" />
               ابدأ الآن
             </>
           ) : (
             <>
               التالي
-              <ChevronLeft className="mr-2 h-5 w-5" />
+              <ChevronLeft className="h-5 w-5" />
             </>
           )}
-        </Button>
+        </button>
 
         {/* Login Link */}
         <button
           type="button"
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            navigate('/auth/teacher?tab=login');
+          }}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             navigate('/auth/teacher?tab=login');
           }}
-          className="w-full mt-4 text-center text-muted-foreground text-sm active:opacity-70 py-2"
+          className="w-full mt-4 text-center text-muted-foreground text-sm active:opacity-70 py-3 touch-manipulation cursor-pointer"
         >
           لديك حساب؟ <span className="text-primary font-medium">سجل دخول</span>
         </button>
