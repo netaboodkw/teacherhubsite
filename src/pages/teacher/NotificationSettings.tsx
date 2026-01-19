@@ -112,55 +112,61 @@ export default function NotificationSettings() {
           iconVariant="amber"
         />
 
-        {/* تنبيه إذا الإشعارات غير مفعلة */}
+        {/* تنبيه وزر تفعيل الإشعارات على iOS */}
         {isNative && permissionStatus !== 'granted' && (
-          <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
-            <XCircle className="h-5 w-5" />
-            <AlertTitle className="font-semibold">الإشعارات غير مفعّلة!</AlertTitle>
-            <AlertDescription className="mt-2 space-y-3">
-              <p className="text-sm">
-                لن تتمكن من استلام تذكيرات الحصص والبصمة بدون تفعيل الإشعارات.
-              </p>
-              
-              {permissionStatus === 'denied' ? (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">لتفعيل الإشعارات:</p>
-                  <ol className="list-decimal list-inside space-y-1 text-sm mr-2">
-                    <li>افتح إعدادات الجهاز</li>
-                    <li>ابحث عن "Teacher Hub"</li>
-                    <li>اضغط على "الإشعارات"</li>
-                    <li>فعّل "السماح بالإشعارات"</li>
-                  </ol>
-                  <Button 
-                    variant="outline"
-                    onClick={handleEnableNotifications}
-                    disabled={requesting}
-                    className="mt-2 w-full"
-                  >
-                    {requesting ? (
-                      <Loader2 className="w-4 h-4 animate-spin ml-2" />
-                    ) : (
-                      <RefreshCw className="w-4 h-4 ml-2" />
-                    )}
-                    إعادة المحاولة
-                  </Button>
+          <Card className="border-2 border-orange-500/50 bg-gradient-to-br from-orange-500/10 to-amber-500/5 overflow-hidden">
+            <CardContent className="p-6">
+              <div className="flex flex-col items-center text-center space-y-4">
+                {/* أيقونة متحركة */}
+                <div className="relative">
+                  <div className="absolute inset-0 bg-orange-500/20 rounded-full animate-ping" />
+                  <div className="relative p-4 rounded-full bg-orange-500/20">
+                    <BellRing className="w-10 h-10 text-orange-500 animate-bounce" />
+                  </div>
                 </div>
-              ) : (
+                
+                {/* العنوان والوصف */}
+                <div className="space-y-2">
+                  <h3 className="text-xl font-bold text-foreground">
+                    الإشعارات غير مفعّلة
+                  </h3>
+                  <p className="text-muted-foreground text-sm max-w-xs">
+                    فعّل الإشعارات لتستلم تذكيرات الحصص والبصمة على جهازك
+                  </p>
+                </div>
+
+                {/* زر التفعيل */}
                 <Button 
                   onClick={handleEnableNotifications}
                   disabled={requesting}
-                  className="w-full"
+                  size="lg"
+                  className="w-full max-w-xs h-14 text-lg font-bold rounded-xl bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/25"
                 >
                   {requesting ? (
-                    <Loader2 className="w-4 h-4 animate-spin ml-2" />
+                    <Loader2 className="w-6 h-6 animate-spin ml-2" />
                   ) : (
-                    <Bell className="w-4 h-4 ml-2" />
+                    <Bell className="w-6 h-6 ml-2" />
                   )}
-                  تفعيل الإشعارات الآن
+                  تفعيل الإشعارات
                 </Button>
-              )}
-            </AlertDescription>
-          </Alert>
+
+                {/* تعليمات إذا تم الرفض */}
+                {permissionStatus === 'denied' && (
+                  <div className="w-full p-4 bg-muted/50 rounded-xl text-right">
+                    <p className="text-sm font-medium text-foreground mb-2">
+                      إذا لم يعمل الزر، اتبع الخطوات التالية:
+                    </p>
+                    <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground mr-2">
+                      <li>افتح <strong>إعدادات</strong> الجهاز</li>
+                      <li>ابحث عن تطبيق <strong>Teacher Hub</strong></li>
+                      <li>اضغط على <strong>الإشعارات</strong></li>
+                      <li>فعّل <strong>السماح بالإشعارات</strong></li>
+                    </ol>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* حالة الإشعارات */}
