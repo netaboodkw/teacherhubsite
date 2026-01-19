@@ -14,6 +14,7 @@ import { ar } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { PageHeader } from '@/components/common/PageHeader';
+import { useNativeNotifications } from '@/hooks/useNativeNotifications';
 
 interface FingerprintSettings {
   attendanceTime: string; // وقت الحضور الفعلي
@@ -58,6 +59,8 @@ const calculateFingerprintWindow = (attendanceTime: string): { start: Date; end:
 type FingerprintStatus = 'waiting' | 'active' | 'urgent' | 'expired' | 'completed';
 
 const FingerprintPage = () => {
+  const { sendImmediateNotification, isNative, permissionGranted, triggerHaptics } = useNativeNotifications();
+  
   const [settings, setSettings] = useState<FingerprintSettings>(() => {
     const saved = localStorage.getItem('fingerprint-settings');
     if (saved) {
@@ -169,12 +172,24 @@ const FingerprintPage = () => {
     }
   }, [fingerprintWindow, currentTime, fingerprintDone, minutesRemaining]);
 
-  // تشغيل التنبيه الصوتي
-  const playReminder = useCallback(() => {
+  // تشغيل التنبيه الصوتي وإرسال إشعار
+  const playReminder = useCallback(async (title: string, body: string) => {
+    // تشغيل الصوت داخل التطبيق
     if (settings.soundEnabled) {
       playNotificationSound(settings.soundType, true);
     }
-  }, [settings.soundEnabled, settings.soundType]);
+    
+    // إرسال إشعار محلي (يعمل حتى لو التطبيق في الخلفية)
+    try {
+      await sendImmediateNotification(title, body);
+      console.log('Fingerprint notification sent:', title);
+    } catch (error) {
+      console.error('Failed to send fingerprint notification:', error);
+    }
+    
+    // اهتزاز
+    triggerHaptics('heavy');
+  }, [settings.soundEnabled, settings.soundType, sendImmediateNotification, triggerHaptics]);
 
   // نظام التذكير
   useEffect(() => {
@@ -184,7 +199,7 @@ const FingerprintPage = () => {
     
     // تذكير عند بداية الفترة
     if (status === 'active' && !lastReminderTime) {
-      playReminder();
+      playReminder('⏰ بدأت فترة بصمة التواجد!', 'يرجى التوجه لجهاز البصمة الآن');
       setLastReminderTime(currentTime);
       toast.warning('⏰ بدأت فترة بصمة التواجد!', {
         description: 'يرجى التوجه لجهاز البصمة الآن',
@@ -199,7 +214,7 @@ const FingerprintPage = () => {
       
       // تأكد من عدم تكرار التنبيه في نفس الدقيقة
       if (now - lastReminder > 55000) {
-        playReminder();
+        playReminder('⚠️ تنبيه عاجل!', `متبقي ${minutesRemaining} دقيقة على انتهاء فترة البصمة`);
         setLastReminderTime(currentTime);
         toast.error('⚠️ تنبيه عاجل!', {
           description: `متبقي ${minutesRemaining} دقيقة على انتهاء فترة البصمة`,
@@ -214,11 +229,12 @@ const FingerprintPage = () => {
       const lastReminder = lastReminderTime?.getTime() || 0;
       
       if (now - lastReminder > 55000) {
-        playReminder();
+        playReminder('⏰ تذكير البصمة', `متبقي ${minutesRemaining} دقيقة على انتهاء فترة البصمة`);
         setLastReminderTime(currentTime);
       }
     }
   }, [status, minutesRemaining, settings, fingerprintWindow, fingerprintDone, lastReminderTime, playReminder, currentTime]);
+
 
   // تسجيل إتمام البصمة
   const markFingerprintDone = () => {
