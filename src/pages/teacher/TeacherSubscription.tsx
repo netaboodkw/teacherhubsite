@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -187,6 +187,8 @@ export default function TeacherSubscription() {
     setSelectedPackage(pkg);
     const finalPrice = calculateFinalPrice(pkg);
     fetchPaymentMethods(finalPrice);
+    // Scroll to checkout section
+    setTimeout(() => scrollToCheckout(), 100);
   };
 
   const handlePurchase = async () => {
@@ -263,32 +265,38 @@ export default function TeacherSubscription() {
     }
   };
 
+  const checkoutRef = useRef<HTMLDivElement>(null);
+  
+  const scrollToCheckout = () => {
+    checkoutRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const getStatusBadge = () => {
     switch (subscriptionStatus.status) {
       case 'trial':
         return (
-          <Badge variant="secondary" className="gap-1 bg-amber-100 text-amber-700 border-amber-300">
+          <Badge variant="secondary" className="gap-1 bg-amber-100 text-amber-700 border-amber-300 text-xs px-2 py-0.5">
             <Clock className="h-3 w-3" />
-            فترة تجريبية - {subscriptionStatus.daysRemaining} يوم متبقي
+            تجريبي - {subscriptionStatus.daysRemaining} يوم
           </Badge>
         );
       case 'trial_expired':
         return (
-          <Badge variant="destructive" className="gap-1">
+          <Badge variant="destructive" className="gap-1 text-xs px-2 py-0.5">
             <AlertTriangle className="h-3 w-3" />
-            انتهت الفترة التجريبية
+            انتهت التجربة
           </Badge>
         );
       case 'active':
         return (
-          <Badge className="gap-1 bg-emerald-600 hover:bg-emerald-700">
+          <Badge className="gap-1 bg-emerald-600 hover:bg-emerald-700 text-xs px-2 py-0.5">
             <Crown className="h-3 w-3" />
-            مشترك - {subscriptionStatus.daysRemaining} يوم متبقي
+            مشترك - {subscriptionStatus.daysRemaining} يوم
           </Badge>
         );
       case 'expired':
         return (
-          <Badge variant="destructive" className="gap-1">
+          <Badge variant="destructive" className="gap-1 text-xs px-2 py-0.5">
             <AlertTriangle className="h-3 w-3" />
             انتهى الاشتراك
           </Badge>
@@ -534,7 +542,7 @@ export default function TeacherSubscription() {
                     
                     <CardFooter className="pb-6">
                       <Button 
-                        className={`w-full gap-2 ${isPopular && !isSelected ? 'bg-primary hover:bg-primary/90' : ''}`}
+                        className={`w-full gap-2 ${isSelected ? 'bg-primary hover:bg-primary/90' : ''}`}
                         variant={isSelected ? 'default' : 'outline'}
                         size="lg"
                       >
@@ -544,7 +552,10 @@ export default function TeacherSubscription() {
                             تم الاختيار
                           </>
                         ) : (
-                          'اختر هذه الباقة'
+                          <>
+                            <Zap className="h-4 w-4" />
+                            اشترك الآن
+                          </>
                         )}
                       </Button>
                     </CardFooter>
@@ -555,7 +566,7 @@ export default function TeacherSubscription() {
 
             {/* Discount Code & Checkout */}
             {selectedPackage && (
-              <Card className="border-primary/20 shadow-lg">
+              <Card ref={checkoutRef} className="border-primary/20 shadow-lg scroll-mt-4">
                 <CardHeader className="bg-muted/50">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-primary/10">
