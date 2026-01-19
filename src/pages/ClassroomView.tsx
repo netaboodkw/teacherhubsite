@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useStudents } from '@/hooks/useStudents';
 import { useClassroom, useArchiveClassroom } from '@/hooks/useClassrooms';
 import { useBehaviorNotesByClassroom } from '@/hooks/useBehaviorNotes';
@@ -260,6 +261,7 @@ function AttendanceStudent({ student, status, onTap, getShortName, getAttendance
 export default function ClassroomView() {
   const { classroomId } = useParams<{ classroomId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const { data: classroom, isLoading: loadingClassroom } = useClassroom(classroomId || '');
   const { data: students = [], isLoading: loadingStudents } = useStudents(classroomId);
@@ -588,6 +590,10 @@ export default function ClassroomView() {
         });
 
       if (error) throw error;
+
+      // Invalidate behavior notes query to refresh stats immediately
+      await queryClient.invalidateQueries({ queryKey: ['behavior_notes', 'classroom', classroomId] });
+      await queryClient.invalidateQueries({ queryKey: ['behavior_notes'] });
 
       toast.success('تم حفظ الملاحظة بنجاح');
       setSelectedStudent(null);
