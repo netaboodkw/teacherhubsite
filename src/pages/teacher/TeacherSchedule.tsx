@@ -13,7 +13,6 @@ import { cn } from '@/lib/utils';
 import { useProfile } from '@/hooks/useProfile';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { usePeriodReminder } from '@/hooks/usePeriodReminder';
-import { PeriodReminderSettings } from '@/components/schedule/PeriodReminderSettings';
 import { UpcomingPeriodAlert } from '@/components/schedule/UpcomingPeriodAlert';
 // Color mapping for Tailwind class names to hex colors
 const colorClassToHex: { [key: string]: string } = {
@@ -113,11 +112,7 @@ export default function TeacherSchedule() {
 
   // Period reminder hook
   const {
-    settings: reminderSettings,
-    updateSettings: updateReminderSettings,
     upcomingPeriod,
-    notificationPermission,
-    requestPermission,
     isRepeating,
     stopRepeating,
   } = usePeriodReminder(currentSchedule, classrooms || [], true);
@@ -178,12 +173,6 @@ export default function TeacherSchedule() {
           iconVariant="pink"
           actions={
             <div className="flex items-center gap-2">
-              <PeriodReminderSettings
-                settings={reminderSettings}
-                onSettingsChange={updateReminderSettings}
-                notificationPermission={notificationPermission}
-                onRequestPermission={requestPermission}
-              />
               <ToggleGroup 
                 type="single" 
                 value={viewMode} 

@@ -22,8 +22,11 @@ import {
   Info,
   Copy,
   Check,
-  RefreshCw
+  RefreshCw,
+  Play,
+  Music
 } from 'lucide-react';
+import { soundOptions, previewSound, type SoundType } from '@/lib/notificationSounds';
 import { useNotificationSystem } from '@/hooks/useNotificationSystem';
 import { toast } from 'sonner';
 import { useState } from 'react';
@@ -41,10 +44,25 @@ export default function NotificationSettings() {
     requestLocalPermissions,
     updatePreferences,
     isUpdating,
+    sendNotification,
   } = useNotificationSystem();
 
   const [copied, setCopied] = useState(false);
   const [requesting, setRequesting] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [selectedSound, setSelectedSound] = useState<SoundType>('schoolBell');
+
+  const handleTestNotification = async () => {
+    setTesting(true);
+    try {
+      await sendNotification('🔔 اختبار الإشعارات', 'هذا إشعار تجريبي - الإشعارات تعمل بشكل صحيح!');
+      toast.success('تم إرسال إشعار تجريبي');
+    } catch (error) {
+      toast.error('فشل إرسال الإشعار التجريبي');
+    } finally {
+      setTesting(false);
+    }
+  };
 
   const handleEnableNotifications = async () => {
     setRequesting(true);
@@ -220,6 +238,23 @@ export default function NotificationSettings() {
                 </div>
               </div>
             )}
+            
+            {/* زر اختبار الإشعارات */}
+            {permissionStatus === 'granted' && (
+              <Button
+                onClick={handleTestNotification}
+                disabled={testing}
+                variant="outline"
+                className="w-full mt-3"
+              >
+                {testing ? (
+                  <Loader2 className="w-4 h-4 animate-spin ml-2" />
+                ) : (
+                  <Bell className="w-4 h-4 ml-2" />
+                )}
+                اختبار الإشعارات
+              </Button>
+            )}
           </CardContent>
         </Card>
 
@@ -348,6 +383,47 @@ export default function NotificationSettings() {
                 disabled={isUpdating}
               />
             </div>
+
+            {/* اختيار نوع الصوت */}
+            {preferences.sound_enabled && (
+              <div className="space-y-3 pr-3 border-r-2 border-primary/20">
+                <Label className="flex items-center gap-2 text-sm">
+                  <Music className="w-4 h-4" />
+                  نوع صوت التنبيه
+                </Label>
+                <div className="grid grid-cols-1 gap-2">
+                  {soundOptions.map((sound) => (
+                    <button
+                      key={sound.id}
+                      onClick={() => setSelectedSound(sound.id)}
+                      className={cn(
+                        "flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-right",
+                        selectedSound === sound.id
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:border-primary/50 hover:bg-muted/50"
+                      )}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm">{sound.nameAr}</div>
+                        <div className="text-xs text-muted-foreground">{sound.description}</div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          previewSound(sound.id);
+                        }}
+                      >
+                        <Play className="w-4 h-4" />
+                      </Button>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Vibration */}
             <div className="flex items-center justify-between py-2">
