@@ -4,10 +4,6 @@ const config: CapacitorConfig = {
   appId: 'com.teacherhub.app',
   appName: 'Teacher Hub',
   webDir: 'dist',
-  server: {
-    url: 'https://3ad4a6f4-c67b-4b81-8b6b-7aa91d42cda7.lovableproject.com?forceHideBadge=true',
-    cleartext: true
-  },
   ios: {
     contentInset: 'automatic',
     backgroundColor: '#ffffff',
