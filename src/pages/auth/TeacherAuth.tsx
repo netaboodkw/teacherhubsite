@@ -185,6 +185,23 @@ export default function TeacherAuth() {
       // Wait a moment to ensure the trigger has completed
       await new Promise(resolve => setTimeout(resolve, 500));
       
+      // Send welcome email
+      try {
+        await supabase.functions.invoke('send-email', {
+          body: {
+            type: 'welcome',
+            to: email.trim(),
+            data: {
+              name: fullName.trim(),
+            },
+          },
+        });
+        console.log('Welcome email sent successfully');
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+        // Don't block registration if email fails
+      }
+      
       // Verify profile was created with correct data
       const { data: verifyProfile } = await supabase
         .from('profiles')
