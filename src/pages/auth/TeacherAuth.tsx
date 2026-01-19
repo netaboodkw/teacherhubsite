@@ -220,29 +220,34 @@ export default function TeacherAuth() {
           <div className={`absolute -bottom-20 -left-20 w-80 h-80 bg-gradient-to-br ${gradientColor} opacity-15 rounded-full blur-3xl`} />
         </div>
 
-        {/* Back Button */}
-        <div className="absolute top-6 right-6 z-20">
-          <button
-            type="button"
-            onClick={() => navigate('/welcome')}
-            className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors touch-manipulation"
-          >
-            <ChevronRight className="w-5 h-5" />
-            <span className="text-sm">رجوع</span>
-          </button>
+        {/* Back Button - iOS Safe Area */}
+        <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-lg border-b border-border/50 safe-area-inset-top">
+          <div className="flex items-center justify-between px-4 py-3">
+            <button
+              type="button"
+              onClick={() => navigate('/welcome')}
+              className="flex items-center gap-1 text-primary font-medium touch-manipulation min-h-[44px] min-w-[44px]"
+            >
+              <ChevronRight className="w-5 h-5" />
+              <span className="text-base">رجوع</span>
+            </button>
+            <h2 className="text-base font-semibold text-foreground">
+              {activeTab === 'login' ? 'تسجيل الدخول' : 'حساب جديد'}
+            </h2>
+            <div className="w-16" /> {/* Spacer for centering */}
+          </div>
         </div>
 
-        {/* Scrollable Content - iOS optimized */}
+        {/* Scrollable Content - iOS optimized with keyboard handling */}
         <div 
-          className="flex-1 overflow-y-auto"
+          className="flex-1 overflow-y-auto overscroll-contain"
           style={{
             WebkitOverflowScrolling: 'touch',
-            overscrollBehavior: 'contain',
           }}
         >
-          <div className="flex flex-col items-center px-4 sm:px-6 pt-14 pb-8">
+          <div className="flex flex-col items-center px-5 pt-6 pb-12">
             {/* Logo */}
-            <div className="w-24 h-24 mb-6 flex items-center justify-center">
+            <div className="w-20 h-20 mb-4 flex items-center justify-center">
               <img 
                 src={displayLogo} 
                 alt="Teacher Hub" 
@@ -252,23 +257,23 @@ export default function TeacherAuth() {
             </div>
 
             {/* Title */}
-            <h1 className="text-2xl font-bold text-foreground mb-2">
+            <h1 className="text-xl font-bold text-foreground mb-1">
               {activeTab === 'login' ? 'مرحباً بعودتك 👋' : 'إنشاء حساب جديد ✨'}
             </h1>
-            <p className="text-muted-foreground text-center mb-6">
+            <p className="text-muted-foreground text-sm text-center mb-5">
               {activeTab === 'login' ? 'سجل دخولك للمتابعة' : 'أنشئ حسابك للبدء'}
             </p>
 
-            {/* Tab Switcher - iOS Style */}
-            <div className="w-full max-w-sm mb-6">
-              <div className="bg-muted/50 backdrop-blur-sm rounded-2xl p-1 flex">
+            {/* Tab Switcher - iOS Style with larger touch targets */}
+            <div className="w-full max-w-sm mb-5">
+              <div className="bg-muted/60 backdrop-blur-sm rounded-xl p-1 flex">
                 <button
                   type="button"
                   onClick={() => setActiveTab('register')}
-                  className={`flex-1 py-3 px-4 rounded-xl text-sm font-medium transition-all duration-300 touch-manipulation ${
+                  className={`flex-1 py-3.5 px-4 rounded-lg text-base font-semibold transition-all duration-200 touch-manipulation min-h-[48px] ${
                     activeTab === 'register'
                       ? 'bg-background shadow-md text-foreground'
-                      : 'text-muted-foreground'
+                      : 'text-muted-foreground active:bg-background/50'
                   }`}
                 >
                   حساب جديد
@@ -276,10 +281,10 @@ export default function TeacherAuth() {
                 <button
                   type="button"
                   onClick={() => setActiveTab('login')}
-                  className={`flex-1 py-3 px-4 rounded-xl text-sm font-medium transition-all duration-300 touch-manipulation ${
+                  className={`flex-1 py-3.5 px-4 rounded-lg text-base font-semibold transition-all duration-200 touch-manipulation min-h-[48px] ${
                     activeTab === 'login'
                       ? 'bg-background shadow-md text-foreground'
-                      : 'text-muted-foreground'
+                      : 'text-muted-foreground active:bg-background/50'
                   }`}
                 >
                   تسجيل الدخول
@@ -291,40 +296,48 @@ export default function TeacherAuth() {
             <div className="w-full max-w-sm">
               {activeTab === 'login' ? (
                 /* Login Form */
-                <form onSubmit={handleLogin} className="space-y-4">
+                <form onSubmit={handleLogin} className="space-y-5">
                   <div className="space-y-2">
-                    <Label htmlFor="login-email" className="text-sm font-medium">البريد الإلكتروني</Label>
+                    <Label htmlFor="login-email" className="text-sm font-semibold text-foreground">البريد الإلكتروني</Label>
                     <div className="relative">
-                      <Mail className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      <Mail className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
                       <Input
                         id="login-email"
                         type="email"
+                        inputMode="email"
+                        autoComplete="email"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck="false"
                         placeholder="example@email.com"
                         value={loginEmail}
                         onChange={(e) => setLoginEmail(e.target.value)}
-                        className="h-14 pr-12 rounded-2xl bg-muted/30 border-0 text-base"
+                        className="h-[52px] pr-12 rounded-xl bg-muted/40 border border-border/50 text-base focus:border-primary focus:ring-2 focus:ring-primary/20"
                         dir="ltr"
+                        style={{ fontSize: '16px' }} // Prevents iOS zoom
                       />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="login-password" className="text-sm font-medium">كلمة المرور</Label>
+                    <Label htmlFor="login-password" className="text-sm font-semibold text-foreground">كلمة المرور</Label>
                     <div className="relative">
-                      <Lock className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      <Lock className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
                       <Input
                         id="login-password"
                         type={showLoginPassword ? "text" : "password"}
+                        autoComplete="current-password"
                         placeholder="••••••••"
                         value={loginPassword}
                         onChange={(e) => setLoginPassword(e.target.value)}
-                        className="h-14 pr-12 pl-12 rounded-2xl bg-muted/30 border-0 text-base"
+                        className="h-[52px] pr-12 pl-14 rounded-xl bg-muted/40 border border-border/50 text-base focus:border-primary focus:ring-2 focus:ring-primary/20"
                         dir="ltr"
+                        style={{ fontSize: '16px' }}
                       />
                       <button
                         type="button"
                         onClick={() => setShowLoginPassword(!showLoginPassword)}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground touch-manipulation"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground p-2 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
                       >
                         {showLoginPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                       </button>
@@ -334,7 +347,7 @@ export default function TeacherAuth() {
                   <button
                     type="submit"
                     disabled={loginLoading}
-                    className={`w-full h-14 text-lg font-bold rounded-2xl shadow-lg bg-gradient-to-r ${gradientColor} text-white border-0 hover:opacity-90 active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 touch-manipulation mt-6`}
+                    className={`w-full h-[52px] text-base font-bold rounded-xl shadow-lg bg-gradient-to-r ${gradientColor} text-white border-0 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 touch-manipulation mt-8 disabled:opacity-50`}
                   >
                     {loginLoading ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
@@ -535,7 +548,7 @@ export default function TeacherAuth() {
                   <button
                     type="submit"
                     disabled={registerLoading || (termsEnabled && !acceptedTerms)}
-                    className={`w-full h-14 text-lg font-bold rounded-2xl shadow-lg bg-gradient-to-r ${gradientColor} text-white border-0 hover:opacity-90 active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 touch-manipulation mt-6 disabled:opacity-50`}
+                    className={`w-full h-[52px] text-base font-bold rounded-xl shadow-lg bg-gradient-to-r ${gradientColor} text-white border-0 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 touch-manipulation mt-6 disabled:opacity-50`}
                   >
                     {registerLoading ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
@@ -553,24 +566,15 @@ export default function TeacherAuth() {
             {/* Department Head Link */}
             <button
               type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                navigate('/auth/department-head');
-              }}
-              onTouchEnd={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                navigate('/auth/department-head');
-              }}
-              className="mt-6 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors touch-manipulation py-3 px-4 active:opacity-70"
+              onClick={() => navigate('/auth/department-head')}
+              className="mt-6 flex items-center gap-2 text-muted-foreground transition-colors touch-manipulation py-3 px-4 active:opacity-70 min-h-[44px]"
             >
               <Users className="h-4 w-4" />
               <span className="text-sm">تسجيل كرئيس قسم</span>
             </button>
 
             {/* Footer */}
-            <p className="text-center text-sm text-muted-foreground mt-6">
+            <p className="text-center text-sm text-muted-foreground mt-4 pb-6">
               منصة كويتية 🇰🇼 صُممت للمعلم في الكويت
             </p>
           </div>
