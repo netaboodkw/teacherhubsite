@@ -28,25 +28,15 @@ import {
   Tag, 
   Loader2,
   Crown,
-  BookOpen,
-  Sparkles,
   Receipt,
   Calendar,
   CheckCircle,
   XCircle,
-  FileText,
-  Users,
-  BarChart3,
-  Bell,
-  Shield,
-  Zap,
   Star,
   GraduationCap,
-  ClipboardCheck,
-  TrendingUp,
-  Smartphone,
-  HeadphonesIcon,
-  Gift
+  Gift,
+  FileText,
+  Zap
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 
@@ -68,49 +58,6 @@ interface Payment {
   } | null;
 }
 
-// Feature items for display
-const features = [
-  {
-    icon: Users,
-    title: 'إدارة الطلاب',
-    description: 'إدارة بيانات الطلاب وتنظيمهم في صفوف'
-  },
-  {
-    icon: ClipboardCheck,
-    title: 'تسجيل الحضور',
-    description: 'تسجيل الحضور والغياب بسهولة وسرعة'
-  },
-  {
-    icon: BarChart3,
-    title: 'تقارير الدرجات',
-    description: 'تقارير شاملة للدرجات والأداء الأكاديمي'
-  },
-  {
-    icon: Bell,
-    title: 'التنبيهات الذكية',
-    description: 'تنبيهات للحصص والمهام المهمة'
-  },
-  {
-    icon: Smartphone,
-    title: 'تطبيق الجوال',
-    description: 'استخدم النظام من أي جهاز في أي وقت'
-  },
-  {
-    icon: TrendingUp,
-    title: 'متابعة التقدم',
-    description: 'تتبع تقدم الطلاب عبر الوقت'
-  },
-  {
-    icon: Shield,
-    title: 'حماية البيانات',
-    description: 'بياناتك آمنة ومحمية بالكامل'
-  },
-  {
-    icon: HeadphonesIcon,
-    title: 'دعم فني متميز',
-    description: 'فريق دعم متاح لمساعدتك'
-  }
-];
 
 interface PaymentMethod {
   PaymentMethodId: number;
@@ -458,26 +405,6 @@ export default function TeacherSubscription() {
           </Card>
         )}
 
-        {/* Features Grid */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-bold">مميزات الاشتراك</h2>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {features.map((feature, index) => (
-              <Card key={index} className="group hover:shadow-md transition-all hover:border-primary/50">
-                <CardContent className="p-4 text-center space-y-2">
-                  <div className="mx-auto w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <feature.icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="font-semibold text-sm">{feature.title}</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{feature.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
 
         {/* Tabs */}
         <Tabs defaultValue="packages" className="w-full">
