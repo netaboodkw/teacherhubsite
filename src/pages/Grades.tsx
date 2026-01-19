@@ -1036,90 +1036,86 @@ export default function Grades() {
   const ActionButton = isLiquidGlass ? GlassButton : Button;
   const InfoCard = isLiquidGlass ? GlassCard : Card;
 
-  // Mobile-specific header component
-  const MobileHeader = () => (
-    <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/40">
-      <div className="px-4 py-3 space-y-3">
-        {/* Title & Settings */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">سجل الدرجات</h1>
-          <div className="flex items-center gap-2">
-            {hasStructure && students.length > 0 && (
-              <ActionButton 
-                variant="outline" 
-                size="icon"
-                className="rounded-full h-10 w-10"
-                onClick={() => setPrintOptionsOpen(true)}
-              >
-                <Printer className="h-4 w-4" />
-              </ActionButton>
-            )}
-            <ActionButton 
-              variant={showGradeSettings ? "default" : "outline"}
-              size="icon"
-              className="rounded-full h-10 w-10"
-              onClick={() => setShowGradeSettings(!showGradeSettings)}
-            >
-              <Vibrate className="h-4 w-4" />
-            </ActionButton>
-          </div>
-        </div>
-        
-        {/* Classroom Selector - Horizontal Scroll */}
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide">
-          {classrooms.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => setSelectedClassroom(c.id)}
-              className={cn(
-                "shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all",
-                selectedClassroom === c.id
-                  ? "bg-primary text-primary-foreground shadow-md"
-                  : "bg-muted/50 text-muted-foreground hover:bg-muted"
-              )}
-            >
-              {c.name}
-            </button>
-          ))}
-        </div>
-        
-        {/* Haptic Settings (when open) */}
-        {showGradeSettings && (
-          <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 animate-in slide-in-from-top duration-200">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-indigo-500/10 flex items-center justify-center">
-                <Vibrate className="w-4 h-4 text-indigo-500" />
-              </div>
-              <div>
-                <p className="font-medium text-sm">الاهتزاز عند الحفظ</p>
-                <p className="text-xs text-muted-foreground">اهتزاز وصوت عند حفظ الدرجة</p>
-              </div>
-            </div>
-            <div dir="ltr">
-              <Switch
-                checked={hapticEnabled}
-                onCheckedChange={handleHapticToggle}
-              />
-            </div>
-          </div>
-        )}
-        
-        {/* Template Badge */}
-        {hasStructure && (
-          <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-0">
-            {gradingStructure.name_ar}
-          </Badge>
-        )}
-      </div>
-    </div>
-  );
-
   return (
     <TeacherLayout>
       {/* Mobile Layout */}
       {isMobile ? (
         <div className="min-h-screen bg-background">
-          <MobileHeader />
+          {/* Mobile Header */}
+          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/40">
+            <div className="px-4 py-3 space-y-3">
+              {/* Title & Settings */}
+              <div className="flex items-center justify-between">
+                <h1 className="text-xl font-bold">سجل الدرجات</h1>
+                <div className="flex items-center gap-2">
+                  {hasStructure && students.length > 0 && (
+                    <ActionButton 
+                      variant="outline" 
+                      size="icon"
+                      className="rounded-full h-10 w-10"
+                      onClick={() => setPrintOptionsOpen(true)}
+                    >
+                      <Printer className="h-4 w-4" />
+                    </ActionButton>
+                  )}
+                  <ActionButton 
+                    variant={showGradeSettings ? "default" : "outline"}
+                    size="icon"
+                    className="rounded-full h-10 w-10"
+                    onClick={() => setShowGradeSettings(!showGradeSettings)}
+                  >
+                    <Vibrate className="h-4 w-4" />
+                  </ActionButton>
+                </div>
+              </div>
+              
+              {/* Classroom Selector - Horizontal Scroll */}
+              <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide">
+                {classrooms.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => setSelectedClassroom(c.id)}
+                    className={cn(
+                      "shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all",
+                      selectedClassroom === c.id
+                        ? "bg-primary text-primary-foreground shadow-md"
+                        : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                    )}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+              
+              {/* Haptic Settings (when open) */}
+              {showGradeSettings && (
+                <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 animate-in slide-in-from-top duration-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-indigo-500/10 flex items-center justify-center">
+                      <Vibrate className="w-4 h-4 text-indigo-500" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">الاهتزاز عند الحفظ</p>
+                      <p className="text-xs text-muted-foreground">اهتزاز وصوت عند حفظ الدرجة</p>
+                    </div>
+                  </div>
+                  <div dir="ltr">
+                    <Switch
+                      checked={hapticEnabled}
+                      onCheckedChange={handleHapticToggle}
+                    />
+                  </div>
+                </div>
+              )}
+              
+              {/* Template Badge */}
+              {hasStructure && (
+                <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-0">
+                  {gradingStructure.name_ar}
+                </Badge>
+              )}
+            </div>
+          </div>
           
           <div className="p-4 pb-24">
             {/* No Classroom Selected */}
