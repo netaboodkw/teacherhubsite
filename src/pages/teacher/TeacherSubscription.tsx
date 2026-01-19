@@ -249,10 +249,17 @@ export default function TeacherSubscription() {
       });
 
       if (error) throw error;
-      if (!data.success) throw new Error(data.error);
+      if (!data.success) throw new Error(data.error || 'فشل في بدء عملية الدفع');
 
-      // Redirect to payment page
-      window.location.href = data.paymentUrl;
+      if (data.paymentUrl) {
+        // Small delay to ensure state is saved before redirect
+        toast.success('جاري التحويل لصفحة الدفع...');
+        setTimeout(() => {
+          window.location.href = data.paymentUrl;
+        }, 500);
+      } else {
+        throw new Error('لم يتم استلام رابط الدفع');
+      }
     } catch (error: any) {
       console.error('Payment error:', error);
       toast.error(error.message || 'حدث خطأ أثناء بدء عملية الدفع');
