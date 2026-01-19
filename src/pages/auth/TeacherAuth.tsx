@@ -210,9 +210,9 @@ export default function TeacherAuth() {
   // Mobile iOS Style Layout
   if (isMobile) {
     return (
-      <div className="fixed inset-0 z-[100] bg-background flex flex-col select-none overflow-hidden" dir="rtl">
+      <div className="fixed inset-0 z-[100] bg-background flex flex-col select-none" dir="rtl">
         {/* Background Gradient */}
-        <div className={`absolute inset-0 bg-gradient-to-br ${gradientColor} opacity-10`} />
+        <div className={`absolute inset-0 bg-gradient-to-br ${gradientColor} opacity-10 pointer-events-none`} />
         
         {/* Animated Background Shapes */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -232,9 +232,15 @@ export default function TeacherAuth() {
           </button>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto overscroll-contain">
-          <div className="min-h-full flex flex-col items-center px-4 sm:px-6 pt-14 pb-8">
+        {/* Scrollable Content - iOS optimized */}
+        <div 
+          className="flex-1 overflow-y-auto"
+          style={{
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehavior: 'contain',
+          }}
+        >
+          <div className="flex flex-col items-center px-4 sm:px-6 pt-14 pb-8">
             {/* Logo */}
             <div className="w-24 h-24 mb-6 flex items-center justify-center">
               <img 
