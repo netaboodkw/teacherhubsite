@@ -228,7 +228,7 @@ export default function NewStudent() {
             <div className="flex gap-3 pt-4">
               <Button 
                 type="submit" 
-                className="flex-1 gradient-hero"
+                className="flex-1"
                 disabled={createStudent.isPending}
               >
                 {createStudent.isPending ? (

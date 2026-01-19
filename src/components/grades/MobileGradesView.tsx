@@ -379,7 +379,7 @@ export function MobileGradesView({
               <Button 
                 onClick={() => handleSave(false)} 
                 disabled={saving || !inputValue}
-                className="flex-[2] gradient-hero"
+                className="flex-[2]"
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'حفظ والتالي'}
               </Button>

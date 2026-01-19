@@ -54,7 +54,7 @@ export default function Dashboard() {
             </p>
           </div>
           <Link to="/classrooms/new">
-            <Button className="gradient-hero shadow-md hover:shadow-lg transition-shadow">
+            <Button>
               <Plus className="w-4 h-4 ml-2" />
               صف جديد
             </Button>
@@ -117,7 +117,7 @@ export default function Dashboard() {
                 <h3 className="font-medium text-foreground mb-2">لا توجد صفوف بعد</h3>
                 <p className="text-sm text-muted-foreground mb-4">ابدأ بإنشاء صفك الأول</p>
                 <Link to="/classrooms/new">
-                  <Button className="gradient-hero">
+                  <Button>
                     <Plus className="w-4 h-4 ml-2" />
                     إنشاء صف
                   </Button>

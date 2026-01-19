@@ -14,7 +14,7 @@ interface StatCardProps {
 }
 
 const variantStyles = {
-  primary: 'gradient-hero',
+  primary: 'bg-primary',
   secondary: 'bg-secondary',
   accent: 'bg-accent',
   success: 'bg-success',

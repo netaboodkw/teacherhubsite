@@ -1345,7 +1345,7 @@ export default function Grades() {
                   السابق
                 </Button>
                 <Button
-                  className="flex-[2] h-11 gradient-hero"
+                  className="flex-[2] h-11"
                   onClick={() => handleSaveGrade(true)}
                   disabled={createGrade.isPending || updateGrade.isPending || !gradeValue}
                 >

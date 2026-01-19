@@ -782,7 +782,7 @@ export default function ClassroomView() {
           <div className="flex items-center justify-center gap-3 mb-4">
             <ActionButton 
               onClick={() => setTimerOpen(true)}
-              className={isLiquidGlass ? "gap-2" : "gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg hover:shadow-xl transition-all"}
+              className="gap-2"
               size="lg"
             >
               <Timer className="h-5 w-5" />
@@ -790,8 +790,9 @@ export default function ClassroomView() {
             </ActionButton>
             <ActionButton 
               onClick={() => setRandomPickerOpen(true)}
-              className={isLiquidGlass ? "gap-2" : "gap-2 bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transition-all"}
+              className="gap-2"
               size="lg"
+              variant="secondary"
             >
               <Shuffle className="h-5 w-5" />
               اختيار عشوائي

@@ -141,7 +141,7 @@ export function PrintOptionsDialog({
             <FileSpreadsheet className="w-4 h-4 ml-2" />
             تصدير Excel
           </Button>
-          <Button onClick={handlePrint} className="flex-1 gradient-hero">
+          <Button onClick={handlePrint} className="flex-1">
             <Printer className="w-4 h-4 ml-2" />
             طباعة
           </Button>

@@ -185,7 +185,7 @@ export function BulkGradeEntry({
           <Button
             onClick={handleSave}
             disabled={saving || !bulkScore || selectedStudents.size === 0}
-            className="w-full gradient-hero h-11"
+            className="w-full h-11"
           >
             {saving ? (
               <Loader2 className="h-4 w-4 animate-spin" />
