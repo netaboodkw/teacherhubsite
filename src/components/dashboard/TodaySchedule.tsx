@@ -159,7 +159,7 @@ export function TodaySchedule({ classrooms, educationLevelName }: TodayScheduleP
                     <div className="flex items-center gap-1 flex-wrap">
                       {item.classroom ? (
                         <Link 
-                          to={`/teacher/classroom/${item.classroom.id}`}
+                          to={`/teacher/classrooms/${item.classroom.id}`}
                           className="font-medium text-xs sm:text-sm hover:text-primary truncate max-w-[100px] sm:max-w-[140px]"
                         >
                           {item.classroom.name}
