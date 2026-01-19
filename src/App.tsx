@@ -1,12 +1,16 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { SwipeBackOverlay } from "@/components/navigation/SwipeBackOverlay";
 import { FloatingThemeToggle } from "@/components/theme/FloatingThemeToggle";
+import { Capacitor } from "@capacitor/core";
+import { App as CapacitorApp } from "@capacitor/app";
+import { Browser } from "@capacitor/browser";
 
 // Landing & Auth
 import Landing from "./pages/Landing";
@@ -69,6 +73,76 @@ import DHTemplates from "./pages/department-head/DHTemplates";
 
 const queryClient = new QueryClient();
 
+// Deep Link Handler Component
+function DeepLinkHandler() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) {
+      return;
+    }
+
+    const handleAppUrlOpen = async (event: { url: string }) => {
+      console.log('Deep link received:', event.url);
+      
+      // Close in-app browser if open
+      try {
+        await Browser.close();
+      } catch (e) {
+        // Browser might not be open
+      }
+      
+      try {
+        const url = new URL(event.url);
+        const path = url.pathname;
+        const searchParams = url.search;
+        
+        // Handle payment callbacks
+        if (path.includes('/subscription/success')) {
+          const paymentId = url.searchParams.get('paymentId') || url.searchParams.get('Id');
+          navigate(`/teacher/subscription/success${paymentId ? `?paymentId=${paymentId}` : searchParams}`);
+        } else if (path.includes('/subscription/error')) {
+          navigate(`/teacher/subscription/error${searchParams}`);
+        } else if (path.includes('/teacher')) {
+          navigate(path + searchParams);
+        } else if (path.includes('/auth')) {
+          navigate(path + searchParams);
+        } else {
+          navigate(path + searchParams);
+        }
+      } catch (error) {
+        console.error('Error parsing deep link:', error);
+        
+        // Fallback: try to extract payment ID from URL string
+        const paymentMatch = event.url.match(/[?&](?:paymentId|Id)=([^&]+)/i);
+        if (paymentMatch) {
+          navigate(`/teacher/subscription/success?paymentId=${paymentMatch[1]}`);
+        } else if (event.url.includes('success')) {
+          navigate('/teacher/subscription/success');
+        } else if (event.url.includes('error')) {
+          navigate('/teacher/subscription/error');
+        }
+      }
+    };
+
+    // Listen for deep links when app is opened from a URL
+    const listener = CapacitorApp.addListener('appUrlOpen', handleAppUrlOpen);
+
+    // Check if app was opened with a URL (cold start)
+    CapacitorApp.getLaunchUrl().then((result) => {
+      if (result?.url) {
+        handleAppUrlOpen({ url: result.url });
+      }
+    });
+
+    return () => {
+      listener.then(l => l.remove());
+    };
+  }, [navigate]);
+
+  return null;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
@@ -77,6 +151,7 @@ const App = () => (
         <Sonner />
         
         <BrowserRouter>
+          <DeepLinkHandler />
           <FloatingThemeToggle />
           <SwipeBackOverlay />
           <Routes>
