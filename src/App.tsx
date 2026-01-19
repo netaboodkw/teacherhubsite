@@ -75,8 +75,9 @@ const App = () => (
           <FloatingThemeToggle />
           <SwipeBackOverlay />
           <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Landing />} />
+            {/* Public Routes - Welcome is the main entry for mobile */}
+            <Route path="/" element={<Welcome />} />
+            <Route path="/landing" element={<Landing />} />
             <Route path="/welcome" element={<Welcome />} />
             <Route path="/auth/teacher" element={<TeacherAuth />} />
             <Route path="/auth/admin" element={<AdminAuth />} />
