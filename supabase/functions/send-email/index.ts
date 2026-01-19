@@ -19,9 +19,9 @@ const getEmailTemplate = (content: string, title: string) => `
   <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; margin-top: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
     
     <!-- Header with Logo -->
-    <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); padding: 30px; text-align: center;">
-      <img src="https://teacherhub.site/logo.png" alt="TeacherHub" style="height: 50px; margin-bottom: 15px;" />
-      <h1 style="color: #ffffff; margin: 0; font-size: 24px;">${title}</h1>
+    <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); padding: 40px 30px; text-align: center;">
+      <img src="https://teacherhub.site/logo.png" alt="TeacherHub" style="height: 80px; margin-bottom: 20px;" />
+      <h1 style="color: #1f2937; margin: 0; font-size: 26px; font-weight: bold; background-color: #ffffff; padding: 12px 24px; border-radius: 8px; display: inline-block;">${title}</h1>
     </div>
     
     <!-- Content -->
