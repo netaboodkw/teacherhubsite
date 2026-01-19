@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
@@ -20,10 +21,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useQuery } from '@tanstack/react-query';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { toast } from 'sonner';
 import { 
   Users, 
   Loader2, 
@@ -37,7 +47,9 @@ import {
   TrendingUp,
   DollarSign,
   UserCheck,
-  UserX
+  UserX,
+  Edit,
+  Wallet
 } from 'lucide-react';
 
 interface Subscriber {
@@ -50,7 +62,9 @@ interface Subscriber {
   subscription_ends_at: string | null;
   courses_remaining: number;
   is_read_only: boolean;
+  package_id: string | null;
   package: {
+    id: string;
     name_ar: string;
     courses_count: number;
     price: number;
@@ -82,10 +96,41 @@ interface Payment {
   } | null;
 }
 
+interface Package {
+  id: string;
+  name_ar: string;
+  courses_count: number;
+}
+
 export default function SubscribersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('all');
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedSubscriber, setSelectedSubscriber] = useState<Subscriber | null>(null);
+  const [editForm, setEditForm] = useState({
+    status: '',
+    package_id: '',
+    subscription_ends_at: '',
+    courses_remaining: 0,
+    is_read_only: false,
+  });
+
+  const queryClient = useQueryClient();
+
+  // Fetch packages for dropdown
+  const { data: packages } = useQuery({
+    queryKey: ['subscription-packages'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('subscription_packages')
+        .select('id, name_ar, courses_count')
+        .eq('is_active', true)
+        .order('display_order');
+      if (error) throw error;
+      return data as Package[];
+    },
+  });
 
   // Fetch subscribers
   const { data: subscribers, isLoading: subscribersLoading } = useQuery({
@@ -95,7 +140,7 @@ export default function SubscribersPage() {
         .from('teacher_subscriptions')
         .select(`
           *,
-          package:subscription_packages(name_ar, courses_count, price)
+          package:subscription_packages(id, name_ar, courses_count, price)
         `)
         .order('created_at', { ascending: false });
 
@@ -144,6 +189,59 @@ export default function SubscribersPage() {
         ...p,
         profile: profileMap.get(p.user_id) || null
       })) as Payment[];
+    },
+  });
+
+  // Update subscription mutation
+  const updateSubscriptionMutation = useMutation({
+    mutationFn: async (data: {
+      id: string;
+      status: string;
+      package_id: string | null;
+      subscription_ends_at: string | null;
+      courses_remaining: number;
+      is_read_only: boolean;
+    }) => {
+      const updateData: Record<string, unknown> = {
+        status: data.status,
+        package_id: data.package_id || null,
+        courses_remaining: data.courses_remaining,
+        is_read_only: data.is_read_only,
+      };
+
+      // Handle subscription dates based on status
+      if (data.status === 'active') {
+        updateData.subscription_ends_at = data.subscription_ends_at || null;
+        if (!updateData.subscription_ends_at) {
+          // Default to 1 year from now if not specified
+          updateData.subscription_ends_at = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+        }
+        if (!updateData.subscription_started_at) {
+          updateData.subscription_started_at = new Date().toISOString();
+        }
+      } else if (data.status === 'trial') {
+        if (!updateData.trial_started_at) {
+          updateData.trial_started_at = new Date().toISOString();
+        }
+        updateData.trial_ends_at = data.subscription_ends_at || new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString();
+      }
+
+      const { error } = await supabase
+        .from('teacher_subscriptions')
+        .update(updateData)
+        .eq('id', data.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('تم تحديث الاشتراك بنجاح');
+      queryClient.invalidateQueries({ queryKey: ['admin-subscribers'] });
+      setEditDialogOpen(false);
+      setSelectedSubscriber(null);
+    },
+    onError: (error) => {
+      toast.error('حدث خطأ أثناء تحديث الاشتراك');
+      console.error(error);
     },
   });
 
@@ -218,6 +316,59 @@ export default function SubscribersPage() {
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
+  };
+
+  const getPaymentMethodDisplay = (method: string | null) => {
+    if (!method) return '-';
+    
+    const methodsMap: Record<string, { name: string; icon: string }> = {
+      'KNET': { name: 'كي نت', icon: '🏦' },
+      'kn': { name: 'كي نت', icon: '🏦' },
+      'VISA/MASTER': { name: 'فيزا/ماستر', icon: '💳' },
+      'vm': { name: 'فيزا/ماستر', icon: '💳' },
+      'APPLEPAY': { name: 'Apple Pay', icon: '🍎' },
+      'ap': { name: 'Apple Pay', icon: '🍎' },
+      'Apple Pay (KWD)': { name: 'Apple Pay', icon: '🍎' },
+      'MADA': { name: 'مدى', icon: '💳' },
+      'SAMSUNG_PAY': { name: 'Samsung Pay', icon: '📱' },
+      'GOOGLE_PAY': { name: 'Google Pay', icon: '📱' },
+    };
+
+    const methodInfo = methodsMap[method.toUpperCase()] || methodsMap[method] || { name: method, icon: '💰' };
+    
+    return (
+      <Badge variant="outline" className="gap-1">
+        <span>{methodInfo.icon}</span>
+        {methodInfo.name}
+      </Badge>
+    );
+  };
+
+  const handleEditSubscription = (subscriber: Subscriber) => {
+    setSelectedSubscriber(subscriber);
+    setEditForm({
+      status: subscriber.status,
+      package_id: subscriber.package_id || '',
+      subscription_ends_at: subscriber.status === 'trial' 
+        ? subscriber.trial_ends_at?.split('T')[0] || ''
+        : subscriber.subscription_ends_at?.split('T')[0] || '',
+      courses_remaining: subscriber.courses_remaining,
+      is_read_only: subscriber.is_read_only,
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveSubscription = () => {
+    if (!selectedSubscriber) return;
+
+    updateSubscriptionMutation.mutate({
+      id: selectedSubscriber.id,
+      status: editForm.status,
+      package_id: editForm.package_id || null,
+      subscription_ends_at: editForm.subscription_ends_at || null,
+      courses_remaining: editForm.courses_remaining,
+      is_read_only: editForm.is_read_only,
+    });
   };
 
   const filteredSubscribers = subscribers?.filter(sub => {
@@ -371,6 +522,7 @@ export default function SubscribersPage() {
                         <TableHead>الحالة</TableHead>
                         <TableHead>تاريخ الانتهاء</TableHead>
                         <TableHead>الكورسات المتبقية</TableHead>
+                        <TableHead>إجراءات</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -393,11 +545,22 @@ export default function SubscribersPage() {
                               : '-'}
                           </TableCell>
                           <TableCell>{sub.courses_remaining}</TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditSubscription(sub)}
+                              className="gap-1"
+                            >
+                              <Edit className="h-4 w-4" />
+                              تعديل
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))}
                       {(!filteredSubscribers || filteredSubscribers.length === 0) && (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                          <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                             لا يوجد مشتركين
                           </TableCell>
                         </TableRow>
@@ -475,12 +638,7 @@ export default function SubscribersPage() {
                             ) : '-'}
                           </TableCell>
                           <TableCell>
-                            {payment.payment_method ? (
-                              <Badge variant="outline" className="gap-1">
-                                <CreditCard className="h-3 w-3" />
-                                {payment.payment_method}
-                              </Badge>
-                            ) : '-'}
+                            {getPaymentMethodDisplay(payment.payment_method)}
                           </TableCell>
                           <TableCell>{getPaymentStatusBadge(payment.status)}</TableCell>
                           <TableCell>
@@ -503,6 +661,122 @@ export default function SubscribersPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Edit Subscription Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>تعديل الاشتراك</DialogTitle>
+            <DialogDescription>
+              تعديل بيانات اشتراك: {selectedSubscriber?.teacher?.full_name || 'المستخدم'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Status */}
+            <div className="space-y-2">
+              <Label>حالة الاشتراك</Label>
+              <Select
+                value={editForm.status}
+                onValueChange={(value) => setEditForm(prev => ({ ...prev, status: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر الحالة" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="trial">تجريبي</SelectItem>
+                  <SelectItem value="active">مشترك (فعال)</SelectItem>
+                  <SelectItem value="expired">منتهي</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Package */}
+            <div className="space-y-2">
+              <Label>الباقة</Label>
+              <Select
+                value={editForm.package_id}
+                onValueChange={(value) => {
+                  const pkg = packages?.find(p => p.id === value);
+                  setEditForm(prev => ({ 
+                    ...prev, 
+                    package_id: value,
+                    courses_remaining: pkg?.courses_count || prev.courses_remaining 
+                  }));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر الباقة" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">بدون باقة</SelectItem>
+                  {packages?.map((pkg) => (
+                    <SelectItem key={pkg.id} value={pkg.id}>
+                      {pkg.name_ar} ({pkg.courses_count} كورسات)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* End Date */}
+            <div className="space-y-2">
+              <Label>
+                {editForm.status === 'trial' ? 'تاريخ انتهاء الفترة التجريبية' : 'تاريخ انتهاء الاشتراك'}
+              </Label>
+              <Input
+                type="date"
+                value={editForm.subscription_ends_at}
+                onChange={(e) => setEditForm(prev => ({ ...prev, subscription_ends_at: e.target.value }))}
+              />
+            </div>
+
+            {/* Courses Remaining */}
+            <div className="space-y-2">
+              <Label>الكورسات المتبقية</Label>
+              <Input
+                type="number"
+                min={0}
+                value={editForm.courses_remaining}
+                onChange={(e) => setEditForm(prev => ({ ...prev, courses_remaining: parseInt(e.target.value) || 0 }))}
+              />
+            </div>
+
+            {/* Read Only */}
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="is_read_only"
+                checked={editForm.is_read_only}
+                onChange={(e) => setEditForm(prev => ({ ...prev, is_read_only: e.target.checked }))}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              <Label htmlFor="is_read_only" className="cursor-pointer">
+                قراءة فقط (تقييد الصلاحيات)
+              </Label>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              إلغاء
+            </Button>
+            <Button 
+              onClick={handleSaveSubscription}
+              disabled={updateSubscriptionMutation.isPending}
+            >
+              {updateSubscriptionMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                  جاري الحفظ...
+                </>
+              ) : (
+                'حفظ التغييرات'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }
