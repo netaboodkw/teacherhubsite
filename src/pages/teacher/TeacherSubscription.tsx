@@ -265,15 +265,21 @@ export default function TeacherSubscription() {
             window.open(data.paymentUrl, '_blank');
           }
         } else {
-          // Web browser - redirect normally
-          try {
-            if (window.top && window.top !== window) {
-              window.top.location.href = data.paymentUrl;
-            } else {
-              window.location.href = data.paymentUrl;
+          // Web browser - open in new tab/window to avoid iframe restrictions
+          const newWindow = window.open(data.paymentUrl, '_blank');
+          if (!newWindow) {
+            // If popup was blocked, try fallback methods
+            try {
+              if (window.top && window.top !== window) {
+                window.top.location.href = data.paymentUrl;
+              } else {
+                window.location.href = data.paymentUrl;
+              }
+            } catch (e) {
+              // Last resort - show the URL to user
+              toast.error('لم نتمكن من فتح صفحة الدفع. الرجاء تعطيل مانع النوافذ المنبثقة أو نسخ الرابط يدوياً.');
+              console.log('Payment URL:', data.paymentUrl);
             }
-          } catch (e) {
-            window.location.href = data.paymentUrl;
           }
         }
       } else {
