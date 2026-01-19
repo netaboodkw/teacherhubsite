@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Camera, Upload, Loader2, X, Check, Edit2, UserPlus } from 'lucide-react';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 
 interface ExtractedStudent {
   name: string;
@@ -29,6 +30,7 @@ export function ImportStudentsDialog({
   const navigate = useNavigate();
   const { data: classrooms = [] } = useClassrooms();
   const createStudent = useCreateStudent();
+  const { isOnboarding, markStepCompleted } = useOnboarding();
   
   const [step, setStep] = useState<'upload' | 'review' | 'importing'>('upload');
   const [selectedClassroom, setSelectedClassroom] = useState(defaultClassroomId || '');
@@ -120,6 +122,11 @@ export function ImportStudentsDialog({
           classroom_id: selectedClassroom,
         });
         setImportProgress(((i + 1) / validStudents.length) * 100);
+      }
+
+      // Mark onboarding step as completed
+      if (isOnboarding) {
+        markStepCompleted('add-students');
       }
 
       toast.success(`تم استيراد ${validStudents.length} طالب بنجاح`);

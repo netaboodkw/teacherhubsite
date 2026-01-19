@@ -6,8 +6,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { OnboardingProvider } from "@/contexts/OnboardingContext";
 import { SwipeBackOverlay } from "@/components/navigation/SwipeBackOverlay";
 import { FloatingThemeToggle } from "@/components/theme/FloatingThemeToggle";
+import { InteractiveOnboardingBanner } from "@/components/onboarding/InteractiveOnboardingBanner";
 import { Capacitor } from "@capacitor/core";
 import { App as CapacitorApp } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
@@ -151,80 +153,83 @@ const App = () => (
         <Sonner />
         
         <BrowserRouter>
-          <DeepLinkHandler />
-          <FloatingThemeToggle />
-          <SwipeBackOverlay />
-          <Routes>
-            {/* Main entry - Platform detection: Native→Welcome, Web→Landing */}
-            <Route path="/" element={<PlatformRouter />} />
-            <Route path="/landing" element={<Landing />} />
-            <Route path="/welcome" element={<Welcome />} />
-            <Route path="/auth/teacher" element={<TeacherAuth />} />
-            <Route path="/auth/admin" element={<AdminAuth />} />
-            <Route path="/auth/department-head" element={<DepartmentHeadAuth />} />
-            <Route path="/auth/reset-password" element={<ResetPassword />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Terms />} />
+          <OnboardingProvider>
+            <DeepLinkHandler />
+            <FloatingThemeToggle />
+            <SwipeBackOverlay />
+            <InteractiveOnboardingBanner />
+            <Routes>
+              {/* Main entry - Platform detection: Native→Welcome, Web→Landing */}
+              <Route path="/" element={<PlatformRouter />} />
+              <Route path="/landing" element={<Landing />} />
+              <Route path="/welcome" element={<Welcome />} />
+              <Route path="/auth/teacher" element={<TeacherAuth />} />
+              <Route path="/auth/admin" element={<AdminAuth />} />
+              <Route path="/auth/department-head" element={<DepartmentHeadAuth />} />
+              <Route path="/auth/reset-password" element={<ResetPassword />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
 
-            {/* Legacy redirects */}
-            <Route path="/auth" element={<Navigate to="/auth/teacher" replace />} />
-            <Route path="/dashboard" element={<Navigate to="/teacher" replace />} />
-            <Route path="/classrooms" element={<Navigate to="/teacher/classrooms" replace />} />
-            <Route path="/students" element={<Navigate to="/teacher/students" replace />} />
-            <Route path="/attendance" element={<Navigate to="/teacher/reports" replace />} />
-            <Route path="/grades" element={<Navigate to="/teacher/grades" replace />} />
-            <Route path="/reports" element={<Navigate to="/teacher/reports" replace />} />
-            <Route path="/settings" element={<Navigate to="/teacher/settings" replace />} />
+              {/* Legacy redirects */}
+              <Route path="/auth" element={<Navigate to="/auth/teacher" replace />} />
+              <Route path="/dashboard" element={<Navigate to="/teacher" replace />} />
+              <Route path="/classrooms" element={<Navigate to="/teacher/classrooms" replace />} />
+              <Route path="/students" element={<Navigate to="/teacher/students" replace />} />
+              <Route path="/attendance" element={<Navigate to="/teacher/reports" replace />} />
+              <Route path="/grades" element={<Navigate to="/teacher/grades" replace />} />
+              <Route path="/reports" element={<Navigate to="/teacher/reports" replace />} />
+              <Route path="/settings" element={<Navigate to="/teacher/settings" replace />} />
 
-            {/* Admin Routes */}
-            <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-            <Route path="/admin/curriculum-tree" element={<ProtectedRoute><CurriculumTreePage /></ProtectedRoute>} />
-            <Route path="/admin/teachers" element={<ProtectedRoute><TeachersPage /></ProtectedRoute>} />
-            <Route path="/admin/users" element={<ProtectedRoute><UsersManagementPage /></ProtectedRoute>} />
-            <Route path="/admin/archived-classrooms" element={<ProtectedRoute><ArchivedClassroomsPage /></ProtectedRoute>} />
-            <Route path="/admin/settings" element={<ProtectedRoute><AdminSettingsPage /></ProtectedRoute>} />
-            <Route path="/admin/subscriptions" element={<ProtectedRoute><SubscriptionsPage /></ProtectedRoute>} />
-            <Route path="/admin/subscribers" element={<ProtectedRoute><SubscribersPage /></ProtectedRoute>} />
-            <Route path="/admin/ai-content" element={<ProtectedRoute><AIContentCreatorPage /></ProtectedRoute>} />
-            <Route path="/admin/emails" element={<ProtectedRoute><EmailManagementPage /></ProtectedRoute>} />
-            <Route path="/admin/notifications" element={<ProtectedRoute><NotificationTemplatesPage /></ProtectedRoute>} />
+              {/* Admin Routes */}
+              <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/admin/curriculum-tree" element={<ProtectedRoute><CurriculumTreePage /></ProtectedRoute>} />
+              <Route path="/admin/teachers" element={<ProtectedRoute><TeachersPage /></ProtectedRoute>} />
+              <Route path="/admin/users" element={<ProtectedRoute><UsersManagementPage /></ProtectedRoute>} />
+              <Route path="/admin/archived-classrooms" element={<ProtectedRoute><ArchivedClassroomsPage /></ProtectedRoute>} />
+              <Route path="/admin/settings" element={<ProtectedRoute><AdminSettingsPage /></ProtectedRoute>} />
+              <Route path="/admin/subscriptions" element={<ProtectedRoute><SubscriptionsPage /></ProtectedRoute>} />
+              <Route path="/admin/subscribers" element={<ProtectedRoute><SubscribersPage /></ProtectedRoute>} />
+              <Route path="/admin/ai-content" element={<ProtectedRoute><AIContentCreatorPage /></ProtectedRoute>} />
+              <Route path="/admin/emails" element={<ProtectedRoute><EmailManagementPage /></ProtectedRoute>} />
+              <Route path="/admin/notifications" element={<ProtectedRoute><NotificationTemplatesPage /></ProtectedRoute>} />
 
-            {/* Teacher Routes */}
-            <Route path="/teacher" element={<ProtectedRoute><TeacherDashboard /></ProtectedRoute>} />
-            <Route path="/teacher/classrooms" element={<ProtectedRoute><Classrooms /></ProtectedRoute>} />
-            <Route path="/teacher/classrooms/new" element={<ProtectedRoute><NewClassroom /></ProtectedRoute>} />
-            <Route path="/teacher/classrooms/:classroomId" element={<ProtectedRoute><ClassroomView /></ProtectedRoute>} />
-            <Route path="/teacher/classrooms/:classroomId/edit" element={<ProtectedRoute><EditClassroom /></ProtectedRoute>} />
-            <Route path="/teacher/schedule" element={<ProtectedRoute><TeacherSchedule /></ProtectedRoute>} />
-            <Route path="/teacher/fingerprint" element={<ProtectedRoute><TeacherFingerprint /></ProtectedRoute>} />
-            <Route path="/teacher/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
-            <Route path="/teacher/students/:studentId" element={<ProtectedRoute><StudentDetail /></ProtectedRoute>} />
-            <Route path="/teacher/students/new" element={<ProtectedRoute><NewStudent /></ProtectedRoute>} />
-            <Route path="/teacher/attendance" element={<Navigate to="/teacher/reports" replace />} />
-            <Route path="/teacher/grades" element={<ProtectedRoute><Grades /></ProtectedRoute>} />
-            <Route path="/teacher/templates" element={<ProtectedRoute><TeacherTemplates /></ProtectedRoute>} />
-            <Route path="/teacher/subscription" element={<ProtectedRoute><TeacherSubscription /></ProtectedRoute>} />
-            <Route path="/teacher/subscription/success" element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>} />
-            <Route path="/teacher/subscription/error" element={<ProtectedRoute><SubscriptionError /></ProtectedRoute>} />
-            <Route path="/teacher/payments" element={<Navigate to="/teacher/subscription" replace />} />
-            <Route path="/teacher/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-            <Route path="/teacher/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            <Route path="/teacher/notifications" element={<Navigate to="/teacher/settings" replace />} />
+              {/* Teacher Routes */}
+              <Route path="/teacher" element={<ProtectedRoute><TeacherDashboard /></ProtectedRoute>} />
+              <Route path="/teacher/classrooms" element={<ProtectedRoute><Classrooms /></ProtectedRoute>} />
+              <Route path="/teacher/classrooms/new" element={<ProtectedRoute><NewClassroom /></ProtectedRoute>} />
+              <Route path="/teacher/classrooms/:classroomId" element={<ProtectedRoute><ClassroomView /></ProtectedRoute>} />
+              <Route path="/teacher/classrooms/:classroomId/edit" element={<ProtectedRoute><EditClassroom /></ProtectedRoute>} />
+              <Route path="/teacher/schedule" element={<ProtectedRoute><TeacherSchedule /></ProtectedRoute>} />
+              <Route path="/teacher/fingerprint" element={<ProtectedRoute><TeacherFingerprint /></ProtectedRoute>} />
+              <Route path="/teacher/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
+              <Route path="/teacher/students/:studentId" element={<ProtectedRoute><StudentDetail /></ProtectedRoute>} />
+              <Route path="/teacher/students/new" element={<ProtectedRoute><NewStudent /></ProtectedRoute>} />
+              <Route path="/teacher/attendance" element={<Navigate to="/teacher/reports" replace />} />
+              <Route path="/teacher/grades" element={<ProtectedRoute><Grades /></ProtectedRoute>} />
+              <Route path="/teacher/templates" element={<ProtectedRoute><TeacherTemplates /></ProtectedRoute>} />
+              <Route path="/teacher/subscription" element={<ProtectedRoute><TeacherSubscription /></ProtectedRoute>} />
+              <Route path="/teacher/subscription/success" element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>} />
+              <Route path="/teacher/subscription/error" element={<ProtectedRoute><SubscriptionError /></ProtectedRoute>} />
+              <Route path="/teacher/payments" element={<Navigate to="/teacher/subscription" replace />} />
+              <Route path="/teacher/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+              <Route path="/teacher/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/teacher/notifications" element={<Navigate to="/teacher/settings" replace />} />
 
-            {/* Department Head Routes */}
-            <Route path="/department-head" element={<ProtectedRoute><DHDashboardNew /></ProtectedRoute>} />
-            <Route path="/department-head/invitations" element={<ProtectedRoute><DHInvitations /></ProtectedRoute>} />
-            <Route path="/department-head/templates" element={<ProtectedRoute><DHTemplates /></ProtectedRoute>} />
-            <Route path="/department-head/classrooms" element={<ProtectedRoute><DHClassrooms /></ProtectedRoute>} />
-            <Route path="/department-head/classrooms/:classroomId" element={<ProtectedRoute><DHClassroomView /></ProtectedRoute>} />
-            <Route path="/department-head/students" element={<ProtectedRoute><DHStudents /></ProtectedRoute>} />
-            <Route path="/department-head/grades" element={<ProtectedRoute><DHGrades /></ProtectedRoute>} />
-            <Route path="/department-head/reports" element={<ProtectedRoute><DepartmentHeadReports /></ProtectedRoute>} />
-            <Route path="/department-head/old" element={<ProtectedRoute><DepartmentHeadDashboard /></ProtectedRoute>} />
-            <Route path="/department-head/teacher/:teacherId" element={<ProtectedRoute><TeacherDetailsView /></ProtectedRoute>} />
+              {/* Department Head Routes */}
+              <Route path="/department-head" element={<ProtectedRoute><DHDashboardNew /></ProtectedRoute>} />
+              <Route path="/department-head/invitations" element={<ProtectedRoute><DHInvitations /></ProtectedRoute>} />
+              <Route path="/department-head/templates" element={<ProtectedRoute><DHTemplates /></ProtectedRoute>} />
+              <Route path="/department-head/classrooms" element={<ProtectedRoute><DHClassrooms /></ProtectedRoute>} />
+              <Route path="/department-head/classrooms/:classroomId" element={<ProtectedRoute><DHClassroomView /></ProtectedRoute>} />
+              <Route path="/department-head/students" element={<ProtectedRoute><DHStudents /></ProtectedRoute>} />
+              <Route path="/department-head/grades" element={<ProtectedRoute><DHGrades /></ProtectedRoute>} />
+              <Route path="/department-head/reports" element={<ProtectedRoute><DepartmentHeadReports /></ProtectedRoute>} />
+              <Route path="/department-head/old" element={<ProtectedRoute><DepartmentHeadDashboard /></ProtectedRoute>} />
+              <Route path="/department-head/teacher/:teacherId" element={<ProtectedRoute><TeacherDetailsView /></ProtectedRoute>} />
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </OnboardingProvider>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
