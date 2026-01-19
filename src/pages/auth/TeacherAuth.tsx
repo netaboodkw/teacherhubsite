@@ -52,6 +52,9 @@ export default function TeacherAuth() {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => {
+    return localStorage.getItem('rememberMe') === 'true';
+  });
   
   // Register state
   const [fullName, setFullName] = useState('');
@@ -86,6 +89,10 @@ export default function TeacherAuth() {
     }
     
     setLoginLoading(true);
+    
+    // Save remember me preference
+    localStorage.setItem('rememberMe', rememberMe.toString());
+    
     try {
       const { error, data } = await signIn(loginEmail.trim(), loginPassword);
       
@@ -345,6 +352,22 @@ export default function TeacherAuth() {
                         {showLoginPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                       </button>
                     </div>
+                  </div>
+                  
+                  {/* Remember Me Option */}
+                  <div className="flex items-center gap-3 py-2">
+                    <Checkbox
+                      id="remember-me-mobile"
+                      checked={rememberMe}
+                      onCheckedChange={(checked) => setRememberMe(checked === true)}
+                      className="h-5 w-5"
+                    />
+                    <Label 
+                      htmlFor="remember-me-mobile" 
+                      className="text-sm text-muted-foreground cursor-pointer flex-1"
+                    >
+                      تذكرني (البقاء متصلاً)
+                    </Label>
                   </div>
                   
                   <button
@@ -688,7 +711,22 @@ export default function TeacherAuth() {
                       </div>
                     </div>
                     
-                    <Button 
+                    {/* Remember Me Option - Desktop */}
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="remember-me-desktop"
+                        checked={rememberMe}
+                        onCheckedChange={(checked) => setRememberMe(checked === true)}
+                      />
+                      <Label 
+                        htmlFor="remember-me-desktop" 
+                        className="text-sm text-muted-foreground cursor-pointer"
+                      >
+                        تذكرني (البقاء متصلاً)
+                      </Label>
+                    </div>
+                    
+                    <Button
                       type="submit" 
                       className="w-full h-11"
                       disabled={loginLoading}
