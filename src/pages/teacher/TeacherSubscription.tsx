@@ -237,10 +237,10 @@ export default function TeacherSubscription() {
 
     setIsProcessing(true);
     try {
-      // Use published URL for payment callbacks to avoid iframe/auth-bridge issues
-      const baseUrl = window.location.hostname.includes('lovable') || window.location.hostname.includes('localhost')
-        ? 'https://echo-grade-ease.lovable.app'
-        : window.location.origin;
+      // Use production domain for payment callbacks
+      const baseUrl = window.location.hostname === 'teacherhub.site' || window.location.hostname === 'www.teacherhub.site'
+        ? window.location.origin
+        : 'https://teacherhub.site';
       
       const { data, error } = await supabase.functions.invoke('myfatoorah-payment', {
         body: {
