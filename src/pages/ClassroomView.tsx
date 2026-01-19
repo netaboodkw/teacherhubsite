@@ -720,6 +720,33 @@ export default function ClassroomView() {
               
               {activeTab === 'arrange' && (
                 <>
+                  <ActionButton 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      // Reset positions to grid layout
+                      const positionsMap = new Map<string, { x: number; y: number }>();
+                      const cardWidth = 110;
+                      const cardHeight = 130;
+                      const cols = 5;
+                      const gap = 20;
+                      
+                      students.forEach((student, index) => {
+                        const col = index % cols;
+                        const row = Math.floor(index / cols);
+                        positionsMap.set(student.id, {
+                          x: col * (cardWidth + gap) + gap,
+                          y: row * (cardHeight + gap) + gap
+                        });
+                      });
+                      
+                      setStudentPositions(positionsMap);
+                      toast.success('تم إعادة ترتيب الطلاب');
+                    }}
+                  >
+                    <Shuffle className="h-4 w-4 sm:ml-1" />
+                    <span className="hidden sm:inline">إعادة الترتيب</span>
+                  </ActionButton>
                   <ActionButton variant="outline" size="sm" onClick={() => setActiveTab('notes')}>
                     <X className="h-4 w-4 sm:ml-1" />
                     <span className="hidden sm:inline">إلغاء</span>
@@ -1006,88 +1033,146 @@ export default function ClassroomView() {
                 ))}
               </div>
             ) : (
-              <div 
-                className="relative bg-muted/30 rounded-lg"
-                style={{ minHeight: containerHeight }}
-              >
-                {students.map((student) => {
-                  const hasNotes = studentsWithNotes.has(student.id);
-                  const notesCount = studentsWithNotes.get(student.id) || 0;
-                  const position = studentPositions.get(student.id) || { x: 20, y: 20 };
-                  
-                  return (
-                    <div
-                      key={student.id}
-                      style={{
-                        position: 'absolute',
-                        left: position.x,
-                        top: position.y,
-                      }}
-                      className="relative flex flex-col items-center p-3 bg-card rounded-xl border-2 border-border/50 shadow-sm cursor-pointer transition-all hover:scale-105 hover:border-primary/50 active:scale-95"
-                      onClick={() => handleStudentTap({
-                        id: student.id,
-                        name: student.name,
-                        avatar_url: student.avatar_url,
-                      })}
-                    >
-                      {/* Status Icons */}
-                      <div className="absolute -top-1 right-0 flex gap-0.5">
-                        {student.special_needs && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="p-0.5 bg-amber-100 dark:bg-amber-900/50 rounded-full">
-                                <HeartPulse className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>احتياجات خاصة</TooltipContent>
-                          </Tooltip>
-                        )}
-                        {hasNotes && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="p-0.5 bg-blue-100 dark:bg-blue-900/50 rounded-full">
-                                <StickyNote className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>{notesCount} ملاحظة</TooltipContent>
-                          </Tooltip>
-                        )}
-                        {student.notes && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="p-0.5 bg-purple-100 dark:bg-purple-900/50 rounded-full">
-                                <MessageSquare className="h-3 w-3 text-purple-600 dark:text-purple-400" />
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-48 text-right">{student.notes}</TooltipContent>
-                          </Tooltip>
-                        )}
-                      </div>
-
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-2 mt-1">
-                        {student.avatar_url ? (
-                          <img
-                            src={student.avatar_url}
-                            alt={student.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <User className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
-                        )}
-                      </div>
-                      <p className="text-sm text-center font-medium truncate w-full leading-tight max-w-[90px]">
-                        {getShortName(student.name)}
-                      </p>
-                      {/* Student Badges - Conditional */}
-                      {classroom.show_badges !== false && (
-                        <div className="mt-1">
-                          <StudentBadges studentId={student.id} classroomId={classroomId || ''} />
+              <>
+                {/* Mobile: Grid Layout */}
+                <div className="grid grid-cols-3 gap-2 sm:hidden">
+                  {students.map((student) => {
+                    const hasNotes = studentsWithNotes.has(student.id);
+                    const notesCount = studentsWithNotes.get(student.id) || 0;
+                    
+                    return (
+                      <div
+                        key={student.id}
+                        className="relative flex flex-col items-center p-2 bg-card rounded-xl border-2 border-border/50 shadow-sm cursor-pointer transition-all hover:scale-105 hover:border-primary/50 active:scale-95"
+                        onClick={() => handleStudentTap({
+                          id: student.id,
+                          name: student.name,
+                          avatar_url: student.avatar_url,
+                        })}
+                      >
+                        {/* Status Icons */}
+                        <div className="absolute -top-1 right-0 flex gap-0.5">
+                          {student.special_needs && (
+                            <div className="p-0.5 bg-amber-100 dark:bg-amber-900/50 rounded-full">
+                              <HeartPulse className="h-2.5 w-2.5 text-amber-600 dark:text-amber-400" />
+                            </div>
+                          )}
+                          {hasNotes && (
+                            <div className="p-0.5 bg-blue-100 dark:bg-blue-900/50 rounded-full">
+                              <StickyNote className="h-2.5 w-2.5 text-blue-600 dark:text-blue-400" />
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-1.5 mt-1">
+                          {student.avatar_url ? (
+                            <img
+                              src={student.avatar_url}
+                              alt={student.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <User className="h-6 w-6 text-primary" />
+                          )}
+                        </div>
+                        <p className="text-[11px] text-center font-medium leading-tight line-clamp-2 w-full px-0.5">
+                          {getShortName(student.name)}
+                        </p>
+                        {/* Student Badges - Conditional */}
+                        {classroom.show_badges !== false && (
+                          <div className="mt-1">
+                            <StudentBadges studentId={student.id} classroomId={classroomId || ''} />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Desktop: Absolute Position Layout */}
+                <div 
+                  className="relative bg-muted/30 rounded-lg hidden sm:block"
+                  style={{ minHeight: containerHeight }}
+                >
+                  {students.map((student) => {
+                    const hasNotes = studentsWithNotes.has(student.id);
+                    const notesCount = studentsWithNotes.get(student.id) || 0;
+                    const position = studentPositions.get(student.id) || { x: 20, y: 20 };
+                    
+                    return (
+                      <div
+                        key={student.id}
+                        style={{
+                          position: 'absolute',
+                          left: position.x,
+                          top: position.y,
+                        }}
+                        className="relative flex flex-col items-center p-3 bg-card rounded-xl border-2 border-border/50 shadow-sm cursor-pointer transition-all hover:scale-105 hover:border-primary/50 active:scale-95"
+                        onClick={() => handleStudentTap({
+                          id: student.id,
+                          name: student.name,
+                          avatar_url: student.avatar_url,
+                        })}
+                      >
+                        {/* Status Icons */}
+                        <div className="absolute -top-1 right-0 flex gap-0.5">
+                          {student.special_needs && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="p-0.5 bg-amber-100 dark:bg-amber-900/50 rounded-full">
+                                  <HeartPulse className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>احتياجات خاصة</TooltipContent>
+                            </Tooltip>
+                          )}
+                          {hasNotes && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="p-0.5 bg-blue-100 dark:bg-blue-900/50 rounded-full">
+                                  <StickyNote className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>{notesCount} ملاحظة</TooltipContent>
+                            </Tooltip>
+                          )}
+                          {student.notes && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="p-0.5 bg-purple-100 dark:bg-purple-900/50 rounded-full">
+                                  <MessageSquare className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-48 text-right">{student.notes}</TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
+
+                        <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-2 mt-1">
+                          {student.avatar_url ? (
+                            <img
+                              src={student.avatar_url}
+                              alt={student.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <User className="h-10 w-10 text-primary" />
+                          )}
+                        </div>
+                        <p className="text-sm text-center font-medium truncate w-full leading-tight max-w-[90px]">
+                          {getShortName(student.name)}
+                        </p>
+                        {/* Student Badges - Conditional */}
+                        {classroom.show_badges !== false && (
+                          <div className="mt-1">
+                            <StudentBadges studentId={student.id} classroomId={classroomId || ''} />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </ContentCardContent>
         </ContentCard>
