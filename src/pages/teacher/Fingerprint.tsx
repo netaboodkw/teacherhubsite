@@ -107,7 +107,13 @@ const FingerprintPage = () => {
   const handleDailyNotificationToggle = (enabled: boolean) => {
     setDailyNotificationEnabled(enabled);
     setAttendancePref(enabled ? 'daily' : 'never');
-    toast.success(enabled ? 'تم تفعيل إشعار الحضور اليومي' : 'تم إيقاف إشعار الحضور اليومي');
+    toast.success(enabled ? 'تم تفعيل إشعار الحضور اليومي ✓' : 'تم إيقاف إشعار الحضور اليومي');
+  };
+
+  // Show toast when settings change
+  const handleSettingsChange = (newSettings: Partial<FingerprintSettings>, message: string) => {
+    setSettings(prev => ({ ...prev, ...newSettings }));
+    toast.success(`تم حفظ الإعدادات ✓`, { description: message });
   };
 
   useEffect(() => {
@@ -406,7 +412,7 @@ const FingerprintPage = () => {
                     <div dir="ltr">
                       <Switch
                         checked={settings.reminderEnabled}
-                        onCheckedChange={(checked) => setSettings({ ...settings, reminderEnabled: checked })}
+                        onCheckedChange={(checked) => handleSettingsChange({ reminderEnabled: checked }, checked ? 'تم تفعيل التذكيرات' : 'تم إيقاف التذكيرات')}
                       />
                     </div>
                   </div>
@@ -418,7 +424,7 @@ const FingerprintPage = () => {
                         <span className="text-sm text-muted-foreground">التنبيه قبل الانتهاء</span>
                         <Select
                           value={settings.reminderMinutesBefore.toString()}
-                          onValueChange={(value) => setSettings({ ...settings, reminderMinutesBefore: parseInt(value) })}
+                          onValueChange={(value) => handleSettingsChange({ reminderMinutesBefore: parseInt(value) }, `التنبيه قبل ${value} دقائق`)}
                         >
                           <SelectTrigger className="w-28 h-9 rounded-lg">
                             <SelectValue />
@@ -445,7 +451,7 @@ const FingerprintPage = () => {
                         <div dir="ltr">
                           <Switch
                             checked={settings.soundEnabled}
-                            onCheckedChange={(checked) => setSettings({ ...settings, soundEnabled: checked })}
+                            onCheckedChange={(checked) => handleSettingsChange({ soundEnabled: checked }, checked ? 'تم تفعيل الصوت' : 'تم إيقاف الصوت')}
                           />
                         </div>
                       </div>
@@ -821,7 +827,7 @@ const FingerprintPage = () => {
                 <div dir="ltr">
                   <Switch
                     checked={settings.reminderEnabled}
-                    onCheckedChange={(checked) => setSettings({ ...settings, reminderEnabled: checked })}
+                    onCheckedChange={(checked) => handleSettingsChange({ reminderEnabled: checked }, checked ? 'تم تفعيل التذكيرات' : 'تم إيقاف التذكيرات')}
                   />
                 </div>
               </div>
@@ -831,7 +837,7 @@ const FingerprintPage = () => {
                 <Label>التنبيه قبل انتهاء الفترة</Label>
                 <Select
                   value={settings.reminderMinutesBefore.toString()}
-                  onValueChange={(value) => setSettings({ ...settings, reminderMinutesBefore: parseInt(value) })}
+                  onValueChange={(value) => handleSettingsChange({ reminderMinutesBefore: parseInt(value) }, `التنبيه قبل ${value} دقائق`)}
                 >
                   <SelectTrigger className="h-12 rounded-xl">
                     <SelectValue />
@@ -860,7 +866,7 @@ const FingerprintPage = () => {
                   <div dir="ltr">
                     <Switch
                       checked={settings.soundEnabled}
-                      onCheckedChange={(checked) => setSettings({ ...settings, soundEnabled: checked })}
+                      onCheckedChange={(checked) => handleSettingsChange({ soundEnabled: checked }, checked ? 'تم تفعيل الصوت' : 'تم إيقاف الصوت')}
                     />
                   </div>
                 </div>
@@ -868,7 +874,7 @@ const FingerprintPage = () => {
                   <div className="flex gap-2">
                     <Select
                       value={settings.soundType}
-                      onValueChange={(value) => setSettings({ ...settings, soundType: value as SoundType })}
+                      onValueChange={(value) => handleSettingsChange({ soundType: value as SoundType }, 'تم تغيير نغمة التنبيه')}
                     >
                       <SelectTrigger className="flex-1 h-12 rounded-xl">
                         <SelectValue />
