@@ -175,6 +175,7 @@ export default function TeacherSchedule() {
           icon={Calendar}
           title="جدول الحصص"
           subtitle="عرض الجدول الأسبوعي لجميع الصفوف"
+          iconVariant="pink"
           actions={
             <div className="flex items-center gap-2">
               <PeriodReminderSettings

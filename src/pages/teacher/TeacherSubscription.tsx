@@ -264,6 +264,7 @@ export default function TeacherSubscription() {
           icon={CreditCard}
           title="الاشتراك والمدفوعات"
           subtitle="اختر الباقة المناسبة لاحتياجاتك واستمتع بجميع مميزات النظام"
+          iconVariant="success"
           actions={
             <div className="flex flex-wrap items-center gap-3">
               {getStatusBadge()}

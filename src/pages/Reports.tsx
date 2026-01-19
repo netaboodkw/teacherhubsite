@@ -223,6 +223,7 @@ export default function Reports() {
           icon={BarChart3}
           title="التقارير والتحليلات"
           subtitle="عرض وتحليل بيانات الحضور والغياب"
+          iconVariant="orange"
           actions={
             <>
               <Button variant="outline"><FileText className="w-4 h-4 ml-2" />تصدير CSV</Button>

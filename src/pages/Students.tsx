@@ -63,6 +63,7 @@ export default function Students() {
           icon={Users}
           title="الطلاب"
           subtitle={`${students.length} طالب مسجل`}
+          iconVariant="blue"
           actions={
             <>
               <ActionButton 

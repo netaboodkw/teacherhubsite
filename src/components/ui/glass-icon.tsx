@@ -68,6 +68,47 @@ const glassIconVariants = cva(
           "bg-transparent border border-border text-foreground",
           "hover:bg-muted/20",
         ].join(" "),
+        // Custom colors for pages
+        blue: [
+          "bg-blue-500 text-white",
+          "shadow-md shadow-blue-500/30",
+        ].join(" "),
+        purple: [
+          "bg-purple-500 text-white",
+          "shadow-md shadow-purple-500/30",
+        ].join(" "),
+        green: [
+          "bg-emerald-500 text-white",
+          "shadow-md shadow-emerald-500/30",
+        ].join(" "),
+        orange: [
+          "bg-orange-500 text-white",
+          "shadow-md shadow-orange-500/30",
+        ].join(" "),
+        pink: [
+          "bg-pink-500 text-white",
+          "shadow-md shadow-pink-500/30",
+        ].join(" "),
+        cyan: [
+          "bg-cyan-500 text-white",
+          "shadow-md shadow-cyan-500/30",
+        ].join(" "),
+        indigo: [
+          "bg-indigo-500 text-white",
+          "shadow-md shadow-indigo-500/30",
+        ].join(" "),
+        amber: [
+          "bg-amber-500 text-white",
+          "shadow-md shadow-amber-500/30",
+        ].join(" "),
+        rose: [
+          "bg-rose-500 text-white",
+          "shadow-md shadow-rose-500/30",
+        ].join(" "),
+        teal: [
+          "bg-teal-500 text-white",
+          "shadow-md shadow-teal-500/30",
+        ].join(" "),
       },
       size: {
         xs: "p-1.5",
@@ -123,9 +164,11 @@ const GlassIcon = React.forwardRef<HTMLDivElement, GlassIconProps>(
 GlassIcon.displayName = "GlassIcon";
 
 // Wrapper component for inline icon usage with glass effect
+export type GlassIconVariant = "default" | "secondary" | "accent" | "success" | "destructive" | "warning" | "muted" | "ghost" | "outline" | "blue" | "purple" | "green" | "orange" | "pink" | "cyan" | "indigo" | "amber" | "rose" | "teal";
+
 export interface GlassIconWrapperProps extends React.HTMLAttributes<HTMLSpanElement> {
   children: React.ReactNode;
-  variant?: "default" | "secondary" | "accent" | "success" | "destructive" | "warning" | "muted" | "ghost";
+  variant?: GlassIconVariant;
   size?: "xs" | "sm" | "default" | "lg" | "xl";
   glow?: boolean;
 }

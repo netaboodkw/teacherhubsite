@@ -66,6 +66,7 @@ export default function NotificationSettings() {
           icon={Bell}
           title="إعدادات الإشعارات"
           subtitle="تخصيص إشعارات التذكير والتنبيهات"
+          iconVariant="amber"
         />
 
         {/* Platform Info */}

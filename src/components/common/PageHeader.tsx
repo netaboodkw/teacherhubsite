@@ -1,6 +1,6 @@
 import React from 'react';
 import { LucideIcon } from 'lucide-react';
-import { GlassIcon } from '@/components/ui/glass-icon';
+import { GlassIcon, type GlassIconVariant } from '@/components/ui/glass-icon';
 import { cn } from '@/lib/utils';
 
 interface PageHeaderProps {
@@ -9,6 +9,7 @@ interface PageHeaderProps {
   subtitle?: string;
   actions?: React.ReactNode;
   className?: string;
+  iconVariant?: GlassIconVariant;
 }
 
 /**
@@ -16,14 +17,14 @@ interface PageHeaderProps {
  * 
  * Always shows a colored icon next to the title for consistency
  */
-export function PageHeader({ icon, title, subtitle, actions, className }: PageHeaderProps) {
+export function PageHeader({ icon, title, subtitle, actions, className, iconVariant = "default" }: PageHeaderProps) {
   return (
     <div className={cn(
       "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4",
       className
     )}>
       <div className="flex items-center gap-3">
-        <GlassIcon icon={icon} variant="default" size="lg" />
+        <GlassIcon icon={icon} variant={iconVariant} size="lg" />
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-foreground">{title}</h1>
           {subtitle && (

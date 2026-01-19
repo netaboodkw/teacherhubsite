@@ -44,6 +44,7 @@ export default function Classrooms() {
           icon={School}
           title="الصفوف الدراسية"
           subtitle="إدارة جميع صفوفك الدراسية"
+          iconVariant="purple"
           actions={
             <Link to="/teacher/classrooms/new">
               <ActionButton className={isLiquidGlass ? "" : "gradient-hero shadow-md hover:shadow-lg transition-shadow"}>

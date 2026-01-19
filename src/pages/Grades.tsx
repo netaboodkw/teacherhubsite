@@ -1028,6 +1028,7 @@ export default function Grades() {
           icon={BookOpen}
           title="سجل الدرجات"
           subtitle={hasStructure ? undefined : "تتبع درجات الطلاب الأسبوعية"}
+          iconVariant="indigo"
           actions={
             <div className="flex items-center gap-3 flex-wrap">
               <Select value={selectedClassroom} onValueChange={setSelectedClassroom}>
