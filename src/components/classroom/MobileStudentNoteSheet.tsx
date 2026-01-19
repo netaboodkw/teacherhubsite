@@ -1,12 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MobileSheet, MobileSheetFooter } from '@/components/ui/mobile-sheet';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { User, Plus, Minus, MessageSquare, Loader2, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { User, Plus, Minus, MessageSquare, Loader2, ThumbsUp, ThumbsDown, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
 interface SelectedStudent {
   id: string;
   name: string;
@@ -46,9 +46,17 @@ export function MobileStudentNoteSheet({
   onSave,
   saving
 }: MobileStudentNoteSheetProps) {
+  const navigate = useNavigate();
   const [noteType, setNoteType] = useState<'positive' | 'negative' | 'note'>('positive');
   const [noteDescription, setNoteDescription] = useState('');
   const [activeTab, setActiveTab] = useState<'positive' | 'negative'>('positive');
+
+  const handleOpenStudentProfile = () => {
+    if (student) {
+      onOpenChange(false);
+      navigate(`/teacher/students/${student.id}`);
+    }
+  };
 
   const handleQuickNote = async (note: string, type: 'positive' | 'negative') => {
     await onSave(type, note);
@@ -86,6 +94,15 @@ export function MobileStudentNoteSheet({
             <h2 className="text-xl font-bold truncate">{student?.name}</h2>
             <p className="text-muted-foreground">إضافة ملاحظة سلوكية</p>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleOpenStudentProfile}
+            className="shrink-0 h-10 w-10"
+            title="فتح ملف الطالب"
+          >
+            <ExternalLink className="h-5 w-5" />
+          </Button>
         </div>
 
         {/* Quick Actions Tabs */}

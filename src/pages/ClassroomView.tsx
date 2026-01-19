@@ -406,15 +406,22 @@ export default function ClassroomView() {
     return parts.slice(0, 2).join(' ');
   };
 
-  // Calculate container height based on positions
+  // Calculate container height based on positions and number of students
   const containerHeight = useMemo(() => {
-    if (studentPositions.size === 0) return 400;
+    const cols = 5;
+    const cardHeight = 130;
+    const gap = 20;
+    const rows = Math.ceil(students.length / cols);
+    const defaultHeight = rows * (cardHeight + gap) + gap + 100; // Extra space for dragging
+    
+    if (studentPositions.size === 0) return Math.max(500, defaultHeight);
+    
     let maxY = 0;
     studentPositions.forEach(pos => {
       if (pos.y > maxY) maxY = pos.y;
     });
-    return Math.max(400, maxY + 150);
-  }, [studentPositions]);
+    return Math.max(500, maxY + 180, defaultHeight);
+  }, [studentPositions, students.length]);
 
   if (loadingClassroom) {
     return (
@@ -734,22 +741,28 @@ export default function ClassroomView() {
             ) : activeTab === 'arrange' ? (
               <div 
                 ref={arrangeContainerRef}
-                className="relative bg-muted/30 rounded-xl border-2 border-dashed border-muted-foreground/20"
-                style={{ minHeight: containerHeight }}
+                className="relative bg-muted/30 rounded-xl border-2 border-dashed border-muted-foreground/20 overflow-visible"
+                style={{ minHeight: containerHeight, height: containerHeight }}
               >
-                {students.map((student) => {
-                  const position = studentPositions.get(student.id) || { x: 20, y: 20 };
-                  return (
-                    <DraggableStudent
-                      key={student.id}
-                      student={student}
-                      position={position}
-                      onPositionChange={handlePositionChange}
-                      getShortName={getShortName}
-                      containerRef={arrangeContainerRef}
-                    />
-                  );
-                })}
+                {loadingPositions ? (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  students.map((student) => {
+                    const position = studentPositions.get(student.id) || { x: 20, y: 20 };
+                    return (
+                      <DraggableStudent
+                        key={student.id}
+                        student={student}
+                        position={position}
+                        onPositionChange={handlePositionChange}
+                        getShortName={getShortName}
+                        containerRef={arrangeContainerRef}
+                      />
+                    );
+                  })
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-3">
