@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
 import { 
@@ -7,7 +7,8 @@ import {
   School, 
   Users, 
   BookOpen,
-  MoreHorizontal
+  MoreHorizontal,
+  LogOut
 } from 'lucide-react';
 import {
   Sheet,
@@ -28,6 +29,8 @@ import {
 } from 'lucide-react';
 
 import { GlassIcon } from '@/components/ui/glass-icon';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 // Nav icon wrapper - uses GlassIcon for active state with color
 interface NavIconProps {
@@ -73,6 +76,7 @@ interface GlassBottomNavProps {
 
 export function GlassBottomNav({ className }: GlassBottomNavProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [sheetOpen, setSheetOpen] = React.useState(false);
 
   const isActive = (href: string) => {
@@ -83,6 +87,16 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
   };
 
   const isMoreActive = moreItems.some(item => isActive(item.href));
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast.success('تم تسجيل الخروج بنجاح');
+      navigate('/');
+    } catch (error) {
+      toast.error('حدث خطأ أثناء تسجيل الخروج');
+    }
+  };
 
   return (
     <nav
@@ -175,6 +189,27 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
                   </Link>
                 );
               })}
+            </div>
+            
+            {/* Logout Button */}
+            <div className="pt-4 border-t border-border/30">
+              <button
+                onClick={() => {
+                  setSheetOpen(false);
+                  handleLogout();
+                }}
+                className={cn(
+                  "w-full flex items-center justify-center gap-3 p-4",
+                  "rounded-xl transition-all duration-200",
+                  "bg-destructive/10 hover:bg-destructive/20",
+                  "active:scale-95"
+                )}
+              >
+                <LogOut className="w-5 h-5 text-destructive" />
+                <span className="text-sm font-semibold text-destructive font-cairo">
+                  تسجيل الخروج
+                </span>
+              </button>
             </div>
           </SheetContent>
         </Sheet>
