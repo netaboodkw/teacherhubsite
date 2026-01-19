@@ -1,67 +1,75 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Fingerprint as FingerprintIcon, Clock, Bell, BellRing, Volume2, VolumeX, AlertTriangle, CheckCircle2, Timer, Info } from 'lucide-react';
+import { 
+  Fingerprint as FingerprintIcon, 
+  Clock, 
+  Bell, 
+  BellRing, 
+  Volume2, 
+  VolumeX, 
+  AlertTriangle, 
+  CheckCircle2, 
+  Timer, 
+  Info,
+  ChevronLeft,
+  Settings,
+  RotateCcw
+} from 'lucide-react';
 import { playNotificationSound, soundOptions, SoundType, previewSound } from '@/lib/notificationSounds';
-import { format, addHours, addMinutes, isWithinInterval, differenceInMinutes, differenceInSeconds } from 'date-fns';
-import { ar } from 'date-fns/locale';
+import { format, addHours, addMinutes, differenceInMinutes, differenceInSeconds } from 'date-fns';
 import { toast } from 'sonner';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { PageHeader } from '@/components/common/PageHeader';
 import { useNativeNotifications } from '@/hooks/useNativeNotifications';
 import { useFingerprintScheduler } from '@/hooks/useFingerprintScheduler';
 import { getAttendancePref, setAttendancePref } from '@/components/notifications/AttendanceNotificationBanner';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
+import { cn } from '@/lib/utils';
 
 interface FingerprintSettings {
-  attendanceTime: string; // وقت الحضور الفعلي
+  attendanceTime: string;
   reminderEnabled: boolean;
-  reminderMinutesBefore: number; // كم دقيقة قبل انتهاء الفترة
+  reminderMinutesBefore: number;
   soundEnabled: boolean;
   soundType: SoundType;
   autoDetectAttendance: boolean;
 }
 
-// دالة للحصول على التوقيت الكويتي الحالي
 const getKuwaitTime = (): Date => {
   const now = new Date();
-  // Kuwait is UTC+3
-  const kuwaitOffset = 3 * 60; // in minutes
+  const kuwaitOffset = 3 * 60;
   const localOffset = now.getTimezoneOffset();
   const totalOffset = localOffset + kuwaitOffset;
   return new Date(now.getTime() + totalOffset * 60 * 1000);
 };
 
-// حساب فترة بصمة التواجد
 const calculateFingerprintWindow = (attendanceTime: string): { start: Date; end: Date } | null => {
   if (!attendanceTime) return null;
   
   const [hours, minutes] = attendanceTime.split(':').map(Number);
   const now = getKuwaitTime();
   
-  // إنشاء تاريخ الحضور لليوم
   const attendanceDate = new Date(now);
   attendanceDate.setHours(hours, minutes, 0, 0);
   
-  // بداية الفترة = الحضور + ساعتين + دقيقة واحدة
   const windowStart = addMinutes(addHours(attendanceDate, 2), 1);
-  
-  // نهاية الفترة = بداية الفترة + 59 دقيقة (إجمالي 60 دقيقة)
   const windowEnd = addMinutes(windowStart, 59);
   
   return { start: windowStart, end: windowEnd };
 };
 
-// حالة البصمة
 type FingerprintStatus = 'waiting' | 'active' | 'urgent' | 'expired' | 'completed';
 
+// Common attendance times
+const commonTimes = ['06:30', '07:00', '07:30', '08:00'];
+
 const FingerprintPage = () => {
-  const { sendImmediateNotification, isNative, permissionGranted, triggerHaptics } = useNativeNotifications();
+  const isMobile = useIsMobile();
+  const { sendImmediateNotification, triggerHaptics } = useNativeNotifications();
   
   const [settings, setSettings] = useState<FingerprintSettings>(() => {
     const saved = localStorage.getItem('fingerprint-settings');
@@ -83,15 +91,14 @@ const FingerprintPage = () => {
   const [fingerprintDone, setFingerprintDone] = useState(false);
   const [lastReminderTime, setLastReminderTime] = useState<Date | null>(null);
   const [dailyNotificationEnabled, setDailyNotificationEnabled] = useState(() => getAttendancePref() === 'daily');
+  const [showSettings, setShowSettings] = useState(false);
 
-  // تبديل حالة إشعار الحضور اليومي
   const handleDailyNotificationToggle = (enabled: boolean) => {
     setDailyNotificationEnabled(enabled);
     setAttendancePref(enabled ? 'daily' : 'never');
     toast.success(enabled ? 'تم تفعيل إشعار الحضور اليومي' : 'تم إيقاف إشعار الحضور اليومي');
   };
 
-  // تحديث الوقت كل ثانية
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(getKuwaitTime());
@@ -99,12 +106,10 @@ const FingerprintPage = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // حفظ الإعدادات
   useEffect(() => {
     localStorage.setItem('fingerprint-settings', JSON.stringify(settings));
   }, [settings]);
 
-  // إعادة تعيين حالة البصمة في بداية اليوم
   useEffect(() => {
     const checkNewDay = () => {
       const lastDoneDate = localStorage.getItem('fingerprint-done-date');
@@ -118,44 +123,36 @@ const FingerprintPage = () => {
     checkNewDay();
   }, [currentTime]);
 
-  // حساب فترة البصمة
   const fingerprintWindow = useMemo(() => {
     return calculateFingerprintWindow(settings.attendanceTime);
   }, [settings.attendanceTime]);
 
-  // حساب الحالة والوقت المتبقي
-  const { timeRemaining, minutesRemaining, secondsRemaining } = useMemo(() => {
+  const { timeRemaining, minutesRemaining } = useMemo(() => {
     if (!fingerprintWindow || fingerprintDone) {
-      return { timeRemaining: '', minutesRemaining: 0, secondsRemaining: 0 };
+      return { timeRemaining: '', minutesRemaining: 0 };
     }
 
     const { start, end } = fingerprintWindow;
     
     if (currentTime < start) {
-      // قبل بدء الفترة
       const mins = differenceInMinutes(start, currentTime);
       const secs = differenceInSeconds(start, currentTime) % 60;
       return {
-        timeRemaining: `${mins} دقيقة ${secs} ثانية حتى بداية الفترة`,
+        timeRemaining: `${mins}:${secs.toString().padStart(2, '0')}`,
         minutesRemaining: mins,
-        secondsRemaining: secs,
       };
     } else if (currentTime >= start && currentTime <= end) {
-      // داخل الفترة
       const mins = differenceInMinutes(end, currentTime);
       const secs = differenceInSeconds(end, currentTime) % 60;
       return {
-        timeRemaining: `${mins} دقيقة ${secs} ثانية متبقية`,
+        timeRemaining: `${mins}:${secs.toString().padStart(2, '0')}`,
         minutesRemaining: mins,
-        secondsRemaining: secs,
       };
     } else {
-      // بعد انتهاء الفترة
-      return { timeRemaining: 'انتهت الفترة', minutesRemaining: 0, secondsRemaining: 0 };
+      return { timeRemaining: '00:00', minutesRemaining: 0 };
     }
   }, [fingerprintWindow, currentTime, fingerprintDone]);
 
-  // تحديث الحالة
   useEffect(() => {
     if (fingerprintDone) {
       setStatus('completed');
@@ -182,32 +179,23 @@ const FingerprintPage = () => {
     }
   }, [fingerprintWindow, currentTime, fingerprintDone, minutesRemaining]);
 
-  // تشغيل التنبيه الصوتي وإرسال إشعار
   const playReminder = useCallback(async (title: string, body: string) => {
-    // تشغيل الصوت داخل التطبيق
     if (settings.soundEnabled) {
       playNotificationSound(settings.soundType, true);
     }
     
-    // إرسال إشعار محلي (يعمل حتى لو التطبيق في الخلفية)
     try {
       await sendImmediateNotification(title, body);
-      console.log('Fingerprint notification sent:', title);
     } catch (error) {
       console.error('Failed to send fingerprint notification:', error);
     }
     
-    // اهتزاز
     triggerHaptics('heavy');
   }, [settings.soundEnabled, settings.soundType, sendImmediateNotification, triggerHaptics]);
 
-  // نظام التذكير
   useEffect(() => {
     if (!settings.reminderEnabled || !fingerprintWindow || fingerprintDone) return;
 
-    const { start, end } = fingerprintWindow;
-    
-    // تذكير عند بداية الفترة
     if (status === 'active' && !lastReminderTime) {
       playReminder('⏰ بدأت فترة بصمة التواجد!', 'يرجى التوجه لجهاز البصمة الآن');
       setLastReminderTime(currentTime);
@@ -217,12 +205,10 @@ const FingerprintPage = () => {
       });
     }
 
-    // تذكير عند اقتراب انتهاء الفترة
     if (status === 'urgent' && minutesRemaining === settings.reminderMinutesBefore) {
       const now = currentTime.getTime();
       const lastReminder = lastReminderTime?.getTime() || 0;
       
-      // تأكد من عدم تكرار التنبيه في نفس الدقيقة
       if (now - lastReminder > 55000) {
         playReminder('⚠️ تنبيه عاجل!', `متبقي ${minutesRemaining} دقيقة على انتهاء فترة البصمة`);
         setLastReminderTime(currentTime);
@@ -233,7 +219,6 @@ const FingerprintPage = () => {
       }
     }
 
-    // تذكير كل 5 دقائق خلال الفترة العاجلة
     if (status === 'urgent' && minutesRemaining > 0 && minutesRemaining % 5 === 0 && minutesRemaining !== settings.reminderMinutesBefore) {
       const now = currentTime.getTime();
       const lastReminder = lastReminderTime?.getTime() || 0;
@@ -245,318 +230,621 @@ const FingerprintPage = () => {
     }
   }, [status, minutesRemaining, settings, fingerprintWindow, fingerprintDone, lastReminderTime, playReminder, currentTime]);
 
-
-  // تكامل مع جدولة التنبيهات المسبقة
   const { scheduleFingerprintNotifications, cancelFingerprintNotifications, markAttendanceTimeSet } = useFingerprintScheduler();
   
-  // جدولة التنبيهات عند تغيير الإعدادات
   useEffect(() => {
     if (settings.reminderEnabled && !fingerprintDone) {
       scheduleFingerprintNotifications(settings);
     }
   }, [settings.attendanceTime, settings.reminderEnabled, settings.reminderMinutesBefore, fingerprintDone, scheduleFingerprintNotifications, settings]);
 
-  // تسجيل إتمام البصمة
   const markFingerprintDone = async () => {
     setFingerprintDone(true);
     localStorage.setItem('fingerprint-done-date', format(currentTime, 'yyyy-MM-dd'));
-    
-    // إلغاء التنبيهات المجدولة
     await cancelFingerprintNotifications();
-    
+    triggerHaptics('heavy');
     toast.success('تم تسجيل البصمة بنجاح! ✅');
   };
 
-  // إعادة تعيين
   const resetFingerprint = async () => {
     setFingerprintDone(false);
     setLastReminderTime(null);
     localStorage.removeItem('fingerprint-done-date');
-    
-    // إعادة جدولة التنبيهات
     await scheduleFingerprintNotifications(settings);
-    
     toast.info('تم إعادة تعيين حالة البصمة');
   };
   
-  // تحديث وقت الحضور
   const handleAttendanceTimeChange = async (time: string) => {
     const newSettings = { ...settings, attendanceTime: time };
     setSettings(newSettings);
     markAttendanceTimeSet();
     
-    // إعادة جدولة التنبيهات مع الوقت الجديد
     if (newSettings.reminderEnabled && !fingerprintDone) {
       await scheduleFingerprintNotifications(newSettings);
-      toast.success('تم تحديث وقت الحضور وجدولة التنبيهات');
+      toast.success('تم تحديث وقت الحضور');
     }
   };
 
-  // معاينة الصوت
   const handlePreviewSound = () => {
     previewSound(settings.soundType);
   };
 
-  const getStatusBadge = () => {
+  const getStatusConfig = () => {
     switch (status) {
       case 'waiting':
-        return <Badge variant="secondary" className="text-lg px-4 py-2"><Clock className="w-4 h-4 ml-2" />في انتظار بدء الفترة</Badge>;
+        return {
+          color: 'from-secondary/20 to-secondary/5',
+          borderColor: 'border-secondary/30',
+          iconColor: 'text-muted-foreground',
+          label: 'في الانتظار',
+          sublabel: 'لم تبدأ الفترة بعد',
+          icon: Clock,
+        };
       case 'active':
-        return <Badge className="text-lg px-4 py-2 bg-green-500 hover:bg-green-600"><CheckCircle2 className="w-4 h-4 ml-2" />الفترة مفتوحة الآن</Badge>;
+        return {
+          color: 'from-emerald-500/20 to-emerald-500/5',
+          borderColor: 'border-emerald-500/40',
+          iconColor: 'text-emerald-500',
+          label: 'الفترة مفتوحة',
+          sublabel: 'يمكنك تسجيل البصمة الآن',
+          icon: CheckCircle2,
+        };
       case 'urgent':
-        return <Badge variant="destructive" className="text-lg px-4 py-2 animate-pulse"><AlertTriangle className="w-4 h-4 ml-2" />وقت عاجل!</Badge>;
+        return {
+          color: 'from-destructive/20 to-destructive/5',
+          borderColor: 'border-destructive/40',
+          iconColor: 'text-destructive',
+          label: 'وقت عاجل!',
+          sublabel: 'سارع لتسجيل البصمة',
+          icon: AlertTriangle,
+        };
       case 'expired':
-        return <Badge variant="destructive" className="text-lg px-4 py-2"><AlertTriangle className="w-4 h-4 ml-2" />انتهت الفترة</Badge>;
+        return {
+          color: 'from-destructive/10 to-destructive/5',
+          borderColor: 'border-destructive/30',
+          iconColor: 'text-destructive',
+          label: 'انتهت الفترة',
+          sublabel: 'فاتك وقت البصمة',
+          icon: AlertTriangle,
+        };
       case 'completed':
-        return <Badge className="text-lg px-4 py-2 bg-primary"><CheckCircle2 className="w-4 h-4 ml-2" />تم تسجيل البصمة ✓</Badge>;
+        return {
+          color: 'from-primary/20 to-primary/5',
+          borderColor: 'border-primary/40',
+          iconColor: 'text-primary',
+          label: 'تم التسجيل ✓',
+          sublabel: 'أحسنت! سجلت البصمة',
+          icon: CheckCircle2,
+        };
     }
   };
 
-  return (
-    <TeacherLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <PageHeader
-          icon={FingerprintIcon}
-          title="بصمة التواجد"
-          subtitle="نظام تذكير بصمة التواجد للمعلمين - الكويت"
-          iconVariant="rose"
-          actions={
-            <div className="text-left">
-              <p className="text-sm text-muted-foreground">التوقيت الحالي (الكويت)</p>
-              <p className="text-2xl font-mono font-bold text-foreground">
-                {format(currentTime, 'HH:mm:ss')}
+  const statusConfig = getStatusConfig();
+  const StatusIcon = statusConfig.icon;
+
+  // Mobile Layout
+  if (isMobile) {
+    return (
+      <TeacherLayout>
+        <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+          {/* iOS-style Header */}
+          <div className="sticky top-0 z-10 backdrop-blur-xl bg-background/80 border-b border-border/50">
+            <div className="flex items-center justify-between px-4 py-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <FingerprintIcon className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h1 className="font-bold text-lg">بصمة التواجد</h1>
+                  <p className="text-xs text-muted-foreground">التوقيت الكويتي</p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full"
+                onClick={() => setShowSettings(!showSettings)}
+              >
+                <Settings className={cn("w-5 h-5 transition-transform", showSettings && "rotate-90")} />
+              </Button>
+            </div>
+          </div>
+
+          <div className="p-4 space-y-4 pb-24">
+            {/* Current Time Display */}
+            <div className="text-center py-2">
+              <p className="text-5xl font-mono font-bold tracking-tight">
+                {format(currentTime, 'HH:mm')}
+                <span className="text-2xl text-muted-foreground">:{format(currentTime, 'ss')}</span>
               </p>
             </div>
-          }
-        />
 
-        {/* Info Alert */}
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertTitle>ما هي بصمة التواجد؟</AlertTitle>
-          <AlertDescription>
-            وفقاً للقرار رقم 6 لسنة 2024، يجب على المعلم تسجيل بصمة التواجد خلال <strong>60 دقيقة</strong> تبدأ بعد مرور <strong>ساعتين</strong> من وقت حضوره الفعلي.
-            <br />
-            مثال: إذا حضرت الساعة 7:00 صباحاً، فإن فترة البصمة تكون من 9:01 إلى 10:00 صباحاً.
-          </AlertDescription>
-        </Alert>
-
-        {/* Status Card */}
-        <Card className={`border-2 ${status === 'urgent' ? 'border-destructive bg-destructive/5' : status === 'active' ? 'border-green-500 bg-green-500/5' : status === 'completed' ? 'border-primary bg-primary/5' : ''}`}>
-          <CardHeader className="text-center pb-2">
-            <CardTitle className="text-2xl">حالة البصمة</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center space-y-6">
-            <div className="flex justify-center">
-              {getStatusBadge()}
-            </div>
-
-            {fingerprintWindow && !fingerprintDone && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
-                  <div className="bg-muted rounded-lg p-4">
-                    <p className="text-sm text-muted-foreground">بداية الفترة</p>
-                    <p className="text-xl font-bold">{format(fingerprintWindow.start, 'HH:mm')}</p>
+            {/* Status Card */}
+            <GlassCard className={cn(
+              "relative overflow-hidden",
+              "bg-gradient-to-br",
+              statusConfig.color,
+              statusConfig.borderColor,
+              status === 'urgent' && "animate-pulse"
+            )}>
+              <GlassCardContent className="pt-6 pb-6">
+                <div className="flex flex-col items-center gap-4">
+                  {/* Status Icon */}
+                  <div className={cn(
+                    "w-20 h-20 rounded-full flex items-center justify-center",
+                    "bg-background/60 backdrop-blur-sm shadow-lg",
+                    status === 'completed' && "ring-4 ring-primary/30"
+                  )}>
+                    <StatusIcon className={cn("w-10 h-10", statusConfig.iconColor)} />
                   </div>
-                  <div className="bg-muted rounded-lg p-4">
-                    <p className="text-sm text-muted-foreground">نهاية الفترة</p>
-                    <p className="text-xl font-bold">{format(fingerprintWindow.end, 'HH:mm')}</p>
+
+                  {/* Status Text */}
+                  <div className="text-center">
+                    <h2 className="text-2xl font-bold">{statusConfig.label}</h2>
+                    <p className="text-muted-foreground">{statusConfig.sublabel}</p>
+                  </div>
+
+                  {/* Time Remaining */}
+                  {fingerprintWindow && !fingerprintDone && status !== 'expired' && (
+                    <div className="w-full mt-2">
+                      <div className="flex justify-between items-center bg-background/40 rounded-2xl p-4">
+                        <div className="text-center flex-1">
+                          <p className="text-xs text-muted-foreground mb-1">البداية</p>
+                          <p className="text-xl font-bold font-mono">{format(fingerprintWindow.start, 'HH:mm')}</p>
+                        </div>
+                        <div className="h-12 w-px bg-border/50" />
+                        <div className="text-center flex-1">
+                          <Timer className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
+                          <p className="text-xl font-bold font-mono">{timeRemaining}</p>
+                        </div>
+                        <div className="h-12 w-px bg-border/50" />
+                        <div className="text-center flex-1">
+                          <p className="text-xs text-muted-foreground mb-1">النهاية</p>
+                          <p className="text-xl font-bold font-mono">{format(fingerprintWindow.end, 'HH:mm')}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Button */}
+                  <div className="w-full mt-2">
+                    {!fingerprintDone ? (
+                      <Button 
+                        size="lg" 
+                        onClick={markFingerprintDone}
+                        className="w-full h-14 text-lg rounded-2xl shadow-lg"
+                        disabled={status === 'waiting'}
+                      >
+                        <CheckCircle2 className="w-6 h-6 ml-2" />
+                        تم تسجيل البصمة
+                      </Button>
+                    ) : (
+                      <Button 
+                        size="lg" 
+                        variant="outline"
+                        onClick={resetFingerprint}
+                        className="w-full h-14 text-lg rounded-2xl"
+                      >
+                        <RotateCcw className="w-5 h-5 ml-2" />
+                        إعادة تعيين
+                      </Button>
+                    )}
                   </div>
                 </div>
+              </GlassCardContent>
+            </GlassCard>
 
-                {timeRemaining && (
-                  <div className={`text-center p-4 rounded-lg ${status === 'urgent' ? 'bg-destructive/10 text-destructive' : 'bg-muted'}`}>
-                    <Timer className="w-6 h-6 mx-auto mb-2" />
-                    <p className="text-2xl font-bold">{timeRemaining}</p>
+            {/* Quick Time Selection */}
+            <GlassCard>
+              <GlassCardHeader className="pb-2">
+                <GlassCardTitle className="text-base flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  وقت الحضور
+                </GlassCardTitle>
+              </GlassCardHeader>
+              <GlassCardContent>
+                <div className="grid grid-cols-4 gap-2 mb-3">
+                  {commonTimes.map((time) => (
+                    <Button
+                      key={time}
+                      variant={settings.attendanceTime === time ? 'default' : 'outline'}
+                      size="lg"
+                      onClick={() => handleAttendanceTimeChange(time)}
+                      className="font-mono text-base h-12 rounded-xl"
+                    >
+                      {time}
+                    </Button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="time"
+                    value={settings.attendanceTime}
+                    onChange={(e) => handleAttendanceTimeChange(e.target.value)}
+                    className="flex-1 h-12 font-mono text-lg rounded-xl text-center"
+                  />
+                </div>
+              </GlassCardContent>
+            </GlassCard>
+
+            {/* Settings Section */}
+            {showSettings && (
+              <GlassCard>
+                <GlassCardHeader className="pb-2">
+                  <GlassCardTitle className="text-base flex items-center gap-2">
+                    <Bell className="w-4 h-4" />
+                    إعدادات التنبيهات
+                  </GlassCardTitle>
+                </GlassCardHeader>
+                <GlassCardContent className="space-y-4">
+                  {/* Daily Notification */}
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-primary/5 border border-primary/20">
+                    <div className="flex-1">
+                      <Label className="font-semibold">إشعار الحضور اليومي</Label>
+                      <p className="text-xs text-muted-foreground">عند فتح التطبيق</p>
+                    </div>
+                    <div dir="ltr">
+                      <Switch
+                        checked={dailyNotificationEnabled}
+                        onCheckedChange={handleDailyNotificationToggle}
+                      />
+                    </div>
                   </div>
-                )}
-              </div>
+
+                  {/* Reminder Toggle */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <Label>تفعيل التذكيرات</Label>
+                      <p className="text-xs text-muted-foreground">تنبيهات بداية ونهاية الفترة</p>
+                    </div>
+                    <div dir="ltr">
+                      <Switch
+                        checked={settings.reminderEnabled}
+                        onCheckedChange={(checked) => setSettings({ ...settings, reminderEnabled: checked })}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Reminder Time */}
+                  <div className="space-y-2">
+                    <Label className="text-sm">التنبيه قبل انتهاء الفترة</Label>
+                    <Select
+                      value={settings.reminderMinutesBefore.toString()}
+                      onValueChange={(value) => setSettings({ ...settings, reminderMinutesBefore: parseInt(value) })}
+                    >
+                      <SelectTrigger className="h-12 rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5 دقائق</SelectItem>
+                        <SelectItem value="10">10 دقائق</SelectItem>
+                        <SelectItem value="15">15 دقيقة</SelectItem>
+                        <SelectItem value="20">20 دقيقة</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Sound Toggle */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {settings.soundEnabled ? (
+                        <Volume2 className="w-5 h-5 text-primary" />
+                      ) : (
+                        <VolumeX className="w-5 h-5 text-muted-foreground" />
+                      )}
+                      <div>
+                        <Label>التنبيه الصوتي</Label>
+                        <p className="text-xs text-muted-foreground">تشغيل صوت عند التذكير</p>
+                      </div>
+                    </div>
+                    <div dir="ltr">
+                      <Switch
+                        checked={settings.soundEnabled}
+                        onCheckedChange={(checked) => setSettings({ ...settings, soundEnabled: checked })}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Sound Type */}
+                  {settings.soundEnabled && (
+                    <div className="flex gap-2">
+                      <Select
+                        value={settings.soundType}
+                        onValueChange={(value) => setSettings({ ...settings, soundType: value as SoundType })}
+                      >
+                        <SelectTrigger className="flex-1 h-12 rounded-xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {soundOptions.map((sound) => (
+                            <SelectItem key={sound.id} value={sound.id}>
+                              {sound.nameAr}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl" onClick={handlePreviewSound}>
+                        <BellRing className="w-5 h-5" />
+                      </Button>
+                    </div>
+                  )}
+                </GlassCardContent>
+              </GlassCard>
             )}
 
-            <div className="flex justify-center gap-4">
-              {!fingerprintDone ? (
-                <Button 
-                  size="lg" 
-                  onClick={markFingerprintDone}
-                  className="text-lg px-8"
-                  disabled={status === 'waiting'}
-                >
-                  <CheckCircle2 className="w-5 h-5 ml-2" />
-                  تم تسجيل البصمة
-                </Button>
-              ) : (
-                <Button 
-                  size="lg" 
-                  variant="outline"
-                  onClick={resetFingerprint}
-                  className="text-lg px-8"
-                >
-                  إعادة تعيين
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+            {/* Info Card */}
+            <GlassCard className="bg-muted/30">
+              <GlassCardContent className="pt-4">
+                <div className="flex gap-3">
+                  <Info className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+                  <div className="text-sm text-muted-foreground">
+                    <p className="font-medium mb-1">القرار رقم 6 لسنة 2024</p>
+                    <p>بصمة التواجد خلال 60 دقيقة بعد ساعتين من الحضور</p>
+                  </div>
+                </div>
+              </GlassCardContent>
+            </GlassCard>
+          </div>
+        </div>
+      </TeacherLayout>
+    );
+  }
 
-        {/* Settings Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="w-5 h-5" />
-              إعدادات التذكير
-            </CardTitle>
-            <CardDescription>
-              ضبط وقت الحضور وإعدادات التنبيهات الصوتية
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* إشعار تذكير الحضور اليومي */}
-            <div className="flex items-center justify-between p-4 rounded-lg bg-primary/5 border border-primary/20">
-              <div className="space-y-0.5">
-                <Label className="text-base font-semibold">إشعار تذكير الحضور اليومي</Label>
-                <p className="text-sm text-muted-foreground">
-                  عرض إشعار عند فتح التطبيق لتسجيل وقت الحضور
-                </p>
+  // Desktop Layout
+  return (
+    <TeacherLayout>
+      <div className="max-w-4xl mx-auto p-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <FingerprintIcon className="w-7 h-7 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">بصمة التواجد</h1>
+              <p className="text-muted-foreground">نظام تذكير بصمة التواجد - الكويت</p>
+            </div>
+          </div>
+          <div className="text-left">
+            <p className="text-sm text-muted-foreground">التوقيت الكويتي</p>
+            <p className="text-3xl font-mono font-bold">
+              {format(currentTime, 'HH:mm:ss')}
+            </p>
+          </div>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-3 gap-6">
+          {/* Status Card - Takes 2 columns */}
+          <GlassCard className={cn(
+            "col-span-2 relative overflow-hidden",
+            "bg-gradient-to-br",
+            statusConfig.color,
+            statusConfig.borderColor,
+            status === 'urgent' && "animate-pulse"
+          )}>
+            <GlassCardContent className="pt-8 pb-8">
+              <div className="flex items-center gap-8">
+                {/* Status Icon */}
+                <div className={cn(
+                  "w-28 h-28 rounded-3xl flex items-center justify-center",
+                  "bg-background/60 backdrop-blur-sm shadow-xl",
+                  status === 'completed' && "ring-4 ring-primary/30"
+                )}>
+                  <StatusIcon className={cn("w-14 h-14", statusConfig.iconColor)} />
+                </div>
+
+                <div className="flex-1">
+                  {/* Status Text */}
+                  <h2 className="text-3xl font-bold mb-1">{statusConfig.label}</h2>
+                  <p className="text-lg text-muted-foreground mb-4">{statusConfig.sublabel}</p>
+
+                  {/* Time Info */}
+                  {fingerprintWindow && !fingerprintDone && status !== 'expired' && (
+                    <div className="flex items-center gap-6 text-lg">
+                      <div>
+                        <span className="text-muted-foreground ml-2">البداية:</span>
+                        <span className="font-mono font-bold">{format(fingerprintWindow.start, 'HH:mm')}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground ml-2">النهاية:</span>
+                        <span className="font-mono font-bold">{format(fingerprintWindow.end, 'HH:mm')}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Timer className="w-5 h-5" />
+                        <span className="font-mono font-bold text-2xl">{timeRemaining}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Button */}
+                  <div className="mt-6">
+                    {!fingerprintDone ? (
+                      <Button 
+                        size="lg" 
+                        onClick={markFingerprintDone}
+                        className="h-14 px-10 text-lg rounded-xl shadow-lg"
+                        disabled={status === 'waiting'}
+                      >
+                        <CheckCircle2 className="w-6 h-6 ml-2" />
+                        تم تسجيل البصمة
+                      </Button>
+                    ) : (
+                      <Button 
+                        size="lg" 
+                        variant="outline"
+                        onClick={resetFingerprint}
+                        className="h-14 px-10 text-lg rounded-xl"
+                      >
+                        <RotateCcw className="w-5 h-5 ml-2" />
+                        إعادة تعيين
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
-              <Switch
-                checked={dailyNotificationEnabled}
-                onCheckedChange={handleDailyNotificationToggle}
-              />
-            </div>
+            </GlassCardContent>
+          </GlassCard>
 
-            {/* وقت الحضور */}
-            <div className="space-y-2">
-              <Label htmlFor="attendanceTime">وقت الحضور الفعلي</Label>
+          {/* Time Selection Card */}
+          <GlassCard>
+            <GlassCardHeader>
+              <GlassCardTitle className="flex items-center gap-2">
+                <Clock className="w-5 h-5" />
+                وقت الحضور
+              </GlassCardTitle>
+            </GlassCardHeader>
+            <GlassCardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                {commonTimes.map((time) => (
+                  <Button
+                    key={time}
+                    variant={settings.attendanceTime === time ? 'default' : 'outline'}
+                    onClick={() => handleAttendanceTimeChange(time)}
+                    className="font-mono h-12 rounded-xl"
+                  >
+                    {time}
+                  </Button>
+                ))}
+              </div>
               <Input
-                id="attendanceTime"
                 type="time"
                 value={settings.attendanceTime}
                 onChange={(e) => handleAttendanceTimeChange(e.target.value)}
-                className="max-w-[200px]"
+                className="h-12 font-mono text-lg rounded-xl text-center"
               />
-              <p className="text-sm text-muted-foreground">
-                أدخل وقت حضورك الفعلي لحساب فترة بصمة التواجد
-                <br />
-                <strong className="text-primary">التنبيهات ستعمل حتى عند إغلاق التطبيق! 🔔</strong>
-              </p>
-            </div>
+            </GlassCardContent>
+          </GlassCard>
+        </div>
 
-            {/* تفعيل التذكير */}
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>تفعيل التذكيرات</Label>
-                <p className="text-sm text-muted-foreground">
-                  استلام تنبيهات عند بدء الفترة واقتراب انتهائها
-                </p>
-              </div>
-              <Switch
-                checked={settings.reminderEnabled}
-                onCheckedChange={(checked) => setSettings({ ...settings, reminderEnabled: checked })}
-              />
-            </div>
-
-            {/* التنبيه قبل الانتهاء */}
-            <div className="space-y-2">
-              <Label>التنبيه قبل انتهاء الفترة بـ</Label>
-              <Select
-                value={settings.reminderMinutesBefore.toString()}
-                onValueChange={(value) => setSettings({ ...settings, reminderMinutesBefore: parseInt(value) })}
-              >
-                <SelectTrigger className="max-w-[200px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">5 دقائق</SelectItem>
-                  <SelectItem value="10">10 دقائق</SelectItem>
-                  <SelectItem value="15">15 دقيقة</SelectItem>
-                  <SelectItem value="20">20 دقيقة</SelectItem>
-                  <SelectItem value="30">30 دقيقة</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* تفعيل الصوت */}
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5 flex items-center gap-2">
-                {settings.soundEnabled ? (
-                  <Volume2 className="w-5 h-5 text-primary" />
-                ) : (
-                  <VolumeX className="w-5 h-5 text-muted-foreground" />
-                )}
+        {/* Settings Card */}
+        <GlassCard>
+          <GlassCardHeader>
+            <GlassCardTitle className="flex items-center gap-2">
+              <Bell className="w-5 h-5" />
+              إعدادات التنبيهات
+            </GlassCardTitle>
+          </GlassCardHeader>
+          <GlassCardContent>
+            <div className="grid grid-cols-2 gap-6">
+              {/* Daily Notification */}
+              <div className="flex items-center justify-between p-4 rounded-xl bg-primary/5 border border-primary/20">
                 <div>
-                  <Label>التنبيه الصوتي</Label>
-                  <p className="text-sm text-muted-foreground">
-                    تشغيل صوت عند التذكير
-                  </p>
+                  <Label className="text-base font-semibold">إشعار الحضور اليومي</Label>
+                  <p className="text-sm text-muted-foreground">عرض إشعار عند فتح التطبيق</p>
+                </div>
+                <div dir="ltr">
+                  <Switch
+                    checked={dailyNotificationEnabled}
+                    onCheckedChange={handleDailyNotificationToggle}
+                  />
                 </div>
               </div>
-              <Switch
-                checked={settings.soundEnabled}
-                onCheckedChange={(checked) => setSettings({ ...settings, soundEnabled: checked })}
-              />
-            </div>
 
-            {/* نوع الصوت */}
-            {settings.soundEnabled && (
-              <div className="space-y-2">
-                <Label>نوع الصوت</Label>
-                <div className="flex gap-2 items-center">
-                  <Select
-                    value={settings.soundType}
-                    onValueChange={(value) => setSettings({ ...settings, soundType: value as SoundType })}
-                  >
-                    <SelectTrigger className="max-w-[200px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {soundOptions.map((sound) => (
-                        <SelectItem key={sound.id} value={sound.id}>
-                          {sound.nameAr}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button variant="outline" size="icon" onClick={handlePreviewSound}>
-                    <BellRing className="w-4 h-4" />
-                  </Button>
+              {/* Reminder Toggle */}
+              <div className="flex items-center justify-between p-4 rounded-xl bg-muted/50">
+                <div>
+                  <Label className="text-base">تفعيل التذكيرات</Label>
+                  <p className="text-sm text-muted-foreground">تنبيهات بداية ونهاية الفترة</p>
+                </div>
+                <div dir="ltr">
+                  <Switch
+                    checked={settings.reminderEnabled}
+                    onCheckedChange={(checked) => setSettings({ ...settings, reminderEnabled: checked })}
+                  />
                 </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
+
+              {/* Reminder Time */}
+              <div className="space-y-2">
+                <Label>التنبيه قبل انتهاء الفترة</Label>
+                <Select
+                  value={settings.reminderMinutesBefore.toString()}
+                  onValueChange={(value) => setSettings({ ...settings, reminderMinutesBefore: parseInt(value) })}
+                >
+                  <SelectTrigger className="h-12 rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 دقائق</SelectItem>
+                    <SelectItem value="10">10 دقائق</SelectItem>
+                    <SelectItem value="15">15 دقيقة</SelectItem>
+                    <SelectItem value="20">20 دقيقة</SelectItem>
+                    <SelectItem value="30">30 دقيقة</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Sound Settings */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    {settings.soundEnabled ? (
+                      <Volume2 className="w-5 h-5 text-primary" />
+                    ) : (
+                      <VolumeX className="w-5 h-5 text-muted-foreground" />
+                    )}
+                    <Label>التنبيه الصوتي</Label>
+                  </div>
+                  <div dir="ltr">
+                    <Switch
+                      checked={settings.soundEnabled}
+                      onCheckedChange={(checked) => setSettings({ ...settings, soundEnabled: checked })}
+                    />
+                  </div>
+                </div>
+                {settings.soundEnabled && (
+                  <div className="flex gap-2">
+                    <Select
+                      value={settings.soundType}
+                      onValueChange={(value) => setSettings({ ...settings, soundType: value as SoundType })}
+                    >
+                      <SelectTrigger className="flex-1 h-12 rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {soundOptions.map((sound) => (
+                          <SelectItem key={sound.id} value={sound.id}>
+                            {sound.nameAr}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl" onClick={handlePreviewSound}>
+                      <BellRing className="w-5 h-5" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </GlassCardContent>
+        </GlassCard>
 
         {/* Examples Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>أمثلة على أوقات البصمة</CardTitle>
-            <CardDescription>
-              حسب القرار رقم 6 لسنة 2024
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="bg-muted rounded-lg p-4 text-center">
-                <p className="text-sm text-muted-foreground">إذا حضرت</p>
-                <p className="text-xl font-bold text-primary">7:00 ص</p>
-                <p className="text-sm text-muted-foreground mt-2">فترة البصمة</p>
-                <p className="font-semibold">9:01 ص - 10:00 ص</p>
-              </div>
-              <div className="bg-muted rounded-lg p-4 text-center">
-                <p className="text-sm text-muted-foreground">إذا حضرت</p>
-                <p className="text-xl font-bold text-primary">7:30 ص</p>
-                <p className="text-sm text-muted-foreground mt-2">فترة البصمة</p>
-                <p className="font-semibold">9:31 ص - 10:30 ص</p>
-              </div>
-              <div className="bg-muted rounded-lg p-4 text-center">
-                <p className="text-sm text-muted-foreground">إذا حضرت</p>
-                <p className="text-xl font-bold text-primary">8:00 ص</p>
-                <p className="text-sm text-muted-foreground mt-2">فترة البصمة</p>
-                <p className="font-semibold">10:01 ص - 11:00 ص</p>
-              </div>
+        <GlassCard className="bg-muted/20">
+          <GlassCardHeader>
+            <GlassCardTitle className="flex items-center gap-2">
+              <Info className="w-5 h-5" />
+              أمثلة على أوقات البصمة
+            </GlassCardTitle>
+          </GlassCardHeader>
+          <GlassCardContent>
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { arrival: '7:00', start: '9:01', end: '10:00' },
+                { arrival: '7:30', start: '9:31', end: '10:30' },
+                { arrival: '8:00', start: '10:01', end: '11:00' },
+              ].map((example) => (
+                <div key={example.arrival} className="bg-background/50 rounded-xl p-4 text-center">
+                  <p className="text-sm text-muted-foreground">إذا حضرت</p>
+                  <p className="text-2xl font-bold text-primary font-mono">{example.arrival} ص</p>
+                  <p className="text-sm text-muted-foreground mt-2">فترة البصمة</p>
+                  <p className="font-semibold font-mono">{example.start} - {example.end} ص</p>
+                </div>
+              ))}
             </div>
-          </CardContent>
-        </Card>
+          </GlassCardContent>
+        </GlassCard>
       </div>
     </TeacherLayout>
   );
