@@ -184,25 +184,22 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
   const progress = ((currentStep + 1) / steps.length) * 100;
 
-  if (loading) {
-    return <>{children}</>;
-  }
+  // Always provide the context, even while loading
+  const contextValue: OnboardingContextType = {
+    isOnboarding: loading ? false : isOnboarding,
+    currentStep,
+    steps,
+    startOnboarding,
+    nextStep,
+    previousStep,
+    skipOnboarding,
+    completeOnboarding,
+    markStepCompleted,
+    progress,
+  };
 
   return (
-    <OnboardingContext.Provider
-      value={{
-        isOnboarding,
-        currentStep,
-        steps,
-        startOnboarding,
-        nextStep,
-        previousStep,
-        skipOnboarding,
-        completeOnboarding,
-        markStepCompleted,
-        progress,
-      }}
-    >
+    <OnboardingContext.Provider value={contextValue}>
       {children}
     </OnboardingContext.Provider>
   );
