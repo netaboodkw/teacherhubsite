@@ -101,7 +101,7 @@ export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
       {/* Top Bar */}
       <header
         className={cn(
-          "sticky top-0 z-50 w-full lg:hidden",
+          "z-50 w-full lg:hidden",
           "bg-background/70 backdrop-blur-xl backdrop-saturate-150",
           "border-b border-border/30",
           "pt-[env(safe-area-inset-top)]"
