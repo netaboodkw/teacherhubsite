@@ -85,6 +85,194 @@ serve(async (req) => {
 
     const MYFATOORAH_API_KEY = myfatoorahApiKey;
 
+    // Get payment methods
+    if (action === "get-payment-methods") {
+      const { invoiceValue, currencyIso = "KWD" } = params;
+
+      console.log("Getting payment methods for:", { invoiceValue, currencyIso });
+
+      const response = await fetch(`${MYFATOORAH_BASE_URL}/v2/InitiatePayment`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${MYFATOORAH_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          InvoiceAmount: invoiceValue,
+          CurrencyIso: currencyIso,
+        }),
+      });
+
+      const result = await response.json();
+
+      console.log("Payment methods response:", result);
+
+      if (!result.IsSuccess) {
+        console.error("MyFatoorah Error:", result);
+        throw new Error(result.Message || "فشل في جلب طرق الدفع");
+      }
+
+      // Filter active payment methods
+      const paymentMethods = result.Data.PaymentMethods.filter((method: any) => method.IsDirectPayment);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          paymentMethods: paymentMethods.map((m: any) => ({
+            PaymentMethodId: m.PaymentMethodId,
+            PaymentMethodAr: m.PaymentMethodAr,
+            PaymentMethodEn: m.PaymentMethodEn,
+            PaymentMethodCode: m.PaymentMethodCode,
+            ImageUrl: m.ImageUrl,
+            ServiceCharge: m.ServiceCharge,
+            TotalAmount: m.TotalAmount,
+          })),
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Execute direct payment
+    if (action === "execute-payment") {
+      const { packageId, discountCode, paymentMethodId, callbackUrl, errorUrl } = params;
+
+      // Get package details
+      const { data: pkg, error: pkgError } = await supabaseClient
+        .from("subscription_packages")
+        .select("*")
+        .eq("id", packageId)
+        .single();
+
+      if (pkgError || !pkg) {
+        throw new Error("Package not found");
+      }
+
+      let discountAmount = 0;
+      let discountCodeId = null;
+
+      // Validate discount code if provided
+      if (discountCode) {
+        const { data: discount, error: discountError } = await supabaseClient
+          .from("discount_codes")
+          .select("*")
+          .eq("code", discountCode.toUpperCase())
+          .eq("is_active", true)
+          .single();
+
+        if (!discountError && discount) {
+          const now = new Date();
+          const validFrom = discount.valid_from ? new Date(discount.valid_from) : null;
+          const validUntil = discount.valid_until ? new Date(discount.valid_until) : null;
+
+          if ((!validFrom || now >= validFrom) && (!validUntil || now <= validUntil)) {
+            if (!discount.max_uses || discount.current_uses < discount.max_uses) {
+              if (discount.discount_type === "percentage") {
+                discountAmount = (pkg.price * discount.discount_value) / 100;
+              } else {
+                discountAmount = discount.discount_value;
+              }
+              discountCodeId = discount.id;
+            }
+          }
+        }
+      }
+
+      const finalAmount = Math.max(0, pkg.price - discountAmount);
+
+      // Create payment record
+      const { data: payment, error: paymentError } = await supabaseClient
+        .from("subscription_payments")
+        .insert({
+          user_id: user.id,
+          package_id: packageId,
+          discount_code_id: discountCodeId,
+          amount: finalAmount,
+          original_amount: pkg.price,
+          discount_amount: discountAmount,
+          currency: pkg.currency,
+          status: "pending",
+        })
+        .select()
+        .single();
+
+      if (paymentError) {
+        throw new Error("Failed to create payment record");
+      }
+
+      // Get user profile for customer info
+      const { data: profile } = await supabaseClient
+        .from("profiles")
+        .select("full_name, phone")
+        .eq("user_id", user.id)
+        .single();
+
+      // Execute direct payment with selected payment method
+      const executePaymentData = {
+        PaymentMethodId: paymentMethodId,
+        CustomerName: profile?.full_name || "Teacher",
+        DisplayCurrencyIso: pkg.currency,
+        MobileCountryCode: "+966",
+        CustomerMobile: profile?.phone || "0500000000",
+        CustomerEmail: user.email,
+        InvoiceValue: finalAmount,
+        CallBackUrl: callbackUrl,
+        ErrorUrl: errorUrl,
+        Language: "AR",
+        CustomerReference: payment.id,
+        InvoiceItems: [
+          {
+            ItemName: pkg.name_ar,
+            Quantity: 1,
+            UnitPrice: finalAmount,
+          },
+        ],
+      };
+
+      console.log("Executing payment:", executePaymentData);
+
+      const response = await fetch(`${MYFATOORAH_BASE_URL}/v2/ExecutePayment`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${MYFATOORAH_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(executePaymentData),
+      });
+
+      const result = await response.json();
+
+      console.log("Execute payment response:", result);
+
+      if (!result.IsSuccess) {
+        console.error("MyFatoorah Error:", result);
+        const errorMessage = result.Message || result.ValidationErrors?.[0]?.Error || "فشل في تنفيذ عملية الدفع";
+        
+        if (errorMessage.includes("token") || errorMessage.includes("Token") || errorMessage.includes("expired")) {
+          throw new Error("مفتاح API لماي فاتورة غير صالح أو منتهي الصلاحية");
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      // Update payment with invoice ID
+      await supabaseClient
+        .from("subscription_payments")
+        .update({
+          invoice_id: result.Data.InvoiceId.toString(),
+        })
+        .eq("id", payment.id);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          paymentUrl: result.Data.PaymentURL,
+          paymentId: payment.id,
+          invoiceId: result.Data.InvoiceId,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (action === "initiate-payment") {
       const { packageId, discountCode, callbackUrl, errorUrl } = params;
 

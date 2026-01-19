@@ -112,6 +112,16 @@ const features = [
   }
 ];
 
+interface PaymentMethod {
+  PaymentMethodId: number;
+  PaymentMethodAr: string;
+  PaymentMethodEn: string;
+  PaymentMethodCode: string;
+  ImageUrl: string;
+  ServiceCharge: number;
+  TotalAmount: number;
+}
+
 export default function TeacherSubscription() {
   const { data: packages, isLoading: packagesLoading } = useSubscriptionPackages();
   const { data: subscription, isLoading: subscriptionLoading } = useMySubscription();
@@ -122,6 +132,9 @@ export default function TeacherSubscription() {
   const [discountCode, setDiscountCode] = useState('');
   const [appliedDiscount, setAppliedDiscount] = useState<DiscountCode | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null);
+  const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
 
   // Fetch payments
   const { data: payments, isLoading: paymentsLoading } = useQuery({
@@ -177,9 +190,48 @@ export default function TeacherSubscription() {
     return Math.max(0, pkg.price - appliedDiscount.discount_value);
   };
 
+  // Fetch payment methods when package is selected
+  const fetchPaymentMethods = async (invoiceValue: number) => {
+    setLoadingPaymentMethods(true);
+    setPaymentMethods([]);
+    setSelectedPaymentMethod(null);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('myfatoorah-payment', {
+        body: {
+          action: 'get-payment-methods',
+          invoiceValue,
+          currencyIso: 'KWD',
+        },
+      });
+
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error);
+
+      setPaymentMethods(data.paymentMethods || []);
+    } catch (error: any) {
+      console.error('Error fetching payment methods:', error);
+      toast.error('فشل في جلب طرق الدفع');
+    } finally {
+      setLoadingPaymentMethods(false);
+    }
+  };
+
+  // Handle package selection
+  const handlePackageSelect = (pkg: SubscriptionPackage) => {
+    setSelectedPackage(pkg);
+    const finalPrice = calculateFinalPrice(pkg);
+    fetchPaymentMethods(finalPrice);
+  };
+
   const handlePurchase = async () => {
     if (!selectedPackage) {
       toast.error('الرجاء اختيار باقة');
+      return;
+    }
+
+    if (!selectedPaymentMethod) {
+      toast.error('الرجاء اختيار طريقة الدفع');
       return;
     }
 
@@ -187,9 +239,10 @@ export default function TeacherSubscription() {
     try {
       const { data, error } = await supabase.functions.invoke('myfatoorah-payment', {
         body: {
-          action: 'initiate-payment',
+          action: 'execute-payment',
           packageId: selectedPackage.id,
           discountCode: appliedDiscount?.code,
+          paymentMethodId: selectedPaymentMethod.PaymentMethodId,
           callbackUrl: `${window.location.origin}/teacher/subscription/success`,
           errorUrl: `${window.location.origin}/teacher/subscription/error`,
         },
@@ -396,7 +449,7 @@ export default function TeacherSubscription() {
                     className={`relative cursor-pointer transition-all duration-300 hover:shadow-xl ${
                       isSelected ? 'ring-2 ring-primary shadow-xl scale-[1.02]' : 'hover:scale-[1.01]'
                     } ${isPopular ? 'border-primary shadow-lg' : ''}`}
-                    onClick={() => setSelectedPackage(pkg)}
+                    onClick={() => handlePackageSelect(pkg)}
                   >
                     {isPopular && (
                       <div className="absolute -top-3 left-1/2 -translate-x-1/2">
@@ -600,23 +653,81 @@ export default function TeacherSubscription() {
                       </div>
                     </div>
                   </div>
+
+                  <Separator />
+
+                  {/* Payment Methods Selection */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold flex items-center gap-2">
+                      <CreditCard className="h-4 w-4 text-primary" />
+                      اختر طريقة الدفع
+                    </h4>
+                    
+                    {loadingPaymentMethods ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        <span className="mr-2 text-muted-foreground">جاري تحميل طرق الدفع...</span>
+                      </div>
+                    ) : paymentMethods.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {paymentMethods.map((method) => (
+                          <button
+                            key={method.PaymentMethodId}
+                            onClick={() => setSelectedPaymentMethod(method)}
+                            className={`relative p-4 rounded-xl border-2 transition-all hover:shadow-md ${
+                              selectedPaymentMethod?.PaymentMethodId === method.PaymentMethodId
+                                ? 'border-primary bg-primary/5 shadow-md'
+                                : 'border-border hover:border-primary/50'
+                            }`}
+                          >
+                            {selectedPaymentMethod?.PaymentMethodId === method.PaymentMethodId && (
+                              <div className="absolute top-2 left-2">
+                                <CheckCircle className="h-5 w-5 text-primary" />
+                              </div>
+                            )}
+                            <img 
+                              src={method.ImageUrl} 
+                              alt={method.PaymentMethodAr}
+                              className="h-10 w-auto mx-auto mb-2 object-contain"
+                            />
+                            <p className="text-xs text-center font-medium truncate">
+                              {method.PaymentMethodAr}
+                            </p>
+                            {method.ServiceCharge > 0 && (
+                              <p className="text-[10px] text-center text-muted-foreground mt-1">
+                                رسوم: {method.ServiceCharge.toFixed(3)} د.ك
+                              </p>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <CreditCard className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                        <p className="text-sm">لا توجد طرق دفع متاحة</p>
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
                 <CardFooter className="bg-muted/30 pt-6">
                   <Button 
                     className="w-full gap-2 h-12 text-base" 
                     size="lg"
                     onClick={handlePurchase}
-                    disabled={isProcessing}
+                    disabled={isProcessing || !selectedPaymentMethod}
                   >
                     {isProcessing ? (
                       <>
                         <Loader2 className="h-5 w-5 animate-spin" />
-                        جاري المعالجة...
+                        جاري التحويل لصفحة الدفع...
                       </>
                     ) : (
                       <>
                         <Zap className="h-5 w-5" />
-                        إتمام الدفع الآن
+                        {selectedPaymentMethod 
+                          ? `ادفع الآن عبر ${selectedPaymentMethod.PaymentMethodAr}`
+                          : 'اختر طريقة الدفع أولاً'
+                        }
                       </>
                     )}
                   </Button>
