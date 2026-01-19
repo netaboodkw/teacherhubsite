@@ -547,8 +547,17 @@ export default function TeacherAuth() {
             {/* Department Head Link */}
             <button
               type="button"
-              onClick={() => navigate('/auth/department-head')}
-              className="mt-6 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors touch-manipulation"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                navigate('/auth/department-head');
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                navigate('/auth/department-head');
+              }}
+              className="mt-6 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors touch-manipulation py-3 px-4 active:opacity-70"
             >
               <Users className="h-4 w-4" />
               <span className="text-sm">تسجيل كرئيس قسم</span>
