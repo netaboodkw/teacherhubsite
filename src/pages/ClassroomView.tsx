@@ -658,7 +658,7 @@ export default function ClassroomView() {
           </div>
         )}
 
-        {/* Mode Instructions & Save Button */}
+        {/* Mode Instructions & Save Button - Above Students */}
         {activeTab !== 'notes' && (
           <div className="space-y-3">
             <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground bg-muted/50 rounded-xl">
@@ -675,6 +675,47 @@ export default function ClassroomView() {
                 </>
               )}
             </div>
+            
+            {/* Save Button - Above Students */}
+            <Button 
+              onClick={activeTab === 'arrange' ? savePositions : saveAttendance}
+              disabled={saving}
+              className="w-full h-14 text-lg gap-3 rounded-2xl shadow-lg"
+              size="lg"
+            >
+              {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+              {activeTab === 'arrange' ? 'حفظ الترتيب' : `حفظ حضور الحصة ${selectedPeriod}`}
+            </Button>
+
+            {/* Reset Arrangement Button - Only in arrange mode */}
+            {activeTab === 'arrange' && (
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  const positionsMap = new Map<string, { x: number; y: number }>();
+                  const cardWidth = 110;
+                  const cardHeight = 130;
+                  const cols = 5;
+                  const gap = 20;
+                  
+                  students.forEach((student, index) => {
+                    const col = index % cols;
+                    const row = Math.floor(index / cols);
+                    positionsMap.set(student.id, {
+                      x: col * (cardWidth + gap) + gap,
+                      y: row * (cardHeight + gap) + gap
+                    });
+                  });
+                  
+                  setStudentPositions(positionsMap);
+                  toast.success('تم إعادة ترتيب الطلاب');
+                }}
+                className="w-full h-12 gap-2 rounded-xl"
+              >
+                <Move className="h-4 w-4" />
+                إعادة الترتيب الافتراضي
+              </Button>
+            )}
           </div>
         )}
 
@@ -790,20 +831,6 @@ export default function ClassroomView() {
           </ContentCardContent>
         </ContentCard>
 
-        {/* Fixed Save Button at Bottom - Only in arrange/attendance mode */}
-        {(activeTab === 'arrange' || activeTab === 'attendance') && (
-          <div className="fixed bottom-20 left-4 right-4 z-30">
-            <Button 
-              onClick={activeTab === 'arrange' ? savePositions : saveAttendance}
-              disabled={saving}
-              className="w-full h-14 text-lg gap-3 rounded-2xl shadow-lg"
-              size="lg"
-            >
-              {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
-              {activeTab === 'arrange' ? 'حفظ الترتيب' : `حفظ حضور الحصة ${selectedPeriod}`}
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* Mobile Note Sheet */}
