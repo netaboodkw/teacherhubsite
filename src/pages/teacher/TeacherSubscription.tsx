@@ -237,14 +237,19 @@ export default function TeacherSubscription() {
 
     setIsProcessing(true);
     try {
+      // Use published URL for payment callbacks to avoid iframe/auth-bridge issues
+      const baseUrl = window.location.hostname.includes('lovable') || window.location.hostname.includes('localhost')
+        ? 'https://echo-grade-ease.lovable.app'
+        : window.location.origin;
+      
       const { data, error } = await supabase.functions.invoke('myfatoorah-payment', {
         body: {
           action: 'execute-payment',
           packageId: selectedPackage.id,
           discountCode: appliedDiscount?.code,
           paymentMethodId: selectedPaymentMethod.PaymentMethodId,
-          callbackUrl: `${window.location.origin}/teacher/subscription/success`,
-          errorUrl: `${window.location.origin}/teacher/subscription/error`,
+          callbackUrl: `${baseUrl}/teacher/subscription/success`,
+          errorUrl: `${baseUrl}/teacher/subscription/error`,
         },
       });
 
