@@ -416,20 +416,52 @@ serve(async (req) => {
     if (action === "verify-payment") {
       const { paymentId } = params;
 
-      // Get payment record
-      const { data: payment, error: paymentError } = await supabaseClient
-        .from("subscription_payments")
-        .select("*")
-        .eq("id", paymentId)
-        .single();
+      console.log("Verifying payment:", paymentId);
 
-      if (paymentError || !payment) {
-        throw new Error("Payment not found");
+      // Try to find payment by ID or invoice_id
+      let payment = null;
+      let paymentError = null;
+
+      // First try by ID
+      const { data: paymentById, error: errorById } = await supabaseClient
+        .from("subscription_payments")
+        .select("*, package:subscription_packages(name_ar, courses_count)")
+        .eq("id", paymentId)
+        .maybeSingle();
+
+      if (paymentById) {
+        payment = paymentById;
+      } else {
+        // Try by invoice_id
+        const { data: paymentByInvoice, error: errorByInvoice } = await supabaseClient
+          .from("subscription_payments")
+          .select("*, package:subscription_packages(name_ar, courses_count)")
+          .eq("invoice_id", paymentId)
+          .maybeSingle();
+        
+        payment = paymentByInvoice;
+        paymentError = errorByInvoice;
       }
+
+      if (!payment) {
+        console.log("Payment not found for ID:", paymentId);
+        return new Response(
+          JSON.stringify({ success: false, error: "Payment not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      console.log("Found payment:", payment.id, "status:", payment.status);
 
       if (payment.status === "completed") {
         return new Response(
-          JSON.stringify({ success: true, status: "completed" }),
+          JSON.stringify({ 
+            success: true, 
+            status: "completed",
+            invoiceId: payment.invoice_id,
+            amount: payment.amount,
+            packageName: payment.package?.name_ar,
+          }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -531,7 +563,13 @@ serve(async (req) => {
         }
 
         return new Response(
-          JSON.stringify({ success: true, status: "completed" }),
+          JSON.stringify({ 
+            success: true, 
+            status: "completed",
+            invoiceId: payment.invoice_id,
+            amount: payment.amount,
+            packageName: payment.package?.name_ar,
+          }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
