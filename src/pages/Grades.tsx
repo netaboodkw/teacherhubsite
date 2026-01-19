@@ -1033,6 +1033,15 @@ export default function Grades() {
   // Check if we have a grading structure
   const hasStructure = gradingStructure?.structure?.groups && gradingStructure.structure.groups.length > 0;
 
+  // Quick grade buttons values - must be called unconditionally
+  const quickGradeValues = useMemo(() => {
+    const max = selectedCell?.maxScore || 10;
+    const values = max <= 10 
+      ? Array.from({ length: max + 1 }, (_, i) => i)
+      : [0, Math.round(max * 0.25), Math.round(max * 0.5), Math.round(max * 0.75), max - 1, max];
+    return values.slice(0, 12);
+  }, [selectedCell?.maxScore]);
+
   const ActionButton = isLiquidGlass ? GlassButton : Button;
   const InfoCard = isLiquidGlass ? GlassCard : Card;
 
@@ -1519,13 +1528,7 @@ export default function Grades() {
               
               {/* Quick grade buttons - optimized for mobile */}
               <div className="flex flex-wrap justify-center gap-2">
-                {useMemo(() => {
-                  const max = selectedCell?.maxScore || 10;
-                  const values = max <= 10 
-                    ? Array.from({ length: max + 1 }, (_, i) => i)
-                    : [0, Math.round(max * 0.25), Math.round(max * 0.5), Math.round(max * 0.75), max - 1, max];
-                  return values.slice(0, 12);
-                }, [selectedCell?.maxScore]).map((val) => (
+              {quickGradeValues.map((val) => (
                   <Button
                     key={val}
                     type="button"
