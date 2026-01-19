@@ -21,7 +21,7 @@ import { Input } from '@/components/ui/input';
 import { GlassInput } from '@/components/ui/glass-input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronRight, ChevronLeft, Plus, Loader2, Table, Settings, ChevronDown, ChevronUp, Printer, MessageSquare, Calendar, Clock, X, Users, Smartphone, FileSpreadsheet } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Plus, Loader2, Table, Settings, ChevronDown, ChevronUp, Printer, MessageSquare, Calendar, Clock, X, Users, Smartphone, FileSpreadsheet, BookOpen } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,6 +32,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/common/PageHeader';
 
 const WEEKS_COUNT = 18; // عدد الأسابيع في الفصل الدراسي
 
@@ -1023,81 +1024,74 @@ export default function Grades() {
     <TeacherLayout>
       <div className="space-y-6 animate-fade-in print:hidden">
         {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-          {/* Controls - Right side in RTL */}
-          <div className="flex items-center gap-3 order-first lg:order-first">
-            <Select value={selectedClassroom} onValueChange={setSelectedClassroom}>
-              <SelectTrigger className={cn(
-                "w-48",
-                isLiquidGlass && "rounded-xl bg-background/50 backdrop-blur-md border-border/50"
-              )}>
-                <SelectValue placeholder="اختر الصف" />
-              </SelectTrigger>
-              <SelectContent className={isLiquidGlass ? "rounded-xl backdrop-blur-xl bg-background/90" : ""}>
-                {classrooms.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {hasStructure && students.length > 0 && (
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* زر الطباعة والتصدير */}
-                <ActionButton 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setPrintOptionsOpen(true)}
-                  className="print:hidden"
-                >
-                  <Printer className="h-4 w-4 ml-1" />
-                  <span className="hidden sm:inline">طباعة / تصدير</span>
-                </ActionButton>
-                
-                {!isMobile && (
-                  <ActionButton 
-                    variant={forceMobileView ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setForceMobileView(!forceMobileView)}
-                    className="gap-1"
-                  >
-                    <Smartphone className="h-4 w-4" />
-                    <span className="hidden sm:inline">عرض الهاتف</span>
-                  </ActionButton>
-                )}
-                {!isMobile && !forceMobileView && (
-                  <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={useNormalFont}
-                      onChange={(e) => setUseNormalFont(e.target.checked)}
-                      className="rounded border-input"
-                    />
-                    خط عادي
-                  </label>
-                )}
-              </div>
-            )}
-          </div>
-          
-          {/* Title - Left side in RTL */}
-          <div className="lg:mr-auto">
-            <h1 className="text-2xl lg:text-3xl font-bold text-foreground">سجل الدرجات</h1>
-            {hasStructure && (
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant="secondary" className={cn(
-                  "text-sm",
-                  isLiquidGlass && "bg-primary/10 text-primary border-0"
+        <PageHeader
+          icon={BookOpen}
+          title="سجل الدرجات"
+          subtitle={hasStructure ? undefined : "تتبع درجات الطلاب الأسبوعية"}
+          actions={
+            <div className="flex items-center gap-3 flex-wrap">
+              <Select value={selectedClassroom} onValueChange={setSelectedClassroom}>
+                <SelectTrigger className={cn(
+                  "w-48",
+                  isLiquidGlass && "rounded-xl bg-background/50 backdrop-blur-md border-border/50"
                 )}>
-                  {gradingStructure.name_ar}
-                </Badge>
-              </div>
-            )}
-            {!hasStructure && (
-              <p className="text-muted-foreground mt-1">
-                تتبع درجات الطلاب الأسبوعية
-              </p>
-            )}
-          </div>
-        </div>
+                  <SelectValue placeholder="اختر الصف" />
+                </SelectTrigger>
+                <SelectContent className={isLiquidGlass ? "rounded-xl backdrop-blur-xl bg-background/90" : ""}>
+                  {classrooms.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {hasStructure && students.length > 0 && (
+                <>
+                  <ActionButton 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setPrintOptionsOpen(true)}
+                    className="print:hidden"
+                  >
+                    <Printer className="h-4 w-4 ml-1" />
+                    <span className="hidden sm:inline">طباعة / تصدير</span>
+                  </ActionButton>
+                  
+                  {!isMobile && (
+                    <ActionButton 
+                      variant={forceMobileView ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setForceMobileView(!forceMobileView)}
+                      className="gap-1"
+                    >
+                      <Smartphone className="h-4 w-4" />
+                      <span className="hidden sm:inline">عرض الهاتف</span>
+                    </ActionButton>
+                  )}
+                  {!isMobile && !forceMobileView && (
+                    <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={useNormalFont}
+                        onChange={(e) => setUseNormalFont(e.target.checked)}
+                        className="rounded border-input"
+                      />
+                      خط عادي
+                    </label>
+                  )}
+                </>
+              )}
+            </div>
+          }
+        />
+        
+        {/* Template Badge */}
+        {hasStructure && (
+          <Badge variant="secondary" className={cn(
+            "text-sm w-fit",
+            isLiquidGlass && "bg-primary/10 text-primary border-0"
+          )}>
+            {gradingStructure.name_ar}
+          </Badge>
+        )}
 
         {/* Structure Info Card */}
         {hasStructure && (

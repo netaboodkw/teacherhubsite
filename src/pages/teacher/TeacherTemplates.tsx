@@ -30,6 +30,7 @@ import { GradingStructureData, GradingGroup, GradingColumn } from '@/hooks/useGr
 import { DraggableStructureEditor } from '@/components/teacher/DraggableStructureEditor';
 import { AITemplateCreator } from '@/components/teacher/AITemplateCreator';
 import { TemplatePreview } from '@/components/teacher/TemplatePreview';
+import { PageHeader } from '@/components/common/PageHeader';
 
 // ألوان المجموعات - باستيل
 const GROUP_COLORS = [
@@ -1045,26 +1046,27 @@ export default function TeacherTemplates() {
   return (
     <TeacherLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-2xl font-bold">قوالب الدرجات</h1>
-            <p className="text-muted-foreground">أنشئ قوالب درجات خاصة بك وطبقها على فصولك</p>
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
-              <Download className="h-4 w-4 ml-2" />
-              استيراد قالب
-            </Button>
-            <Button variant="outline" onClick={() => setAiTemplateDialogOpen(true)}>
-              <Sparkles className="h-4 w-4 ml-2" />
-              إنشاء بالذكاء الاصطناعي
-            </Button>
-            <Button onClick={openCreateDialog}>
-              <Plus className="h-4 w-4 ml-2" />
-              قالب جديد
-            </Button>
-          </div>
-        </div>
+        <PageHeader
+          icon={LayoutGrid}
+          title="قوالب الدرجات"
+          subtitle="أنشئ قوالب درجات خاصة بك وطبقها على فصولك"
+          actions={
+            <div className="flex gap-2 flex-wrap">
+              <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+                <Download className="h-4 w-4 ml-2" />
+                استيراد قالب
+              </Button>
+              <Button variant="outline" onClick={() => setAiTemplateDialogOpen(true)}>
+                <Sparkles className="h-4 w-4 ml-2" />
+                إنشاء بالذكاء الاصطناعي
+              </Button>
+              <Button onClick={openCreateDialog}>
+                <Plus className="h-4 w-4 ml-2" />
+                قالب جديد
+              </Button>
+            </div>
+          }
+        />
 
         {templates.length === 0 ? (
           <Card className="border-dashed">

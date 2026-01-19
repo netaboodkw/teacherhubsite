@@ -13,6 +13,7 @@ import { format, addHours, addMinutes, isWithinInterval, differenceInMinutes, di
 import { ar } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { PageHeader } from '@/components/common/PageHeader';
 
 interface FingerprintSettings {
   attendanceTime: string; // وقت الحضور الفعلي
@@ -258,23 +259,19 @@ const FingerprintPage = () => {
     <TeacherLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-              <FingerprintIcon className="w-8 h-8 text-primary" />
-              بصمة التواجد
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              نظام تذكير بصمة التواجد للمعلمين - الكويت
-            </p>
-          </div>
-          <div className="text-left">
-            <p className="text-sm text-muted-foreground">التوقيت الحالي (الكويت)</p>
-            <p className="text-2xl font-mono font-bold text-foreground">
-              {format(currentTime, 'HH:mm:ss')}
-            </p>
-          </div>
-        </div>
+        <PageHeader
+          icon={FingerprintIcon}
+          title="بصمة التواجد"
+          subtitle="نظام تذكير بصمة التواجد للمعلمين - الكويت"
+          actions={
+            <div className="text-left">
+              <p className="text-sm text-muted-foreground">التوقيت الحالي (الكويت)</p>
+              <p className="text-2xl font-mono font-bold text-foreground">
+                {format(currentTime, 'HH:mm:ss')}
+              </p>
+            </div>
+          }
+        />
 
         {/* Info Alert */}
         <Alert>
