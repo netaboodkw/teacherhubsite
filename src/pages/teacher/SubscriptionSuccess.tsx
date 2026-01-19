@@ -1,18 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { CheckCircle, Loader2, Home, AlertCircle, Receipt, Calendar, CreditCard } from 'lucide-react';
+import { CheckCircle, Loader2, Home, AlertCircle, Receipt, Calendar, CreditCard, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { useWaitForPaymentCompletion } from '@/hooks/useSubscriptionRealtime';
+import { toast } from 'sonner';
 
 export default function SubscriptionSuccess() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [isVerifying, setIsVerifying] = useState(true);
   const [verified, setVerified] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [paymentDetails, setPaymentDetails] = useState<{
     invoiceId?: string;
     amount?: number;
@@ -23,6 +26,55 @@ export default function SubscriptionSuccess() {
 
   // MyFatoorah sends paymentId or Id parameter
   const paymentId = searchParams.get('paymentId') || searchParams.get('Id');
+
+  // Listen for realtime subscription updates
+  useWaitForPaymentCompletion(paymentId, {
+    onComplete: useCallback((subscriptionData: any) => {
+      console.log('Realtime: Subscription activated!', subscriptionData);
+      if (!verified) {
+        setVerified(true);
+        toast.success('تم تفعيل اشتراكك! 🎉');
+        // Fetch updated payment details
+        verifyPaymentDetails();
+      }
+    }, [verified]),
+    timeout: 60000, // Wait up to 60 seconds
+  });
+
+  const verifyPaymentDetails = async () => {
+    if (!paymentId) return;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('myfatoorah-payment', {
+        body: {
+          action: 'verify-payment',
+          paymentId,
+        },
+      });
+
+      if (error) throw error;
+      
+      if (data.success && data.status === 'completed') {
+        setVerified(true);
+        setPaymentDetails({
+          invoiceId: data.invoiceId || paymentId,
+          amount: data.amount,
+          packageName: data.packageName,
+          subscriptionEndsAt: data.subscriptionEndsAt,
+          paymentMethod: data.paymentMethod,
+        });
+      } else if (data.success) {
+        setPaymentDetails({
+          invoiceId: paymentId,
+        });
+      }
+    } catch (error) {
+      console.error('Verification error:', error);
+      setPaymentDetails({
+        invoiceId: paymentId,
+      });
+    }
+  };
 
   useEffect(() => {
     const verifyPayment = async () => {
@@ -51,14 +103,13 @@ export default function SubscriptionSuccess() {
             paymentMethod: data.paymentMethod,
           });
         } else if (data.success) {
-          // Payment found but status might be different
+          // Payment found but not yet completed - realtime will catch the update
           setPaymentDetails({
             invoiceId: paymentId,
           });
         }
       } catch (error) {
         console.error('Verification error:', error);
-        // Even if verification fails, show a success message since they were redirected here
         setPaymentDetails({
           invoiceId: paymentId,
         });
@@ -68,7 +119,12 @@ export default function SubscriptionSuccess() {
     };
 
     verifyPayment();
-  }, [paymentId]);
+  }, [paymentId, retryCount]);
+
+  const handleRetry = () => {
+    setIsVerifying(true);
+    setRetryCount(prev => prev + 1);
+  };
 
   const formatEndDate = (dateString: string) => {
     try {
@@ -172,13 +228,16 @@ export default function SubscriptionSuccess() {
               </>
             ) : paymentId ? (
               <>
-                <div className="w-24 h-24 rounded-full bg-emerald-100 flex items-center justify-center mx-auto">
-                  <CheckCircle className="h-14 w-14 text-emerald-600" />
+                <div className="w-24 h-24 rounded-full bg-amber-100 flex items-center justify-center mx-auto animate-pulse">
+                  <Loader2 className="h-14 w-14 text-amber-600 animate-spin" />
                 </div>
                 <div className="space-y-2">
-                  <h2 className="text-2xl font-bold text-emerald-600">شكراً لك!</h2>
+                  <h2 className="text-2xl font-bold text-amber-600">جاري تفعيل اشتراكك...</h2>
                   <p className="text-muted-foreground">
-                    تم استلام طلب الدفع الخاص بك. سيتم تفعيل اشتراكك خلال لحظات.
+                    تم استلام طلب الدفع الخاص بك. سيتم تفعيل اشتراكك تلقائياً خلال لحظات.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    سيتم تحديث الصفحة تلقائياً عند اكتمال التفعيل
                   </p>
                 </div>
                 
@@ -192,11 +251,22 @@ export default function SubscriptionSuccess() {
                     <span className="font-mono font-medium text-xs">{paymentId}</span>
                   </div>
                 </div>
-                
-                <Button onClick={() => navigate('/teacher')} className="gap-2 w-full sm:w-auto" size="lg">
-                  <Home className="h-4 w-4" />
-                  العودة للرئيسية
-                </Button>
+
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleRetry} 
+                    className="gap-2"
+                    disabled={isVerifying}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isVerifying ? 'animate-spin' : ''}`} />
+                    إعادة التحقق
+                  </Button>
+                  <Button onClick={() => navigate('/teacher')} className="gap-2">
+                    <Home className="h-4 w-4" />
+                    العودة للرئيسية
+                  </Button>
+                </div>
               </>
             ) : (
               <>
