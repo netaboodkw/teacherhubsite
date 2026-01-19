@@ -693,11 +693,6 @@ export default function TeacherSubscription() {
                             <p className="text-xs text-center font-medium truncate">
                               {method.PaymentMethodAr}
                             </p>
-                            {method.ServiceCharge > 0 && (
-                              <p className="text-[10px] text-center text-muted-foreground mt-1">
-                                رسوم: {method.ServiceCharge.toFixed(3)} د.ك
-                              </p>
-                            )}
                           </button>
                         ))}
                       </div>
