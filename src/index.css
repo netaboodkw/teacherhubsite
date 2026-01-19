@@ -350,13 +350,31 @@
     @apply bg-background text-foreground font-sans antialiased;
   }
 
-  /* RTL Support */
-  [dir="rtl"] {
-    font-family: 'Cairo', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  /* RTL Support - Apply Cairo font globally */
+  html[dir="rtl"],
+  html[dir="rtl"] *,
+  [dir="rtl"],
+  [dir="rtl"] * {
+    font-family: 'Cairo', 'Inter', ui-sans-serif, system-ui, sans-serif !important;
   }
 
-  .theme-liquid-glass [dir="rtl"] {
-    font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  .theme-liquid-glass[dir="rtl"],
+  .theme-liquid-glass[dir="rtl"] *,
+  .theme-liquid-glass [dir="rtl"],
+  .theme-liquid-glass [dir="rtl"] * {
+    font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif !important;
+  }
+
+  /* Ensure dropdown menus and popovers use Cairo */
+  [data-radix-popper-content-wrapper],
+  [data-radix-popper-content-wrapper] *,
+  [role="menu"],
+  [role="menu"] *,
+  [role="listbox"],
+  [role="listbox"] *,
+  .dropdown-menu,
+  .dropdown-menu * {
+    font-family: 'Cairo', 'Inter', ui-sans-serif, system-ui, sans-serif !important;
   }
 }
 
