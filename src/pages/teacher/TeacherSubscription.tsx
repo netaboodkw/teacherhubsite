@@ -320,7 +320,8 @@ export default function TeacherSubscription() {
   return (
     <TeacherLayout>
       <div className="max-w-6xl mx-auto space-y-8">
-        {/* Hero Section */}
+        {/* Hero Section - Only show if not active subscription */}
+        {!hasActiveSubscription && (
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 p-8 text-primary-foreground">
           <div className="absolute inset-0 opacity-20">
             <div className="absolute inset-0" style={{ 
@@ -358,6 +359,7 @@ export default function TeacherSubscription() {
             </div>
           </div>
         </div>
+        )}
 
         {/* Read-only warning */}
         {subscription?.is_read_only && (
