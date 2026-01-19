@@ -6,6 +6,16 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
@@ -38,7 +48,9 @@ import {
   GraduationCap,
   Gift,
   FileText,
-  Zap
+  Zap,
+  ExternalLink,
+  ShieldCheck
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 
@@ -84,6 +96,7 @@ export default function TeacherSubscription() {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null);
   const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
+  const [showPaymentConfirmDialog, setShowPaymentConfirmDialog] = useState(false);
 
   // Fetch payments
   const { data: payments, isLoading: paymentsLoading } = useQuery({
@@ -191,21 +204,32 @@ export default function TeacherSubscription() {
     setTimeout(() => scrollToCheckout(), 100);
   };
 
-  const handlePurchase = async () => {
+  const initiatePayment = () => {
     if (!selectedPackage) {
       toast.error('الرجاء اختيار باقة');
       return;
     }
-
     if (!selectedPaymentMethod) {
       toast.error('الرجاء اختيار طريقة الدفع');
       return;
     }
+    setShowPaymentConfirmDialog(true);
+  };
 
+  const handlePurchase = async () => {
+    if (!selectedPackage || !selectedPaymentMethod) return;
+
+    setShowPaymentConfirmDialog(false);
     setIsProcessing(true);
+    
     try {
       // Use production domain for payment callbacks - this domain has Universal Links configured
       const baseUrl = 'https://teacherhub.site';
+      
+      toast.info('جاري تحويلك لصفحة الدفع الآمنة...', {
+        description: 'سيتم إرجاعك للتطبيق تلقائياً بعد إتمام الدفع',
+        duration: 4000,
+      });
       
       const { data, error } = await supabase.functions.invoke('myfatoorah-payment', {
         body: {
@@ -222,8 +246,6 @@ export default function TeacherSubscription() {
       if (!data.success) throw new Error(data.error || 'فشل في بدء عملية الدفع');
 
       if (data.paymentUrl) {
-        toast.success('جاري فتح صفحة الدفع...');
-        
         // Check if running on native platform (iOS/Android)
         if (Capacitor.isNativePlatform()) {
           try {
@@ -712,11 +734,11 @@ export default function TeacherSubscription() {
                     )}
                   </div>
                 </CardContent>
-                <CardFooter className="bg-muted/30 pt-6">
+                <CardFooter className="bg-muted/30 pt-6 flex-col gap-3">
                   <Button 
                     className="w-full gap-2 h-12 text-base" 
                     size="lg"
-                    onClick={handlePurchase}
+                    onClick={initiatePayment}
                     disabled={isProcessing || !selectedPaymentMethod}
                   >
                     {isProcessing ? (
@@ -734,9 +756,65 @@ export default function TeacherSubscription() {
                       </>
                     )}
                   </Button>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                    <span>دفع آمن عبر بوابة MyFatoorah المعتمدة</span>
+                  </div>
                 </CardFooter>
               </Card>
             )}
+
+            {/* Payment Confirmation Dialog */}
+            <AlertDialog open={showPaymentConfirmDialog} onOpenChange={setShowPaymentConfirmDialog}>
+              <AlertDialogContent className="max-w-md">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="flex items-center gap-2 text-xl">
+                    <ExternalLink className="h-5 w-5 text-primary" />
+                    تأكيد عملية الدفع
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="text-right space-y-4 pt-4">
+                    <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">الباقة:</span>
+                        <span className="font-semibold text-foreground">{selectedPackage?.name_ar}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">المبلغ:</span>
+                        <span className="font-bold text-primary text-lg">
+                          {selectedPackage && calculateFinalPrice(selectedPackage).toFixed(2)} د.ك
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">طريقة الدفع:</span>
+                        <span className="font-medium text-foreground">{selectedPaymentMethod?.PaymentMethodAr}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-amber-800 text-sm">
+                      <div className="flex items-start gap-2">
+                        <ExternalLink className="h-4 w-4 mt-0.5 shrink-0" />
+                        <p>
+                          سيتم تحويلك لصفحة الدفع الآمنة لإتمام العملية. 
+                          بعد الانتهاء ستعود تلقائياً للتطبيق.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-emerald-700 text-sm">
+                      <ShieldCheck className="h-4 w-4" />
+                      <span>دفع آمن ومشفر عبر MyFatoorah</span>
+                    </div>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="gap-2 sm:gap-0">
+                  <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                  <AlertDialogAction onClick={handlePurchase} className="gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    متابعة الدفع
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
             {/* Empty State */}
             {activePackages.length === 0 && (
