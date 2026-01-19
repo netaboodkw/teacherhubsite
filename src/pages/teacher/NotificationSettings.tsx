@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
   Bell, 
   BellRing, 
@@ -19,15 +18,16 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
-  Info,
   Copy,
   Check,
   RefreshCw,
   Play,
-  Music
+  Music,
+  Zap
 } from 'lucide-react';
 import { soundOptions, previewSound, type SoundType } from '@/lib/notificationSounds';
 import { useNotificationSystem } from '@/hooks/useNotificationSystem';
+import { getHapticEnabled, setHapticEnabled } from '@/hooks/useHapticFeedback';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -51,6 +51,13 @@ export default function NotificationSettings() {
   const [requesting, setRequesting] = useState(false);
   const [testing, setTesting] = useState(false);
   const [selectedSound, setSelectedSound] = useState<SoundType>('schoolBell');
+  const [hapticEnabled, setHapticEnabledState] = useState(getHapticEnabled());
+
+  const handleHapticToggle = (enabled: boolean) => {
+    setHapticEnabled(enabled);
+    setHapticEnabledState(enabled);
+    toast.success(enabled ? 'تم تفعيل الاهتزاز عند إدخال الدرجات' : 'تم إيقاف الاهتزاز عند إدخال الدرجات');
+  };
 
   const handleTestNotification = async () => {
     setTesting(true);
@@ -448,6 +455,25 @@ export default function NotificationSettings() {
                 checked={preferences.vibration_enabled}
                 onCheckedChange={(checked) => updatePreferences({ vibration_enabled: checked })}
                 disabled={isUpdating}
+              />
+            </div>
+
+            {/* Haptic when entering grades */}
+            <div className="flex items-center justify-between py-2">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-emerald-500/10">
+                  <Zap className="w-5 h-5 text-emerald-500" />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">الاهتزاز عند إدخال الدرجات</Label>
+                  <p className="text-xs text-muted-foreground">
+                    اهتزاز عند حفظ الدرجة بنجاح
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={hapticEnabled}
+                onCheckedChange={handleHapticToggle}
               />
             </div>
           </CardContent>

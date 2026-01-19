@@ -17,10 +17,10 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { User, School, Mail, Users, Loader2, Save, GraduationCap, Phone, BookOpen, Volume2, Vibrate, CreditCard, Clock, AlertTriangle, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Settings as SettingsIcon } from 'lucide-react';
+import { User, School, Mail, Users, Loader2, Save, GraduationCap, Phone, BookOpen, CreditCard, Clock, AlertTriangle, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Settings as SettingsIcon } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { InviteDepartmentHead } from '@/components/teacher/InviteDepartmentHead';
-import { getHapticEnabled, setHapticEnabled } from '@/hooks/useHapticFeedback';
+
 import { useMySubscription, useSubscriptionSettings, getSubscriptionStatus } from '@/hooks/useSubscription';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -35,7 +35,6 @@ export default function Settings() {
   const { data: subscription, isLoading: subscriptionLoading } = useMySubscription();
   const { data: subscriptionSettings } = useSubscriptionSettings();
   const subscriptionStatus = getSubscriptionStatus(subscription, subscriptionSettings);
-  const [hapticEnabled, setHapticEnabledState] = useState(getHapticEnabled());
   const { mode, setMode, isLiquidGlass } = useTheme();
   const [formData, setFormData] = useState({
     full_name: '',
@@ -54,13 +53,6 @@ export default function Settings() {
   const ContentCardContent = isLiquidGlass ? GlassCardContent : CardContent;
   const ActionButton = isLiquidGlass ? GlassButton : Button;
   const TextInput = isLiquidGlass ? GlassInput : Input;
-
-  // Toggle haptic feedback
-  const handleHapticToggle = (enabled: boolean) => {
-    setHapticEnabled(enabled);
-    setHapticEnabledState(enabled);
-    toast.success(enabled ? 'تم تفعيل الاهتزاز والصوت' : 'تم إيقاف الاهتزاز والصوت');
-  };
 
   // Get education level name
   const educationLevelName = educationLevels?.find(l => l.id === profile?.education_level_id)?.name_ar;
@@ -427,36 +419,6 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
-
-          {/* App Settings */}
-          <ContentCard>
-            <ContentCardHeader>
-              <ContentCardTitle className="flex items-center gap-2">
-                <Volume2 className="h-5 w-5" />
-                إعدادات التطبيق
-              </ContentCardTitle>
-              <ContentCardDescription>
-                تخصيص سلوك التطبيق
-              </ContentCardDescription>
-            </ContentCardHeader>
-            <ContentCardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <Vibrate className="h-4 w-4 text-muted-foreground" />
-                    <Label>الاهتزاز والصوت عند إدخال الدرجات</Label>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    تشغيل اهتزاز وصوت عند حفظ الدرجة بنجاح
-                  </p>
-                </div>
-                <Switch
-                  checked={hapticEnabled}
-                  onCheckedChange={handleHapticToggle}
-                />
-              </div>
-            </ContentCardContent>
-          </ContentCard>
 
           {/* Theme Settings */}
           <ContentCard>
