@@ -233,8 +233,8 @@ export default function TeacherAuth() {
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="min-h-full flex flex-col items-center px-6 py-16 pb-8">
+        <div className="flex-1 overflow-y-auto overscroll-contain">
+          <div className="min-h-full flex flex-col items-center px-4 sm:px-6 pt-14 pb-8">
             {/* Logo */}
             <div className="w-24 h-24 mb-6 flex items-center justify-center">
               <img 
@@ -391,26 +391,26 @@ export default function TeacherAuth() {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-3">
                     <div className="space-y-2">
                       <Label htmlFor="password" className="text-sm font-medium">كلمة المرور *</Label>
                       <div className="relative">
-                        <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Lock className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input
                           id="password"
                           type={showPassword ? "text" : "password"}
                           placeholder="••••••"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="h-14 pr-10 pl-10 rounded-2xl bg-muted/30 border-0 text-base"
+                          className="h-14 pr-12 pl-12 rounded-2xl bg-muted/30 border-0 text-base"
                           dir="ltr"
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground touch-manipulation"
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground touch-manipulation"
                         >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                         </button>
                       </div>
                     </div>
@@ -418,22 +418,22 @@ export default function TeacherAuth() {
                     <div className="space-y-2">
                       <Label htmlFor="confirmPassword" className="text-sm font-medium">تأكيد كلمة المرور *</Label>
                       <div className="relative">
-                        <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Lock className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input
                           id="confirmPassword"
                           type={showConfirmPassword ? "text" : "password"}
                           placeholder="••••••"
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
-                          className="h-14 pr-10 pl-10 rounded-2xl bg-muted/30 border-0 text-base"
+                          className="h-14 pr-12 pl-12 rounded-2xl bg-muted/30 border-0 text-base"
                           dir="ltr"
                         />
                         <button
                           type="button"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground touch-manipulation"
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground touch-manipulation"
                         >
-                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                         </button>
                       </div>
                     </div>

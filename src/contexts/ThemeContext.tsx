@@ -19,6 +19,12 @@ interface ThemeProviderProps {
   children: ReactNode;
 }
 
+// Check if device is mobile
+const isMobileDevice = () => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    (window.innerWidth <= 768);
+};
+
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const [mode, setModeState] = useState<ThemeMode>('system');
   const [style, setStyleState] = useState<ThemeStyle>('liquid-glass');
@@ -28,11 +34,15 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   const { data: themeStyleSetting } = useSystemSetting('app_theme_style');
   const updateSystemSetting = useUpdateSystemSetting();
 
-  // Load theme mode from localStorage
+  // Load theme mode from localStorage or default to light on mobile
   useEffect(() => {
     const savedMode = localStorage.getItem('theme-mode') as ThemeMode;
     if (savedMode) {
       setModeState(savedMode);
+    } else if (isMobileDevice()) {
+      // Default to light mode on mobile if no saved preference
+      setModeState('light');
+      localStorage.setItem('theme-mode', 'light');
     }
   }, []);
 

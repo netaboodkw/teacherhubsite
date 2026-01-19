@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { SwipeBackOverlay } from "@/components/navigation/SwipeBackOverlay";
+import { FloatingThemeToggle } from "@/components/theme/FloatingThemeToggle";
 
 // Landing & Auth
 import Landing from "./pages/Landing";
@@ -71,6 +72,7 @@ const App = () => (
         <Sonner />
         
         <BrowserRouter>
+          <FloatingThemeToggle />
           <SwipeBackOverlay />
           <Routes>
             {/* Public Routes */}
