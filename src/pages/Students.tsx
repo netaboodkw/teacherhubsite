@@ -1,33 +1,118 @@
-import { TeacherLayout } from '@/components/layout/TeacherLayout';
-import { StudentCard } from '@/components/students/StudentCard';
-import { GlassStudentCard } from '@/components/students/GlassStudentCard';
-import { ImportStudentsDialog } from '@/components/students/ImportStudentsDialog';
-import { EmptyState } from '@/components/common/EmptyState';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useStudents } from '@/hooks/useStudents';
 import { useClassrooms } from '@/hooks/useClassrooms';
-import { Users, Plus, Search, Filter, Loader2, Upload } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { ImportStudentsDialog } from '@/components/students/ImportStudentsDialog';
+import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { Button } from '@/components/ui/button';
-import { GlassButton } from '@/components/ui/glass-button';
 import { Input } from '@/components/ui/input';
-import { GlassInput } from '@/components/ui/glass-input';
-import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
+import { Users, Plus, Search, Upload, Loader2, ChevronLeft, HeartPulse, Eye, GraduationCap, UserX, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { GlassIcon } from '@/components/ui/glass-icon';
-import { PageHeader } from '@/components/common/PageHeader';
+import { useGrades } from '@/hooks/useGrades';
+import { useBehaviorNotes } from '@/hooks/useBehaviorNotes';
+import { useAttendance } from '@/hooks/useAttendance';
+
+// iOS-style Student Row Component
+function StudentRow({ 
+  student, 
+  classroomName, 
+  onClick 
+}: { 
+  student: any; 
+  classroomName: string;
+  onClick: () => void;
+}) {
+  const { data: grades = [] } = useGrades(student.classroom_id, student.id);
+  const { data: behaviorNotes = [] } = useBehaviorNotes(student.id);
+  const { data: attendance = [] } = useAttendance(student.classroom_id);
+  
+  const initials = student.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2);
+  const totalScore = grades.reduce((sum, g) => sum + g.score, 0);
+  const positiveNotes = behaviorNotes.filter(n => n.type === 'positive').length;
+  const negativeNotes = behaviorNotes.filter(n => n.type === 'negative').length;
+  const studentAttendance = attendance.filter(a => a.student_id === student.id);
+  const absentCount = studentAttendance.filter(a => a.status === 'absent').length;
+
+  return (
+    <div 
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-3 p-3 bg-card/80 backdrop-blur-sm",
+        "active:bg-muted transition-colors cursor-pointer",
+        "border-b border-border/30 last:border-b-0"
+      )}
+    >
+      {/* Avatar */}
+      <div className="relative shrink-0">
+        <Avatar className="w-12 h-12 border border-border/50">
+          <AvatarImage src={student.avatar_url || undefined} alt={student.name} />
+          <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+        {student.special_needs && (
+          <div className="absolute -top-0.5 -right-0.5 bg-amber-500 rounded-full p-0.5">
+            <HeartPulse className="w-2.5 h-2.5 text-white" />
+          </div>
+        )}
+        {student.is_watched && (
+          <div className="absolute -bottom-0.5 -right-0.5 bg-purple-500 rounded-full p-0.5">
+            <Eye className="w-2.5 h-2.5 text-white" />
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <h4 className="font-medium text-sm text-foreground truncate">{student.name}</h4>
+        <p className="text-xs text-muted-foreground truncate">{classroomName}</p>
+        
+        {/* Mini Stats */}
+        <div className="flex items-center gap-2 mt-1">
+          {totalScore > 0 && (
+            <span className="flex items-center gap-0.5 text-[10px] text-primary">
+              <GraduationCap className="w-3 h-3" />
+              {totalScore}
+            </span>
+          )}
+          {absentCount > 0 && (
+            <span className="flex items-center gap-0.5 text-[10px] text-destructive">
+              <UserX className="w-3 h-3" />
+              {absentCount}
+            </span>
+          )}
+          {positiveNotes > 0 && (
+            <span className="flex items-center gap-0.5 text-[10px] text-green-600">
+              <ThumbsUp className="w-3 h-3" />
+              {positiveNotes}
+            </span>
+          )}
+          {negativeNotes > 0 && (
+            <span className="flex items-center gap-0.5 text-[10px] text-red-600">
+              <ThumbsDown className="w-3 h-3" />
+              {negativeNotes}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Arrow */}
+      <ChevronLeft className="w-5 h-5 text-muted-foreground/50 shrink-0" />
+    </div>
+  );
+}
 
 export default function Students() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const { data: students = [], isLoading: loadingStudents } = useStudents();
   const { data: classrooms = [], isLoading: loadingClassrooms } = useClassrooms();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClassroom, setSelectedClassroom] = useState('all');
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const { isLiquidGlass } = useTheme();
 
   const filteredStudents = students.filter(s => {
     const matchesSearch = s.name.includes(searchTerm) || s.student_id.includes(searchTerm);
@@ -35,8 +120,19 @@ export default function Students() {
     return matchesSearch && matchesClass;
   });
 
+  // Group students by classroom
+  const groupedStudents = filteredStudents.reduce((acc, student) => {
+    const classroom = classrooms.find(c => c.id === student.classroom_id);
+    const classroomName = classroom?.name || 'بدون صف';
+    if (!acc[classroomName]) {
+      acc[classroomName] = [];
+    }
+    acc[classroomName].push(student);
+    return acc;
+  }, {} as Record<string, typeof students>);
+
   const getClassroomName = (classroomId: string) => {
-    return classrooms.find(c => c.id === classroomId)?.name || '';
+    return classrooms.find(c => c.id === classroomId)?.name || 'بدون صف';
   };
 
   const isLoading = loadingStudents || loadingClassrooms;
@@ -51,103 +147,163 @@ export default function Students() {
     );
   }
 
-  const SearchInput = isLiquidGlass ? GlassInput : Input;
-  const ActionButton = isLiquidGlass ? GlassButton : Button;
-  const ContentCard = isLiquidGlass ? GlassCard : Card;
+  // iOS-style mobile layout
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-background" dir="rtl">
+        {/* iOS Header */}
+        <div className={cn(
+          "sticky top-0 z-20",
+          "bg-background/60 backdrop-blur-2xl backdrop-saturate-200",
+          "border-b border-border/10",
+          "pt-[env(safe-area-inset-top)]"
+        )}>
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <h1 className="text-xl font-bold">الطلاب</h1>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setImportDialogOpen(true)}
+                  className="h-10 w-10"
+                >
+                  <Upload className="h-5 w-5" />
+                </Button>
+                <Button 
+                  size="icon"
+                  onClick={() => navigate('/teacher/students/new')}
+                  className="h-10 w-10"
+                >
+                  <Plus className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+            
+            {/* Search & Filter */}
+            <div className="flex gap-2 mt-3">
+              <div className="relative flex-1">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="بحث..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pr-10 h-10 rounded-xl bg-muted/50"
+                />
+              </div>
+              <Select value={selectedClassroom} onValueChange={setSelectedClassroom}>
+                <SelectTrigger className="w-32 h-10 rounded-xl bg-muted/50">
+                  <SelectValue placeholder="الكل" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">الكل</SelectItem>
+                  {classrooms.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
 
+        {/* Content */}
+        <div className="pb-24">
+          {filteredStudents.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 px-4">
+              <Users className="h-16 w-16 text-muted-foreground/30 mb-4" />
+              <p className="text-lg font-medium text-muted-foreground mb-2">لا يوجد طلاب</p>
+              <p className="text-sm text-muted-foreground/70 text-center mb-6">أضف طلابك لتبدأ بتتبع حضورهم ودرجاتهم</p>
+              <Button onClick={() => navigate('/teacher/students/new')}>
+                <Plus className="w-4 h-4 ml-2" />
+                إضافة طالب
+              </Button>
+            </div>
+          ) : selectedClassroom === 'all' ? (
+            // Grouped by classroom
+            Object.entries(groupedStudents).map(([classroomName, classStudents]) => (
+              <div key={classroomName} className="mb-4">
+                <div className="px-4 py-2 bg-muted/30">
+                  <p className="text-xs font-medium text-muted-foreground uppercase">
+                    {classroomName} ({classStudents.length})
+                  </p>
+                </div>
+                <div className="mx-4 rounded-xl overflow-hidden border border-border/30">
+                  {classStudents.map((student) => (
+                    <StudentRow
+                      key={student.id}
+                      student={student}
+                      classroomName={classroomName}
+                      onClick={() => navigate(`/teacher/students/${student.id}`)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))
+          ) : (
+            // Single classroom list
+            <div className="mx-4 mt-4 rounded-xl overflow-hidden border border-border/30">
+              {filteredStudents.map((student) => (
+                <StudentRow
+                  key={student.id}
+                  student={student}
+                  classroomName={getClassroomName(student.classroom_id)}
+                  onClick={() => navigate(`/teacher/students/${student.id}`)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        <ImportStudentsDialog 
+          open={importDialogOpen} 
+          onOpenChange={setImportDialogOpen}
+          defaultClassroomId={selectedClassroom !== 'all' ? selectedClassroom : undefined}
+        />
+      </div>
+    );
+  }
+
+  // Desktop layout
   return (
     <TeacherLayout>
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
-        <PageHeader
-          icon={Users}
-          title="الطلاب"
-          subtitle={`${students.length} طالب مسجل`}
-          iconVariant="blue"
-          actions={
-            <>
-              <ActionButton 
-                variant="outline"
-                onClick={() => setImportDialogOpen(true)}
-                className={isLiquidGlass ? "gap-2" : ""}
-              >
-                <Upload className="w-4 h-4 ml-2" />
-                استيراد
-              </ActionButton>
-              <Link to="/teacher/students/new">
-                <ActionButton>
-                  <Plus className="w-4 h-4 ml-2" />
-                  طالب جديد
-                </ActionButton>
-              </Link>
-            </>
-          }
-        />
-
-        {/* Stats Cards */}
-        {isLiquidGlass && students.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <ContentCard className="p-4">
-              <div className="flex items-center gap-3">
-                <GlassIcon icon={Users} variant="default" size="default" />
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{students.length}</p>
-                  <p className="text-xs text-muted-foreground">إجمالي الطلاب</p>
-                </div>
-              </div>
-            </ContentCard>
-            <ContentCard className="p-4">
-              <div className="flex items-center gap-3">
-                <GlassIcon icon={Filter} variant="accent" size="default" />
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{classrooms.length}</p>
-                  <p className="text-xs text-muted-foreground">الصفوف</p>
-                </div>
-              </div>
-            </ContentCard>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">الطلاب</h1>
+            <p className="text-muted-foreground">{students.length} طالب مسجل</p>
           </div>
-        )}
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+              <Upload className="w-4 h-4 ml-2" />
+              استيراد
+            </Button>
+            <Button onClick={() => navigate('/teacher/students/new')}>
+              <Plus className="w-4 h-4 ml-2" />
+              طالب جديد
+            </Button>
+          </div>
+        </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex gap-4">
           <div className="relative flex-1 max-w-md">
-            {isLiquidGlass ? (
-              <div className={cn(
-                "absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg",
-                "bg-primary/10 text-primary pointer-events-none"
-              )}>
-                <Search className="w-3.5 h-3.5" />
-              </div>
-            ) : (
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-            )}
-            <SearchInput
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
               placeholder="بحث عن طالب..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={isLiquidGlass ? "pr-12" : "pr-10"}
+              className="pr-10"
             />
           </div>
           <Select value={selectedClassroom} onValueChange={setSelectedClassroom}>
-            <SelectTrigger className={cn(
-              "w-full sm:w-48",
-              isLiquidGlass && "rounded-xl bg-background/50 backdrop-blur-md border-border/50"
-            )}>
-              {isLiquidGlass ? (
-                <div className="p-1 rounded-lg bg-accent/10 text-accent ml-2">
-                  <Filter className="w-3.5 h-3.5" />
-                </div>
-              ) : (
-                <Filter className="w-4 h-4 ml-2" />
-              )}
+            <SelectTrigger className="w-48">
               <SelectValue placeholder="جميع الصفوف" />
             </SelectTrigger>
-            <SelectContent className={isLiquidGlass ? 'rounded-xl backdrop-blur-xl bg-background/90' : ''}>
+            <SelectContent>
               <SelectItem value="all">جميع الصفوف</SelectItem>
-              {classrooms.map((classroom) => (
-                <SelectItem key={classroom.id} value={classroom.id}>
-                  {classroom.name}
-                </SelectItem>
+              {classrooms.map((c) => (
+                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -157,34 +313,34 @@ export default function Students() {
         {filteredStudents.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredStudents.map((student) => (
-              isLiquidGlass ? (
-                <GlassStudentCard 
-                  key={student.id}
-                  student={student} 
-                  classroomName={getClassroomName(student.classroom_id)}
-                  onClick={() => navigate(`/teacher/students/${student.id}`)}
-                />
-              ) : (
-                <div key={student.id} className="flex flex-col gap-1">
-                  <span className="text-xs text-muted-foreground px-1 truncate">
-                    {getClassroomName(student.classroom_id)}
-                  </span>
-                  <StudentCard 
-                    student={student} 
-                    onClick={() => navigate(`/teacher/students/${student.id}`)}
-                  />
+              <div 
+                key={student.id}
+                onClick={() => navigate(`/teacher/students/${student.id}`)}
+                className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border hover:border-primary/50 cursor-pointer transition-all"
+              >
+                <Avatar className="w-12 h-12">
+                  <AvatarImage src={student.avatar_url || undefined} />
+                  <AvatarFallback className="bg-primary/10 text-primary">
+                    {student.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium truncate">{student.name}</h4>
+                  <p className="text-sm text-muted-foreground truncate">{getClassroomName(student.classroom_id)}</p>
                 </div>
-              )
+                <ChevronLeft className="w-5 h-5 text-muted-foreground" />
+              </div>
             ))}
           </div>
         ) : (
-          <EmptyState
-            icon={Users}
-            title="لا يوجد طلاب"
-            description="أضف طلابك لتبدأ بتتبع حضورهم ودرجاتهم"
-            actionLabel="إضافة طالب"
-            onAction={() => navigate('/teacher/students/new')}
-          />
+          <div className="text-center py-12">
+            <Users className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
+            <p className="text-lg font-medium text-muted-foreground mb-4">لا يوجد طلاب</p>
+            <Button onClick={() => navigate('/teacher/students/new')}>
+              <Plus className="w-4 h-4 ml-2" />
+              إضافة طالب
+            </Button>
+          </div>
         )}
       </div>
 
