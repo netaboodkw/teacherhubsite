@@ -8,15 +8,21 @@ import {
   Layout,
   FileSpreadsheet,
   CheckCircle2,
-  Monitor
+  GraduationCap,
+  BarChart3,
+  ClipboardCheck,
+  Home
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const stepIcons: { [key: string]: React.ReactNode } = {
-  'add-students': <Users className="w-5 h-5" />,
-  'classroom-view': <Layout className="w-5 h-5" />,
-  'grade-templates': <FileSpreadsheet className="w-5 h-5" />,
+  'create-classroom': <GraduationCap className="w-4 h-4" />,
+  'add-students': <Users className="w-4 h-4" />,
+  'grade-templates': <FileSpreadsheet className="w-4 h-4" />,
+  'grades': <BarChart3 className="w-4 h-4" />,
+  'dashboard': <Home className="w-4 h-4" />,
+  'attendance': <ClipboardCheck className="w-4 h-4" />,
 };
 
 export function InteractiveOnboardingBanner() {
@@ -31,12 +37,17 @@ export function InteractiveOnboardingBanner() {
     progress 
   } = useOnboarding();
   const navigate = useNavigate();
+  const location = useLocation();
 
   if (!isOnboarding) return null;
 
   const step = steps[currentStep];
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === steps.length - 1;
+
+  // Check if we're on the current step's page
+  const isOnCurrentStepPage = location.pathname === step.route || 
+    (step.route === '/teacher' && location.pathname === '/teacher');
 
   const handleAction = () => {
     if (step.route) {
@@ -55,104 +66,109 @@ export function InteractiveOnboardingBanner() {
   return (
     <div 
       className={cn(
-        "fixed bottom-20 left-3 right-3 z-50",
-        "md:left-auto md:right-6 md:bottom-6 md:max-w-sm",
-        "bg-card border border-border rounded-xl shadow-lg",
-        "animate-in slide-in-from-bottom-4 duration-300"
+        "fixed top-0 left-0 right-0 z-50",
+        "bg-primary text-primary-foreground",
+        "shadow-lg",
+        "safe-area-inset-top"
       )}
       dir="rtl"
     >
-      {/* Simple progress dots */}
-      <div className="flex justify-center gap-2 pt-3">
-        {steps.map((_, index) => (
-          <div
-            key={index}
-            className={cn(
-              "h-2 w-2 rounded-full transition-all",
-              index === currentStep 
-                ? "bg-primary scale-110" 
-                : index < currentStep 
-                  ? "bg-primary/40" 
-                  : "bg-muted"
-            )}
-          />
-        ))}
+      {/* Progress bar */}
+      <div className="h-1 bg-primary-foreground/20">
+        <div 
+          className="h-full bg-primary-foreground/60 transition-all duration-300"
+          style={{ width: `${progress}%` }}
+        />
       </div>
 
-      {/* Content */}
-      <div className="p-3">
-        <div className="flex items-start gap-2.5">
-          {/* Icon */}
-          <div className="p-2 rounded-lg bg-primary/10 text-primary flex-shrink-0">
-            {stepIcons[step.id] || <Users className="w-5 h-5" />}
+      {/* Content - compact horizontal layout */}
+      <div className="px-3 py-2">
+        <div className="flex items-center gap-2">
+          {/* Step indicator with icon */}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <div className="p-1.5 rounded-md bg-primary-foreground/20">
+              {stepIcons[step.id] || <GraduationCap className="w-4 h-4" />}
+            </div>
+            <span className="text-xs font-medium opacity-80">
+              {currentStep + 1}/{steps.length}
+            </span>
           </div>
 
-          {/* Text */}
+          {/* Text - compact */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-foreground text-sm leading-tight">
+            <p className="text-sm font-medium truncate">
               {step.title}
-            </h3>
-            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-              {step.description}
             </p>
-            
-            {/* Computer tip for templates */}
-            {step.id === 'grade-templates' && (
-              <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-600 dark:text-amber-400">
-                <Monitor className="w-3.5 h-3.5" />
-                <span>يُفضل استخدام الكمبيوتر</span>
-              </div>
-            )}
           </div>
 
-          {/* Close button */}
-          <button
-            onClick={skipOnboarding}
-            className="p-1 rounded-full hover:bg-muted transition-colors text-muted-foreground"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+          {/* Actions - horizontal */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {!isFirstStep && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={previousStep}
+                className="h-7 w-7 text-primary-foreground hover:bg-primary-foreground/20"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            )}
 
-        {/* Actions - simplified */}
-        <div className="flex items-center gap-2 mt-3">
-          {!isFirstStep && (
+            {!isOnCurrentStepPage && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleAction}
+                className="h-7 px-2 text-xs"
+              >
+                {step.action}
+              </Button>
+            )}
+
             <Button
               variant="ghost"
               size="sm"
-              onClick={previousStep}
-              className="h-8 px-2 text-xs"
+              onClick={handleNext}
+              className="h-7 px-2 text-xs text-primary-foreground hover:bg-primary-foreground/20"
             >
-              <ChevronRight className="w-3.5 h-3.5" />
+              {isLastStep ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5 ml-1" />
+                  إنهاء
+                </>
+              ) : (
+                <>
+                  التالي
+                  <ChevronLeft className="w-3.5 h-3.5 mr-1" />
+                </>
+              )}
             </Button>
-          )}
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleAction}
-            className="h-8 px-3 text-xs flex-1"
-          >
-            {step.action}
-          </Button>
+            {/* Close button */}
+            <button
+              onClick={skipOnboarding}
+              className="p-1 rounded hover:bg-primary-foreground/20 transition-colors opacity-60 hover:opacity-100"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
 
-          <Button
-            size="sm"
-            onClick={handleNext}
-            className="h-8 px-3 text-xs"
-          >
-            {isLastStep ? (
-              <>
-                <CheckCircle2 className="w-3.5 h-3.5 ml-1" />
-                تم
-              </>
-            ) : (
-              <>
-                التالي
-                <ChevronLeft className="w-3.5 h-3.5 mr-1" />
-              </>
-            )}
-          </Button>
+        {/* Step dots - smaller */}
+        <div className="flex justify-center gap-1 mt-1.5">
+          {steps.map((_, index) => (
+            <div
+              key={index}
+              className={cn(
+                "h-1 rounded-full transition-all",
+                index === currentStep 
+                  ? "w-3 bg-primary-foreground" 
+                  : index < currentStep 
+                    ? "w-1 bg-primary-foreground/50" 
+                    : "w-1 bg-primary-foreground/20"
+              )}
+            />
+          ))}
         </div>
       </div>
     </div>

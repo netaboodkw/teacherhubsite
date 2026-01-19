@@ -29,27 +29,51 @@ const OnboardingContext = createContext<OnboardingContextType | undefined>(undef
 
 const initialSteps: OnboardingStep[] = [
   {
-    id: 'add-students',
-    title: 'إضافة الطلاب 👥',
-    description: 'يمكنك استيراد أسماء الطلاب من صورة كشف الأسماء أو إضافتهم يدوياً',
-    route: '/teacher/students',
-    action: 'صفحة الطلاب',
+    id: 'create-classroom',
+    title: 'إنشاء الصف 🏫',
+    description: 'ابدأ بإنشاء صفك الدراسي الأول',
+    route: '/teacher/classrooms/new',
+    action: 'إنشاء صف',
     isCompleted: false,
   },
   {
-    id: 'classroom-view',
-    title: 'إدارة الصف 🎯',
-    description: 'ادخل الصف وتفاعل مع الطلاب، سجل الحضور والغياب بضغطة زر',
-    route: '/teacher/classrooms',
-    action: 'صفحاتي',
+    id: 'add-students',
+    title: 'إضافة الطلاب 👥',
+    description: 'استورد أسماء الطلاب من صورة أو أضفهم يدوياً',
+    route: '/teacher/students',
+    action: 'الطلاب',
     isCompleted: false,
   },
   {
     id: 'grade-templates',
-    title: 'قوالب الدرجات 📊',
-    description: 'أنشئ قوالب تقييم مخصصة. ننصح باستخدام الكمبيوتر لوضوح أكبر',
+    title: 'قوالب الدرجات 📋',
+    description: 'أنشئ قوالب تقييم مخصصة (الكمبيوتر أفضل)',
     route: '/teacher/templates',
     action: 'القوالب',
+    isCompleted: false,
+  },
+  {
+    id: 'grades',
+    title: 'الدرجات 📊',
+    description: 'سجل درجات طلابك وتابع تقدمهم',
+    route: '/teacher/grades',
+    action: 'الدرجات',
+    isCompleted: false,
+  },
+  {
+    id: 'dashboard',
+    title: 'لوحة التحكم 🎯',
+    description: 'تابع إحصائياتك وجدولك اليومي',
+    route: '/teacher',
+    action: 'الرئيسية',
+    isCompleted: false,
+  },
+  {
+    id: 'attendance',
+    title: 'الحضور والغياب ✓',
+    description: 'سجل حضور الطلاب بسهولة من داخل الصف',
+    route: '/teacher/attendance',
+    action: 'الحضور',
     isCompleted: false,
   },
 ];
