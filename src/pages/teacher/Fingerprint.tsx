@@ -16,6 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { PageHeader } from '@/components/common/PageHeader';
 import { useNativeNotifications } from '@/hooks/useNativeNotifications';
 import { useFingerprintScheduler } from '@/hooks/useFingerprintScheduler';
+import { getAttendancePref, setAttendancePref } from '@/components/notifications/AttendanceNotificationBanner';
 
 interface FingerprintSettings {
   attendanceTime: string; // وقت الحضور الفعلي
@@ -81,6 +82,14 @@ const FingerprintPage = () => {
   const [status, setStatus] = useState<FingerprintStatus>('waiting');
   const [fingerprintDone, setFingerprintDone] = useState(false);
   const [lastReminderTime, setLastReminderTime] = useState<Date | null>(null);
+  const [dailyNotificationEnabled, setDailyNotificationEnabled] = useState(() => getAttendancePref() === 'daily');
+
+  // تبديل حالة إشعار الحضور اليومي
+  const handleDailyNotificationToggle = (enabled: boolean) => {
+    setDailyNotificationEnabled(enabled);
+    setAttendancePref(enabled ? 'daily' : 'never');
+    toast.success(enabled ? 'تم تفعيل إشعار الحضور اليومي' : 'تم إيقاف إشعار الحضور اليومي');
+  };
 
   // تحديث الوقت كل ثانية
   useEffect(() => {
@@ -402,6 +411,20 @@ const FingerprintPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* إشعار تذكير الحضور اليومي */}
+            <div className="flex items-center justify-between p-4 rounded-lg bg-primary/5 border border-primary/20">
+              <div className="space-y-0.5">
+                <Label className="text-base font-semibold">إشعار تذكير الحضور اليومي</Label>
+                <p className="text-sm text-muted-foreground">
+                  عرض إشعار عند فتح التطبيق لتسجيل وقت الحضور
+                </p>
+              </div>
+              <Switch
+                checked={dailyNotificationEnabled}
+                onCheckedChange={handleDailyNotificationToggle}
+              />
+            </div>
+
             {/* وقت الحضور */}
             <div className="space-y-2">
               <Label htmlFor="attendanceTime">وقت الحضور الفعلي</Label>
