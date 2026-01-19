@@ -64,7 +64,6 @@ const moreItems = [
   { href: '/teacher/fingerprint', icon: Fingerprint, label: 'البصمة', color: 'rose' as const },
   { href: '/teacher/templates', icon: LayoutGrid, label: 'قوالب الدرجات', color: 'purple' as const },
   { href: '/teacher/reports', icon: BarChart3, label: 'التقارير', color: 'orange' as const },
-  { href: '/teacher/notifications', icon: Bell, label: 'الإشعارات', color: 'amber' as const },
   { href: '/teacher/subscription', icon: CreditCard, label: 'الاشتراك', color: 'success' as const },
   { href: '/teacher/settings', icon: Settings, label: 'الإعدادات', color: 'teal' as const },
 ];

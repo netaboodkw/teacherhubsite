@@ -4,15 +4,18 @@ import { useClassrooms, type Classroom } from '@/hooks/useClassrooms';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, ChevronLeft, ChevronRight, Printer, BookOpen } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Calendar, Clock, ChevronLeft, ChevronRight, Printer, BookOpen, Settings, Bell, Volume2, Vibrate, Play } from 'lucide-react';
 import { educationSchedules, getScheduleByEducationLevel, weekDays, getKuwaitDayKey, type EducationSchedule } from '@/lib/periodSchedules';
 import { cn } from '@/lib/utils';
 import { useProfile } from '@/hooks/useProfile';
-import { usePeriodReminder } from '@/hooks/usePeriodReminder';
+import { usePeriodReminder, getReminderSettings, saveReminderSettings, type ReminderSettings } from '@/hooks/usePeriodReminder';
 import { UpcomingPeriodAlert } from '@/components/schedule/UpcomingPeriodAlert';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useNavigate } from 'react-router-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { soundOptions, previewSound, type SoundType } from '@/lib/notificationSounds';
+import { toast } from 'sonner';
 
 // Color mapping for Tailwind class names to hex colors
 const colorClassToHex: { [key: string]: string } = {
@@ -67,6 +70,15 @@ export default function TeacherSchedule() {
     return index >= 0 ? index : 0;
   });
   const [selectedEducationLevel, setSelectedEducationLevel] = useState<string>('all');
+  const [showSettings, setShowSettings] = useState(false);
+  const [reminderSettings, setReminderSettings] = useState<ReminderSettings>(getReminderSettings);
+
+  const updateReminderSettings = (updates: Partial<ReminderSettings>) => {
+    const newSettings = { ...reminderSettings, ...updates };
+    setReminderSettings(newSettings);
+    saveReminderSettings(newSettings);
+    toast.success('تم حفظ الإعدادات');
+  };
 
   const handlePrint = () => {
     window.print();
@@ -165,14 +177,25 @@ export default function TeacherSchedule() {
             <div className="px-4 pt-12 pb-4 safe-area-inset-top">
               <div className="flex items-center justify-between mb-4">
                 <h1 className="text-2xl font-bold">جدول الحصص</h1>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handlePrint}
-                  className="h-10 w-10 rounded-full"
-                >
-                  <Printer className="h-5 w-5" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant={showSettings ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setShowSettings(!showSettings)}
+                    className="rounded-full gap-1"
+                  >
+                    <Settings className={cn("h-4 w-4", showSettings && "rotate-90 transition-transform")} />
+                    {showSettings ? "إغلاق" : "التذكيرات"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handlePrint}
+                    className="h-10 w-10 rounded-full"
+                  >
+                    <Printer className="h-5 w-5" />
+                  </Button>
+                </div>
               </div>
               
               {/* Education Level Filter */}
@@ -193,6 +216,112 @@ export default function TeacherSchedule() {
               )}
             </div>
           </div>
+
+          {/* Settings Section - At Top When Open */}
+          {showSettings && (
+            <div className="px-4 pt-4 animate-in slide-in-from-top duration-200">
+              <div className="rounded-2xl bg-muted/30 p-4 space-y-4">
+                {/* Enable Reminder */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                      <Bell className="w-5 h-5 text-blue-500" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">تذكير الحصص</p>
+                      <p className="text-xs text-muted-foreground">تنبيه قبل بداية الحصة</p>
+                    </div>
+                  </div>
+                  <div dir="ltr">
+                    <Switch
+                      checked={reminderSettings.enabled}
+                      onCheckedChange={(checked) => updateReminderSettings({ enabled: checked })}
+                    />
+                  </div>
+                </div>
+
+                {reminderSettings.enabled && (
+                  <div className="space-y-3 pt-2 border-t border-border/30">
+                    {/* Minutes Before */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">التنبيه قبل الحصة بـ</span>
+                      <Select
+                        value={reminderSettings.minutesBefore.toString()}
+                        onValueChange={(value) => updateReminderSettings({ minutesBefore: parseInt(value) })}
+                      >
+                        <SelectTrigger className="w-28 h-9 rounded-lg">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="3">3 دقائق</SelectItem>
+                          <SelectItem value="5">5 دقائق</SelectItem>
+                          <SelectItem value="10">10 دقائق</SelectItem>
+                          <SelectItem value="15">15 دقيقة</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Sound Toggle */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Volume2 className="w-4 h-4 text-blue-500" />
+                        <span className="text-sm">الصوت</span>
+                      </div>
+                      <div dir="ltr">
+                        <Switch
+                          checked={reminderSettings.soundEnabled}
+                          onCheckedChange={(checked) => updateReminderSettings({ soundEnabled: checked })}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Sound Type */}
+                    {reminderSettings.soundEnabled && (
+                      <div className="flex gap-2">
+                        <Select
+                          value={reminderSettings.soundType}
+                          onValueChange={(value) => updateReminderSettings({ soundType: value as SoundType })}
+                        >
+                          <SelectTrigger className="flex-1 h-9 rounded-lg">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {soundOptions.map((sound) => (
+                              <SelectItem key={sound.id} value={sound.id}>
+                                {sound.nameAr}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          className="h-9 w-9 rounded-lg"
+                          onClick={() => previewSound(reminderSettings.soundType)}
+                        >
+                          <Play className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Vibration Toggle */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Vibrate className="w-4 h-4 text-blue-500" />
+                        <span className="text-sm">الاهتزاز</span>
+                      </div>
+                      <div dir="ltr">
+                        <Switch
+                          checked={reminderSettings.vibrationEnabled}
+                          onCheckedChange={(checked) => updateReminderSettings({ vibrationEnabled: checked })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Upcoming Period Alert */}
           {upcomingPeriod && (
