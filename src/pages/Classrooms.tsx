@@ -121,8 +121,8 @@ export default function Classrooms() {
               </div>
               
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-base truncate">{classroom.name}</h3>
-                <p className="text-sm text-muted-foreground truncate">{classroom.subject}</p>
+                <h3 className="font-semibold text-base">{classroom.name}</h3>
+                <p className="text-sm text-muted-foreground">{classroom.subject}</p>
               </div>
               
               {/* Edit Button */}
@@ -273,8 +273,8 @@ export default function Classrooms() {
                 </div>
                 
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold truncate">{classroom.name}</h3>
-                  <p className="text-sm text-muted-foreground truncate">{classroom.subject}</p>
+                  <h3 className="font-semibold">{classroom.name}</h3>
+                  <p className="text-sm text-muted-foreground">{classroom.subject}</p>
                 </div>
                 
                 <Button
