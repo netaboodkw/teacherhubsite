@@ -147,111 +147,109 @@ export default function Students() {
     );
   }
 
-  // iOS-style mobile layout
+  // Mobile layout - matching Grades page design
   if (isMobile) {
     return (
       <TeacherLayout hideHeader hidePadding>
-        {/* iOS Header */}
-        <div className={cn(
-          "sticky top-0 z-20",
-          "bg-background/60 backdrop-blur-2xl backdrop-saturate-200",
-          "border-b border-border/10",
-          "pt-[env(safe-area-inset-top)]"
-        )}>
-          <div className="px-4 py-3">
-            <div className="flex items-center justify-between gap-3">
-              <h1 className="text-xl font-bold">الطلاب</h1>
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => setImportDialogOpen(true)}
-                  className="h-10 w-10"
-                >
-                  <FileSpreadsheet className="h-5 w-5" />
-                </Button>
-                <Button 
-                  size="icon"
-                  onClick={() => navigate('/teacher/students/new')}
-                  className="h-10 w-10"
-                >
-                  <Plus className="h-5 w-5" />
-                </Button>
+        <div className="min-h-screen bg-background">
+          {/* Mobile Header */}
+          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/40">
+            <div className="px-4 py-3 space-y-3">
+              {/* Title & Actions */}
+              <div className="flex items-center justify-between">
+                <h1 className="text-xl font-bold">الطلاب</h1>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    className="rounded-full h-10 w-10"
+                    onClick={() => setImportDialogOpen(true)}
+                  >
+                    <FileSpreadsheet className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    size="icon"
+                    className="rounded-full h-10 w-10"
+                    onClick={() => navigate('/teacher/students/new')}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-            </div>
-            
-            {/* Search & Filter */}
-            <div className="flex gap-2 mt-3">
-              <div className="relative flex-1">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="بحث..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pr-10 h-10 rounded-xl bg-muted/50"
-                />
-              </div>
+              
+              {/* Classroom Selector - Dropdown */}
               <Select value={selectedClassroom} onValueChange={setSelectedClassroom}>
-                <SelectTrigger className="w-32 h-10 rounded-xl bg-muted/50">
-                  <SelectValue placeholder="الكل" />
+                <SelectTrigger className="w-full bg-muted/50 border-border/50 rounded-xl">
+                  <SelectValue placeholder="جميع الصفوف" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">الكل</SelectItem>
+                <SelectContent className="bg-popover border-border z-50">
+                  <SelectItem value="all">جميع الصفوف</SelectItem>
                   {classrooms.map((c) => (
                     <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="بحث عن طالب..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pr-10 h-10 rounded-xl bg-muted/50 border-border/50"
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Content */}
-        <div className="pb-24">
-          {filteredStudents.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 px-4">
-              <Users className="h-16 w-16 text-muted-foreground/30 mb-4" />
-              <p className="text-lg font-medium text-muted-foreground mb-2">لا يوجد طلاب</p>
-              <p className="text-sm text-muted-foreground/70 text-center mb-6">أضف طلابك لتبدأ بتتبع حضورهم ودرجاتهم</p>
-              <Button onClick={() => navigate('/teacher/students/new')}>
-                <Plus className="w-4 h-4 ml-2" />
-                إضافة طالب
-              </Button>
-            </div>
-          ) : selectedClassroom === 'all' ? (
-            // Grouped by classroom
-            Object.entries(groupedStudents).map(([classroomName, classStudents]) => (
-              <div key={classroomName} className="mb-4">
-                <div className="px-4 py-2 bg-muted/30">
-                  <p className="text-xs font-medium text-muted-foreground uppercase">
-                    {classroomName} ({classStudents.length})
-                  </p>
-                </div>
-                <div className="mx-4 rounded-xl overflow-hidden border border-border/30">
-                  {classStudents.map((student) => (
-                    <StudentRow
-                      key={student.id}
-                      student={student}
-                      classroomName={classroomName}
-                      onClick={() => navigate(`/teacher/students/${student.id}`)}
-                    />
-                  ))}
-                </div>
+          {/* Content */}
+          <div className="p-4 pb-24">
+            {filteredStudents.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                <Users className="h-12 w-12 mb-4 opacity-30" />
+                <p className="text-lg font-medium mb-2">لا يوجد طلاب</p>
+                <p className="text-sm text-muted-foreground/70 text-center mb-6">أضف طلابك لتبدأ بتتبع حضورهم ودرجاتهم</p>
+                <Button onClick={() => navigate('/teacher/students/new')}>
+                  <Plus className="w-4 h-4 ml-2" />
+                  إضافة طالب
+                </Button>
               </div>
-            ))
-          ) : (
-            // Single classroom list
-            <div className="mx-4 mt-4 rounded-xl overflow-hidden border border-border/30">
-              {filteredStudents.map((student) => (
-                <StudentRow
-                  key={student.id}
-                  student={student}
-                  classroomName={getClassroomName(student.classroom_id)}
-                  onClick={() => navigate(`/teacher/students/${student.id}`)}
-                />
-              ))}
-            </div>
-          )}
+            ) : selectedClassroom === 'all' ? (
+              // Grouped by classroom
+              Object.entries(groupedStudents).map(([classroomName, classStudents]) => (
+                <div key={classroomName} className="mb-4">
+                  <div className="py-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase">
+                      {classroomName} ({classStudents.length})
+                    </p>
+                  </div>
+                  <div className="rounded-xl overflow-hidden border border-border/30 bg-card">
+                    {classStudents.map((student) => (
+                      <StudentRow
+                        key={student.id}
+                        student={student}
+                        classroomName={classroomName}
+                        onClick={() => navigate(`/teacher/students/${student.id}`)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))
+            ) : (
+              // Single classroom list
+              <div className="rounded-xl overflow-hidden border border-border/30 bg-card">
+                {filteredStudents.map((student) => (
+                  <StudentRow
+                    key={student.id}
+                    student={student}
+                    classroomName={getClassroomName(student.classroom_id)}
+                    onClick={() => navigate(`/teacher/students/${student.id}`)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <ImportStudentsDialog 
