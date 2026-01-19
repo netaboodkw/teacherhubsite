@@ -34,7 +34,19 @@ import {
   Calendar,
   CheckCircle,
   XCircle,
-  FileText
+  FileText,
+  Users,
+  BarChart3,
+  Bell,
+  Shield,
+  Zap,
+  Star,
+  GraduationCap,
+  ClipboardCheck,
+  TrendingUp,
+  Smartphone,
+  HeadphonesIcon,
+  Gift
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 
@@ -55,6 +67,50 @@ interface Payment {
     courses_count: number;
   } | null;
 }
+
+// Feature items for display
+const features = [
+  {
+    icon: Users,
+    title: 'إدارة الطلاب',
+    description: 'إدارة بيانات الطلاب وتنظيمهم في صفوف'
+  },
+  {
+    icon: ClipboardCheck,
+    title: 'تسجيل الحضور',
+    description: 'تسجيل الحضور والغياب بسهولة وسرعة'
+  },
+  {
+    icon: BarChart3,
+    title: 'تقارير الدرجات',
+    description: 'تقارير شاملة للدرجات والأداء الأكاديمي'
+  },
+  {
+    icon: Bell,
+    title: 'التنبيهات الذكية',
+    description: 'تنبيهات للحصص والمهام المهمة'
+  },
+  {
+    icon: Smartphone,
+    title: 'تطبيق الجوال',
+    description: 'استخدم النظام من أي جهاز في أي وقت'
+  },
+  {
+    icon: TrendingUp,
+    title: 'متابعة التقدم',
+    description: 'تتبع تقدم الطلاب عبر الوقت'
+  },
+  {
+    icon: Shield,
+    title: 'حماية البيانات',
+    description: 'بياناتك آمنة ومحمية بالكامل'
+  },
+  {
+    icon: HeadphonesIcon,
+    title: 'دعم فني متميز',
+    description: 'فريق دعم متاح لمساعدتك'
+  }
+];
 
 export default function TeacherSubscription() {
   const { data: packages, isLoading: packagesLoading } = useSubscriptionPackages();
@@ -156,7 +212,7 @@ export default function TeacherSubscription() {
     switch (subscriptionStatus.status) {
       case 'trial':
         return (
-          <Badge variant="secondary" className="gap-1">
+          <Badge variant="secondary" className="gap-1 bg-amber-100 text-amber-700 border-amber-300">
             <Clock className="h-3 w-3" />
             فترة تجريبية - {subscriptionStatus.daysRemaining} يوم متبقي
           </Badge>
@@ -170,7 +226,7 @@ export default function TeacherSubscription() {
         );
       case 'active':
         return (
-          <Badge variant="default" className="gap-1 bg-emerald-600">
+          <Badge className="gap-1 bg-emerald-600 hover:bg-emerald-700">
             <Crown className="h-3 w-3" />
             مشترك - {subscriptionStatus.daysRemaining} يوم متبقي
           </Badge>
@@ -191,7 +247,7 @@ export default function TeacherSubscription() {
     switch (status) {
       case 'completed':
         return (
-          <Badge variant="default" className="gap-1 bg-emerald-600">
+          <Badge className="gap-1 bg-emerald-600">
             <CheckCircle className="h-3 w-3" />
             مكتمل
           </Badge>
@@ -235,48 +291,81 @@ export default function TeacherSubscription() {
 
   return (
     <TeacherLayout>
-      <div className="max-w-5xl mx-auto space-y-6">
-        {/* Trial Period Banner - Show when user is in trial */}
-        {subscriptionStatus.status === 'trial' && subscription?.trial_ends_at && (
-          <Card className="border-amber-500 bg-amber-500/10">
-            <CardContent className="flex items-center gap-4 p-4">
-              <div className="p-2 rounded-full bg-amber-500/20">
-                <Clock className="h-6 w-6 text-amber-600" />
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Hero Section */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 p-8 text-primary-foreground">
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute inset-0" style={{ 
+              backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)',
+              backgroundSize: '24px 24px'
+            }} />
+          </div>
+          <div className="relative z-10">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
+                    <Crown className="h-8 w-8" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl lg:text-3xl font-bold">اشترك الآن</h1>
+                    <p className="text-primary-foreground/80">واستمتع بجميع مميزات النظام</p>
+                  </div>
+                </div>
+                {subscriptionStatus.status === 'trial' && subscription?.trial_ends_at && (
+                  <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 w-fit">
+                    <Clock className="h-5 w-5" />
+                    <span>
+                      الفترة التجريبية تنتهي في <strong>{getTrialEndDate()}</strong>
+                    </span>
+                    <Badge variant="secondary" className="bg-white/20 border-0">
+                      {subscriptionStatus.daysRemaining} يوم
+                    </Badge>
+                  </div>
+                )}
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-amber-700">أنت في الفترة التجريبية</h3>
+              <div className="flex flex-wrap items-center gap-3">
+                {getStatusBadge()}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Read-only warning */}
+        {subscription?.is_read_only && (
+          <Card className="border-destructive bg-destructive/5">
+            <CardContent className="flex items-center gap-4 p-4">
+              <AlertTriangle className="h-8 w-8 text-destructive shrink-0" />
+              <div>
+                <h3 className="font-semibold text-destructive">حسابك في وضع القراءة فقط</h3>
                 <p className="text-sm text-muted-foreground">
-                  تنتهي الفترة التجريبية في{' '}
-                  <span className="font-bold text-amber-700">{getTrialEndDate()}</span>
-                  {' '}({subscriptionStatus.daysRemaining} يوم متبقي)
+                  يمكنك عرض بياناتك فقط. اشترك الآن للاستمرار في استخدام جميع المميزات.
                 </p>
               </div>
-              <Badge variant="secondary" className="gap-1 bg-amber-100 text-amber-700 border-amber-300">
-                <Calendar className="h-3 w-3" />
-                {subscriptionStatus.daysRemaining} يوم
-              </Badge>
             </CardContent>
           </Card>
         )}
 
-        {/* Header */}
-        <PageHeader
-          icon={CreditCard}
-          title="الاشتراك والمدفوعات"
-          subtitle="اختر الباقة المناسبة لاحتياجاتك واستمتع بجميع مميزات النظام"
-          iconVariant="success"
-          actions={
-            <div className="flex flex-wrap items-center gap-3">
-              {getStatusBadge()}
-              {subscriptionStatus.status === 'trial' && subscription?.trial_ends_at && (
-                <Badge variant="outline" className="gap-1">
-                  <Calendar className="h-3 w-3" />
-                  تنتهي في: {getTrialEndDate()}
-                </Badge>
-              )}
-            </div>
-          }
-        />
+        {/* Features Grid */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-bold">مميزات الاشتراك</h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {features.map((feature, index) => (
+              <Card key={index} className="group hover:shadow-md transition-all hover:border-primary/50">
+                <CardContent className="p-4 text-center space-y-2">
+                  <div className="mx-auto w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <feature.icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="font-semibold text-sm">{feature.title}</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{feature.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
 
         {/* Tabs */}
         <Tabs defaultValue="packages" className="w-full">
@@ -292,93 +381,121 @@ export default function TeacherSubscription() {
           </TabsList>
 
           {/* Packages Tab */}
-          <TabsContent value="packages" className="space-y-6 mt-6">
-            {/* Read-only warning - only show when subscription is actually in read-only mode */}
-            {subscription?.is_read_only && (
-              <Card className="border-destructive bg-destructive/5">
-                <CardContent className="flex items-center gap-4 p-4">
-                  <AlertTriangle className="h-8 w-8 text-destructive shrink-0" />
-                  <div>
-                    <h3 className="font-semibold text-destructive">حسابك في وضع القراءة فقط</h3>
-                    <p className="text-sm text-muted-foreground">
-                      يمكنك عرض بياناتك فقط. اشترك الآن للاستمرار في استخدام جميع المميزات.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
+          <TabsContent value="packages" className="space-y-8 mt-8">
             {/* Packages Grid */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {activePackages.map((pkg) => {
+              {activePackages.map((pkg, index) => {
                 const isSelected = selectedPackage?.id === pkg.id;
                 const finalPrice = calculateFinalPrice(pkg);
                 const hasDiscount = appliedDiscount && finalPrice < pkg.price;
+                const isPopular = index === 1 || pkg.courses_count === 2;
                 
                 return (
                   <Card 
                     key={pkg.id}
-                    className={`relative cursor-pointer transition-all hover:shadow-lg ${
-                      isSelected ? 'ring-2 ring-primary shadow-lg' : ''
-                    } ${pkg.courses_count === 2 ? 'md:scale-105 border-primary' : ''}`}
+                    className={`relative cursor-pointer transition-all duration-300 hover:shadow-xl ${
+                      isSelected ? 'ring-2 ring-primary shadow-xl scale-[1.02]' : 'hover:scale-[1.01]'
+                    } ${isPopular ? 'border-primary shadow-lg' : ''}`}
                     onClick={() => setSelectedPackage(pkg)}
                   >
-                    {pkg.courses_count === 2 && (
-                      <div className="absolute -top-3 right-4">
-                        <Badge className="gap-1 bg-primary">
-                          <Sparkles className="h-3 w-3" />
+                    {isPopular && (
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                        <Badge className="gap-1 bg-primary shadow-lg">
+                          <Star className="h-3 w-3 fill-current" />
                           الأكثر شيوعاً
                         </Badge>
                       </div>
                     )}
                     
-                    <CardHeader className="text-center pb-2">
-                      <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-                        <BookOpen className="h-6 w-6 text-primary" />
+                    <CardHeader className="text-center pt-8 pb-4">
+                      <div className={`mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-4 ${
+                        isPopular ? 'bg-primary text-primary-foreground' : 'bg-primary/10'
+                      }`}>
+                        <GraduationCap className={`h-8 w-8 ${isPopular ? '' : 'text-primary'}`} />
                       </div>
                       <CardTitle className="text-xl">{pkg.name_ar}</CardTitle>
-                      <CardDescription>{pkg.description}</CardDescription>
+                      <CardDescription className="text-base">{pkg.description}</CardDescription>
                     </CardHeader>
                     
-                    <CardContent className="text-center space-y-4">
+                    <CardContent className="text-center space-y-6">
+                      {/* Price */}
                       <div className="space-y-1">
                         {hasDiscount && (
                           <p className="text-lg text-muted-foreground line-through">
                             {pkg.price} د.ك
                           </p>
                         )}
-                        <p className="text-3xl font-bold text-primary">
-                          {finalPrice.toFixed(2)}
+                        <div className="flex items-baseline justify-center gap-1">
+                          <span className="text-4xl font-bold text-primary">
+                            {finalPrice.toFixed(0)}
+                          </span>
+                          <span className="text-lg text-muted-foreground">.{(finalPrice % 1).toFixed(2).slice(2)}</span>
                           <span className="text-base font-normal text-muted-foreground mr-1">
                             د.ك
                           </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          لمدة {pkg.courses_count} {pkg.courses_count === 1 ? 'كورس' : 'كورسات'}
                         </p>
                       </div>
                       
                       <Separator />
                       
-                      <ul className="space-y-2 text-sm">
-                        <li className="flex items-center gap-2">
-                          <Check className="h-4 w-4 text-emerald-600" />
-                          <span>{pkg.courses_count} {pkg.courses_count === 1 ? 'كورس' : 'كورسات'}</span>
+                      {/* Features List */}
+                      <ul className="space-y-3 text-sm text-right">
+                        <li className="flex items-center gap-3">
+                          <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                            <Check className="h-3 w-3 text-emerald-600" />
+                          </div>
+                          <span>{pkg.courses_count} {pkg.courses_count === 1 ? 'كورس دراسي' : 'كورسات دراسية'}</span>
                         </li>
-                        <li className="flex items-center gap-2">
-                          <Check className="h-4 w-4 text-emerald-600" />
-                          <span>جميع مميزات النظام</span>
+                        <li className="flex items-center gap-3">
+                          <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                            <Check className="h-3 w-3 text-emerald-600" />
+                          </div>
+                          <span>عدد غير محدود من الصفوف</span>
                         </li>
-                        <li className="flex items-center gap-2">
-                          <Check className="h-4 w-4 text-emerald-600" />
-                          <span>دعم فني متميز</span>
+                        <li className="flex items-center gap-3">
+                          <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                            <Check className="h-3 w-3 text-emerald-600" />
+                          </div>
+                          <span>عدد غير محدود من الطلاب</span>
+                        </li>
+                        <li className="flex items-center gap-3">
+                          <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                            <Check className="h-3 w-3 text-emerald-600" />
+                          </div>
+                          <span>تسجيل الحضور والدرجات</span>
+                        </li>
+                        <li className="flex items-center gap-3">
+                          <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                            <Check className="h-3 w-3 text-emerald-600" />
+                          </div>
+                          <span>تقارير شاملة وتصدير البيانات</span>
+                        </li>
+                        <li className="flex items-center gap-3">
+                          <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                            <Check className="h-3 w-3 text-emerald-600" />
+                          </div>
+                          <span>دعم فني على مدار الساعة</span>
                         </li>
                       </ul>
                     </CardContent>
                     
-                    <CardFooter>
+                    <CardFooter className="pb-6">
                       <Button 
-                        className="w-full" 
+                        className={`w-full gap-2 ${isPopular && !isSelected ? 'bg-primary hover:bg-primary/90' : ''}`}
                         variant={isSelected ? 'default' : 'outline'}
+                        size="lg"
                       >
-                        {isSelected ? 'تم الاختيار' : 'اختر هذه الباقة'}
+                        {isSelected ? (
+                          <>
+                            <CheckCircle className="h-4 w-4" />
+                            تم الاختيار
+                          </>
+                        ) : (
+                          'اختر هذه الباقة'
+                        )}
                       </Button>
                     </CardFooter>
                   </Card>
@@ -388,14 +505,25 @@ export default function TeacherSubscription() {
 
             {/* Discount Code & Checkout */}
             {selectedPackage && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">إتمام الشراء</CardTitle>
+              <Card className="border-primary/20 shadow-lg">
+                <CardHeader className="bg-muted/50">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <CreditCard className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">إتمام الشراء</CardTitle>
+                      <CardDescription>راجع طلبك وأكمل عملية الدفع</CardDescription>
+                    </div>
+                  </div>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-6 pt-6">
                   {/* Discount Code Input */}
                   <div className="space-y-3">
-                    <label className="text-sm font-medium">كود الخصم (اختياري)</label>
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <Gift className="h-4 w-4 text-primary" />
+                      كود الخصم (اختياري)
+                    </label>
                     <div className="flex gap-2">
                       <div className="relative flex-1">
                         <Tag className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -426,63 +554,69 @@ export default function TeacherSubscription() {
                       )}
                     </div>
                     {appliedDiscount && (
-                      <p className="text-sm text-emerald-600 flex items-center gap-1">
-                        <Check className="h-4 w-4" />
-                        تم تطبيق خصم {appliedDiscount.discount_type === 'percentage' 
-                          ? `${appliedDiscount.discount_value}%` 
-                          : `${appliedDiscount.discount_value} د.ك`}
-                      </p>
+                      <div className="flex items-center gap-2 text-sm text-emerald-600 bg-emerald-50 p-2 rounded-lg">
+                        <CheckCircle className="h-4 w-4" />
+                        <span>
+                          تم تطبيق خصم {appliedDiscount.discount_type === 'percentage' 
+                            ? `${appliedDiscount.discount_value}%` 
+                            : `${appliedDiscount.discount_value} د.ك`}
+                        </span>
+                      </div>
                     )}
                   </div>
 
                   <Separator />
 
                   {/* Order Summary */}
-                  <div className="space-y-3">
-                    <h4 className="font-medium">ملخص الطلب</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>الباقة</span>
-                        <span className="font-medium">{selectedPackage.name_ar}</span>
+                  <div className="space-y-4">
+                    <h4 className="font-semibold flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-primary" />
+                      ملخص الطلب
+                    </h4>
+                    <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">الباقة</span>
+                        <span className="font-semibold">{selectedPackage.name_ar}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span>عدد الكورسات</span>
-                        <span>{selectedPackage.courses_count}</span>
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">عدد الكورسات</span>
+                        <Badge variant="secondary">{selectedPackage.courses_count} كورس</Badge>
                       </div>
-                      <div className="flex justify-between">
-                        <span>السعر الأصلي</span>
-                        <span>{selectedPackage.price} د.ك</span>
+                      <Separator />
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">السعر الأصلي</span>
+                        <span>{selectedPackage.price.toFixed(2)} د.ك</span>
                       </div>
                       {appliedDiscount && (
-                        <div className="flex justify-between text-emerald-600">
+                        <div className="flex justify-between items-center text-emerald-600">
                           <span>الخصم</span>
                           <span>- {(selectedPackage.price - calculateFinalPrice(selectedPackage)).toFixed(2)} د.ك</span>
                         </div>
                       )}
                       <Separator />
-                      <div className="flex justify-between text-lg font-bold">
-                        <span>الإجمالي</span>
-                        <span className="text-primary">{calculateFinalPrice(selectedPackage).toFixed(2)} د.ك</span>
+                      <div className="flex justify-between items-center text-lg">
+                        <span className="font-bold">الإجمالي</span>
+                        <span className="font-bold text-primary text-2xl">{calculateFinalPrice(selectedPackage).toFixed(2)} د.ك</span>
                       </div>
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="bg-muted/30 pt-6">
                   <Button 
-                    className="w-full gap-2" 
+                    className="w-full gap-2 h-12 text-base" 
                     size="lg"
                     onClick={handlePurchase}
                     disabled={isProcessing}
                   >
                     {isProcessing ? (
                       <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-5 w-5 animate-spin" />
                         جاري المعالجة...
                       </>
                     ) : (
                       <>
-                        <CreditCard className="h-4 w-4" />
-                        إتمام الدفع
+                        <Zap className="h-5 w-5" />
+                        إتمام الدفع الآن
                       </>
                     )}
                   </Button>
@@ -492,16 +626,18 @@ export default function TeacherSubscription() {
 
             {/* Empty State */}
             {activePackages.length === 0 && (
-              <Card className="text-center py-12">
+              <Card className="text-center py-16 border-dashed">
                 <CardContent>
-                  <p className="text-muted-foreground">لا توجد باقات متاحة حالياً</p>
+                  <CreditCard className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">لا توجد باقات متاحة</h3>
+                  <p className="text-muted-foreground">لا توجد باقات متاحة حالياً، يرجى المحاولة لاحقاً</p>
                 </CardContent>
               </Card>
             )}
           </TabsContent>
 
           {/* Payments Tab */}
-          <TabsContent value="payments" className="mt-6">
+          <TabsContent value="payments" className="mt-8">
             {paymentsLoading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -509,16 +645,16 @@ export default function TeacherSubscription() {
             ) : payments && payments.length > 0 ? (
               <div className="space-y-4">
                 {payments.map((payment) => (
-                  <Card key={payment.id}>
+                  <Card key={payment.id} className="hover:shadow-md transition-shadow">
                     <CardContent className="p-6">
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="space-y-2">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                              <CreditCard className="h-5 w-5 text-primary" />
+                            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                              <CreditCard className="h-6 w-6 text-primary" />
                             </div>
                             <div>
-                              <h3 className="font-semibold">
+                              <h3 className="font-semibold text-lg">
                                 {payment.package?.name_ar || 'باقة اشتراك'}
                               </h3>
                               <p className="text-sm text-muted-foreground">
@@ -527,7 +663,7 @@ export default function TeacherSubscription() {
                             </div>
                           </div>
                           
-                          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mr-15">
                             <span className="flex items-center gap-1">
                               <Calendar className="h-4 w-4" />
                               {format(new Date(payment.created_at), 'dd MMMM yyyy', { locale: ar })}
@@ -549,7 +685,7 @@ export default function TeacherSubscription() {
                                 {payment.original_amount.toFixed(2)} د.ك
                               </p>
                             )}
-                            <p className="text-xl font-bold text-primary">
+                            <p className="text-2xl font-bold text-primary">
                               {payment.amount.toFixed(2)} د.ك
                             </p>
                           </div>
@@ -561,13 +697,22 @@ export default function TeacherSubscription() {
                           <Separator className="my-4" />
                           <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                             {payment.payment_method && (
-                              <span>طريقة الدفع: {payment.payment_method}</span>
+                              <span className="flex items-center gap-1">
+                                <CreditCard className="h-4 w-4" />
+                                طريقة الدفع: {payment.payment_method}
+                              </span>
                             )}
                             {payment.paid_at && (
-                              <span>تاريخ الدفع: {format(new Date(payment.paid_at), 'dd/MM/yyyy HH:mm', { locale: ar })}</span>
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-4 w-4" />
+                                تاريخ الدفع: {format(new Date(payment.paid_at), 'dd/MM/yyyy HH:mm', { locale: ar })}
+                              </span>
                             )}
                             {payment.payment_reference && (
-                              <span>مرجع الدفع: {payment.payment_reference}</span>
+                              <span className="flex items-center gap-1">
+                                <FileText className="h-4 w-4" />
+                                مرجع الدفع: {payment.payment_reference}
+                              </span>
                             )}
                           </div>
                         </>
@@ -577,10 +722,10 @@ export default function TeacherSubscription() {
                 ))}
               </div>
             ) : (
-              <Card className="text-center py-12">
+              <Card className="text-center py-16 border-dashed">
                 <CardContent>
-                  <Receipt className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2">لا توجد مدفوعات</h3>
+                  <Receipt className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">لا توجد مدفوعات</h3>
                   <p className="text-muted-foreground">لم تقم بأي عمليات دفع بعد</p>
                 </CardContent>
               </Card>
