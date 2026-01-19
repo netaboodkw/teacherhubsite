@@ -168,6 +168,7 @@ export default function UsersManagementPage() {
   const [editForm, setEditForm] = useState({
     full_name: '',
     phone: '',
+    email: '',
     school_name: '',
     education_level_id: '',
     subject_id: '',
@@ -197,7 +198,8 @@ export default function UsersManagementPage() {
   const filteredTeachers = teachers?.filter(t => 
     t.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     t.school_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.phone?.includes(searchTerm)
+    t.phone?.includes(searchTerm) ||
+    t.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredDepartmentHeads = departmentHeads?.filter(dh => 
@@ -233,6 +235,7 @@ export default function UsersManagementPage() {
     setEditForm({
       full_name: teacher.full_name || '',
       phone: teacher.phone || '',
+      email: teacher.email || profile?.email || '',
       school_name: teacher.school_name || '',
       education_level_id: level?.id || profile?.education_level_id || '',
       subject_id: subject?.id || profile?.subject_id || '',
@@ -257,6 +260,7 @@ export default function UsersManagementPage() {
         .update({
           full_name: editForm.full_name.trim(),
           phone: editForm.phone || null,
+          email: editForm.email || null,
           school_name: editForm.school_name || null,
           education_level_id: editForm.education_level_id || null,
           subject_id: editForm.subject_id || null,
@@ -529,6 +533,12 @@ export default function UsersManagementPage() {
                           <div>
                             <h3 className="font-medium">{teacher.full_name}</h3>
                             <div className="flex flex-wrap gap-2 mt-1">
+                              {teacher.email && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Mail className="h-3 w-3 ml-1" />
+                                  {teacher.email}
+                                </Badge>
+                              )}
                               {teacher.phone && (
                                 <Badge variant="outline" className="text-xs font-mono">
                                   <Phone className="h-3 w-3 ml-1" />
@@ -550,6 +560,10 @@ export default function UsersManagementPage() {
                                 <Badge className="text-xs">{teacher.subject_name}</Badge>
                               )}
                             </div>
+                            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              تاريخ التسجيل: {new Date(teacher.created_at).toLocaleDateString('ar-SA')}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
@@ -937,6 +951,20 @@ export default function UsersManagementPage() {
                     value={editForm.full_name}
                     onChange={(e) => setEditForm(prev => ({ ...prev, full_name: e.target.value }))}
                     placeholder="أدخل اسم المعلم"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    البريد الإلكتروني
+                  </Label>
+                  <Input
+                    value={editForm.email}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="example@email.com"
+                    type="email"
+                    dir="ltr"
                   />
                 </div>
 

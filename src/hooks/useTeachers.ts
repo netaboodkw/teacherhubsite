@@ -9,6 +9,7 @@ export interface Teacher {
   school_name: string | null;
   subject: string | null;
   phone: string | null;
+  email: string | null;
   avatar_url: string | null;
   is_profile_complete: boolean | null;
   created_at: string;

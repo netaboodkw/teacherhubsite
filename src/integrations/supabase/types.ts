@@ -999,6 +999,7 @@ export type Database = {
           created_at: string
           department_head_name: string | null
           education_level_id: string | null
+          email: string | null
           full_name: string
           id: string
           is_profile_complete: boolean | null
@@ -1017,6 +1018,7 @@ export type Database = {
           created_at?: string
           department_head_name?: string | null
           education_level_id?: string | null
+          email?: string | null
           full_name: string
           id?: string
           is_profile_complete?: boolean | null
@@ -1035,6 +1037,7 @@ export type Database = {
           created_at?: string
           department_head_name?: string | null
           education_level_id?: string | null
+          email?: string | null
           full_name?: string
           id?: string
           is_profile_complete?: boolean | null
@@ -1854,6 +1857,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string | null
           education_level_name: string | null
+          email: string | null
           full_name: string | null
           id: string | null
           is_profile_complete: boolean | null
