@@ -15,6 +15,11 @@ export const PageTransition: React.FC<PageTransitionProps> = ({ children, classN
 
   useEffect(() => {
     if (location.pathname !== previousPathRef.current) {
+      // Haptic feedback on navigation
+      if ('vibrate' in navigator) {
+        navigator.vibrate(5);
+      }
+      
       // Start exit animation
       setTransitionStage('exit');
       
@@ -57,6 +62,11 @@ export const FadeTransition: React.FC<PageTransitionProps> = ({ children, classN
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
+    // Haptic feedback on navigation
+    if ('vibrate' in navigator) {
+      navigator.vibrate(5);
+    }
+    
     setIsVisible(false);
     const timer = setTimeout(() => setIsVisible(true), 50);
     return () => clearTimeout(timer);
@@ -65,8 +75,27 @@ export const FadeTransition: React.FC<PageTransitionProps> = ({ children, classN
   return (
     <div
       className={cn(
-        'transition-all duration-300 ease-out',
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2',
+        'transition-all duration-300 ease-out will-change-transform',
+        isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-2 scale-[0.99]',
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+};
+
+// iOS-style scale transition for modals and cards
+export const ScaleTransition: React.FC<PageTransitionProps & { isVisible?: boolean }> = ({ 
+  children, 
+  className,
+  isVisible = true 
+}) => {
+  return (
+    <div
+      className={cn(
+        'transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform',
+        isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95',
         className
       )}
     >

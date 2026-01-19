@@ -662,6 +662,91 @@
 }
 
 /* ============================================
+   iOS STYLE INTERACTIONS
+   ============================================ */
+
+/* iOS-style button press effect */
+.ios-pressable {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  transition: transform 0.15s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.15s ease;
+}
+
+.ios-pressable:active {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+
+/* iOS-style card press effect */
+.ios-card-pressable {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: transform 0.2s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.2s ease;
+}
+
+.ios-card-pressable:active {
+  transform: scale(0.98);
+}
+
+/* iOS-style list item tap */
+.ios-list-item {
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.ios-list-item:active {
+  background-color: hsl(var(--muted));
+}
+
+/* Smooth scrolling for iOS */
+.ios-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+}
+
+/* iOS-style momentum scrolling */
+@supports (-webkit-touch-callout: none) {
+  .ios-scroll {
+    scroll-snap-type: y proximity;
+  }
+}
+
+/* Prevent text selection on interactive elements */
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* iOS haptic-ready button base */
+@layer components {
+  .btn-ios {
+    @apply relative overflow-hidden transition-all duration-150 ease-out;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .btn-ios:active {
+    @apply scale-[0.97] opacity-90;
+  }
+  
+  .btn-ios::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, hsl(var(--foreground) / 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+  }
+  
+  .btn-ios:active::after {
+    opacity: 1;
+  }
+}
+
+/* ============================================
    PRINT STYLES
    ============================================ */
 

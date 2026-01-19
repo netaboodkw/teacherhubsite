@@ -87,11 +87,62 @@ export default {
   				to: {
   					height: '0'
   				}
+  			},
+  			'ios-slide-in': {
+  				'0%': {
+  					opacity: '0',
+  					transform: 'translateX(-30px)'
+  				},
+  				'100%': {
+  					opacity: '1',
+  					transform: 'translateX(0)'
+  				}
+  			},
+  			'ios-slide-out': {
+  				'0%': {
+  					opacity: '1',
+  					transform: 'translateX(0)'
+  				},
+  				'100%': {
+  					opacity: '0',
+  					transform: 'translateX(30px)'
+  				}
+  			},
+  			'ios-scale-in': {
+  				'0%': {
+  					opacity: '0',
+  					transform: 'scale(0.95)'
+  				},
+  				'100%': {
+  					opacity: '1',
+  					transform: 'scale(1)'
+  				}
+  			},
+  			'ios-bounce': {
+  				'0%, 100%': {
+  					transform: 'scale(1)'
+  				},
+  				'50%': {
+  					transform: 'scale(0.97)'
+  				}
+  			},
+  			'ios-press': {
+  				'0%': {
+  					transform: 'scale(1)'
+  				},
+  				'100%': {
+  					transform: 'scale(0.95)'
+  				}
   			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			'ios-slide-in': 'ios-slide-in 0.35s cubic-bezier(0.32, 0.72, 0, 1)',
+  			'ios-slide-out': 'ios-slide-out 0.25s cubic-bezier(0.32, 0.72, 0, 1)',
+  			'ios-scale-in': 'ios-scale-in 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
+  			'ios-bounce': 'ios-bounce 0.15s ease-in-out',
+  			'ios-press': 'ios-press 0.1s ease-out forwards'
   		},
   		boxShadow: {
   			'2xs': 'var(--shadow-2xs)',
