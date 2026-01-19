@@ -118,6 +118,27 @@ export default function ClassroomView() {
     return noteMap;
   }, [behaviorNotes]);
 
+  // Sort students by their saved positions (top to bottom, left to right)
+  const sortedStudents = useMemo(() => {
+    if (studentPositions.size === 0) return students;
+    
+    return [...students].sort((a, b) => {
+      const posA = studentPositions.get(a.id);
+      const posB = studentPositions.get(b.id);
+      
+      if (!posA && !posB) return 0;
+      if (!posA) return 1;
+      if (!posB) return -1;
+      
+      // Sort by row first (y position), then by column (x position)
+      const rowA = Math.floor(posA.y / 150); // Approximate row height
+      const rowB = Math.floor(posB.y / 150);
+      
+      if (rowA !== rowB) return rowA - rowB;
+      return posA.x - posB.x;
+    });
+  }, [students, studentPositions]);
+
   const handleArchiveClassroom = () => {
     if (!classroomId) return;
     archiveClassroom.mutate(classroomId, {
@@ -766,7 +787,7 @@ export default function ClassroomView() {
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-3">
-                {students.map((student) => {
+                {sortedStudents.map((student) => {
                   const hasNotes = studentsWithNotes.has(student.id);
                   const notesCount = studentsWithNotes.get(student.id) || 0;
                   const attendanceStatus = getAttendanceStatus(student.id);
