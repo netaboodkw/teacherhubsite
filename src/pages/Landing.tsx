@@ -7,7 +7,7 @@ import {
   ArrowLeft, Gift, LogIn, Sparkles, CheckCircle2,
   Smartphone, Shield, Cloud, Zap, Star, Camera,
   Brain, FileSpreadsheet, Bell, TrendingUp, Award,
-  ChevronDown, Play
+  ChevronDown, Play, Fingerprint, Quote, MessageCircle
 } from 'lucide-react';
 import { useSiteLogo } from '@/hooks/useSiteLogo';
 import { useSubscriptionSettings } from '@/hooks/useSubscription';
@@ -22,6 +22,13 @@ const features = [
     description: 'صوّر كشف الأسماء بالجوال والذكاء الاصطناعي يضيف الطلاب تلقائياً',
     highlight: true,
     badge: 'جديد',
+  },
+  {
+    icon: Fingerprint,
+    title: 'تذكير بصمة التواجد',
+    description: 'تنبيهات يومية لتسجيل بصمة الحضور والانصراف حتى لا تنسى أبداً',
+    highlight: true,
+    badge: 'مميز',
   },
   {
     icon: FileSpreadsheet,
@@ -39,12 +46,6 @@ const features = [
     icon: BarChart3,
     title: 'درجات مرنة وشاملة',
     description: 'نظام درجات قابل للتخصيص حسب احتياجاتك',
-    highlight: false,
-  },
-  {
-    icon: Brain,
-    title: 'تقارير ذكية',
-    description: 'إحصائيات وتحليلات تساعدك على متابعة تقدم الطلاب',
     highlight: false,
   },
   {
@@ -72,6 +73,33 @@ const steps = [
   { number: '1', title: 'سجّل حسابك', description: 'في أقل من دقيقة' },
   { number: '2', title: 'أضف صفوفك', description: 'وطلابك بسهولة' },
   { number: '3', title: 'ابدأ العمل', description: 'حضور ودرجات فوراً' },
+];
+
+const testimonials = [
+  {
+    name: 'أ. محمد العنزي',
+    role: 'معلم رياضيات - الكويت',
+    content: 'التطبيق سهّل عليّ كثير! قبل كنت أضيع وقت كبير في تسجيل الدرجات، الحين بضغطة زر أرصد وأطبع.',
+    rating: 5,
+  },
+  {
+    name: 'أ. فاطمة الشمري',
+    role: 'معلمة علوم - السعودية',
+    content: 'ميزة تصوير كشف الأسماء وفرت عليّ ساعات! صورت الكشف والطلاب انضافوا تلقائياً، شيء خرافي!',
+    rating: 5,
+  },
+  {
+    name: 'أ. عبدالله المطيري',
+    role: 'معلم لغة عربية - الكويت',
+    content: 'تذكير البصمة ينقذني كل يوم! ما أنسى أسجل حضوري أبداً الحين. شكراً Teacher Hub!',
+    rating: 5,
+  },
+  {
+    name: 'أ. نورة القحطاني',
+    role: 'معلمة إنجليزي - البحرين',
+    content: 'أفضل تطبيق لإدارة الصفوف استخدمته. سهل وبسيط وكل شي واضح. أنصح كل معلم يجربه!',
+    rating: 5,
+  },
 ];
 
 export default function Landing() {
@@ -388,8 +416,114 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Fingerprint Feature Section */}
+      <section className="py-20 px-4 bg-muted/30 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 right-1/4 w-80 h-80 bg-secondary/10 rounded-full blur-3xl" />
+        </div>
+        
+        <div className="max-w-4xl mx-auto relative z-10">
+          <div className="bg-card/80 backdrop-blur-xl rounded-3xl p-8 md:p-12 border border-border/50 shadow-2xl">
+            <div className="flex flex-col md:flex-row-reverse items-center gap-8">
+              <div className="flex-shrink-0">
+                <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-secondary to-primary flex items-center justify-center shadow-xl relative">
+                  <Fingerprint className="w-16 h-16 text-primary-foreground" />
+                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shadow-lg animate-pulse">
+                    <Bell className="w-4 h-4 text-white" />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="text-center md:text-right flex-1">
+                <Badge className="mb-4 bg-secondary text-secondary-foreground">
+                  <Bell className="w-3 h-3 ml-1" />
+                  تذكير يومي
+                </Badge>
+                <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+                  لا تنسَ بصمة التواجد أبداً
+                </h3>
+                <p className="text-muted-foreground text-lg leading-relaxed mb-6">
+                  فعّل تذكير البصمة وسيصلك تنبيه يومي في الوقت المحدد لتسجيل حضورك وانصرافك. وداعاً للنسيان والخصومات!
+                </p>
+                <div className="flex flex-wrap justify-center md:justify-start gap-3">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    <span>تذكير الحضور الصباحي</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    <span>تذكير الانصراف</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    <span>تخصيص الأوقات</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-20 px-4 bg-background relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-20 left-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-20 w-80 h-80 bg-secondary/5 rounded-full blur-3xl" />
+        </div>
+        
+        <div className="max-w-6xl mx-auto relative z-10">
+          <div className="text-center mb-16">
+            <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
+              <MessageCircle className="w-4 h-4 ml-2" />
+              آراء المعلمين
+            </Badge>
+            <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
+              ماذا يقول المعلمون عنا؟
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+              آراء حقيقية من معلمين يستخدمون Teacher Hub يومياً
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {testimonials.map((testimonial, i) => (
+              <div 
+                key={i}
+                className="group p-6 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 hover:border-primary/30 hover:shadow-xl transition-all duration-300"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-primary-foreground font-bold text-lg">
+                      {testimonial.name.charAt(3)}
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-bold text-foreground">{testimonial.name}</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3">{testimonial.role}</p>
+                    <div className="flex gap-1 mb-3">
+                      {Array.from({ length: testimonial.rating }).map((_, j) => (
+                        <Star key={j} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                      ))}
+                    </div>
+                    <div className="relative">
+                      <Quote className="absolute -top-2 -right-2 w-8 h-8 text-primary/20" />
+                      <p className="text-muted-foreground leading-relaxed pr-6">
+                        {testimonial.content}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
-      <section className="py-20 px-4 bg-muted/30">
+      <section className="py-20 px-4 bg-gradient-to-br from-primary/10 via-background to-secondary/10">
         <div className="max-w-2xl mx-auto text-center">
           <div className="inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-gradient-to-br from-primary to-secondary mb-8 shadow-xl">
             <Award className="w-12 h-12 text-primary-foreground" />
