@@ -6,25 +6,15 @@ import { useClassroom, useArchiveClassroom } from '@/hooks/useClassrooms';
 import { useBehaviorNotesByClassroom } from '@/hooks/useBehaviorNotes';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { GlassButton } from '@/components/ui/glass-button';
 import { Card, CardContent } from '@/components/ui/card';
 import { GlassCard, GlassCardContent } from '@/components/ui/glass-card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,15 +29,17 @@ import { toast } from 'sonner';
 import { 
   ArrowRight, User, Plus, Minus, MessageSquare, Save, Loader2, 
   Move, Check, X, Clock, FileText, ClipboardCheck,
-  MoreVertical, Archive, Settings, UserPlus, GripVertical, HeartPulse, StickyNote, Shuffle, Timer
+  MoreVertical, Archive, Settings, UserPlus, GripVertical, HeartPulse, StickyNote, Shuffle, Timer, Home, Sparkles
 } from 'lucide-react';
+import { MobileRandomPicker } from '@/components/classroom/MobileRandomPicker';
+import { MobileTimer } from '@/components/classroom/MobileTimer';
+import { MobileStudentNoteSheet } from '@/components/classroom/MobileStudentNoteSheet';
 import { RandomStudentPicker } from '@/components/classroom/RandomStudentPicker';
 import { ClassroomTimer } from '@/components/classroom/ClassroomTimer';
 import { ClassroomStatsBanner } from '@/components/classroom/ClassroomStatsBanner';
 import { GlassClassroomStatsBanner } from '@/components/classroom/GlassClassroomStatsBanner';
 import { StudentBadges, WeeklyAchievementsManager, WeeklyLeaderboard } from '@/components/classroom/StudentBadges';
 import { GlassWeeklyLeaderboard } from '@/components/classroom/GlassWeeklyLeaderboard';
-import { GlassDraggableStudent, GlassAttendanceStudent, GlassStudentIcon } from '@/components/classroom/GlassStudentCard';
 import { getCurrentPeriod, getScheduleByEducationLevel } from '@/lib/periodSchedules';
 import { cn } from '@/lib/utils';
 
@@ -68,196 +60,6 @@ interface AttendanceRecord {
   status: 'present' | 'absent' | 'late' | 'excused';
 }
 
-interface DraggableStudentProps {
-  student: {
-    id: string;
-    name: string;
-    avatar_url: string | null;
-  };
-  position: { x: number; y: number };
-  isArrangeMode: boolean;
-  onPositionChange: (studentId: string, x: number, y: number) => void;
-  onTap: (student: SelectedStudent) => void;
-  getShortName: (name: string) => string;
-  containerRef: React.RefObject<HTMLDivElement>;
-  classroomId: string;
-}
-
-function DraggableStudent({ 
-  student, 
-  position, 
-  isArrangeMode, 
-  onPositionChange, 
-  onTap, 
-  getShortName,
-  containerRef,
-  classroomId
-}: DraggableStudentProps) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const nodeRef = useRef<HTMLDivElement>(null);
-
-  const handleDragStart = (clientX: number, clientY: number) => {
-    if (!isArrangeMode || !nodeRef.current) return;
-    
-    const rect = nodeRef.current.getBoundingClientRect();
-    setDragOffset({
-      x: clientX - rect.left,
-      y: clientY - rect.top
-    });
-    setIsDragging(true);
-  };
-
-  const handleDrag = (clientX: number, clientY: number) => {
-    if (!isDragging || !containerRef.current) return;
-    
-    const containerRect = containerRef.current.getBoundingClientRect();
-    const nodeWidth = nodeRef.current?.offsetWidth || 100;
-    const nodeHeight = nodeRef.current?.offsetHeight || 120;
-    
-    let newX = clientX - containerRect.left - dragOffset.x;
-    let newY = clientY - containerRect.top - dragOffset.y;
-    
-    // Clamp to container bounds
-    newX = Math.max(0, Math.min(newX, containerRect.width - nodeWidth));
-    newY = Math.max(0, Math.min(newY, containerRect.height - nodeHeight));
-    
-    onPositionChange(student.id, newX, newY);
-  };
-
-  const handleDragEnd = () => {
-    setIsDragging(false);
-  };
-
-  // Mouse events
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (!isArrangeMode) return;
-    e.preventDefault();
-    handleDragStart(e.clientX, e.clientY);
-  };
-
-  // Touch events
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (!isArrangeMode) return;
-    const touch = e.touches[0];
-    handleDragStart(touch.clientX, touch.clientY);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    const touch = e.touches[0];
-    handleDrag(touch.clientX, touch.clientY);
-  };
-
-  useEffect(() => {
-    if (!isDragging) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      handleDrag(e.clientX, e.clientY);
-    };
-
-    const handleMouseUp = () => {
-      handleDragEnd();
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging, dragOffset]);
-
-  return (
-    <div
-      ref={nodeRef}
-      style={{
-        position: 'absolute',
-        left: position.x,
-        top: position.y,
-        zIndex: isDragging ? 100 : 1,
-        cursor: isArrangeMode ? (isDragging ? 'grabbing' : 'grab') : 'pointer',
-        touchAction: isArrangeMode ? 'none' : 'auto',
-      }}
-      className={`flex flex-col items-center p-3 bg-card rounded-xl border-2 shadow-sm select-none transition-shadow ${
-        isDragging 
-          ? 'border-primary shadow-xl scale-105 ring-2 ring-primary/30' 
-          : 'border-border/50 hover:border-primary/30 hover:shadow-md'
-      }`}
-      onClick={() => !isArrangeMode && !isDragging && onTap(student)}
-      onMouseDown={handleMouseDown}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleDragEnd}
-    >
-      {isArrangeMode && (
-        <div className="absolute -top-2 -right-2 p-2 bg-primary text-primary-foreground rounded-full z-10 shadow-lg">
-          <GripVertical className="h-4 w-4" />
-        </div>
-      )}
-      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-2">
-        {student.avatar_url ? (
-          <img
-            src={student.avatar_url}
-            alt={student.name}
-            className="w-full h-full object-cover"
-            draggable={false}
-          />
-        ) : (
-          <User className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
-        )}
-      </div>
-      <p className="text-sm text-center font-medium truncate w-full leading-tight px-1 max-w-[90px]">
-        {getShortName(student.name)}
-      </p>
-    </div>
-  );
-}
-
-interface AttendanceStudentProps {
-  student: {
-    id: string;
-    name: string;
-    avatar_url: string | null;
-  };
-  status: AttendanceRecord['status'] | null;
-  onTap: (student: SelectedStudent) => void;
-  getShortName: (name: string) => string;
-  getAttendanceBorder: (status: AttendanceRecord['status'] | null) => string;
-  getAttendanceIcon: (status: AttendanceRecord['status'] | null) => React.ReactNode;
-}
-
-function AttendanceStudent({ student, status, onTap, getShortName, getAttendanceBorder, getAttendanceIcon }: AttendanceStudentProps) {
-  return (
-    <div
-      className={`flex flex-col items-center p-3 bg-card rounded-xl border-2 shadow-sm cursor-pointer transition-all hover:scale-105 active:scale-95 ${getAttendanceBorder(status)}`}
-      onClick={() => onTap(student)}
-    >
-      <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-2">
-        {student.avatar_url ? (
-          <img
-            src={student.avatar_url}
-            alt={student.name}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <User className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
-        )}
-        {status && (
-          <div className="absolute -bottom-1 -right-1 bg-card rounded-full p-0.5 shadow border">
-            {getAttendanceIcon(status)}
-          </div>
-        )}
-      </div>
-      <p className="text-sm text-center font-medium truncate w-full leading-tight">
-        {getShortName(student.name)}
-      </p>
-    </div>
-  );
-}
-
 export default function ClassroomView() {
   const { classroomId } = useParams<{ classroomId: string }>();
   const navigate = useNavigate();
@@ -269,12 +71,10 @@ export default function ClassroomView() {
   const archiveClassroom = useArchiveClassroom();
   const arrangeContainerRef = useRef<HTMLDivElement>(null);
   const { isLiquidGlass } = useTheme();
+  const isMobile = useIsMobile();
   
   const [studentPositions, setStudentPositions] = useState<Map<string, { x: number; y: number }>>(new Map());
   const [selectedStudent, setSelectedStudent] = useState<SelectedStudent | null>(null);
-  const [dialogMode, setDialogMode] = useState<'note' | 'attendance'>('note');
-  const [noteType, setNoteType] = useState<'positive' | 'negative' | 'note'>('positive');
-  const [noteDescription, setNoteDescription] = useState('');
   const [saving, setSaving] = useState(false);
   const [loadingPositions, setLoadingPositions] = useState(true);
   const [activeTab, setActiveTab] = useState<'notes' | 'arrange' | 'attendance'>('notes');
@@ -283,6 +83,7 @@ export default function ClassroomView() {
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [randomPickerOpen, setRandomPickerOpen] = useState(false);
   const [timerOpen, setTimerOpen] = useState(false);
+  const [noteSheetOpen, setNoteSheetOpen] = useState(false);
 
   // Auto-detect current period based on classroom schedule and Kuwait time
   const currentPeriodInfo = useMemo(() => {
@@ -370,7 +171,6 @@ export default function ClassroomView() {
         setStudentPositions(positionsMap);
       } catch (error) {
         console.error('Error loading positions:', error);
-        // Set default grid positions
         const positionsMap = new Map<string, { x: number; y: number }>();
         const cardWidth = 110;
         const cardHeight = 130;
@@ -443,9 +243,7 @@ export default function ClassroomView() {
       cycleAttendance(student.id);
     } else if (activeTab === 'notes') {
       setSelectedStudent(student);
-      setDialogMode('note');
-      setNoteType('positive');
-      setNoteDescription('');
+      setNoteSheetOpen(true);
     }
   };
 
@@ -482,10 +280,10 @@ export default function ClassroomView() {
 
   const getAttendanceIcon = (status: AttendanceRecord['status'] | null) => {
     switch (status) {
-      case 'present': return <Check className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />;
-      case 'absent': return <X className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />;
-      case 'late': return <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600" />;
-      case 'excused': return <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />;
+      case 'present': return <Check className="h-5 w-5 text-green-600" />;
+      case 'absent': return <X className="h-5 w-5 text-red-600" />;
+      case 'late': return <Clock className="h-5 w-5 text-yellow-600" />;
+      case 'excused': return <FileText className="h-5 w-5 text-blue-600" />;
       default: return null;
     }
   };
@@ -524,7 +322,7 @@ export default function ClassroomView() {
 
       if (error) throw error;
 
-      toast.success('تم حفظ ترتيب الطلاب بنجاح');
+      toast.success('تم حفظ ترتيب الطلاب');
       setActiveTab('notes');
     } catch (error: any) {
       toast.error(error.message || 'حدث خطأ أثناء الحفظ');
@@ -562,7 +360,7 @@ export default function ClassroomView() {
         if (error) throw error;
       }
 
-      toast.success(`تم حفظ حضور الحصة ${selectedPeriod} بنجاح`);
+      toast.success(`تم حفظ حضور الحصة ${selectedPeriod}`);
       setActiveTab('notes');
     } catch (error: any) {
       toast.error(error.message || 'حدث خطأ أثناء الحفظ');
@@ -571,7 +369,7 @@ export default function ClassroomView() {
     }
   };
 
-  const saveNote = async () => {
+  const saveNote = async (noteType: 'positive' | 'negative' | 'note', noteDescription: string) => {
     if (!selectedStudent || !noteDescription.trim() || !classroomId || !user) return;
 
     setSaving(true);
@@ -591,13 +389,11 @@ export default function ClassroomView() {
 
       if (error) throw error;
 
-      // Invalidate behavior notes query to refresh stats immediately
       await queryClient.invalidateQueries({ queryKey: ['behavior_notes', 'classroom', classroomId] });
       await queryClient.invalidateQueries({ queryKey: ['behavior_notes'] });
 
-      toast.success('تم حفظ الملاحظة بنجاح');
+      toast.success('تم حفظ الملاحظة');
       setSelectedStudent(null);
-      setNoteDescription('');
     } catch (error: any) {
       toast.error(error.message || 'حدث خطأ أثناء الحفظ');
     } finally {
@@ -640,140 +436,69 @@ export default function ClassroomView() {
   const ContentCard = isLiquidGlass ? GlassCard : Card;
   const ContentCardContent = isLiquidGlass ? GlassCardContent : CardContent;
 
+  // Count attendance stats
+  const presentCount = attendanceRecords.filter(r => r.status === 'present').length;
+  const absentCount = attendanceRecords.filter(r => r.status === 'absent').length;
+
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
-      {/* Header - Mobile Optimized */}
-      <div className={cn("sticky top-0 z-10", isLiquidGlass ? "glass-card border-b border-border/30" : "bg-card border-b")}>
-        <div className="px-3 py-3 sm:px-4 sm:py-4">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
-              <div className="flex items-center shrink-0">
-                <TooltipProvider>
-                  <Tooltip>
-                <TooltipTrigger asChild>
-                      <ActionButton variant="ghost" size="icon" onClick={() => navigate('/teacher')}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                      </ActionButton>
-                    </TooltipTrigger>
-                    <TooltipContent>الرئيسية</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <TooltipProvider>
-                  <Tooltip>
-                <TooltipTrigger asChild>
-                      <ActionButton variant="ghost" size="icon" onClick={() => navigate('/teacher/classrooms')}>
-                        <ArrowRight className="h-5 w-5" />
-                      </ActionButton>
-                    </TooltipTrigger>
-                    <TooltipContent>الفصول</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
+    <div className="min-h-screen bg-background pb-24" dir="rtl">
+      {/* Header - iOS Style */}
+      <div className={cn(
+        "sticky top-0 z-20",
+        "bg-background/80 backdrop-blur-xl backdrop-saturate-150",
+        "border-b border-border/20",
+        "pt-[env(safe-area-inset-top)]"
+      )}>
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            {/* Back & Title */}
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => navigate('/teacher/classrooms')}
+                className="shrink-0 h-10 w-10"
+              >
+                <ArrowRight className="h-5 w-5" />
+              </Button>
               <div className="min-w-0">
-                <h1 className="text-base sm:text-xl font-bold truncate">{classroom.name}</h1>
-                <p className="text-xs sm:text-sm text-muted-foreground truncate">{classroom.subject}</p>
+                <h1 className="text-lg font-bold truncate">{classroom.name}</h1>
+                <p className="text-sm text-muted-foreground truncate">{classroom.subject} • {students.length} طالب</p>
               </div>
             </div>
-            
-            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+
+            {/* Actions */}
+            <div className="flex items-center gap-2 shrink-0">
               {activeTab === 'notes' && (
-                <>
-                  {/* Mobile: Show icons only */}
-                  <ActionButton variant="outline" size="icon" className="sm:hidden" onClick={() => setActiveTab('arrange')}>
-                    <Move className="h-4 w-4" />
-                  </ActionButton>
-                  <ActionButton variant="outline" size="icon" className="sm:hidden" onClick={() => setActiveTab('attendance')}>
-                    <ClipboardCheck className="h-4 w-4" />
-                  </ActionButton>
-                  
-                  {/* Desktop: Show full buttons */}
-                  <ActionButton variant="outline" size="sm" className="hidden sm:flex" onClick={() => setActiveTab('arrange')}>
-                    <Move className="h-4 w-4 ml-1" />
-                    ترتيب الطلاب
-                  </ActionButton>
-                  <ActionButton variant="outline" size="sm" className="hidden sm:flex" onClick={() => setActiveTab('attendance')}>
-                    <ClipboardCheck className="h-4 w-4 ml-1" />
-                    تسجيل الحضور
-                  </ActionButton>
-                  
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <ActionButton variant="outline" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                      </ActionButton>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => navigate(`/teacher/students/new?classroomId=${classroomId}`)}>
-                        <UserPlus className="h-4 w-4 ml-2" />
-                        إضافة طالب
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate(`/teacher/classrooms/${classroomId}/edit`)}>
-                        <Settings className="h-4 w-4 ml-2" />
-                        إعدادات الصف
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        onClick={() => setArchiveDialogOpen(true)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Archive className="h-4 w-4 ml-2" />
-                        أرشفة الصف
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => navigate(`/teacher/classrooms/${classroomId}/edit`)}
+                  className="h-10 w-10"
+                >
+                  <Settings className="h-5 w-5" />
+                </Button>
               )}
               
-              {activeTab === 'arrange' && (
+              {(activeTab === 'arrange' || activeTab === 'attendance') && (
                 <>
-                  <ActionButton 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => {
-                      // Reset positions to grid layout
-                      const positionsMap = new Map<string, { x: number; y: number }>();
-                      const cardWidth = 110;
-                      const cardHeight = 130;
-                      const cols = 5;
-                      const gap = 20;
-                      
-                      students.forEach((student, index) => {
-                        const col = index % cols;
-                        const row = Math.floor(index / cols);
-                        positionsMap.set(student.id, {
-                          x: col * (cardWidth + gap) + gap,
-                          y: row * (cardHeight + gap) + gap
-                        });
-                      });
-                      
-                      setStudentPositions(positionsMap);
-                      toast.success('تم إعادة ترتيب الطلاب');
-                    }}
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setActiveTab('notes')}
+                    className="h-10"
                   >
-                    <Shuffle className="h-4 w-4 sm:ml-1" />
-                    <span className="hidden sm:inline">إعادة الترتيب</span>
-                  </ActionButton>
-                  <ActionButton variant="outline" size="sm" onClick={() => setActiveTab('notes')}>
-                    <X className="h-4 w-4 sm:ml-1" />
-                    <span className="hidden sm:inline">إلغاء</span>
-                  </ActionButton>
-                  <ActionButton size="sm" onClick={savePositions} disabled={saving}>
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 sm:ml-1" />}
-                    <span className="hidden sm:inline">حفظ</span>
-                  </ActionButton>
-                </>
-              )}
-              
-              {activeTab === 'attendance' && (
-                <>
-                  <ActionButton variant="outline" size="sm" onClick={() => setActiveTab('notes')}>
-                    <X className="h-4 w-4 sm:ml-1" />
-                    <span className="hidden sm:inline">إلغاء</span>
-                  </ActionButton>
-                  <ActionButton size="sm" onClick={saveAttendance} disabled={saving}>
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 sm:ml-1" />}
-                    <span className="hidden sm:inline">حفظ</span>
-                  </ActionButton>
+                    <X className="h-5 w-5" />
+                  </Button>
+                  <Button 
+                    size="sm"
+                    onClick={activeTab === 'arrange' ? savePositions : saveAttendance}
+                    disabled={saving}
+                    className="h-10 gap-2"
+                  >
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    حفظ
+                  </Button>
                 </>
               )}
             </div>
@@ -782,41 +507,62 @@ export default function ClassroomView() {
       </div>
 
       {/* Main Content */}
-      <div className="p-3 sm:p-4 max-w-5xl mx-auto">
-        {/* Quick Action Buttons - Timer & Random Picker & Stats - Above Board */}
+      <div className="p-4 space-y-4">
+        {/* Quick Tools - Large Touch Targets */}
         {activeTab === 'notes' && (
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <ActionButton 
+          <div className="grid grid-cols-2 gap-3">
+            <Button 
               onClick={() => setTimerOpen(true)}
-              className="gap-2"
+              className="h-16 gap-3 text-base rounded-2xl"
               size="lg"
             >
-              <Timer className="h-5 w-5" />
-              مؤقت
-            </ActionButton>
-            <ActionButton 
+              <Timer className="h-6 w-6" />
+              المؤقت
+            </Button>
+            <Button 
               onClick={() => setRandomPickerOpen(true)}
-              className="gap-2"
-              size="lg"
               variant="secondary"
+              className="h-16 gap-3 text-base rounded-2xl"
+              size="lg"
             >
-              <Shuffle className="h-5 w-5" />
+              <Shuffle className="h-6 w-6" />
               اختيار عشوائي
-            </ActionButton>
+            </Button>
           </div>
         )}
 
-        {/* Board */}
-        <ContentCard className={cn("mb-3 sm:mb-4", isLiquidGlass ? "" : "bg-muted/50")}>
-          <ContentCardContent className="p-3 sm:p-4 text-center">
-            <div className={cn("border-2 border-dashed rounded-lg py-3 sm:py-4", isLiquidGlass ? "bg-background/50 backdrop-blur-sm" : "bg-background")}>
-              <p className="text-muted-foreground font-medium text-sm sm:text-base">السبورة</p>
-            </div>
-          </ContentCardContent>
-        </ContentCard>
+        {/* Mode Tabs - Only show in notes mode */}
+        {activeTab === 'notes' && (
+          <div className="flex gap-2 p-1.5 bg-muted rounded-2xl">
+            <Button
+              variant={activeTab === 'notes' ? 'default' : 'ghost'}
+              className="flex-1 h-12 gap-2 rounded-xl"
+              onClick={() => setActiveTab('notes')}
+            >
+              <MessageSquare className="h-5 w-5" />
+              ملاحظات
+            </Button>
+            <Button
+              variant="ghost"
+              className="flex-1 h-12 gap-2 rounded-xl"
+              onClick={() => setActiveTab('attendance')}
+            >
+              <ClipboardCheck className="h-5 w-5" />
+              الحضور
+            </Button>
+            <Button
+              variant="ghost"
+              className="flex-1 h-12 gap-2 rounded-xl"
+              onClick={() => setActiveTab('arrange')}
+            >
+              <Move className="h-5 w-5" />
+              ترتيب
+            </Button>
+          </div>
+        )}
 
-        {/* Stats Banner - Motivational Message, Engagement, Best Student - Conditional */}
-        {classroom.show_stats_banner !== false && (
+        {/* Stats Banner */}
+        {activeTab === 'notes' && classroom.show_stats_banner !== false && (
           isLiquidGlass ? (
             <GlassClassroomStatsBanner 
               students={students}
@@ -834,7 +580,7 @@ export default function ClassroomView() {
           )
         )}
 
-        {/* Weekly Achievements Manager - calculates and awards badges */}
+        {/* Weekly Achievements Manager */}
         {classroom.show_badges !== false && (
           <WeeklyAchievementsManager
             students={students}
@@ -843,7 +589,7 @@ export default function ClassroomView() {
           />
         )}
 
-        {/* Weekly Leaderboard - shows top students */}
+        {/* Weekly Leaderboard */}
         {activeTab === 'notes' && classroom.show_leaderboard !== false && (
           <div className="mb-4">
             {isLiquidGlass ? (
@@ -862,150 +608,100 @@ export default function ClassroomView() {
           </div>
         )}
 
-        {/* Mode-specific instructions */}
-        <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4 text-xs sm:text-sm text-muted-foreground">
-          {activeTab === 'arrange' && (
-            <>
-              <GripVertical className="h-4 w-4" />
-              <span>اسحب الطالب وضعه في المكان المطلوب</span>
-            </>
-          )}
-          {activeTab === 'attendance' && (
-            <>
-              <ClipboardCheck className="h-4 w-4" />
-              <span>اضغط على الطالب لتغيير الحالة</span>
-            </>
-          )}
-          {activeTab === 'notes' && (
-            <>
-              <MessageSquare className="h-4 w-4" />
-              <span>اضغط على الطالب لإضافة ملاحظة</span>
-            </>
-          )}
-        </div>
-
         {/* Attendance Controls */}
         {activeTab === 'attendance' && (
-          <div className="space-y-3 mb-4">
-            {/* Current Period Info */}
-            {currentPeriodInfo.periodInfo && (
-              <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-primary/10 border border-primary/20">
-                <Clock className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium text-primary">
-                  الحصة الحالية: {currentPeriodInfo.periodInfo.nameAr}
-                </span>
-                <Badge variant="secondary" className="text-xs">
-                  {currentPeriodInfo.periodInfo.startTime} - {currentPeriodInfo.periodInfo.endTime}
-                </Badge>
-              </div>
-            )}
-
-            {!currentPeriodInfo.isClassDay && classroom && (
-              <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-muted border border-border">
-                <span className="text-sm text-muted-foreground">
-                  لا توجد حصص مجدولة لهذا الصف اليوم
-                </span>
-              </div>
-            )}
-
+          <div className="space-y-4">
             {/* Period Selection */}
-            <div className="flex items-center justify-center gap-3">
-              <Label className="text-sm font-medium">الحصة:</Label>
+            <div className="flex items-center gap-3">
               <Select value={String(selectedPeriod)} onValueChange={(v) => setSelectedPeriod(Number(v))}>
-                <SelectTrigger className="w-32 sm:w-40">
+                <SelectTrigger className="flex-1 h-12 text-base rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {scheduleInfo?.periods.filter(p => !p.isBreak && p.period > 0).map(p => (
-                    <SelectItem key={p.period} value={String(p.period)}>
+                    <SelectItem key={p.period} value={String(p.period)} className="text-base">
                       {p.nameAr}
                       {p.period === currentPeriodInfo.period && (
                         <span className="mr-2 text-primary">(الحالية)</span>
                       )}
                     </SelectItem>
-                  )) || [1,2,3,4,5,6,7].map(n => (
-                    <SelectItem key={n} value={String(n)}>الحصة {n}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Bulk Actions */}
-            <div className="flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
+            {/* Quick Actions */}
+            <div className="grid grid-cols-2 gap-2">
               <Button 
                 variant="outline" 
-                size="sm" 
-                className="gap-1 border-green-500 text-green-600 hover:bg-green-50 text-xs sm:text-sm px-2 sm:px-3"
+                className="h-12 gap-2 rounded-xl border-green-300 text-green-700 dark:border-green-700 dark:text-green-400"
                 onClick={() => setAllAttendance('present')}
               >
-                <Check className="h-3 w-3" />
-                <span className="hidden xs:inline">الكل</span> حاضر
+                <Check className="h-5 w-5" />
+                الكل حاضر
               </Button>
               <Button 
-                variant="outline" 
-                size="sm" 
-                className="gap-1 border-red-500 text-red-600 hover:bg-red-50 text-xs sm:text-sm px-2 sm:px-3"
+                variant="outline"
+                className="h-12 gap-2 rounded-xl border-red-300 text-red-700 dark:border-red-700 dark:text-red-400"
                 onClick={() => setAllAttendance('absent')}
               >
-                <X className="h-3 w-3" />
-                <span className="hidden xs:inline">الكل</span> غائب
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="gap-1 border-yellow-500 text-yellow-600 hover:bg-yellow-50 text-xs sm:text-sm px-2 sm:px-3"
-                onClick={() => setAllAttendance('late')}
-              >
-                <Clock className="h-3 w-3" />
-                <span className="hidden xs:inline">الكل</span> متأخر
+                <X className="h-5 w-5" />
+                الكل غائب
               </Button>
             </div>
 
-            {/* Legend */}
-            <div className="flex items-center justify-center gap-3 sm:gap-4 text-xs">
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded border-2 border-green-500 bg-green-50" />
-                <span>حاضر</span>
+            {/* Attendance Stats */}
+            <div className="flex gap-3">
+              <div className="flex-1 p-3 bg-green-100 dark:bg-green-900/30 rounded-xl text-center">
+                <p className="text-2xl font-bold text-green-700 dark:text-green-400">{presentCount}</p>
+                <p className="text-sm text-green-600 dark:text-green-500">حاضر</p>
               </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded border-2 border-red-500 bg-red-50" />
-                <span>غائب</span>
+              <div className="flex-1 p-3 bg-red-100 dark:bg-red-900/30 rounded-xl text-center">
+                <p className="text-2xl font-bold text-red-700 dark:text-red-400">{absentCount}</p>
+                <p className="text-sm text-red-600 dark:text-red-500">غائب</p>
               </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded border-2 border-yellow-500 bg-yellow-50" />
-                <span>متأخر</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded border-2 border-blue-500 bg-blue-50" />
-                <span>عذر</span>
+              <div className="flex-1 p-3 bg-muted rounded-xl text-center">
+                <p className="text-2xl font-bold text-foreground">{students.length - presentCount - absentCount}</p>
+                <p className="text-sm text-muted-foreground">بدون</p>
               </div>
             </div>
           </div>
         )}
 
+        {/* Mode Instructions */}
+        {activeTab !== 'notes' && (
+          <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground bg-muted/50 rounded-xl">
+            {activeTab === 'arrange' && (
+              <>
+                <GripVertical className="h-4 w-4" />
+                <span>اسحب الطالب وضعه في المكان المطلوب</span>
+              </>
+            )}
+            {activeTab === 'attendance' && (
+              <>
+                <ClipboardCheck className="h-4 w-4" />
+                <span>اضغط على الطالب لتغيير الحالة</span>
+              </>
+            )}
+          </div>
+        )}
+
         {/* Students Grid */}
-        <ContentCard className="overflow-hidden">
-          <ContentCardContent className="p-3 sm:p-4">
-            {loadingStudents || loadingPositions ? (
-              <div className="flex items-center justify-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            ) : students.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-                <User className="h-12 w-12 mb-4" />
-                <p>لا يوجد طلاب في هذا الفصل</p>
-                <Button 
-                  variant="outline" 
-                  className="mt-4"
-                  onClick={() => navigate(`/teacher/students/new?classroomId=${classroomId}`)}
-                >
+        <ContentCard>
+          <ContentCardContent className="p-3">
+            {students.length === 0 ? (
+              <div className="text-center py-12">
+                <User className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
+                <p className="text-lg font-medium text-muted-foreground mb-4">لا يوجد طلاب</p>
+                <Button onClick={() => navigate(`/teacher/students/new?classroomId=${classroomId}`)}>
+                  <UserPlus className="h-5 w-5 ml-2" />
                   إضافة طالب
                 </Button>
               </div>
             ) : activeTab === 'arrange' ? (
               <div 
                 ref={arrangeContainerRef}
-                className="relative bg-muted/30 rounded-lg border-2 border-dashed border-muted-foreground/20"
+                className="relative bg-muted/30 rounded-xl border-2 border-dashed border-muted-foreground/20"
                 style={{ minHeight: containerHeight }}
               >
                 {students.map((student) => {
@@ -1015,366 +711,283 @@ export default function ClassroomView() {
                       key={student.id}
                       student={student}
                       position={position}
-                      isArrangeMode={true}
                       onPositionChange={handlePositionChange}
-                      onTap={handleStudentTap}
                       getShortName={getShortName}
                       containerRef={arrangeContainerRef}
-                      classroomId={classroomId || ''}
                     />
                   );
                 })}
               </div>
-            ) : activeTab === 'attendance' ? (
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4">
-                {students.map((student) => (
-                  <AttendanceStudent
-                    key={student.id}
-                    student={student}
-                    status={getAttendanceStatus(student.id)}
-                    onTap={handleStudentTap}
-                    getShortName={getShortName}
-                    getAttendanceBorder={getAttendanceBorder}
-                    getAttendanceIcon={getAttendanceIcon}
-                  />
-                ))}
-              </div>
             ) : (
-              <>
-                {/* Mobile: Grid Layout */}
-                <div className="grid grid-cols-3 gap-2 sm:hidden">
-                  {students.map((student) => {
-                    const hasNotes = studentsWithNotes.has(student.id);
-                    const notesCount = studentsWithNotes.get(student.id) || 0;
-                    
-                    return (
-                      <div
-                        key={student.id}
-                        className="relative flex flex-col items-center p-2 bg-card rounded-xl border-2 border-border/50 shadow-sm cursor-pointer transition-all hover:scale-105 hover:border-primary/50 active:scale-95"
-                        onClick={() => handleStudentTap({
-                          id: student.id,
-                          name: student.name,
-                          avatar_url: student.avatar_url,
-                        })}
-                      >
-                        {/* Status Icons */}
-                        <div className="absolute -top-1 right-0 flex gap-0.5">
-                          {student.special_needs && (
-                            <div className="p-0.5 bg-amber-100 dark:bg-amber-900/50 rounded-full">
-                              <HeartPulse className="h-2.5 w-2.5 text-amber-600 dark:text-amber-400" />
-                            </div>
-                          )}
-                          {hasNotes && (
-                            <div className="p-0.5 bg-blue-100 dark:bg-blue-900/50 rounded-full">
-                              <StickyNote className="h-2.5 w-2.5 text-blue-600 dark:text-blue-400" />
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-1.5 mt-1">
-                          {student.avatar_url ? (
-                            <img
-                              src={student.avatar_url}
-                              alt={student.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <User className="h-6 w-6 text-primary" />
-                          )}
-                        </div>
-                        <p className="text-[11px] text-center font-medium leading-tight line-clamp-2 w-full px-0.5">
-                          {getShortName(student.name)}
-                        </p>
-                        {/* Student Badges - Conditional */}
-                        {classroom.show_badges !== false && (
-                          <div className="mt-1">
-                            <StudentBadges studentId={student.id} classroomId={classroomId || ''} />
+              <div className="grid grid-cols-3 gap-3">
+                {students.map((student) => {
+                  const hasNotes = studentsWithNotes.has(student.id);
+                  const notesCount = studentsWithNotes.get(student.id) || 0;
+                  const attendanceStatus = getAttendanceStatus(student.id);
+                  
+                  return (
+                    <div
+                      key={student.id}
+                      className={cn(
+                        "relative flex flex-col items-center p-3 rounded-2xl cursor-pointer transition-all active:scale-95",
+                        activeTab === 'attendance' 
+                          ? `border-2 ${getAttendanceBorder(attendanceStatus)}`
+                          : "bg-card border border-border/50 hover:border-primary/50"
+                      )}
+                      onClick={() => handleStudentTap({
+                        id: student.id,
+                        name: student.name,
+                        avatar_url: student.avatar_url,
+                      })}
+                    >
+                      {/* Status Icons */}
+                      <div className="absolute top-1 right-1 flex gap-0.5">
+                        {student.special_needs && (
+                          <div className="p-1 bg-amber-100 dark:bg-amber-900/50 rounded-full">
+                            <HeartPulse className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                          </div>
+                        )}
+                        {hasNotes && (
+                          <div className="p-1 bg-blue-100 dark:bg-blue-900/50 rounded-full">
+                            <StickyNote className="h-3 w-3 text-blue-600 dark:text-blue-400" />
                           </div>
                         )}
                       </div>
-                    );
-                  })}
-                </div>
 
-                {/* Desktop: Absolute Position Layout */}
-                <div 
-                  className="relative bg-muted/30 rounded-lg hidden sm:block"
-                  style={{ minHeight: containerHeight }}
-                >
-                  {students.map((student) => {
-                    const hasNotes = studentsWithNotes.has(student.id);
-                    const notesCount = studentsWithNotes.get(student.id) || 0;
-                    const position = studentPositions.get(student.id) || { x: 20, y: 20 };
-                    
-                    return (
-                      <div
-                        key={student.id}
-                        style={{
-                          position: 'absolute',
-                          left: position.x,
-                          top: position.y,
-                        }}
-                        className="relative flex flex-col items-center p-3 bg-card rounded-xl border-2 border-border/50 shadow-sm cursor-pointer transition-all hover:scale-105 hover:border-primary/50 active:scale-95"
-                        onClick={() => handleStudentTap({
-                          id: student.id,
-                          name: student.name,
-                          avatar_url: student.avatar_url,
-                        })}
-                      >
-                        {/* Status Icons */}
-                        <div className="absolute -top-1 right-0 flex gap-0.5">
-                          {student.special_needs && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div className="p-0.5 bg-amber-100 dark:bg-amber-900/50 rounded-full">
-                                  <HeartPulse className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent>احتياجات خاصة</TooltipContent>
-                            </Tooltip>
-                          )}
-                          {hasNotes && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div className="p-0.5 bg-blue-100 dark:bg-blue-900/50 rounded-full">
-                                  <StickyNote className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent>{notesCount} ملاحظة</TooltipContent>
-                            </Tooltip>
-                          )}
-                          {student.notes && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div className="p-0.5 bg-purple-100 dark:bg-purple-900/50 rounded-full">
-                                  <MessageSquare className="h-3 w-3 text-purple-600 dark:text-purple-400" />
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-48 text-right">{student.notes}</TooltipContent>
-                            </Tooltip>
-                          )}
-                        </div>
-
-                        <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-2 mt-1">
-                          {student.avatar_url ? (
-                            <img
-                              src={student.avatar_url}
-                              alt={student.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <User className="h-10 w-10 text-primary" />
-                          )}
-                        </div>
-                        <p className="text-sm text-center font-medium truncate w-full leading-tight max-w-[90px]">
-                          {getShortName(student.name)}
-                        </p>
-                        {/* Student Badges - Conditional */}
-                        {classroom.show_badges !== false && (
-                          <div className="mt-1">
-                            <StudentBadges studentId={student.id} classroomId={classroomId || ''} />
+                      {/* Avatar */}
+                      <div className="relative w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-2">
+                        {student.avatar_url ? (
+                          <img
+                            src={student.avatar_url}
+                            alt={student.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User className="h-7 w-7 text-primary" />
+                        )}
+                        
+                        {/* Attendance Icon Overlay */}
+                        {activeTab === 'attendance' && attendanceStatus && (
+                          <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5 shadow">
+                            {getAttendanceIcon(attendanceStatus)}
                           </div>
                         )}
                       </div>
-                    );
-                  })}
-                </div>
-              </>
+                      
+                      {/* Name */}
+                      <p className="text-xs text-center font-medium leading-tight line-clamp-2 w-full">
+                        {getShortName(student.name)}
+                      </p>
+                      
+                      {/* Badges */}
+                      {activeTab === 'notes' && classroom.show_badges !== false && (
+                        <div className="mt-1">
+                          <StudentBadges studentId={student.id} classroomId={classroomId || ''} />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </ContentCardContent>
         </ContentCard>
       </div>
 
-      {/* Student Note Dialog */}
-      <Dialog open={!!selectedStudent && dialogMode === 'note'} onOpenChange={() => setSelectedStudent(null)}>
-        <DialogContent dir="rtl" className="max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden shrink-0">
-                {selectedStudent?.avatar_url ? (
-                  <img
-                    src={selectedStudent.avatar_url}
-                    alt={selectedStudent.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <User className="h-6 w-6 text-primary" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <span className="block text-lg">{selectedStudent?.name}</span>
-              </div>
-            </DialogTitle>
-            <DialogDescription>
-              اختر ملاحظة سريعة أو اكتب ملاحظة مخصصة
-            </DialogDescription>
-          </DialogHeader>
+      {/* Mobile Note Sheet */}
+      <MobileStudentNoteSheet
+        student={selectedStudent}
+        open={noteSheetOpen}
+        onOpenChange={setNoteSheetOpen}
+        onSave={saveNote}
+        saving={saving}
+      />
 
-          <div className="space-y-4">
-            {/* Quick Positive Options */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1 text-green-600">
-                <Plus className="h-4 w-4" />
-                ملاحظات إيجابية سريعة
-              </Label>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  'مشاركة ممتازة',
-                  'إجابة صحيحة',
-                  'سلوك مميز',
-                  'تعاون مع الزملاء',
-                  'التزام بالنظام',
-                  'إبداع في الحل',
-                  'مساعدة الآخرين',
-                  'حفظ متقن',
-                ].map((option) => (
-                  <Button
-                    key={option}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="border-green-200 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 dark:bg-green-950/30 dark:border-green-800 dark:text-green-400"
-                    onClick={() => {
-                      setNoteType('positive');
-                      setNoteDescription(option);
-                    }}
-                  >
-                    {option}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Quick Negative Options */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1 text-red-600">
-                <Minus className="h-4 w-4" />
-                ملاحظات سلبية سريعة
-              </Label>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  'عدم الانتباه',
-                  'الحديث مع الزملاء',
-                  'عدم إحضار الكتاب',
-                  'عدم حل الواجب',
-                  'التأخر عن الحصة',
-                  'إزعاج الآخرين',
-                  'استخدام الجوال',
-                  'عدم المشاركة',
-                ].map((option) => (
-                  <Button
-                    key={option}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="border-red-200 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800 dark:bg-red-950/30 dark:border-red-800 dark:text-red-400"
-                    onClick={() => {
-                      setNoteType('negative');
-                      setNoteDescription(option);
-                    }}
-                  >
-                    {option}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Divider */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">أو اكتب ملاحظة مخصصة</span>
-              </div>
-            </div>
-
-            {/* Custom Note Type */}
-            <div className="space-y-2">
-              <Label>نوع الملاحظة</Label>
-              <RadioGroup
-                value={noteType}
-                onValueChange={(v) => setNoteType(v as 'positive' | 'negative' | 'note')}
-                className="flex flex-wrap gap-3 sm:gap-4"
-              >
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="positive" id="positive" />
-                  <Label htmlFor="positive" className="flex items-center gap-1 text-green-600">
-                    <Plus className="h-4 w-4" />
-                    إيجابي
-                  </Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="negative" id="negative" />
-                  <Label htmlFor="negative" className="flex items-center gap-1 text-red-600">
-                    <Minus className="h-4 w-4" />
-                    سلبي
-                  </Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="note" id="note" />
-                  <Label htmlFor="note" className="flex items-center gap-1">
-                    <MessageSquare className="h-4 w-4" />
-                    ملاحظة
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">الوصف</Label>
-              <Textarea
-                id="description"
-                placeholder="اكتب الملاحظة هنا..."
-                value={noteDescription}
-                onChange={(e) => setNoteDescription(e.target.value)}
-                className="min-h-[80px]"
-              />
-            </div>
-
-            <Button 
-              className="w-full" 
-              onClick={saveNote}
-              disabled={saving || !noteDescription.trim()}
-            >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : null}
-              حفظ الملاحظة
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Timer & Random Picker */}
+      {isMobile ? (
+        <>
+          <MobileRandomPicker
+            students={students}
+            classroomId={classroomId || ''}
+            open={randomPickerOpen}
+            onOpenChange={setRandomPickerOpen}
+          />
+          <MobileTimer
+            open={timerOpen}
+            onOpenChange={setTimerOpen}
+          />
+        </>
+      ) : (
+        <>
+          <RandomStudentPicker
+            students={students}
+            classroomId={classroomId || ''}
+            open={randomPickerOpen}
+            onOpenChange={setRandomPickerOpen}
+          />
+          <ClassroomTimer
+            open={timerOpen}
+            onOpenChange={setTimerOpen}
+          />
+        </>
+      )}
 
       {/* Archive Confirmation Dialog */}
       <AlertDialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
-        <AlertDialogContent dir="rtl">
+        <AlertDialogContent dir="rtl" className="max-w-[90vw] rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>أرشفة الصف</AlertDialogTitle>
-            <AlertDialogDescription>
-              هل أنت متأكد من أرشفة هذا الصف؟ سيتم نقله إلى قسم الصفوف المؤرشفة ولن يظهر في القائمة الرئيسية.
+            <AlertDialogDescription className="text-base">
+              هل أنت متأكد من أرشفة هذا الصف؟ سيتم نقله إلى قسم الصفوف المؤرشفة.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row-reverse gap-2">
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-            <AlertDialogAction onClick={handleArchiveClassroom} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogCancel className="h-12 px-6">إلغاء</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleArchiveClassroom} 
+              className="h-12 px-6 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               أرشفة
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
 
-      {/* Random Student Picker */}
-      <RandomStudentPicker
-        students={students}
-        classroomId={classroomId || ''}
-        open={randomPickerOpen}
-        onOpenChange={setRandomPickerOpen}
-      />
+// Draggable Student Component
+interface DraggableStudentProps {
+  student: {
+    id: string;
+    name: string;
+    avatar_url: string | null;
+  };
+  position: { x: number; y: number };
+  onPositionChange: (studentId: string, x: number, y: number) => void;
+  getShortName: (name: string) => string;
+  containerRef: React.RefObject<HTMLDivElement>;
+}
 
-      {/* Classroom Timer */}
-      <ClassroomTimer
-        open={timerOpen}
-        onOpenChange={setTimerOpen}
-      />
+function DraggableStudent({ 
+  student, 
+  position, 
+  onPositionChange, 
+  getShortName,
+  containerRef,
+}: DraggableStudentProps) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const nodeRef = useRef<HTMLDivElement>(null);
+
+  const handleDragStart = (clientX: number, clientY: number) => {
+    if (!nodeRef.current) return;
+    
+    const rect = nodeRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    });
+    setIsDragging(true);
+  };
+
+  const handleDrag = (clientX: number, clientY: number) => {
+    if (!isDragging || !containerRef.current) return;
+    
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const nodeWidth = nodeRef.current?.offsetWidth || 100;
+    const nodeHeight = nodeRef.current?.offsetHeight || 120;
+    
+    let newX = clientX - containerRect.left - dragOffset.x;
+    let newY = clientY - containerRect.top - dragOffset.y;
+    
+    newX = Math.max(0, Math.min(newX, containerRect.width - nodeWidth));
+    newY = Math.max(0, Math.min(newY, containerRect.height - nodeHeight));
+    
+    onPositionChange(student.id, newX, newY);
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    handleDragStart(e.clientX, e.clientY);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    handleDragStart(touch.clientX, touch.clientY);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    handleDrag(touch.clientX, touch.clientY);
+  };
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      handleDrag(e.clientX, e.clientY);
+    };
+
+    const handleMouseUp = () => {
+      handleDragEnd();
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragOffset]);
+
+  return (
+    <div
+      ref={nodeRef}
+      style={{
+        position: 'absolute',
+        left: position.x,
+        top: position.y,
+        zIndex: isDragging ? 100 : 1,
+        cursor: isDragging ? 'grabbing' : 'grab',
+        touchAction: 'none',
+      }}
+      className={cn(
+        "flex flex-col items-center p-3 bg-card rounded-2xl border-2 shadow-sm select-none transition-shadow",
+        isDragging 
+          ? 'border-primary shadow-xl scale-105 ring-2 ring-primary/30' 
+          : 'border-border/50'
+      )}
+      onMouseDown={handleMouseDown}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleDragEnd}
+    >
+      <div className="absolute -top-2 -right-2 p-2 bg-primary text-primary-foreground rounded-full z-10 shadow-lg">
+        <GripVertical className="h-4 w-4" />
+      </div>
+      <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-2">
+        {student.avatar_url ? (
+          <img
+            src={student.avatar_url}
+            alt={student.name}
+            className="w-full h-full object-cover"
+            draggable={false}
+          />
+        ) : (
+          <User className="h-7 w-7 text-primary" />
+        )}
+      </div>
+      <p className="text-xs text-center font-medium truncate w-full leading-tight max-w-[70px]">
+        {getShortName(student.name)}
+      </p>
     </div>
   );
 }
