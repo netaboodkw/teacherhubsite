@@ -63,7 +63,16 @@ export function useAuth() {
     return { data, error };
   };
 
-  const signOut = async () => {
+  const signOut = async (saveUserInfo?: { name: string | null; avatarUrl: string | null }) => {
+    // Save user info for welcome back experience
+    if (saveUserInfo) {
+      localStorage.setItem('teacherhub_last_user', JSON.stringify({
+        name: saveUserInfo.name,
+        avatarUrl: saveUserInfo.avatarUrl,
+        timestamp: Date.now(),
+      }));
+    }
+    
     const { error } = await supabase.auth.signOut();
     return { error };
   };
