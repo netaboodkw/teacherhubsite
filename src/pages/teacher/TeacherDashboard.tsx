@@ -1,5 +1,6 @@
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useClassrooms } from '@/hooks/useClassrooms';
+import { useProfile } from '@/hooks/useProfile';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/ui/glass-card';
 import { GraduationCap, Users, ClipboardCheck, BookOpen, AlertTriangle, Plus, LayoutDashboard } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -18,6 +19,7 @@ import { PageHeader } from '@/components/common/PageHeader';
 
 export default function TeacherDashboard() {
   const { data: classrooms, isLoading: classroomsLoading } = useClassrooms();
+  const { profile } = useProfile();
   const themeStyle = useThemeStyle();
   const isGlass = themeStyle === 'liquid-glass';
   
@@ -244,7 +246,7 @@ export default function TeacherDashboard() {
 
         <PageHeader
           icon={LayoutDashboard}
-          title="مرحباً بك"
+          title={`مرحباً ${profile?.full_name || 'بك'} 👋`}
           subtitle="إدارة صفوفك وطلابك"
           iconVariant="cyan"
         />
