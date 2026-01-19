@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { StudentAvatarUpload } from '@/components/students/StudentAvatarUpload';
-import { ArrowRight, Users, Loader2, HeartPulse, Phone } from 'lucide-react';
+import { ArrowRight, Users, Loader2, HeartPulse, Phone, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function NewStudent() {
@@ -26,6 +26,7 @@ export default function NewStudent() {
     classroom_id: '',
     notes: '',
     special_needs: false,
+    is_watched: false,
     avatar_url: '',
     parent_name: '',
     parent_phone: '',
@@ -171,14 +172,30 @@ export default function NewStudent() {
               <div className="flex items-center gap-3">
                 <HeartPulse className="w-5 h-5 text-amber-500" />
                 <div>
-                  <Label htmlFor="special_needs" className="font-medium">احتياجات خاصة / يحتاج متابعة</Label>
-                  <p className="text-sm text-muted-foreground">تفعيل هذا الخيار سيظهر أيقونة خاصة بجانب اسم الطالب</p>
+                  <Label htmlFor="special_needs" className="font-medium">احتياجات خاصة</Label>
+                  <p className="text-sm text-muted-foreground">طالب من ذوي الاحتياجات الخاصة</p>
                 </div>
               </div>
               <Switch
                 id="special_needs"
                 checked={formData.special_needs}
                 onCheckedChange={(checked) => setFormData({ ...formData, special_needs: checked })}
+              />
+            </div>
+
+            {/* Needs Watch Toggle */}
+            <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
+              <div className="flex items-center gap-3">
+                <Eye className="w-5 h-5 text-purple-500" />
+                <div>
+                  <Label htmlFor="is_watched" className="font-medium">يحتاج متابعة</Label>
+                  <p className="text-sm text-muted-foreground">طالب يحتاج متابعة خاصة من المعلم</p>
+                </div>
+              </div>
+              <Switch
+                id="is_watched"
+                checked={formData.is_watched}
+                onCheckedChange={(checked) => setFormData({ ...formData, is_watched: checked })}
               />
             </div>
 

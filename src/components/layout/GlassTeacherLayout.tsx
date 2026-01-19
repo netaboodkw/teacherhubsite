@@ -63,9 +63,11 @@ const navItems = [
 
 interface GlassTeacherLayoutProps {
   children: React.ReactNode;
+  hideHeader?: boolean;
+  hidePadding?: boolean;
 }
 
-export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
+export function GlassTeacherLayout({ children, hideHeader, hidePadding }: GlassTeacherLayoutProps) {
   const { logoUrl } = useSiteLogo();
   const location = useLocation();
   const navigate = useNavigate();
@@ -99,30 +101,32 @@ export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
       )}
     >
       {/* Top Bar - iOS Native Style with Enhanced Status Bar Blur */}
-      <header
-        className={cn(
-          "z-50 w-full lg:hidden",
-          "bg-background/60 backdrop-blur-2xl backdrop-saturate-200",
-          "border-b border-border/10",
-          "pt-[env(safe-area-inset-top)]"
-        )}
-      >
-        <div className="flex items-center justify-between h-16 px-4">
-          <div className="flex items-center gap-3">
-            <img src={logoUrl} alt="Logo" className="w-10 h-10 object-contain" />
-            <h1 className="text-xl font-bold text-foreground">Teacher Hub</h1>
+      {!hideHeader && (
+        <header
+          className={cn(
+            "z-50 w-full lg:hidden",
+            "bg-background/60 backdrop-blur-2xl backdrop-saturate-200",
+            "border-b border-border/10",
+            "pt-[env(safe-area-inset-top)]"
+          )}
+        >
+          <div className="flex items-center justify-between h-16 px-4">
+            <div className="flex items-center gap-3">
+              <img src={logoUrl} alt="Logo" className="w-10 h-10 object-contain" />
+              <h1 className="text-xl font-bold text-foreground">Teacher Hub</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <ThemeToggle size="default" />
+              <NotificationBell />
+              <Link to="/teacher/settings">
+                <Button variant="ghost" size="icon" className="rounded-full h-11 w-11">
+                  <User className="h-6 w-6" />
+                </Button>
+              </Link>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <ThemeToggle size="default" />
-            <NotificationBell />
-            <Link to="/teacher/settings">
-              <Button variant="ghost" size="icon" className="rounded-full h-11 w-11">
-                <User className="h-6 w-6" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       {/* Main content area */}
       <div className="flex flex-1 w-full">
@@ -252,7 +256,10 @@ export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
           )}
         >
           <FadeTransition>
-            <div className="container max-w-6xl mx-auto px-4 py-5 lg:py-6">
+            <div className={cn(
+              "container max-w-6xl mx-auto lg:py-6",
+              hidePadding ? "" : "px-4 py-5"
+            )}>
               {children}
             </div>
           </FadeTransition>

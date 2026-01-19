@@ -86,7 +86,10 @@ export function useCreateStudent() {
       classroom_id: string; 
       notes?: string;
       special_needs?: boolean;
+      is_watched?: boolean;
       avatar_url?: string;
+      parent_name?: string;
+      parent_phone?: string;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('يجب تسجيل الدخول أولاً');
@@ -100,8 +103,10 @@ export function useCreateStudent() {
           classroom_id: student.classroom_id,
           notes: student.notes || null,
           special_needs: student.special_needs || false,
-          is_watched: false,
+          is_watched: student.is_watched || false,
           avatar_url: student.avatar_url || null,
+          parent_name: student.parent_name || null,
+          parent_phone: student.parent_phone || null,
         })
         .select()
         .single();

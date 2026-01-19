@@ -9,9 +9,11 @@ import { GlassTeacherLayout } from './GlassTeacherLayout';
 
 interface TeacherLayoutProps {
   children: ReactNode;
+  hideHeader?: boolean;
+  hidePadding?: boolean;
 }
 
-export function TeacherLayout({ children }: TeacherLayoutProps) {
+export function TeacherLayout({ children, hideHeader, hidePadding }: TeacherLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { data: userRole, isLoading } = useUserRole();
   const themeStyle = useThemeStyle();
@@ -33,7 +35,7 @@ export function TeacherLayout({ children }: TeacherLayoutProps) {
 
   // Use Liquid Glass layout when theme is enabled
   if (themeStyle === 'liquid-glass') {
-    return <GlassTeacherLayout>{children}</GlassTeacherLayout>;
+    return <GlassTeacherLayout hideHeader={hideHeader} hidePadding={hidePadding}>{children}</GlassTeacherLayout>;
   }
 
   return (

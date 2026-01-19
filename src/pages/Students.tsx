@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, Plus, Search, Upload, Loader2, ChevronLeft, HeartPulse, Eye, GraduationCap, UserX, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Users, Plus, Search, FileSpreadsheet, Loader2, ChevronLeft, HeartPulse, Eye, GraduationCap, UserX, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useGrades } from '@/hooks/useGrades';
 import { useBehaviorNotes } from '@/hooks/useBehaviorNotes';
@@ -150,7 +150,7 @@ export default function Students() {
   // iOS-style mobile layout
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-background" dir="rtl">
+      <TeacherLayout hideHeader hidePadding>
         {/* iOS Header */}
         <div className={cn(
           "sticky top-0 z-20",
@@ -168,7 +168,7 @@ export default function Students() {
                   onClick={() => setImportDialogOpen(true)}
                   className="h-10 w-10"
                 >
-                  <Upload className="h-5 w-5" />
+                  <FileSpreadsheet className="h-5 w-5" />
                 </Button>
                 <Button 
                   size="icon"
@@ -259,7 +259,7 @@ export default function Students() {
           onOpenChange={setImportDialogOpen}
           defaultClassroomId={selectedClassroom !== 'all' ? selectedClassroom : undefined}
         />
-      </div>
+      </TeacherLayout>
     );
   }
 
@@ -275,7 +275,7 @@ export default function Students() {
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
-              <Upload className="w-4 h-4 ml-2" />
+              <FileSpreadsheet className="w-4 h-4 ml-2" />
               استيراد
             </Button>
             <Button onClick={() => navigate('/teacher/students/new')}>
