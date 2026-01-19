@@ -23,6 +23,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
+// Logo colors: sky blue, violet/purple, pink, emerald/green, teal/turquoise, yellow
 const features = [
   // المميزات الذكية
   {
@@ -31,7 +32,7 @@ const features = [
     description: 'صوّر كشف الدرجات وسيتم التعرف على نظام درجاتك تلقائياً',
     highlight: true,
     badge: 'ذكاء اصطناعي',
-    color: 'from-primary to-secondary',
+    color: 'from-sky-400 to-violet-400',
   },
   {
     icon: Camera,
@@ -39,7 +40,7 @@ const features = [
     description: 'صوّر كشف الأسماء والذكاء الاصطناعي يضيف الطلاب تلقائياً',
     highlight: true,
     badge: 'جديد',
-    color: 'from-secondary to-primary',
+    color: 'from-violet-400 to-pink-400',
   },
   // إدارة الصفوف والطلاب
   {
@@ -47,21 +48,21 @@ const features = [
     title: 'إدارة الصفوف',
     description: 'أنشئ صفوفك وحدد المادة والمرحلة والجدول الأسبوعي',
     highlight: false,
-    color: 'from-primary to-primary/70',
+    color: 'from-emerald-400 to-teal-400',
   },
   {
     icon: Users,
     title: 'إدارة الطلاب',
     description: 'أضف الطلاب وبيانات أولياء الأمور والملاحظات',
     highlight: false,
-    color: 'from-secondary to-secondary/70',
+    color: 'from-teal-400 to-sky-400',
   },
   {
     icon: FileSpreadsheet,
     title: 'استيراد من Excel',
     description: 'أضف عشرات الطلاب دفعة واحدة من ملفات Excel',
     highlight: false,
-    color: 'from-primary/80 to-secondary/80',
+    color: 'from-pink-400 to-yellow-400',
   },
   // الحضور والتذكيرات
   {
@@ -69,7 +70,7 @@ const features = [
     title: 'تسجيل الحضور',
     description: 'سجل حضور طلابك بضغطة واحدة مع تتبع الحصص',
     highlight: false,
-    color: 'from-secondary to-primary/70',
+    color: 'from-sky-400 to-emerald-400',
   },
   {
     icon: Fingerprint,
@@ -77,7 +78,7 @@ const features = [
     description: 'تنبيهات يومية لتسجيل بصمة الحضور والانصراف',
     highlight: true,
     badge: 'مميز',
-    color: 'from-accent to-accent/70',
+    color: 'from-violet-400 to-teal-400',
   },
   {
     icon: Clock,
@@ -85,7 +86,7 @@ const features = [
     description: 'تنبيه قبل بداية كل حصة حتى تكون مستعداً',
     highlight: true,
     badge: 'مميز',
-    color: 'from-primary to-accent',
+    color: 'from-yellow-400 to-pink-400',
   },
   // الدرجات والتقييم
   {
@@ -93,14 +94,14 @@ const features = [
     title: 'تسجيل الدرجات',
     description: 'سجل درجات الاختبارات والواجبات والمشاركة',
     highlight: false,
-    color: 'from-secondary/80 to-primary/60',
+    color: 'from-emerald-400 to-sky-400',
   },
   {
     icon: BarChart3,
     title: 'حساب المعدلات',
     description: 'حساب تلقائي للمعدلات والنسب المئوية',
     highlight: false,
-    color: 'from-primary/70 to-secondary/70',
+    color: 'from-teal-400 to-violet-400',
   },
   // أدوات الفصل
   {
@@ -108,21 +109,21 @@ const features = [
     title: 'مؤقت الأنشطة',
     description: 'مؤقت للاختبارات والأنشطة الصفية',
     highlight: false,
-    color: 'from-accent/80 to-primary/60',
+    color: 'from-pink-400 to-sky-400',
   },
   {
     icon: Shuffle,
     title: 'اختيار طالب عشوائي',
     description: 'اختر طالباً عشوائياً للمشاركة والإجابة',
     highlight: false,
-    color: 'from-primary/60 to-secondary/60',
+    color: 'from-yellow-400 to-emerald-400',
   },
   {
     icon: Trophy,
     title: 'نظام النقاط والشارات',
     description: 'كافئ الطلاب بنقاط وشارات تحفيزية',
     highlight: false,
-    color: 'from-secondary/70 to-accent/70',
+    color: 'from-violet-400 to-yellow-400',
   },
   // التقارير والتصدير
   {
@@ -130,41 +131,41 @@ const features = [
     title: 'التقارير والإحصائيات',
     description: 'تقارير شاملة للحضور والدرجات والأداء',
     highlight: false,
-    color: 'from-primary to-secondary/80',
+    color: 'from-sky-400 to-pink-400',
   },
   {
     icon: Printer,
     title: 'طباعة الكشوفات',
     description: 'اطبع كشوف الحضور والدرجات بسهولة',
     highlight: false,
-    color: 'from-secondary to-primary/80',
+    color: 'from-emerald-400 to-violet-400',
   },
   {
     icon: Download,
     title: 'تصدير Excel/PDF',
     description: 'صدّر بياناتك لملفات Excel و PDF',
     highlight: false,
-    color: 'from-accent/70 to-secondary/70',
+    color: 'from-teal-400 to-yellow-400',
   },
 ];
 
 const stats = [
-  { number: '500+', label: 'معلم نشط', color: 'text-primary' },
-  { number: '10K+', label: 'طالب مسجل', color: 'text-secondary' },
-  { number: '99%', label: 'رضا المستخدمين', color: 'text-primary' },
+  { number: '500+', label: 'معلم نشط', color: 'text-sky-500' },
+  { number: '10K+', label: 'طالب مسجل', color: 'text-emerald-500' },
+  { number: '99%', label: 'رضا المستخدمين', color: 'text-violet-500' },
 ];
 
 const highlights = [
-  { icon: Zap, text: 'سريع وسهل', color: 'text-primary' },
-  { icon: Cloud, text: 'حفظ تلقائي', color: 'text-secondary' },
-  { icon: Shield, text: 'آمن وموثوق', color: 'text-primary' },
-  { icon: Smartphone, text: 'يعمل على الهواتف', color: 'text-secondary' },
+  { icon: Zap, text: 'سريع وسهل', color: 'text-sky-500' },
+  { icon: Cloud, text: 'حفظ تلقائي', color: 'text-emerald-500' },
+  { icon: Shield, text: 'آمن وموثوق', color: 'text-violet-500' },
+  { icon: Smartphone, text: 'يعمل على الهواتف', color: 'text-teal-500' },
 ];
 
 const steps = [
-  { number: '1', title: 'سجّل حسابك', description: 'في أقل من دقيقة', color: 'from-primary to-secondary' },
-  { number: '2', title: 'أضف صفوفك', description: 'وطلابك بسهولة', color: 'from-secondary to-primary' },
-  { number: '3', title: 'ابدأ العمل', description: 'حضور ودرجات فوراً', color: 'from-primary to-primary/70' },
+  { number: '1', title: 'سجّل حسابك', description: 'في أقل من دقيقة', color: 'from-sky-400 to-violet-400' },
+  { number: '2', title: 'أضف صفوفك', description: 'وطلابك بسهولة', color: 'from-emerald-400 to-teal-400' },
+  { number: '3', title: 'ابدأ العمل', description: 'حضور ودرجات فوراً', color: 'from-pink-400 to-yellow-400' },
 ];
 
 const testimonials = [
@@ -173,28 +174,28 @@ const testimonials = [
     role: 'معلم رياضيات - الكويت',
     content: 'التطبيق سهّل عليّ كثير! قبل كنت أضيع وقت كبير في تسجيل الدرجات، الحين بضغطة زر أرصد وأطبع.',
     rating: 5,
-    color: 'from-primary to-secondary',
+    color: 'from-sky-400 to-violet-400',
   },
   {
     name: 'أ. فاطمة الهاجري',
     role: 'معلمة علوم - الكويت',
     content: 'ميزة تصوير كشف الأسماء وفرت عليّ ساعات! صورت الكشف والطلاب انضافوا تلقائياً، شيء خرافي!',
     rating: 5,
-    color: 'from-secondary to-primary',
+    color: 'from-emerald-400 to-teal-400',
   },
   {
     name: 'أ. عبدالله المطيري',
     role: 'معلم لغة عربية - الكويت',
     content: 'تذكير البصمة ينقذني كل يوم! ما أنسى أسجل حضوري أبداً الحين. شكراً Teacher Hub!',
     rating: 5,
-    color: 'from-primary/80 to-secondary/80',
+    color: 'from-pink-400 to-yellow-400',
   },
   {
     name: 'أ. نورة الرشيدي',
     role: 'معلمة إنجليزي - الكويت',
     content: 'أفضل تطبيق لإدارة الصفوف استخدمته. سهل وبسيط وكل شي واضح. أنصح كل معلم يجربه!',
     rating: 5,
-    color: 'from-secondary/80 to-primary/80',
+    color: 'from-violet-400 to-sky-400',
   },
 ];
 
@@ -287,18 +288,22 @@ export default function Landing() {
     <div className="min-h-screen bg-background overflow-x-hidden" dir="rtl">
       {/* Hero Section */}
       <section className="relative min-h-screen flex flex-col">
-        {/* Subtle Gradient Background - Using logo colors */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
+        {/* Subtle Gradient Background - Using logo colors: light blue, purple, pink, green, turquoise, yellow */}
+        <div className="absolute inset-0 bg-gradient-to-br from-sky-100/30 via-transparent to-violet-100/20 dark:from-sky-900/10 dark:to-violet-900/10" />
         
         {/* Floating Shapes - Using logo colors */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div 
-            className="absolute top-20 right-10 w-72 h-72 bg-gradient-to-br from-primary/10 to-secondary/5 rounded-full blur-3xl"
+            className="absolute top-20 right-10 w-72 h-72 bg-gradient-to-br from-sky-300/15 to-violet-300/10 rounded-full blur-3xl"
             style={{ transform: `translateY(${scrollY * 0.1}px)` }}
           />
           <div 
-            className="absolute bottom-40 left-10 w-96 h-96 bg-gradient-to-br from-secondary/10 to-primary/5 rounded-full blur-3xl"
+            className="absolute bottom-40 left-10 w-96 h-96 bg-gradient-to-br from-emerald-300/15 to-teal-300/10 rounded-full blur-3xl"
             style={{ transform: `translateY(${-scrollY * 0.15}px)` }}
+          />
+          <div 
+            className="absolute top-1/2 left-1/4 w-64 h-64 bg-gradient-to-br from-pink-300/10 to-yellow-300/10 rounded-full blur-3xl"
+            style={{ transform: `translateY(${scrollY * 0.08}px)` }}
           />
           
           {/* Decorative Grid */}
@@ -306,26 +311,29 @@ export default function Landing() {
           
           {/* Floating Icons - Using logo colors */}
           <div className="absolute top-1/4 right-1/4 opacity-15">
-            <GraduationCap className="w-16 h-16 text-primary animate-bounce" style={{ animationDuration: '3s' }} />
+            <GraduationCap className="w-16 h-16 text-sky-500 animate-bounce" style={{ animationDuration: '3s' }} />
           </div>
           <div className="absolute bottom-1/3 left-1/3 opacity-15">
-            <BarChart3 className="w-12 h-12 text-secondary animate-bounce" style={{ animationDuration: '4s', animationDelay: '0.5s' }} />
+            <BarChart3 className="w-12 h-12 text-emerald-500 animate-bounce" style={{ animationDuration: '4s', animationDelay: '0.5s' }} />
           </div>
           <div className="absolute top-1/2 right-1/3 opacity-15">
-            <Users className="w-10 h-10 text-primary animate-bounce" style={{ animationDuration: '3.5s', animationDelay: '1s' }} />
+            <Users className="w-10 h-10 text-violet-500 animate-bounce" style={{ animationDuration: '3.5s', animationDelay: '1s' }} />
           </div>
         </div>
 
         {/* Header */}
         <header className="relative z-20 flex items-center justify-between p-4 md:p-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-card/80 backdrop-blur-sm p-2 shadow-lg border border-border/50">
-              <img 
-                src={displayLogo} 
-                alt="Teacher Hub" 
-                className="w-full h-full object-contain"
-                onError={(e) => { e.currentTarget.src = defaultLogo; }}
-              />
+            {/* iOS App Icon Style Logo */}
+            <div className="w-12 h-12 md:w-14 md:h-14 rounded-[22%] bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 p-1.5 shadow-[0_4px_12px_rgba(0,0,0,0.15),0_1px_3px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.6)] border border-white/20 overflow-hidden">
+              <div className="w-full h-full rounded-[18%] overflow-hidden bg-white dark:bg-gray-800">
+                <img 
+                  src={displayLogo} 
+                  alt="Teacher Hub" 
+                  className="w-full h-full object-contain"
+                  onError={(e) => { e.currentTarget.src = defaultLogo; }}
+                />
+              </div>
             </div>
             <span className="text-lg md:text-xl font-bold text-foreground hidden sm:block">Teacher Hub</span>
           </div>
@@ -341,16 +349,20 @@ export default function Landing() {
         {/* Main Content */}
         <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
           <div className="text-center max-w-3xl mx-auto">
-            {/* Logo - Better placement */}
+            {/* Logo - iOS App Icon Style */}
             <div className="relative inline-block mb-8 animate-logo-float">
-              <div className="w-36 h-36 md:w-48 md:h-48 relative">
-                <img 
-                  src={displayLogo} 
-                  alt="Teacher Hub" 
-                  className="w-full h-full object-contain drop-shadow-2xl"
-                  onError={(e) => { e.currentTarget.src = defaultLogo; }}
-                />
+              <div className="w-32 h-32 md:w-44 md:h-44 rounded-[22%] bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 p-2 md:p-3 shadow-[0_8px_30px_rgba(0,0,0,0.2),0_4px_10px_rgba(0,0,0,0.1),inset_0_2px_0_rgba(255,255,255,0.7)] border border-white/30 overflow-hidden hover:scale-105 transition-transform duration-300">
+                <div className="w-full h-full rounded-[18%] overflow-hidden bg-white dark:bg-gray-800 flex items-center justify-center">
+                  <img 
+                    src={displayLogo} 
+                    alt="Teacher Hub" 
+                    className="w-[90%] h-[90%] object-contain"
+                    onError={(e) => { e.currentTarget.src = defaultLogo; }}
+                  />
+                </div>
               </div>
+              {/* iOS-style reflection */}
+              <div className="absolute inset-0 rounded-[22%] bg-gradient-to-b from-white/30 to-transparent pointer-events-none" style={{ height: '50%' }} />
             </div>
             
             {/* AI Badge */}
