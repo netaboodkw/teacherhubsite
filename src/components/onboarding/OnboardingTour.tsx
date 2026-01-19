@@ -15,7 +15,8 @@ import {
   CheckCircle2,
   Sparkles,
   BookOpen,
-  Timer
+  Timer,
+  FileSpreadsheet
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -77,6 +78,18 @@ const tourSteps: TourStep[] = [
       "إشعارات للغياب المتكرر"
     ],
     tip: "اضغط مرتين على الطالب للتبديل بين حاضر/غائب/متأخر"
+  },
+  {
+    title: "قوالب الدرجات",
+    description: "أنشئ قوالب تقييم مخصصة لتوحيد طريقة رصد الدرجات في جميع صفوفك.",
+    icon: <FileSpreadsheet className="w-12 h-12 text-indigo-500" />,
+    features: [
+      "إنشاء هيكل تقييم مخصص",
+      "تحديد الأوزان والنسب",
+      "إضافة فترات تقييم متعددة",
+      "مشاركة القوالب مع زملائك"
+    ],
+    tip: "أنشئ قالباً واحداً واستخدمه في جميع صفوفك لتوفير الوقت"
   },
   {
     title: "تسجيل الدرجات",
