@@ -352,176 +352,56 @@ const FingerprintPage = () => {
   if (isMobile) {
     return (
       <TeacherLayout>
-        <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-          {/* iOS-style Header */}
-          <div className="sticky top-0 z-10 backdrop-blur-xl bg-background/80 border-b border-border/50">
-            <div className="flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <FingerprintIcon className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h1 className="font-bold text-lg">بصمة التواجد</h1>
-                  <p className="text-xs text-muted-foreground">التوقيت الكويتي</p>
-                </div>
-              </div>
+        <div className="min-h-screen bg-background">
+          {/* Simple Header */}
+          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/40">
+            <div className="flex items-center justify-between px-4 h-14">
+              <h1 className="font-bold text-lg">بصمة التواجد</h1>
               <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full"
+                variant={showSettings ? "default" : "ghost"}
+                size="sm"
+                className="rounded-full gap-2"
                 onClick={() => setShowSettings(!showSettings)}
               >
-                <Settings className={cn("w-5 h-5 transition-transform", showSettings && "rotate-90")} />
+                <Settings className={cn("w-4 h-4 transition-transform", showSettings && "rotate-90")} />
+                {showSettings ? "إغلاق" : "الإعدادات"}
               </Button>
             </div>
           </div>
 
           <div className="p-4 space-y-4 pb-24">
-            {/* Current Time Display */}
-            <div className="text-center py-2">
-              <p className="text-5xl font-mono font-bold tracking-tight">
-                {format(currentTime, 'HH:mm')}
-                <span className="text-2xl text-muted-foreground">:{format(currentTime, 'ss')}</span>
-              </p>
-            </div>
-
-            {/* Status Card */}
-            <GlassCard className={cn(
-              "relative overflow-hidden",
-              "bg-gradient-to-br",
-              statusConfig.color,
-              statusConfig.borderColor,
-              status === 'urgent' && "animate-pulse"
-            )}>
-              <GlassCardContent className="pt-6 pb-6">
-                <div className="flex flex-col items-center gap-4">
-                  {/* Status Icon */}
-                  <div className={cn(
-                    "w-20 h-20 rounded-full flex items-center justify-center",
-                    "bg-background/60 backdrop-blur-sm shadow-lg",
-                    status === 'completed' && "ring-4 ring-primary/30"
-                  )}>
-                    <StatusIcon className={cn("w-10 h-10", statusConfig.iconColor)} />
-                  </div>
-
-                  {/* Status Text */}
-                  <div className="text-center">
-                    <h2 className="text-2xl font-bold">{statusConfig.label}</h2>
-                    <p className="text-muted-foreground">{statusConfig.sublabel}</p>
-                  </div>
-
-                  {/* Time Remaining */}
-                  {fingerprintWindow && !fingerprintDone && status !== 'expired' && (
-                    <div className="w-full mt-2">
-                      <div className="flex justify-between items-center bg-background/40 rounded-2xl p-4">
-                        <div className="text-center flex-1">
-                          <p className="text-xs text-muted-foreground mb-1">البداية</p>
-                          <p className="text-xl font-bold font-mono">{format(fingerprintWindow.start, 'HH:mm')}</p>
-                        </div>
-                        <div className="h-12 w-px bg-border/50" />
-                        <div className="text-center flex-1">
-                          <Timer className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
-                          <p className="text-xl font-bold font-mono">{timeRemaining}</p>
-                        </div>
-                        <div className="h-12 w-px bg-border/50" />
-                        <div className="text-center flex-1">
-                          <p className="text-xs text-muted-foreground mb-1">النهاية</p>
-                          <p className="text-xl font-bold font-mono">{format(fingerprintWindow.end, 'HH:mm')}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Action Button */}
-                  <div className="w-full mt-2">
-                    {!fingerprintDone ? (
-                      <Button 
-                        size="lg" 
-                        onClick={markFingerprintDone}
-                        className="w-full h-14 text-lg rounded-2xl shadow-lg"
-                        disabled={status === 'waiting'}
-                      >
-                        <CheckCircle2 className="w-6 h-6 ml-2" />
-                        تم تسجيل البصمة
-                      </Button>
-                    ) : (
-                      <Button 
-                        size="lg" 
-                        variant="outline"
-                        onClick={resetFingerprint}
-                        className="w-full h-14 text-lg rounded-2xl"
-                      >
-                        <RotateCcw className="w-5 h-5 ml-2" />
-                        إعادة تعيين
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </GlassCardContent>
-            </GlassCard>
-
-            {/* Quick Time Selection */}
-            <GlassCard>
-              <GlassCardHeader className="pb-2">
-                <GlassCardTitle className="text-base flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  وقت الحضور
-                </GlassCardTitle>
-              </GlassCardHeader>
-              <GlassCardContent>
-                <div className="grid grid-cols-4 gap-2 mb-3">
-                  {commonTimes.map((time) => (
-                    <Button
-                      key={time}
-                      variant={settings.attendanceTime === time ? 'default' : 'outline'}
-                      size="lg"
-                      onClick={() => handleAttendanceTimeChange(time)}
-                      className="font-mono text-base h-12 rounded-xl"
-                    >
-                      {time}
-                    </Button>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="time"
-                    value={settings.attendanceTime}
-                    onChange={(e) => handleAttendanceTimeChange(e.target.value)}
-                    className="flex-1 h-12 font-mono text-lg rounded-xl text-center"
-                  />
-                </div>
-              </GlassCardContent>
-            </GlassCard>
-
-            {/* Settings Section */}
+            {/* Settings Section - At Top When Open */}
             {showSettings && (
-              <GlassCard>
-                <GlassCardHeader className="pb-2">
-                  <GlassCardTitle className="text-base flex items-center gap-2">
-                    <Bell className="w-4 h-4" />
-                    إعدادات التنبيهات
-                  </GlassCardTitle>
-                </GlassCardHeader>
-                <GlassCardContent className="space-y-4">
-                  {/* Daily Notification */}
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-primary/5 border border-primary/20">
-                    <div className="flex-1">
-                      <Label className="font-semibold">إشعار الحضور اليومي</Label>
-                      <p className="text-xs text-muted-foreground">عند فتح التطبيق</p>
+              <div className="space-y-3 animate-in slide-in-from-top duration-200">
+                {/* Daily Notification Toggle */}
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-primary/5 border-2 border-primary/20">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Bell className="w-5 h-5 text-primary" />
                     </div>
-                    <div dir="ltr">
-                      <Switch
-                        checked={dailyNotificationEnabled}
-                        onCheckedChange={handleDailyNotificationToggle}
-                      />
+                    <div>
+                      <p className="font-semibold">إشعار الحضور اليومي</p>
+                      <p className="text-xs text-muted-foreground">يظهر عند فتح التطبيق صباحاً</p>
                     </div>
                   </div>
+                  <div dir="ltr">
+                    <Switch
+                      checked={dailyNotificationEnabled}
+                      onCheckedChange={handleDailyNotificationToggle}
+                    />
+                  </div>
+                </div>
 
+                {/* Other Settings */}
+                <div className="p-4 rounded-2xl bg-muted/30 space-y-4">
                   {/* Reminder Toggle */}
                   <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <Label>تفعيل التذكيرات</Label>
-                      <p className="text-xs text-muted-foreground">تنبيهات بداية ونهاية الفترة</p>
+                    <div className="flex items-center gap-3">
+                      <BellRing className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium text-sm">تذكيرات البصمة</p>
+                        <p className="text-xs text-muted-foreground">تنبيه عند بداية ونهاية الفترة</p>
+                      </div>
                     </div>
                     <div dir="ltr">
                       <Switch
@@ -531,157 +411,250 @@ const FingerprintPage = () => {
                     </div>
                   </div>
 
-                  {/* Reminder Time */}
-                  <div className="space-y-2">
-                    <Label className="text-sm">التنبيه قبل انتهاء الفترة</Label>
-                    <Select
-                      value={settings.reminderMinutesBefore.toString()}
-                      onValueChange={(value) => setSettings({ ...settings, reminderMinutesBefore: parseInt(value) })}
-                    >
-                      <SelectTrigger className="h-12 rounded-xl">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="5">5 دقائق</SelectItem>
-                        <SelectItem value="10">10 دقائق</SelectItem>
-                        <SelectItem value="15">15 دقيقة</SelectItem>
-                        <SelectItem value="20">20 دقيقة</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Sound Toggle */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {settings.soundEnabled ? (
-                        <Volume2 className="w-5 h-5 text-primary" />
-                      ) : (
-                        <VolumeX className="w-5 h-5 text-muted-foreground" />
-                      )}
-                      <div>
-                        <Label>التنبيه الصوتي</Label>
-                        <p className="text-xs text-muted-foreground">تشغيل صوت عند التذكير</p>
+                  {settings.reminderEnabled && (
+                    <>
+                      {/* Reminder Time */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">التنبيه قبل الانتهاء</span>
+                        <Select
+                          value={settings.reminderMinutesBefore.toString()}
+                          onValueChange={(value) => setSettings({ ...settings, reminderMinutesBefore: parseInt(value) })}
+                        >
+                          <SelectTrigger className="w-28 h-9 rounded-lg">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="5">5 دقائق</SelectItem>
+                            <SelectItem value="10">10 دقائق</SelectItem>
+                            <SelectItem value="15">15 دقيقة</SelectItem>
+                            <SelectItem value="20">20 دقيقة</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                    </div>
-                    <div dir="ltr">
-                      <Switch
-                        checked={settings.soundEnabled}
-                        onCheckedChange={(checked) => setSettings({ ...settings, soundEnabled: checked })}
-                      />
-                    </div>
-                  </div>
 
-                  {/* Sound Type */}
-                  {settings.soundEnabled && (
-                    <div className="flex gap-2">
-                      <Select
-                        value={settings.soundType}
-                        onValueChange={(value) => setSettings({ ...settings, soundType: value as SoundType })}
-                      >
-                        <SelectTrigger className="flex-1 h-12 rounded-xl">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {soundOptions.map((sound) => (
-                            <SelectItem key={sound.id} value={sound.id}>
-                              {sound.nameAr}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl" onClick={handlePreviewSound}>
-                        <BellRing className="w-5 h-5" />
-                      </Button>
-                    </div>
+                      {/* Sound Toggle */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {settings.soundEnabled ? (
+                            <Volume2 className="w-5 h-5 text-primary" />
+                          ) : (
+                            <VolumeX className="w-5 h-5 text-muted-foreground" />
+                          )}
+                          <span className="text-sm">التنبيه الصوتي</span>
+                        </div>
+                        <div dir="ltr">
+                          <Switch
+                            checked={settings.soundEnabled}
+                            onCheckedChange={(checked) => setSettings({ ...settings, soundEnabled: checked })}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Sound Type */}
+                      {settings.soundEnabled && (
+                        <div className="flex gap-2">
+                          <Select
+                            value={settings.soundType}
+                            onValueChange={(value) => setSettings({ ...settings, soundType: value as SoundType })}
+                          >
+                            <SelectTrigger className="flex-1 h-10 rounded-lg">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {soundOptions.map((sound) => (
+                                <SelectItem key={sound.id} value={sound.id}>
+                                  {sound.nameAr}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button variant="outline" size="icon" className="h-10 w-10 rounded-lg" onClick={handlePreviewSound}>
+                            <BellRing className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </>
                   )}
-                </GlassCardContent>
-              </GlassCard>
+                </div>
+              </div>
             )}
 
-            {/* Monthly Stats Card */}
-            <GlassCard>
-              <GlassCardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <GlassCardTitle className="text-base flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4" />
-                    إحصائيات الشهر
-                  </GlassCardTitle>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-full"
-                      onClick={() => setStatsMonth(subMonths(statsMonth, 1))}
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                    <span className="text-sm font-medium min-w-[100px] text-center">
-                      {format(statsMonth, 'MMMM yyyy', { locale: ar })}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-full"
-                      onClick={() => setStatsMonth(addMonths(statsMonth, 1))}
-                      disabled={format(statsMonth, 'yyyy-MM') === format(new Date(), 'yyyy-MM')}
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </GlassCardHeader>
-              <GlassCardContent>
-                {loadingStats ? (
-                  <div className="text-center py-4 text-muted-foreground">جاري التحميل...</div>
-                ) : stats.total === 0 ? (
-                  <div className="text-center py-4 text-muted-foreground">
-                    <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p>لا توجد سجلات لهذا الشهر</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="text-center p-3 rounded-xl bg-emerald-500/10">
-                        <p className="text-2xl font-bold text-emerald-600">{stats.onTime}</p>
-                        <p className="text-xs text-muted-foreground">في الوقت</p>
-                      </div>
-                      <div className="text-center p-3 rounded-xl bg-amber-500/10">
-                        <p className="text-2xl font-bold text-amber-600">{stats.late}</p>
-                        <p className="text-xs text-muted-foreground">متأخر</p>
-                      </div>
-                      <div className="text-center p-3 rounded-xl bg-primary/10">
-                        <p className="text-2xl font-bold text-primary">{stats.total}</p>
-                        <p className="text-xs text-muted-foreground">إجمالي</p>
-                      </div>
-                    </div>
-                    {/* Success Rate */}
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
-                      <span className="text-sm">نسبة الحضور في الوقت</span>
-                      <span className={cn(
-                        "text-lg font-bold",
-                        stats.onTimeRate >= 80 ? "text-emerald-600" : stats.onTimeRate >= 50 ? "text-amber-600" : "text-destructive"
-                      )}>
-                        {stats.onTimeRate}%
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </GlassCardContent>
-            </GlassCard>
+            {/* Current Time */}
+            <div className="text-center py-3">
+              <p className="text-4xl font-mono font-bold tracking-tight">
+                {format(currentTime, 'HH:mm')}
+                <span className="text-xl text-muted-foreground">:{format(currentTime, 'ss')}</span>
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">التوقيت الكويتي</p>
+            </div>
 
-            {/* Info Card */}
-            <GlassCard className="bg-muted/30">
-              <GlassCardContent className="pt-4">
-                <div className="flex gap-3">
-                  <Info className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
-                  <div className="text-sm text-muted-foreground">
-                    <p className="font-medium mb-1">القرار رقم 6 لسنة 2024</p>
-                    <p>بصمة التواجد خلال 60 دقيقة بعد ساعتين من الحضور</p>
+            {/* Main Status Card */}
+            <div className={cn(
+              "rounded-3xl p-5 text-center",
+              "bg-gradient-to-br shadow-lg",
+              statusConfig.color,
+              statusConfig.borderColor,
+              "border-2",
+              status === 'urgent' && "animate-pulse"
+            )}>
+              {/* Status Icon */}
+              <div className={cn(
+                "w-16 h-16 rounded-full mx-auto mb-3",
+                "bg-background/70 backdrop-blur-sm shadow-md",
+                "flex items-center justify-center",
+                status === 'completed' && "ring-4 ring-primary/30"
+              )}>
+                <StatusIcon className={cn("w-8 h-8", statusConfig.iconColor)} />
+              </div>
+
+              {/* Status Text */}
+              <h2 className="text-xl font-bold mb-1">{statusConfig.label}</h2>
+              <p className="text-sm text-muted-foreground mb-4">{statusConfig.sublabel}</p>
+
+              {/* Time Window */}
+              {fingerprintWindow && !fingerprintDone && status !== 'expired' && (
+                <div className="bg-background/50 rounded-2xl p-3 mb-4">
+                  <div className="flex justify-between items-center">
+                    <div className="text-center flex-1">
+                      <p className="text-[10px] text-muted-foreground">البداية</p>
+                      <p className="text-lg font-bold font-mono">{format(fingerprintWindow.start, 'HH:mm')}</p>
+                    </div>
+                    <div className="text-center flex-1 border-x border-border/30">
+                      <Timer className="w-3 h-3 mx-auto text-muted-foreground" />
+                      <p className="text-lg font-bold font-mono text-primary">{timeRemaining}</p>
+                    </div>
+                    <div className="text-center flex-1">
+                      <p className="text-[10px] text-muted-foreground">النهاية</p>
+                      <p className="text-lg font-bold font-mono">{format(fingerprintWindow.end, 'HH:mm')}</p>
+                    </div>
                   </div>
                 </div>
-              </GlassCardContent>
-            </GlassCard>
+              )}
+
+              {/* Action Button */}
+              {!fingerprintDone ? (
+                <Button 
+                  size="lg" 
+                  onClick={markFingerprintDone}
+                  className="w-full h-12 text-base rounded-xl shadow-md"
+                  disabled={status === 'waiting'}
+                >
+                  <CheckCircle2 className="w-5 h-5 ml-2" />
+                  تم تسجيل البصمة
+                </Button>
+              ) : (
+                <Button 
+                  size="lg" 
+                  variant="outline"
+                  onClick={resetFingerprint}
+                  className="w-full h-12 text-base rounded-xl bg-background/50"
+                >
+                  <RotateCcw className="w-4 h-4 ml-2" />
+                  إعادة تعيين
+                </Button>
+              )}
+            </div>
+
+            {/* Attendance Time Selection */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 px-1">
+                <Clock className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium">وقت الحضور</span>
+              </div>
+              
+              <div className="grid grid-cols-4 gap-2">
+                {commonTimes.map((time) => (
+                  <Button
+                    key={time}
+                    variant={settings.attendanceTime === time ? 'default' : 'outline'}
+                    onClick={() => handleAttendanceTimeChange(time)}
+                    className="font-mono text-sm h-11 rounded-xl"
+                  >
+                    {time}
+                  </Button>
+                ))}
+              </div>
+              
+              <Input
+                type="time"
+                value={settings.attendanceTime}
+                onChange={(e) => handleAttendanceTimeChange(e.target.value)}
+                className="h-11 font-mono text-center rounded-xl"
+              />
+            </div>
+
+            {/* Monthly Stats */}
+            <div className="rounded-2xl bg-muted/30 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">إحصائيات الشهر</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 rounded-full"
+                    onClick={() => setStatsMonth(subMonths(statsMonth, 1))}
+                  >
+                    <ChevronRight className="w-3 h-3" />
+                  </Button>
+                  <span className="text-xs min-w-[80px] text-center">
+                    {format(statsMonth, 'MMM yyyy', { locale: ar })}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 rounded-full"
+                    onClick={() => setStatsMonth(addMonths(statsMonth, 1))}
+                    disabled={format(statsMonth, 'yyyy-MM') === format(new Date(), 'yyyy-MM')}
+                  >
+                    <ChevronLeft className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+
+              {loadingStats ? (
+                <div className="text-center py-3 text-muted-foreground text-sm">جاري التحميل...</div>
+              ) : stats.total === 0 ? (
+                <div className="text-center py-3 text-muted-foreground text-sm">
+                  <Calendar className="w-6 h-6 mx-auto mb-1 opacity-50" />
+                  <p>لا توجد سجلات</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="text-center p-2 rounded-xl bg-emerald-500/10">
+                      <p className="text-xl font-bold text-emerald-600">{stats.onTime}</p>
+                      <p className="text-[10px] text-muted-foreground">في الوقت</p>
+                    </div>
+                    <div className="text-center p-2 rounded-xl bg-amber-500/10">
+                      <p className="text-xl font-bold text-amber-600">{stats.late}</p>
+                      <p className="text-[10px] text-muted-foreground">متأخر</p>
+                    </div>
+                    <div className="text-center p-2 rounded-xl bg-primary/10">
+                      <p className="text-xl font-bold text-primary">{stats.total}</p>
+                      <p className="text-[10px] text-muted-foreground">إجمالي</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between py-2 px-3 rounded-xl bg-background/50">
+                    <span className="text-xs text-muted-foreground">نسبة الحضور في الوقت</span>
+                    <span className={cn(
+                      "text-base font-bold",
+                      stats.onTimeRate >= 80 ? "text-emerald-600" : stats.onTimeRate >= 50 ? "text-amber-600" : "text-destructive"
+                    )}>
+                      {stats.onTimeRate}%
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Info */}
+            <div className="flex gap-2 p-3 rounded-xl bg-muted/20 text-xs text-muted-foreground">
+              <Info className="w-4 h-4 shrink-0 mt-0.5" />
+              <p>القرار رقم 6 لسنة 2024: بصمة التواجد خلال 60 دقيقة بعد ساعتين من الحضور</p>
+            </div>
           </div>
         </div>
       </TeacherLayout>
