@@ -141,9 +141,11 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   };
 
   const startOnboarding = () => {
+    // Reset steps to initial state with all steps
+    setSteps(initialSteps);
     setIsOnboarding(true);
     setCurrentStep(0);
-    navigate(steps[0].route);
+    navigate(initialSteps[0].route);
   };
 
   const nextStep = () => {
