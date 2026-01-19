@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GraduationCap, ChevronLeft, Sparkles, Users, ClipboardCheck, BarChart3, Shield, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSiteLogo } from '@/hooks/useSiteLogo';
+import { WelcomeBackDialog } from '@/components/auth/WelcomeBackDialog';
 import defaultLogo from '@/assets/logo.png';
 
 const slides = [
@@ -45,14 +46,57 @@ const slides = [
   },
 ];
 
+// Key for storing last logged-in user info
+const LAST_USER_KEY = 'teacherhub_last_user';
+
+interface LastUserInfo {
+  name: string | null;
+  avatarUrl: string | null;
+  timestamp: number;
+}
+
 export default function Welcome() {
   const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [showWelcomeBack, setShowWelcomeBack] = useState(false);
+  const [lastUser, setLastUser] = useState<LastUserInfo | null>(null);
   const { logoUrl, isCustomLogo } = useSiteLogo();
   const displayLogo = isCustomLogo ? logoUrl : defaultLogo;
+
+  // Check if there's a recently logged-out user
+  useEffect(() => {
+    const storedUser = localStorage.getItem(LAST_USER_KEY);
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser) as LastUserInfo;
+        // Check if the logout was within the last 24 hours
+        const oneDayMs = 24 * 60 * 60 * 1000;
+        if (Date.now() - userData.timestamp < oneDayMs) {
+          setLastUser(userData);
+          setShowWelcomeBack(true);
+        } else {
+          // Clear old data
+          localStorage.removeItem(LAST_USER_KEY);
+        }
+      } catch {
+        localStorage.removeItem(LAST_USER_KEY);
+      }
+    }
+  }, []);
+
+  const handleReLogin = () => {
+    setShowWelcomeBack(false);
+    navigate('/auth/teacher?tab=login', { replace: true });
+  };
+
+  const handleClearAndExit = () => {
+    localStorage.removeItem(LAST_USER_KEY);
+    setShowWelcomeBack(false);
+    setLastUser(null);
+  };
 
   const minSwipeDistance = 50;
 
@@ -274,6 +318,16 @@ export default function Welcome() {
           لديك حساب؟ <span className="text-primary font-medium">سجل دخول</span>
         </button>
       </div>
+      
+      {/* Welcome Back Dialog */}
+      <WelcomeBackDialog
+        open={showWelcomeBack}
+        onOpenChange={setShowWelcomeBack}
+        teacherName={lastUser?.name || null}
+        avatarUrl={lastUser?.avatarUrl || null}
+        onReLogin={handleReLogin}
+        onClearAndExit={handleClearAndExit}
+      />
     </div>
   );
 }

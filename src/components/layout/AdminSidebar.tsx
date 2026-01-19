@@ -20,6 +20,7 @@ import {
   CreditCard,
   Wand2,
   Mail,
+  Bell,
   LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -60,6 +61,7 @@ const navItems = [
   { href: '/admin/archived-classrooms', icon: Archive, label: 'الصفوف المؤرشفة' },
   { href: '/admin/subscriptions', icon: CreditCard, label: 'الاشتراكات والمدفوعات' },
   { href: '/admin/emails', icon: Mail, label: 'إدارة الإيميلات' },
+  { href: '/admin/notifications', icon: Bell, label: 'قوالب الإشعارات' },
   { href: '/admin/ai-content', icon: Wand2, label: 'إنشاء محتوى AI' },
 ];
 

@@ -20,8 +20,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 import { toast } from 'sonner';
 import { useSiteLogo } from '@/hooks/useSiteLogo';
+import { Capacitor } from '@capacitor/core';
 
 interface TeacherSidebarProps {
   isOpen: boolean;
@@ -51,7 +53,9 @@ export function TeacherSidebar({ isOpen, onClose }: TeacherSidebarProps) {
     return saved === 'true';
   });
   const { signOut } = useAuth();
+  const { profile } = useProfile();
   const { logoUrl } = useSiteLogo();
+  const isNative = Capacitor.isNativePlatform();
 
   // Persist collapsed state
   useEffect(() => {
@@ -59,12 +63,19 @@ export function TeacherSidebar({ isOpen, onClose }: TeacherSidebarProps) {
   }, [collapsed]);
 
   const handleLogout = async () => {
-    const { error } = await signOut();
+    // Save user info for welcome back experience on native
+    const userInfo = isNative ? {
+      name: profile?.full_name || null,
+      avatarUrl: profile?.avatar_url || null,
+    } : undefined;
+    
+    const { error } = await signOut(userInfo);
     if (error) {
       toast.error('حدث خطأ أثناء تسجيل الخروج');
     } else {
       toast.success('تم تسجيل الخروج بنجاح');
-      navigate('/auth/teacher');
+      // On native, go to welcome page; on web, go to auth
+      navigate(isNative ? '/welcome' : '/auth/teacher');
     }
   };
 
