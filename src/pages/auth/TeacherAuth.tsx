@@ -37,6 +37,9 @@ export default function TeacherAuth() {
   const initialTab = searchParams.get('tab') === 'login' ? 'login' : 'register';
   const [activeTab, setActiveTab] = useState<'login' | 'register'>(initialTab);
   
+  // Get pre-filled email from URL params (for quick re-login)
+  const prefilledEmail = searchParams.get('email') || '';
+  
   // Terms settings - Always require terms acceptance
   const termsContent = (systemSettings?.find(s => s.key === 'terms_content')?.value as string) || 'الشروط والأحكام الخاصة باستخدام منصة Teacher Hub.\n\nباستخدامك للمنصة فإنك توافق على:\n1. الحفاظ على سرية بيانات الطلاب\n2. استخدام المنصة للأغراض التعليمية فقط\n3. عدم مشاركة حسابك مع الآخرين\n4. الالتزام بقوانين دولة الكويت';
   const termsEnabled = true;
@@ -44,8 +47,8 @@ export default function TeacherAuth() {
   // Check if user is logged in with a different role
   const isLoggedInWithDifferentRole = user && userRole && userRole.role !== 'user';
   
-  // Login state
-  const [loginEmail, setLoginEmail] = useState('');
+  // Login state - pre-fill email if available
+  const [loginEmail, setLoginEmail] = useState(prefilledEmail);
   const [loginPassword, setLoginPassword] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
