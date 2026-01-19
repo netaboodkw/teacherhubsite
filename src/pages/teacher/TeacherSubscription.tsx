@@ -50,9 +50,7 @@ import {
   FileText,
   Zap,
   ExternalLink,
-  ShieldCheck,
-  Copy,
-  Link
+  ShieldCheck
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 
@@ -74,17 +72,6 @@ interface Payment {
   } | null;
 }
 
-
-interface PaymentMethod {
-  PaymentMethodId: number;
-  PaymentMethodAr: string;
-  PaymentMethodEn: string;
-  PaymentMethodCode: string;
-  ImageUrl: string;
-  ServiceCharge: number;
-  TotalAmount: number;
-}
-
 export default function TeacherSubscription() {
   const { data: packages, isLoading: packagesLoading } = useSubscriptionPackages();
   const { data: subscription, isLoading: subscriptionLoading } = useMySubscription();
@@ -95,11 +82,7 @@ export default function TeacherSubscription() {
   const [discountCode, setDiscountCode] = useState('');
   const [appliedDiscount, setAppliedDiscount] = useState<DiscountCode | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null);
-  const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
   const [showPaymentConfirmDialog, setShowPaymentConfirmDialog] = useState(false);
-  const [pendingPaymentUrl, setPendingPaymentUrl] = useState<string | null>(null);
 
   // Fetch payments
   const { data: payments, isLoading: paymentsLoading } = useQuery({
@@ -167,33 +150,6 @@ export default function TeacherSubscription() {
     return Math.max(0, pkg.price - appliedDiscount.discount_value);
   };
 
-  // Fetch payment methods when package is selected
-  const fetchPaymentMethods = async (invoiceValue: number) => {
-    setLoadingPaymentMethods(true);
-    setPaymentMethods([]);
-    setSelectedPaymentMethod(null);
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('myfatoorah-payment', {
-        body: {
-          action: 'get-payment-methods',
-          invoiceValue,
-          currencyIso: 'KWD',
-        },
-      });
-
-      if (error) throw error;
-      if (!data.success) throw new Error(data.error);
-
-      setPaymentMethods(data.paymentMethods || []);
-    } catch (error: any) {
-      console.error('Error fetching payment methods:', error);
-      toast.error('فشل في جلب طرق الدفع');
-    } finally {
-      setLoadingPaymentMethods(false);
-    }
-  };
-
   // Handle package selection
   const handlePackageSelect = (pkg: SubscriptionPackage) => {
     if (!canSubscribe()) {
@@ -201,8 +157,6 @@ export default function TeacherSubscription() {
       return;
     }
     setSelectedPackage(pkg);
-    const finalPrice = calculateFinalPrice(pkg);
-    fetchPaymentMethods(finalPrice);
     // Scroll to checkout section
     setTimeout(() => scrollToCheckout(), 100);
   };
@@ -212,15 +166,11 @@ export default function TeacherSubscription() {
       toast.error('الرجاء اختيار باقة');
       return;
     }
-    if (!selectedPaymentMethod) {
-      toast.error('الرجاء اختيار طريقة الدفع');
-      return;
-    }
     setShowPaymentConfirmDialog(true);
   };
 
   const handlePurchase = async () => {
-    if (!selectedPackage || !selectedPaymentMethod) return;
+    if (!selectedPackage) return;
 
     setShowPaymentConfirmDialog(false);
     setIsProcessing(true);
@@ -234,12 +184,12 @@ export default function TeacherSubscription() {
         duration: 4000,
       });
       
+      // Use initiate-payment to get a payment page with all payment methods
       const { data, error } = await supabase.functions.invoke('myfatoorah-payment', {
         body: {
-          action: 'execute-payment',
+          action: 'initiate-payment',
           packageId: selectedPackage.id,
           discountCode: appliedDiscount?.code,
-          paymentMethodId: selectedPaymentMethod.PaymentMethodId,
           callbackUrl: `${baseUrl}/teacher/subscription/success`,
           errorUrl: `${baseUrl}/teacher/subscription/error`,
         },
@@ -253,36 +203,27 @@ export default function TeacherSubscription() {
         if (Capacitor.isNativePlatform()) {
           try {
             // Use In-App Browser (Safari View Controller on iOS, Chrome Custom Tab on Android)
-            // This keeps the user within the app context and allows Universal Links to work
             await Browser.open({ 
               url: data.paymentUrl,
               presentationStyle: 'fullscreen',
               toolbarColor: '#0f172a',
             });
-            
-            // Note: The browser will automatically close and redirect back to app
-            // when the callback URL (teacherhub.site) triggers the Universal Link
           } catch (browserError) {
             console.error('In-app browser error:', browserError);
-            // Fallback to external browser
             window.open(data.paymentUrl, '_blank');
           }
         } else {
-          // Web browser - open in new tab/window to avoid iframe restrictions
-          const newWindow = window.open(data.paymentUrl, '_blank');
-          if (!newWindow) {
-            // If popup was blocked, try fallback methods
-            try {
-              if (window.top && window.top !== window) {
-                window.top.location.href = data.paymentUrl;
-              } else {
-                window.location.href = data.paymentUrl;
-              }
-            } catch (e) {
-              // Last resort - save the URL and show it to the user
-              setPendingPaymentUrl(data.paymentUrl);
-              toast.info('تم إنشاء رابط الدفع - انسخ الرابط وافتحه في متصفح جديد');
+          // Web browser - redirect to payment page
+          // Try to open in same window/tab to avoid popup blockers
+          try {
+            if (window.top && window.top !== window) {
+              window.top.location.href = data.paymentUrl;
+            } else {
+              window.location.href = data.paymentUrl;
             }
+          } catch (e) {
+            // Fallback to new tab
+            window.open(data.paymentUrl, '_blank');
           }
         }
       } else {
@@ -454,63 +395,6 @@ export default function TeacherSubscription() {
             </CardContent>
           </Card>
         )}
-
-        {/* Pending Payment URL - Show when popup was blocked */}
-        {pendingPaymentUrl && (
-          <Card className="border-primary bg-primary/5">
-            <CardContent className="p-4 space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Link className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-primary">رابط الدفع جاهز</h3>
-                  <p className="text-sm text-muted-foreground">
-                    انسخ الرابط وافتحه في تبويب جديد لإتمام عملية الدفع
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex gap-2">
-                <Input 
-                  value={pendingPaymentUrl} 
-                  readOnly 
-                  className="flex-1 text-sm bg-background" 
-                  dir="ltr"
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    navigator.clipboard.writeText(pendingPaymentUrl);
-                    toast.success('تم نسخ الرابط');
-                  }}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-                <Button
-                  onClick={() => {
-                    window.open(pendingPaymentUrl, '_blank');
-                  }}
-                >
-                  <ExternalLink className="h-4 w-4 ml-2" />
-                  فتح
-                </Button>
-              </div>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground"
-                onClick={() => setPendingPaymentUrl(null)}
-              >
-                إغلاق
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-
         <Tabs defaultValue="packages" className="w-full">
           <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
             <TabsTrigger value="packages" className="gap-2">
@@ -747,62 +631,13 @@ export default function TeacherSubscription() {
                     </div>
                   </div>
 
-                  <Separator />
-
-                  {/* Payment Methods Selection */}
-                  <div className="space-y-4">
-                    <h4 className="font-semibold flex items-center gap-2">
-                      <CreditCard className="h-4 w-4 text-primary" />
-                      اختر طريقة الدفع
-                    </h4>
-                    
-                    {loadingPaymentMethods ? (
-                      <div className="flex items-center justify-center py-8">
-                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                        <span className="mr-2 text-muted-foreground">جاري تحميل طرق الدفع...</span>
-                      </div>
-                    ) : paymentMethods.length > 0 ? (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {paymentMethods.map((method) => (
-                          <button
-                            key={method.PaymentMethodId}
-                            onClick={() => setSelectedPaymentMethod(method)}
-                            className={`relative p-4 rounded-xl border-2 transition-all hover:shadow-md ${
-                              selectedPaymentMethod?.PaymentMethodId === method.PaymentMethodId
-                                ? 'border-primary bg-primary/5 shadow-md'
-                                : 'border-border hover:border-primary/50'
-                            }`}
-                          >
-                            {selectedPaymentMethod?.PaymentMethodId === method.PaymentMethodId && (
-                              <div className="absolute top-2 left-2">
-                                <CheckCircle className="h-5 w-5 text-primary" />
-                              </div>
-                            )}
-                            <img 
-                              src={method.ImageUrl} 
-                              alt={method.PaymentMethodAr}
-                              className="h-10 w-auto mx-auto mb-2 object-contain"
-                            />
-                            <p className="text-xs text-center font-medium truncate">
-                              {method.PaymentMethodAr}
-                            </p>
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 text-muted-foreground">
-                        <CreditCard className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                        <p className="text-sm">لا توجد طرق دفع متاحة</p>
-                      </div>
-                    )}
-                  </div>
                 </CardContent>
                 <CardFooter className="bg-muted/30 pt-6 flex-col gap-3">
                   <Button 
                     className="w-full gap-2 h-12 text-base" 
                     size="lg"
                     onClick={initiatePayment}
-                    disabled={isProcessing || !selectedPaymentMethod}
+                    disabled={isProcessing}
                   >
                     {isProcessing ? (
                       <>
@@ -811,11 +646,9 @@ export default function TeacherSubscription() {
                       </>
                     ) : (
                       <>
-                        <Zap className="h-5 w-5" />
-                        {selectedPaymentMethod 
-                          ? `ادفع الآن عبر ${selectedPaymentMethod.PaymentMethodAr}`
-                          : 'اختر طريقة الدفع أولاً'
-                        }
+                        <CreditCard className="h-5 w-5" />
+                        ادفع الآن
+                        <span className="text-xs opacity-75 mr-2">(كي نت - فيزا - ماستر - Apple Pay)</span>
                       </>
                     )}
                   </Button>
@@ -848,8 +681,8 @@ export default function TeacherSubscription() {
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">طريقة الدفع:</span>
-                        <span className="font-medium text-foreground">{selectedPaymentMethod?.PaymentMethodAr}</span>
+                        <span className="text-muted-foreground">طرق الدفع المتاحة:</span>
+                        <span className="font-medium text-foreground text-sm">كي نت - فيزا - ماستر - Apple Pay</span>
                       </div>
                     </div>
                     
