@@ -12,7 +12,9 @@ import {
   BarChart3,
   ClipboardCheck,
   Home,
-  HelpCircle
+  HelpCircle,
+  Calendar,
+  Fingerprint
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -22,6 +24,8 @@ const stepIcons: { [key: string]: React.ReactNode } = {
   'add-students': <Users className="w-5 h-5" />,
   'grade-templates': <FileSpreadsheet className="w-5 h-5" />,
   'grades': <BarChart3 className="w-5 h-5" />,
+  'schedule': <Calendar className="w-5 h-5" />,
+  'fingerprint': <Fingerprint className="w-5 h-5" />,
   'dashboard': <Home className="w-5 h-5" />,
   'attendance': <ClipboardCheck className="w-5 h-5" />,
 };

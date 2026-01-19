@@ -61,19 +61,35 @@ const initialSteps: OnboardingStep[] = [
     isCompleted: false,
   },
   {
-    id: 'dashboard',
-    title: 'لوحة التحكم 🎯',
-    description: 'تابع إحصائياتك وجدولك اليومي',
-    route: '/teacher',
-    action: 'الرئيسية',
+    id: 'schedule',
+    title: 'الجدول 📅',
+    description: 'اعرض جدولك الأسبوعي وحصصك اليومية',
+    route: '/teacher/schedule',
+    action: 'الجدول',
+    isCompleted: false,
+  },
+  {
+    id: 'fingerprint',
+    title: 'البصمة ⏰',
+    description: 'سجل حضورك اليومي وتابع إحصائياتك',
+    route: '/teacher/fingerprint',
+    action: 'البصمة',
     isCompleted: false,
   },
   {
     id: 'attendance',
-    title: 'الحضور والغياب ✓',
-    description: 'سجل حضور الطلاب بسهولة من داخل الصف',
+    title: 'حضور الطلاب ✓',
+    description: 'سجل حضور وغياب الطلاب من داخل الصف',
     route: '/teacher/attendance',
     action: 'الحضور',
+    isCompleted: false,
+  },
+  {
+    id: 'dashboard',
+    title: 'لوحة التحكم 🎯',
+    description: 'تابع إحصائياتك وصفوفك من الرئيسية',
+    route: '/teacher',
+    action: 'الرئيسية',
     isCompleted: false,
   },
 ];
