@@ -48,12 +48,17 @@ const slides = [
 
 // Key for storing last logged-in user info
 const LAST_USER_KEY = 'teacherhub_last_user';
+// Key for storing welcome back dialog preference
+const WELCOME_BACK_PREF_KEY = 'teacherhub_welcome_back_pref';
 
 interface LastUserInfo {
   name: string | null;
   avatarUrl: string | null;
   timestamp: number;
 }
+
+// Welcome back preference: 'daily' | 'never' | 'always'
+type WelcomeBackPref = 'daily' | 'never' | 'always';
 
 export default function Welcome() {
   const navigate = useNavigate();
@@ -71,11 +76,33 @@ export default function Welcome() {
     // Small delay to ensure localStorage is updated after logout
     const timeoutId = setTimeout(() => {
       const storedUser = localStorage.getItem(LAST_USER_KEY);
+      const preference = (localStorage.getItem(WELCOME_BACK_PREF_KEY) || 'always') as WelcomeBackPref;
+      
+      // If preference is 'never', don't show the dialog
+      if (preference === 'never') {
+        return;
+      }
+      
       if (storedUser) {
         try {
           const userData = JSON.parse(storedUser) as LastUserInfo;
           // Check if the logout was within the last 24 hours
           const oneDayMs = 24 * 60 * 60 * 1000;
+          
+          // For 'daily' preference, only show once per day
+          if (preference === 'daily') {
+            const lastDismissed = localStorage.getItem('teacherhub_welcome_dismissed_at');
+            if (lastDismissed) {
+              const dismissedAt = parseInt(lastDismissed, 10);
+              // If dismissed today, don't show
+              const today = new Date().toDateString();
+              const dismissedDate = new Date(dismissedAt).toDateString();
+              if (today === dismissedDate) {
+                return;
+              }
+            }
+          }
+          
           if (Date.now() - userData.timestamp < oneDayMs && userData.name) {
             setLastUser(userData);
             setShowWelcomeBack(true);
@@ -91,6 +118,11 @@ export default function Welcome() {
     
     return () => clearTimeout(timeoutId);
   }, []);
+
+  const handleDismiss = () => {
+    // Save dismiss timestamp for 'daily' preference
+    localStorage.setItem('teacherhub_welcome_dismissed_at', Date.now().toString());
+  };
 
   const handleReLogin = () => {
     setShowWelcomeBack(false);
@@ -332,6 +364,7 @@ export default function Welcome() {
         avatarUrl={lastUser?.avatarUrl || null}
         onReLogin={handleReLogin}
         onClearAndExit={handleClearAndExit}
+        onDismiss={handleDismiss}
       />
     </div>
   );

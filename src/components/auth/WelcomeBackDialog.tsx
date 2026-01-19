@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogIn, UserX } from 'lucide-react';
+import { LogIn, UserX, X } from 'lucide-react';
 
 interface WelcomeBackDialogProps {
   open: boolean;
@@ -17,6 +17,7 @@ interface WelcomeBackDialogProps {
   avatarUrl: string | null;
   onReLogin: () => void;
   onClearAndExit: () => void;
+  onDismiss?: () => void;
 }
 
 export const WelcomeBackDialog = forwardRef<HTMLDivElement, WelcomeBackDialogProps>(({
@@ -26,10 +27,16 @@ export const WelcomeBackDialog = forwardRef<HTMLDivElement, WelcomeBackDialogPro
   avatarUrl,
   onReLogin,
   onClearAndExit,
+  onDismiss,
 }, ref) => {
   const getInitials = (name: string | null) => {
     if (!name) return '؟';
     return name.split(' ').map(n => n[0]).join('').slice(0, 2);
+  };
+
+  const handleDismiss = () => {
+    onOpenChange(false);
+    onDismiss?.();
   };
 
   return (
@@ -69,6 +76,15 @@ export const WelcomeBackDialog = forwardRef<HTMLDivElement, WelcomeBackDialogPro
           >
             <UserX className="w-4 h-4 ml-2" />
             تسجيل دخول بحساب آخر
+          </Button>
+
+          <Button 
+            variant="ghost" 
+            onClick={handleDismiss}
+            className="w-full text-muted-foreground"
+          >
+            <X className="w-4 h-4 ml-2" />
+            تجاهل
           </Button>
         </div>
       </DialogContent>

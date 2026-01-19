@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { User, School, Mail, Users, Loader2, Save, GraduationCap, Phone, BookOpen, CreditCard, Clock, AlertTriangle, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Settings as SettingsIcon } from 'lucide-react';
+import { User, School, Mail, Users, Loader2, Save, GraduationCap, Phone, BookOpen, CreditCard, Clock, AlertTriangle, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Settings as SettingsIcon, Bell } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { InviteDepartmentHead } from '@/components/teacher/InviteDepartmentHead';
 
@@ -44,6 +44,18 @@ export default function Settings() {
     principal_name: '',
     department_head_name: '',
   });
+  
+  // Welcome back dialog preference
+  const [welcomeBackPref, setWelcomeBackPref] = useState<'always' | 'daily' | 'never'>(() => {
+    const saved = localStorage.getItem('teacherhub_welcome_back_pref');
+    return (saved as 'always' | 'daily' | 'never') || 'always';
+  });
+  
+  const handleWelcomeBackPrefChange = (pref: 'always' | 'daily' | 'never') => {
+    setWelcomeBackPref(pref);
+    localStorage.setItem('teacherhub_welcome_back_pref', pref);
+    toast.success('تم حفظ الإعداد');
+  };
 
   // Aliases for components based on theme
   const ContentCard = isLiquidGlass ? GlassCard : Card;
@@ -504,6 +516,94 @@ export default function Settings() {
               </div>
               <p className="text-xs text-muted-foreground text-center">
                 الوضع التلقائي يتبع إعدادات جهازك
+              </p>
+            </ContentCardContent>
+          </ContentCard>
+
+          {/* Welcome Back Dialog Settings */}
+          <ContentCard>
+            <ContentCardHeader>
+              <ContentCardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5" />
+                نافذة الترحيب عند العودة
+              </ContentCardTitle>
+              <ContentCardDescription>
+                تحكم في ظهور نافذة "مرحباً بعودتك" عند فتح التطبيق
+              </ContentCardDescription>
+            </ContentCardHeader>
+            <ContentCardContent className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                {/* Always Show */}
+                <button
+                  type="button"
+                  onClick={() => handleWelcomeBackPrefChange('always')}
+                  className={cn(
+                    "flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all",
+                    welcomeBackPref === 'always'
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/50 hover:bg-muted/50"
+                  )}
+                >
+                  <div className={cn(
+                    "p-3 rounded-full",
+                    welcomeBackPref === 'always' ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                  )}>
+                    <CheckCircle2 className="h-6 w-6" />
+                  </div>
+                  <span className={cn(
+                    "text-sm font-medium",
+                    welcomeBackPref === 'always' ? "text-primary" : "text-muted-foreground"
+                  )}>دائماً</span>
+                </button>
+
+                {/* Daily */}
+                <button
+                  type="button"
+                  onClick={() => handleWelcomeBackPrefChange('daily')}
+                  className={cn(
+                    "flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all",
+                    welcomeBackPref === 'daily'
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/50 hover:bg-muted/50"
+                  )}
+                >
+                  <div className={cn(
+                    "p-3 rounded-full",
+                    welcomeBackPref === 'daily' ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                  )}>
+                    <Clock className="h-6 w-6" />
+                  </div>
+                  <span className={cn(
+                    "text-sm font-medium",
+                    welcomeBackPref === 'daily' ? "text-primary" : "text-muted-foreground"
+                  )}>مرة يومياً</span>
+                </button>
+
+                {/* Never */}
+                <button
+                  type="button"
+                  onClick={() => handleWelcomeBackPrefChange('never')}
+                  className={cn(
+                    "flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all",
+                    welcomeBackPref === 'never'
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/50 hover:bg-muted/50"
+                  )}
+                >
+                  <div className={cn(
+                    "p-3 rounded-full",
+                    welcomeBackPref === 'never' ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                  )}>
+                    <XCircle className="h-6 w-6" />
+                  </div>
+                  <span className={cn(
+                    "text-sm font-medium",
+                    welcomeBackPref === 'never' ? "text-primary" : "text-muted-foreground"
+                  )}>لا تظهر</span>
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground text-center">
+                تظهر النافذة عند فتح التطبيق لتسهيل الدخول السريع
               </p>
             </ContentCardContent>
           </ContentCard>
