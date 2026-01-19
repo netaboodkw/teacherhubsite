@@ -23,6 +23,7 @@ import UsersManagementPage from "./pages/admin/UsersManagementPage";
 import SubscriptionsPage from "./pages/admin/SubscriptionsPage";
 import SubscribersPage from "./pages/admin/SubscribersPage";
 import AIContentCreatorPage from "./pages/admin/AIContentCreatorPage";
+import EmailManagementPage from "./pages/admin/EmailManagementPage";
 
 // Teacher Pages
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
@@ -95,6 +96,7 @@ const App = () => (
             <Route path="/admin/subscriptions" element={<ProtectedRoute><SubscriptionsPage /></ProtectedRoute>} />
             <Route path="/admin/subscribers" element={<ProtectedRoute><SubscribersPage /></ProtectedRoute>} />
             <Route path="/admin/ai-content" element={<ProtectedRoute><AIContentCreatorPage /></ProtectedRoute>} />
+            <Route path="/admin/emails" element={<ProtectedRoute><EmailManagementPage /></ProtectedRoute>} />
 
             {/* Teacher Routes */}
             <Route path="/teacher" element={<ProtectedRoute><TeacherDashboard /></ProtectedRoute>} />
