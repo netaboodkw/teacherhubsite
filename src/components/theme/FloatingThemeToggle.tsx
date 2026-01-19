@@ -2,14 +2,21 @@ import React from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 export function FloatingThemeToggle() {
   const { isDark, setMode } = useTheme();
   const isMobile = useIsMobile();
+  const location = useLocation();
 
-  // Only show on mobile
-  if (!isMobile) return null;
+  // Only show on mobile AND only on welcome/auth pages
+  const allowedPaths = ['/', '/welcome', '/auth/teacher', '/auth/admin', '/auth/department-head', '/landing'];
+  const isAllowedPage = allowedPaths.some(path => 
+    path === '/' ? location.pathname === '/' : location.pathname.startsWith(path)
+  );
+
+  if (!isMobile || !isAllowedPage) return null;
 
   const toggleTheme = () => {
     setMode(isDark ? 'light' : 'dark');
@@ -24,13 +31,13 @@ export function FloatingThemeToggle() {
       onClick={toggleTheme}
       className={cn(
         "fixed top-4 left-4 z-[200]",
-        "w-10 h-10 rounded-full",
-        "bg-background/80 backdrop-blur-md",
+        "w-11 h-11 rounded-full",
+        "bg-background/90 backdrop-blur-md",
         "border border-border/50",
         "shadow-lg shadow-black/10",
         "flex items-center justify-center",
         "transition-all duration-300",
-        "hover:scale-105 active:scale-95",
+        "active:scale-95",
         "touch-manipulation"
       )}
       aria-label={isDark ? 'تفعيل الوضع النهاري' : 'تفعيل الوضع الليلي'}

@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ClassroomCard } from '@/components/dashboard/ClassroomCard';
 import { PageHeader } from '@/components/common/PageHeader';
 import { OnboardingTour } from '@/components/onboarding/OnboardingTour';
+import { NotificationPermissionPrompt } from '@/components/notifications/NotificationPermissionPrompt';
 
 export default function TeacherDashboard() {
   const { data: classrooms, isLoading: classroomsLoading } = useClassrooms();
@@ -333,6 +334,9 @@ export default function TeacherDashboard() {
       
       {/* Onboarding Tour for new users */}
       <OnboardingTour />
+      
+      {/* Notification Permission Prompt - shows once on first login */}
+      <NotificationPermissionPrompt />
     </TeacherLayout>
   );
 }

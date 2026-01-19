@@ -102,13 +102,15 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
     <nav
       className={cn(
         "lg:hidden fixed bottom-0 left-0 right-0 z-50",
-        "bg-background/70 backdrop-blur-xl backdrop-saturate-150",
-        "border-t border-border/30",
-        "pb-[env(safe-area-inset-bottom)]",
+        "bg-background/95 backdrop-blur-xl",
+        "border-t border-border/40",
         className
       )}
+      style={{
+        paddingBottom: 'max(env(safe-area-inset-bottom), 8px)',
+      }}
     >
-      <div className="flex items-center justify-around h-16 px-2">
+      <div className="flex items-center justify-around h-[60px] px-1">
         {mainTabs.map((tab) => {
           const active = isActive(tab.href);
           return (
@@ -116,14 +118,15 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
               key={tab.href}
               to={tab.href}
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 min-w-[56px] py-1",
+                "flex flex-col items-center justify-center gap-0.5",
+                "min-w-[60px] min-h-[52px] py-1 px-2",
                 "rounded-xl transition-all duration-200",
-                "active:scale-95"
+                "active:scale-95 touch-manipulation"
               )}
             >
               <NavIcon icon={tab.icon} active={active} colorVariant={tab.color} />
               <span className={cn(
-                "text-[10px] font-cairo",
+                "text-[10px] font-cairo leading-tight",
                 active ? "font-semibold text-foreground" : "font-medium text-muted-foreground"
               )}>
                 {tab.label}
@@ -137,14 +140,15 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
           <SheetTrigger asChild>
             <button
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 min-w-[56px] py-1",
+                "flex flex-col items-center justify-center gap-0.5",
+                "min-w-[60px] min-h-[52px] py-1 px-2",
                 "rounded-xl transition-all duration-200",
-                "active:scale-95"
+                "active:scale-95 touch-manipulation"
               )}
             >
               <NavIcon icon={MoreHorizontal} active={isMoreActive} />
               <span className={cn(
-                "text-[10px] font-cairo",
+                "text-[10px] font-cairo leading-tight",
                 isMoreActive ? "font-semibold text-foreground" : "font-medium text-muted-foreground"
               )}>
                 المزيد
@@ -154,12 +158,13 @@ export function GlassBottomNav({ className }: GlassBottomNavProps) {
           <SheetContent 
             side="bottom" 
             className={cn(
-              "bg-background/80 backdrop-blur-xl backdrop-saturate-150",
-              "border-t border-border/30",
-              "rounded-t-3xl",
-              "pb-[env(safe-area-inset-bottom)]",
+              "bg-background border-t border-border/50",
+              "rounded-t-[24px]",
               "font-cairo"
             )}
+            style={{
+              paddingBottom: 'max(env(safe-area-inset-bottom), 16px)',
+            }}
           >
             <SheetHeader className="pb-4">
               <SheetTitle className="text-center text-foreground font-semibold font-cairo">المزيد من الخيارات</SheetTitle>
