@@ -301,7 +301,7 @@ export default function TeacherAuth() {
                     
                     <Button 
                       type="submit" 
-                      className="w-full gradient-hero h-11"
+                      className="w-full h-11"
                       disabled={loginLoading}
                     >
                       {loginLoading ? (
@@ -499,7 +499,7 @@ export default function TeacherAuth() {
                     
                     <Button 
                       type="submit" 
-                      className="w-full gradient-hero h-11"
+                      className="w-full h-11"
                       disabled={registerLoading || (termsEnabled && !acceptedTerms)}
                     >
                       {registerLoading ? (
