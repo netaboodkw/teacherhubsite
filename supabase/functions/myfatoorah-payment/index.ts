@@ -418,12 +418,11 @@ serve(async (req) => {
 
       console.log("Verifying payment:", paymentId);
 
-      // Try to find payment by ID or invoice_id
+      // Try to find payment by ID, invoice_id, or query MyFatoorah
       let payment = null;
-      let paymentError = null;
 
-      // First try by ID
-      const { data: paymentById, error: errorById } = await supabaseClient
+      // First try by our payment ID
+      const { data: paymentById } = await supabaseClient
         .from("subscription_payments")
         .select("*, package:subscription_packages(name_ar, courses_count)")
         .eq("id", paymentId)
@@ -433,14 +432,52 @@ serve(async (req) => {
         payment = paymentById;
       } else {
         // Try by invoice_id
-        const { data: paymentByInvoice, error: errorByInvoice } = await supabaseClient
+        const { data: paymentByInvoice } = await supabaseClient
           .from("subscription_payments")
           .select("*, package:subscription_packages(name_ar, courses_count)")
           .eq("invoice_id", paymentId)
           .maybeSingle();
         
-        payment = paymentByInvoice;
-        paymentError = errorByInvoice;
+        if (paymentByInvoice) {
+          payment = paymentByInvoice;
+        } else {
+          // If not found, this might be MyFatoorah's PaymentId
+          // Query MyFatoorah to get the invoice details using PaymentId
+          console.log("Trying to find payment via MyFatoorah PaymentId:", paymentId);
+          
+          try {
+            const mfResponse = await fetch(`${MYFATOORAH_BASE_URL}/v2/GetPaymentStatus`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${MYFATOORAH_API_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                Key: paymentId,
+                KeyType: "PaymentId",
+              }),
+            });
+
+            const mfResult = await mfResponse.json();
+            console.log("MyFatoorah PaymentId lookup result:", JSON.stringify(mfResult));
+
+            if (mfResult.IsSuccess && mfResult.Data?.InvoiceId) {
+              // Now search by the invoice ID from MyFatoorah
+              const { data: paymentByMfInvoice } = await supabaseClient
+                .from("subscription_payments")
+                .select("*, package:subscription_packages(name_ar, courses_count)")
+                .eq("invoice_id", mfResult.Data.InvoiceId.toString())
+                .maybeSingle();
+              
+              if (paymentByMfInvoice) {
+                payment = paymentByMfInvoice;
+                console.log("Found payment via MyFatoorah InvoiceId:", mfResult.Data.InvoiceId);
+              }
+            }
+          } catch (mfError) {
+            console.error("Error querying MyFatoorah:", mfError);
+          }
+        }
       }
 
       if (!payment) {
@@ -451,9 +488,16 @@ serve(async (req) => {
         );
       }
 
-      console.log("Found payment:", payment.id, "status:", payment.status);
+      console.log("Found payment:", payment.id, "status:", payment.status, "invoice_id:", payment.invoice_id);
 
       if (payment.status === "completed") {
+        // Get updated subscription info
+        const { data: subscription } = await supabaseClient
+          .from("teacher_subscriptions")
+          .select("subscription_ends_at, package_id")
+          .eq("user_id", payment.user_id)
+          .single();
+
         return new Response(
           JSON.stringify({ 
             success: true, 
@@ -461,6 +505,7 @@ serve(async (req) => {
             invoiceId: payment.invoice_id,
             amount: payment.amount,
             packageName: payment.package?.name_ar,
+            subscriptionEndsAt: subscription?.subscription_ends_at,
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
