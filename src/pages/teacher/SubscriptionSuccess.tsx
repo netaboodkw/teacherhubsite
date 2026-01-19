@@ -4,15 +4,21 @@ import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { CheckCircle, Loader2, Home } from 'lucide-react';
+import { CheckCircle, Loader2, Home, AlertCircle, Receipt } from 'lucide-react';
 
 export default function SubscriptionSuccess() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [isVerifying, setIsVerifying] = useState(true);
   const [verified, setVerified] = useState(false);
+  const [paymentDetails, setPaymentDetails] = useState<{
+    invoiceId?: string;
+    amount?: number;
+    packageName?: string;
+  } | null>(null);
 
-  const paymentId = searchParams.get('paymentId');
+  // MyFatoorah sends paymentId or Id parameter
+  const paymentId = searchParams.get('paymentId') || searchParams.get('Id');
 
   useEffect(() => {
     const verifyPayment = async () => {
@@ -30,9 +36,26 @@ export default function SubscriptionSuccess() {
         });
 
         if (error) throw error;
-        setVerified(data.success && data.status === 'completed');
+        
+        if (data.success && data.status === 'completed') {
+          setVerified(true);
+          setPaymentDetails({
+            invoiceId: data.invoiceId || paymentId,
+            amount: data.amount,
+            packageName: data.packageName,
+          });
+        } else if (data.success) {
+          // Payment found but status might be different
+          setPaymentDetails({
+            invoiceId: paymentId,
+          });
+        }
       } catch (error) {
         console.error('Verification error:', error);
+        // Even if verification fails, show a success message since they were redirected here
+        setPaymentDetails({
+          invoiceId: paymentId,
+        });
       } finally {
         setIsVerifying(false);
       }
@@ -43,9 +66,9 @@ export default function SubscriptionSuccess() {
 
   return (
     <TeacherLayout>
-      <div className="max-w-md mx-auto mt-20">
-        <Card className="text-center">
-          <CardContent className="py-12 space-y-6">
+      <div className="max-w-md mx-auto mt-10 sm:mt-20 px-4">
+        <Card className="text-center overflow-hidden">
+          <CardContent className="py-10 sm:py-12 space-y-6">
             {isVerifying ? (
               <>
                 <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" />
@@ -54,28 +77,88 @@ export default function SubscriptionSuccess() {
               </>
             ) : verified ? (
               <>
-                <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mx-auto">
-                  <CheckCircle className="h-12 w-12 text-emerald-600" />
+                <div className="w-24 h-24 rounded-full bg-emerald-100 flex items-center justify-center mx-auto animate-pulse">
+                  <CheckCircle className="h-14 w-14 text-emerald-600" />
                 </div>
-                <h2 className="text-2xl font-bold text-emerald-600">تم الاشتراك بنجاح!</h2>
-                <p className="text-muted-foreground">
-                  شكراً لك! تم تفعيل اشتراكك بنجاح ويمكنك الآن الاستمتاع بجميع مميزات النظام.
-                </p>
-                <Button onClick={() => navigate('/teacher')} className="gap-2">
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-bold text-emerald-600">تم الاشتراك بنجاح! 🎉</h2>
+                  <p className="text-muted-foreground">
+                    شكراً لك! تم تفعيل اشتراكك بنجاح ويمكنك الآن الاستمتاع بجميع مميزات النظام.
+                  </p>
+                </div>
+                
+                {paymentDetails && (
+                  <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-sm">
+                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                      <Receipt className="h-4 w-4" />
+                      <span>تفاصيل الدفع</span>
+                    </div>
+                    {paymentDetails.invoiceId && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">رقم الفاتورة:</span>
+                        <span className="font-mono font-medium">{paymentDetails.invoiceId}</span>
+                      </div>
+                    )}
+                    {paymentDetails.packageName && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">الباقة:</span>
+                        <span className="font-medium">{paymentDetails.packageName}</span>
+                      </div>
+                    )}
+                    {paymentDetails.amount && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">المبلغ:</span>
+                        <span className="font-medium">{paymentDetails.amount} د.ك</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                <Button onClick={() => navigate('/teacher')} className="gap-2 w-full sm:w-auto" size="lg">
+                  <Home className="h-4 w-4" />
+                  العودة للرئيسية
+                </Button>
+              </>
+            ) : paymentId ? (
+              <>
+                <div className="w-24 h-24 rounded-full bg-emerald-100 flex items-center justify-center mx-auto">
+                  <CheckCircle className="h-14 w-14 text-emerald-600" />
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-bold text-emerald-600">شكراً لك!</h2>
+                  <p className="text-muted-foreground">
+                    تم استلام طلب الدفع الخاص بك. سيتم تفعيل اشتراكك خلال لحظات.
+                  </p>
+                </div>
+                
+                <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-sm">
+                  <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                    <Receipt className="h-4 w-4" />
+                    <span>تفاصيل الدفع</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">رقم العملية:</span>
+                    <span className="font-mono font-medium text-xs">{paymentId}</span>
+                  </div>
+                </div>
+                
+                <Button onClick={() => navigate('/teacher')} className="gap-2 w-full sm:w-auto" size="lg">
                   <Home className="h-4 w-4" />
                   العودة للرئيسية
                 </Button>
               </>
             ) : (
               <>
-                <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mx-auto">
-                  <CheckCircle className="h-12 w-12 text-emerald-600" />
+                <div className="w-24 h-24 rounded-full bg-amber-100 flex items-center justify-center mx-auto">
+                  <AlertCircle className="h-14 w-14 text-amber-600" />
                 </div>
-                <h2 className="text-2xl font-bold">شكراً لك!</h2>
-                <p className="text-muted-foreground">
-                  تم استلام طلبك. سيتم تفعيل اشتراكك قريباً.
-                </p>
-                <Button onClick={() => navigate('/teacher')} className="gap-2">
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-bold">لم يتم العثور على بيانات الدفع</h2>
+                  <p className="text-muted-foreground">
+                    يرجى التواصل مع الدعم الفني إذا تم خصم المبلغ من حسابك.
+                  </p>
+                </div>
+                <Button onClick={() => navigate('/teacher')} className="gap-2 w-full sm:w-auto" size="lg">
                   <Home className="h-4 w-4" />
                   العودة للرئيسية
                 </Button>
