@@ -1,19 +1,19 @@
 import { useMemo, useState } from 'react';
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { useClassrooms, type Classroom } from '@/hooks/useClassrooms';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, Filter, GraduationCap, Printer, Maximize2, Minimize2 } from 'lucide-react';
-import { PageHeader } from '@/components/common/PageHeader';
-import { educationSchedules, getScheduleByEducationLevel, weekDays, type EducationSchedule } from '@/lib/periodSchedules';
+import { Calendar, Clock, ChevronLeft, ChevronRight, Printer, BookOpen } from 'lucide-react';
+import { educationSchedules, getScheduleByEducationLevel, weekDays, getKuwaitDayKey, type EducationSchedule } from '@/lib/periodSchedules';
 import { cn } from '@/lib/utils';
 import { useProfile } from '@/hooks/useProfile';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { usePeriodReminder } from '@/hooks/usePeriodReminder';
 import { UpcomingPeriodAlert } from '@/components/schedule/UpcomingPeriodAlert';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useNavigate } from 'react-router-dom';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 // Color mapping for Tailwind class names to hex colors
 const colorClassToHex: { [key: string]: string } = {
   'bg-blue-200': '#bfdbfe',
@@ -42,9 +42,7 @@ const colorClassToHex: { [key: string]: string } = {
 // Helper function to get hex color from class name or hex value
 const getHexColor = (color: string | null | undefined): string => {
   if (!color) return '#888888';
-  // If it's already a hex color
   if (color.startsWith('#')) return color;
-  // If it's a Tailwind class name
   return colorClassToHex[color] || '#888888';
 };
 
@@ -61,9 +59,14 @@ const hexToRgba = (hex: string, alpha: number): string => {
 export default function TeacherSchedule() {
   const { data: classrooms, isLoading } = useClassrooms();
   const { profile } = useProfile();
-  const [selectedClassroom, setSelectedClassroom] = useState<string>('all');
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const [selectedDayIndex, setSelectedDayIndex] = useState(() => {
+    const todayKey = getKuwaitDayKey();
+    const index = weekDays.findIndex(d => d.key === todayKey);
+    return index >= 0 ? index : 0;
+  });
   const [selectedEducationLevel, setSelectedEducationLevel] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<'full' | 'compact'>('full');
 
   const handlePrint = () => {
     window.print();
@@ -81,21 +84,12 @@ export default function TeacherSchedule() {
     return Array.from(levels.values());
   }, [classrooms]);
 
-  // Filter classrooms based on selection
+  // Filter classrooms based on education level
   const filteredClassrooms = useMemo(() => {
     if (!classrooms) return [];
-    let filtered = classrooms;
-    
-    if (selectedEducationLevel !== 'all') {
-      filtered = filtered.filter(c => c.education_level?.id === selectedEducationLevel);
-    }
-    
-    if (selectedClassroom !== 'all') {
-      filtered = filtered.filter(c => c.id === selectedClassroom);
-    }
-    
-    return filtered;
-  }, [classrooms, selectedClassroom, selectedEducationLevel]);
+    if (selectedEducationLevel === 'all') return classrooms;
+    return classrooms.filter(c => c.education_level?.id === selectedEducationLevel);
+  }, [classrooms, selectedEducationLevel]);
 
   // Get the schedule for the selected education level
   const currentSchedule: EducationSchedule = useMemo(() => {
@@ -103,7 +97,6 @@ export default function TeacherSchedule() {
       const level = educationLevels.find(l => l.id === selectedEducationLevel);
       return getScheduleByEducationLevel(level?.name_ar || level?.name);
     }
-    // Default to first classroom's education level or elementary
     if (filteredClassrooms.length > 0 && filteredClassrooms[0].education_level) {
       return getScheduleByEducationLevel(filteredClassrooms[0].education_level.name_ar);
     }
@@ -117,435 +110,455 @@ export default function TeacherSchedule() {
     stopRepeating,
   } = usePeriodReminder(currentSchedule, classrooms || [], true);
 
-  // Build the schedule grid
-  const scheduleGrid = useMemo(() => {
-    const grid: { [periodIndex: number]: { [day: string]: Classroom[] } } = {};
-    
-    // Only include non-break periods
-    const classPeriods = currentSchedule.periods.filter(p => !p.isBreak);
-    
-    classPeriods.forEach((_, index) => {
-      grid[index] = {};
-      weekDays.forEach(day => {
-        grid[index][day.key] = [];
-      });
-    });
-
-    filteredClassrooms.forEach(classroom => {
-      if (!classroom.class_schedule) return;
-      
-      Object.entries(classroom.class_schedule).forEach(([day, periods]) => {
-        if (!Array.isArray(periods)) return;
-        periods.forEach(period => {
-          // Find the index in classPeriods (non-break periods)
-          const periodIndex = classPeriods.findIndex(p => p.period === period);
-          if (periodIndex !== -1 && grid[periodIndex] && grid[periodIndex][day]) {
-            grid[periodIndex][day].push(classroom);
-          }
-        });
-      });
-    });
-
-    return grid;
-  }, [filteredClassrooms, currentSchedule]);
-
   const classPeriods = currentSchedule.periods.filter(p => !p.isBreak);
+  const selectedDay = weekDays[selectedDayIndex];
+  const todayKey = getKuwaitDayKey();
+
+  // Get classes for selected day
+  const dayClasses = useMemo(() => {
+    const classes: { period: typeof classPeriods[0]; classroom: Classroom | null }[] = [];
+    
+    classPeriods.forEach(period => {
+      let foundClassroom: Classroom | null = null;
+      
+      filteredClassrooms.forEach(classroom => {
+        if (!classroom.class_schedule) return;
+        const daySchedule = classroom.class_schedule[selectedDay.key];
+        if (Array.isArray(daySchedule) && daySchedule.includes(period.period)) {
+          foundClassroom = classroom;
+        }
+      });
+      
+      classes.push({ period, classroom: foundClassroom });
+    });
+    
+    return classes;
+  }, [filteredClassrooms, classPeriods, selectedDay]);
+
+  const navigateDay = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
+      setSelectedDayIndex(prev => (prev === 0 ? weekDays.length - 1 : prev - 1));
+    } else {
+      setSelectedDayIndex(prev => (prev === weekDays.length - 1 ? 0 : prev + 1));
+    }
+  };
 
   if (isLoading) {
     return (
-      <TeacherLayout>
-        <div className="p-4 lg:p-6 space-y-6">
-          <Skeleton className="h-10 w-48" />
-          <Skeleton className="h-96 w-full" />
+      <TeacherLayout hideHeader={isMobile} hidePadding={isMobile}>
+        <div className="p-4 space-y-4">
+          <Skeleton className="h-16 w-full rounded-2xl" />
+          <Skeleton className="h-32 w-full rounded-2xl" />
+          <Skeleton className="h-64 w-full rounded-2xl" />
         </div>
       </TeacherLayout>
     );
   }
 
-  return (
-    <TeacherLayout>
-      <div className="p-4 lg:p-6 space-y-6">
-        {/* Header */}
-        <PageHeader
-          icon={Calendar}
-          title="جدول الحصص"
-          subtitle="عرض الجدول الأسبوعي لجميع الصفوف"
-          iconVariant="pink"
-          actions={
-            <div className="flex items-center gap-2">
-              <ToggleGroup 
-                type="single" 
-                value={viewMode} 
-                onValueChange={(value) => value && setViewMode(value as 'full' | 'compact')}
-                className="border rounded-lg"
+  // Mobile iOS-style Layout
+  if (isMobile) {
+    return (
+      <TeacherLayout hideHeader hidePadding>
+        <div className="min-h-screen bg-background pb-24">
+          {/* iOS Header */}
+          <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/50">
+            <div className="px-4 pt-12 pb-4 safe-area-inset-top">
+              <div className="flex items-center justify-between mb-4">
+                <h1 className="text-2xl font-bold">جدول الحصص</h1>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handlePrint}
+                  className="h-10 w-10 rounded-full"
+                >
+                  <Printer className="h-5 w-5" />
+                </Button>
+              </div>
+              
+              {/* Education Level Filter */}
+              {educationLevels.length > 1 && (
+                <Select value={selectedEducationLevel} onValueChange={setSelectedEducationLevel}>
+                  <SelectTrigger className="w-full h-11 rounded-xl bg-muted/50 border-0">
+                    <SelectValue placeholder="جميع المراحل" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع المراحل</SelectItem>
+                    {educationLevels.map(level => (
+                      <SelectItem key={level.id} value={level.id}>
+                        {level.name_ar}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          </div>
+
+          {/* Upcoming Period Alert */}
+          {upcomingPeriod && (
+            <div className="px-4 pt-4">
+              <UpcomingPeriodAlert
+                upcomingPeriod={upcomingPeriod} 
+                isRepeating={isRepeating}
+                onStopRepeating={stopRepeating}
+              />
+            </div>
+          )}
+
+          {/* Day Selector */}
+          <div className="px-4 pt-4">
+            <div className="flex items-center justify-between bg-card rounded-2xl p-2 border border-border/50">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigateDay('next')}
+                className="h-10 w-10 rounded-xl"
               >
-                <ToggleGroupItem value="full" aria-label="عرض كامل" className="gap-1.5 px-3">
-                  <Maximize2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">كامل</span>
-                </ToggleGroupItem>
-                <ToggleGroupItem value="compact" aria-label="عرض مختصر" className="gap-1.5 px-3">
-                  <Minimize2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">مختصر</span>
-                </ToggleGroupItem>
-              </ToggleGroup>
-              <Button onClick={handlePrint} className="gap-2">
-                <Printer className="w-4 h-4" />
-                <span className="hidden sm:inline">طباعة الجدول</span>
-                <span className="sm:hidden">طباعة</span>
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+              
+              <div className="flex-1 flex items-center justify-center gap-3">
+                <Calendar className="h-5 w-5 text-primary" />
+                <span className="text-lg font-semibold">{selectedDay.name}</span>
+                {selectedDay.key === todayKey && (
+                  <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">
+                    اليوم
+                  </Badge>
+                )}
+              </div>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigateDay('prev')}
+                className="h-10 w-10 rounded-xl"
+              >
+                <ChevronLeft className="h-5 w-5" />
               </Button>
             </div>
-          }
+          </div>
+
+          {/* Days Quick Select */}
+          <div className="px-4 pt-3">
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              {weekDays.map((day, index) => (
+                <button
+                  key={day.key}
+                  onClick={() => setSelectedDayIndex(index)}
+                  className={cn(
+                    "flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all",
+                    index === selectedDayIndex
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : day.key === todayKey
+                        ? "bg-primary/10 text-primary border border-primary/30"
+                        : "bg-muted/50 text-muted-foreground"
+                  )}
+                >
+                  {day.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Period Times */}
+          <div className="px-4 pt-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">{currentSchedule.levelNameAr}</span>
+            </div>
+          </div>
+
+          {/* Classes List */}
+          <div className="px-4 space-y-3 pb-4">
+            {dayClasses.map(({ period, classroom }, index) => {
+              const hexColor = classroom ? getHexColor(classroom.color) : null;
+              const isCurrentPeriod = upcomingPeriod?.period?.period === period.period && selectedDay.key === todayKey;
+              
+              return (
+                <div
+                  key={index}
+                  className={cn(
+                    "rounded-2xl overflow-hidden transition-all",
+                    isCurrentPeriod && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                  )}
+                  style={classroom ? {
+                    backgroundColor: hexToRgba(classroom.color, 0.12),
+                    borderRight: `4px solid ${hexColor}`,
+                  } : undefined}
+                >
+                  <div
+                    className={cn(
+                      "p-4",
+                      !classroom && "bg-muted/30 border border-border/50 rounded-2xl"
+                    )}
+                    onClick={() => classroom && navigate(`/classroom/${classroom.id}`)}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge 
+                            variant="secondary" 
+                            className={cn(
+                              "text-xs font-medium",
+                              isCurrentPeriod ? "bg-primary text-primary-foreground" : "bg-muted"
+                            )}
+                          >
+                            {period.nameAr}
+                          </Badge>
+                          {isCurrentPeriod && (
+                            <span className="text-xs text-primary font-medium animate-pulse">الآن</span>
+                          )}
+                        </div>
+                        
+                        {classroom ? (
+                          <>
+                            <h3 className="text-lg font-semibold text-foreground mb-1">
+                              {classroom.name}
+                            </h3>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <BookOpen className="h-4 w-4" />
+                              <span>{classroom.subject}</span>
+                            </div>
+                          </>
+                        ) : (
+                          <p className="text-muted-foreground">لا يوجد حصة</p>
+                        )}
+                      </div>
+                      
+                      <div className="text-left">
+                        <div className="text-sm font-medium text-foreground">
+                          {period.startTime}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {period.endTime}
+                        </div>
+                        <Badge variant="outline" className="mt-1 text-[10px]">
+                          {period.duration} د
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Empty State */}
+          {filteredClassrooms.length === 0 && (
+            <div className="px-4 py-12 text-center">
+              <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                <Calendar className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-medium mb-2">لا توجد صفوف</h3>
+              <p className="text-muted-foreground text-sm">
+                قم بإضافة صفوف وتحديد جدول الحصص
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Print Container */}
+        <PrintContainer 
+          currentSchedule={currentSchedule}
+          filteredClassrooms={filteredClassrooms}
+          classPeriods={classPeriods}
+          getHexColor={getHexColor}
+          hexToRgba={hexToRgba}
         />
+      </TeacherLayout>
+    );
+  }
 
-        <div className="space-y-4">
-          {/* Upcoming Period Alert */}
-          <UpcomingPeriodAlert
-            upcomingPeriod={upcomingPeriod} 
-            isRepeating={isRepeating}
-            onStopRepeating={stopRepeating}
-          />
-
-          {/* Filters */}
-          <div className="flex flex-wrap gap-3">
-            <Select value={selectedEducationLevel} onValueChange={setSelectedEducationLevel}>
-              <SelectTrigger className="w-[200px]">
-                <Filter className="w-4 h-4 ml-2" />
-                <SelectValue placeholder="المرحلة الدراسية" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">جميع المراحل</SelectItem>
-                {educationLevels.map(level => (
-                  <SelectItem key={level.id} value={level.id}>
-                    {level.name_ar}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedClassroom} onValueChange={setSelectedClassroom}>
-              <SelectTrigger className="w-[200px]">
-                <GraduationCap className="w-4 h-4 ml-2" />
-                <SelectValue placeholder="الصف" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">جميع الصفوف</SelectItem>
-                {classrooms?.filter(c => 
-                  selectedEducationLevel === 'all' || c.education_level?.id === selectedEducationLevel
-                ).map(classroom => (
-                  <SelectItem key={classroom.id} value={classroom.id}>
-                    {classroom.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+  // Desktop Layout
+  return (
+    <TeacherLayout>
+      <div className="p-4 lg:p-6 space-y-6 print:hidden">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-primary" />
+              </div>
+              جدول الحصص
+            </h1>
+            <p className="text-muted-foreground mt-1">عرض الجدول الأسبوعي لجميع الصفوف</p>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            {educationLevels.length > 1 && (
+              <Select value={selectedEducationLevel} onValueChange={setSelectedEducationLevel}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="جميع المراحل" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع المراحل</SelectItem>
+                  {educationLevels.map(level => (
+                    <SelectItem key={level.id} value={level.id}>
+                      {level.name_ar}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Button onClick={handlePrint} className="gap-2">
+              <Printer className="w-4 h-4" />
+              طباعة
+            </Button>
           </div>
         </div>
 
-        {/* Period Times Card - Only show in full mode */}
-        {viewMode === 'full' && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Clock className="w-5 h-5" />
-                أوقات الحصص - {currentSchedule.levelNameAr}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                {currentSchedule.periods.map((period, index) => (
-                  <div
-                    key={index}
-                    className={cn(
-                      "p-3 rounded-lg text-center text-sm",
-                      period.isBreak 
-                        ? "bg-muted/50 text-muted-foreground" 
-                        : "bg-primary/5 border border-primary/20"
-                    )}
-                  >
-                    <div className="font-medium">{period.nameAr}</div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {period.startTime} - {period.endTime}
-                    </div>
-                    <Badge variant="secondary" className="mt-1 text-xs">
-                      {period.duration} دقيقة
-                    </Badge>
-                  </div>
-                ))}
+        {/* Upcoming Period Alert */}
+        <UpcomingPeriodAlert
+          upcomingPeriod={upcomingPeriod} 
+          isRepeating={isRepeating}
+          onStopRepeating={stopRepeating}
+        />
+
+        {/* Period Times */}
+        <div className="bg-card rounded-2xl border p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Clock className="w-5 h-5 text-primary" />
+            <h2 className="font-semibold">أوقات الحصص - {currentSchedule.levelNameAr}</h2>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-2">
+            {currentSchedule.periods.map((period, index) => (
+              <div
+                key={index}
+                className={cn(
+                  "p-3 rounded-xl text-center text-sm transition-all",
+                  period.isBreak 
+                    ? "bg-muted/50 text-muted-foreground" 
+                    : "bg-primary/5 border border-primary/20 hover:bg-primary/10"
+                )}
+              >
+                <div className="font-medium">{period.nameAr}</div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {period.startTime} - {period.endTime}
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Schedule Grid */}
-        <Card className="overflow-hidden">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              الجدول الأسبوعي
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[700px] border-collapse">
-                <thead>
-                  <tr>
-                    <th className="border border-border bg-muted/50 p-3 text-right font-semibold min-w-[100px]">
-                      الحصة
-                    </th>
-                    {weekDays.map(day => (
-                      <th key={day.key} className="border border-border bg-muted/50 p-3 text-center font-semibold">
-                        {day.name}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {classPeriods.map((period, periodIndex) => (
-                    <tr key={periodIndex} className="hover:bg-muted/20 transition-colors">
-                      <td className={cn(
-                        "border border-border bg-muted/20",
-                        viewMode === 'compact' ? "p-2" : "p-3"
-                      )}>
-                        <div className={cn(
-                          "font-semibold text-foreground",
-                          viewMode === 'compact' ? "text-xs" : "text-sm"
-                        )}>{period.nameAr}</div>
-                        {viewMode === 'full' && (
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            {period.startTime} - {period.endTime}
-                          </div>
-                        )}
-                      </td>
-                      {weekDays.map(day => {
-                        const cellClassrooms = scheduleGrid[periodIndex]?.[day.key] || [];
-                        return (
-                          <td key={day.key} className={cn(
-                            "border border-border align-top min-w-[100px]",
-                            viewMode === 'compact' ? "p-1.5" : "p-2"
-                          )}>
-                            {cellClassrooms.length > 0 ? (
-                              <div className={viewMode === 'compact' ? "space-y-1" : "space-y-1.5"}>
-                                {cellClassrooms.map(classroom => {
-                                  const hexColor = getHexColor(classroom.color);
-                                  const bgColor = hexToRgba(classroom.color, 0.25);
-                                  
-                                  return (
-                                    <div
-                                      key={classroom.id}
-                                      className={cn(
-                                        "rounded-md transition-all hover:shadow-sm",
-                                        viewMode === 'compact' ? "p-1.5" : "p-2"
-                                      )}
-                                      style={{ 
-                                        backgroundColor: bgColor,
-                                        borderRight: `4px solid ${hexColor}`,
-                                        boxShadow: `inset 0 0 0 1px ${hexToRgba(classroom.color, 0.3)}`
-                                      }}
-                                    >
-                                      <div className={cn(
-                                        "font-semibold text-foreground",
-                                        viewMode === 'compact' ? "text-[11px]" : "text-xs"
-                                      )}>
-                                        {classroom.name}
-                                      </div>
-                                      {viewMode === 'full' && (
-                                        <div className="text-[11px] text-muted-foreground mt-0.5">
-                                          {classroom.subject}
-                                        </div>
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            ) : (
-                              <div className={cn(
-                                "text-center text-muted-foreground/50",
-                                viewMode === 'compact' ? "text-xs py-1" : "text-sm py-2"
-                              )}>—</div>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Legend - Only show in full mode */}
-        {viewMode === 'full' && filteredClassrooms.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">دليل الألوان</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-3">
-                {filteredClassrooms.map(classroom => {
-                  const hexColor = getHexColor(classroom.color);
-                  return (
-                    <div
-                      key={classroom.id}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg border"
-                      style={{ 
-                        borderColor: hexColor,
-                        backgroundColor: hexToRgba(classroom.color, 0.15)
-                      }}
-                    >
-                      <div
-                        className="w-4 h-4 rounded"
-                        style={{ backgroundColor: hexColor }}
-                      />
-                      <span className="text-sm font-medium">{classroom.name}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {filteredClassrooms.length === 0 && (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <GraduationCap className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">لا توجد صفوف</h3>
-              <p className="text-muted-foreground">
-                قم بإضافة صفوف وتحديد جدول الحصص لعرضها هنا
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Print Container - Hidden on screen, visible on print */}
-      <div className="hidden print:block print-container print-arabic-font">
-        <div className="print-header">
-          <h1>جدول الحصص الأسبوعي {viewMode === 'compact' ? '(مختصر)' : ''}</h1>
-          <p style={{ fontSize: '14px', fontWeight: 'bold' }}>{currentSchedule.levelNameAr}</p>
-          {profile?.school_name && <p>المدرسة: {profile.school_name}</p>}
-          {profile?.full_name && <p>المعلم/ة: {profile.full_name}</p>}
+            ))}
+          </div>
         </div>
 
-        {/* Period Times for Print - Only in full mode */}
-        {viewMode === 'full' && (
-          <div style={{ marginBottom: '15px' }}>
-            <h3 style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '8px', textAlign: 'right' }}>أوقات الحصص:</h3>
-            <table className="print-table" style={{ marginBottom: '10px' }}>
+        {/* Schedule Grid */}
+        <div className="bg-card rounded-2xl border overflow-hidden">
+          <div className="p-4 border-b">
+            <h2 className="font-semibold flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-primary" />
+              الجدول الأسبوعي
+            </h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[700px] border-collapse">
               <thead>
                 <tr>
-                  {currentSchedule.periods.map((period, index) => (
-                    <th key={index} style={{ 
-                      backgroundColor: period.isBreak ? '#fff3cd' : '#e8f4fd',
-                      fontSize: '8px',
-                      padding: '4px 2px'
-                    }}>
-                      {period.nameAr}
+                  <th className="border-b border-l bg-muted/50 p-3 text-right font-semibold min-w-[100px]">
+                    الحصة
+                  </th>
+                  {weekDays.map(day => (
+                    <th 
+                      key={day.key} 
+                      className={cn(
+                        "border-b border-l last:border-l-0 p-3 text-center font-semibold",
+                        day.key === todayKey ? "bg-primary/10" : "bg-muted/50"
+                      )}
+                    >
+                      <span>{day.name}</span>
+                      {day.key === todayKey && (
+                        <Badge variant="secondary" className="mr-2 bg-primary text-primary-foreground text-xs">
+                          اليوم
+                        </Badge>
+                      )}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  {currentSchedule.periods.map((period, index) => (
-                    <td key={index} style={{ fontSize: '8px', padding: '3px 2px' }}>
-                      {period.startTime} - {period.endTime}
+                {classPeriods.map((period, periodIndex) => (
+                  <tr key={periodIndex} className="hover:bg-muted/10 transition-colors">
+                    <td className="border-b border-l bg-muted/20 p-3">
+                      <div className="font-semibold text-sm">{period.nameAr}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {period.startTime} - {period.endTime}
+                      </div>
                     </td>
-                  ))}
-                </tr>
+                    {weekDays.map(day => {
+                      const cellClassrooms = filteredClassrooms.filter(classroom => {
+                        if (!classroom.class_schedule) return false;
+                        const daySchedule = classroom.class_schedule[day.key];
+                        return Array.isArray(daySchedule) && daySchedule.includes(period.period);
+                      });
+                      
+                      return (
+                        <td 
+                          key={day.key} 
+                          className={cn(
+                            "border-b border-l last:border-l-0 align-top p-2 min-w-[120px]",
+                            day.key === todayKey && "bg-primary/5"
+                          )}
+                        >
+                          {cellClassrooms.length > 0 ? (
+                            <div className="space-y-1.5">
+                              {cellClassrooms.map(classroom => {
+                                const hexColor = getHexColor(classroom.color);
+                                const bgColor = hexToRgba(classroom.color, 0.2);
+                                
+                                return (
+                                  <div
+                                    key={classroom.id}
+                                    onClick={() => navigate(`/classroom/${classroom.id}`)}
+                                    className="rounded-lg p-2 cursor-pointer transition-all hover:shadow-md"
+                                    style={{ 
+                                      backgroundColor: bgColor,
+                                      borderRight: `3px solid ${hexColor}`,
+                                    }}
+                                  >
+                                    <div className="font-medium text-xs text-foreground">
+                                      {classroom.name}
+                                    </div>
+                                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                                      {classroom.subject}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div className="text-center text-muted-foreground/40 text-sm py-2">—</div>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
-        )}
+        </div>
 
-        {/* Main Schedule Table for Print */}
-        <table className="print-table">
-          <thead>
-            <tr>
-              <th style={{ width: '100px' }}>الحصة</th>
-              {weekDays.map(day => (
-                <th key={day.key}>{day.name}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {classPeriods.map((period, periodIndex) => (
-              <tr key={periodIndex}>
-                <td style={{ textAlign: 'right', fontWeight: 'bold' }}>
-                  <div>{period.nameAr}</div>
-                  {viewMode === 'full' && (
-                    <div style={{ fontSize: '7px', color: '#666' }}>
-                      {period.startTime} - {period.endTime}
-                    </div>
-                  )}
-                </td>
-                {weekDays.map(day => {
-                  const cellClassrooms = scheduleGrid[periodIndex]?.[day.key] || [];
-                  return (
-                    <td key={day.key} style={{ padding: viewMode === 'compact' ? '2px' : '3px' }}>
-                      {cellClassrooms.length > 0 ? (
-                        cellClassrooms.map(classroom => {
-                          const hexColor = getHexColor(classroom.color);
-                          return (
-                            <div
-                              key={classroom.id}
-                              style={{ 
-                                padding: viewMode === 'compact' ? '2px' : '3px',
-                                marginBottom: '2px',
-                                backgroundColor: hexToRgba(classroom.color, 0.25),
-                                borderRight: `3px solid ${hexColor}`,
-                                borderRadius: '3px',
-                                fontSize: viewMode === 'compact' ? '7px' : '8px'
-                              }}
-                            >
-                              <div style={{ fontWeight: 'bold' }}>{classroom.name}</div>
-                              {viewMode === 'full' && (
-                                <div style={{ fontSize: '7px', color: '#666' }}>{classroom.subject}</div>
-                              )}
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <span style={{ color: '#999' }}>-</span>
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {/* Legend for Print - Only in full mode */}
-        {viewMode === 'full' && filteredClassrooms.length > 0 && (
-          <div style={{ marginTop: '15px' }}>
-            <h3 style={{ fontSize: '10px', fontWeight: 'bold', marginBottom: '5px' }}>دليل الألوان:</h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+        {/* Color Legend */}
+        {filteredClassrooms.length > 0 && (
+          <div className="bg-card rounded-2xl border p-4">
+            <h3 className="font-semibold mb-3">دليل الألوان</h3>
+            <div className="flex flex-wrap gap-2">
               {filteredClassrooms.map(classroom => {
                 const hexColor = getHexColor(classroom.color);
                 return (
                   <div
                     key={classroom.id}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all hover:shadow-sm cursor-pointer"
                     style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '4px',
-                      padding: '3px 6px',
-                      border: `1px solid ${hexColor}`,
-                      borderRadius: '4px',
-                      fontSize: '8px'
+                      backgroundColor: hexToRgba(classroom.color, 0.15),
+                      border: `1px solid ${hexToRgba(classroom.color, 0.3)}`
                     }}
+                    onClick={() => navigate(`/classroom/${classroom.id}`)}
                   >
                     <div
-                      style={{ 
-                        width: '10px', 
-                        height: '10px', 
-                        borderRadius: '2px',
-                        backgroundColor: hexColor 
-                      }}
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: hexColor }}
                     />
-                    <span>{classroom.name}</span>
+                    <span className="text-sm font-medium">{classroom.name}</span>
                   </div>
                 );
               })}
@@ -553,10 +566,155 @@ export default function TeacherSchedule() {
           </div>
         )}
 
-        <div style={{ textAlign: 'center', marginTop: '20px', paddingTop: '10px', borderTop: '1px solid #ccc', fontSize: '9px', color: '#666' }}>
-          تم الطباعة بتاريخ: {new Date().toLocaleDateString('ar-SA')}
+        {/* Empty State */}
+        {filteredClassrooms.length === 0 && (
+          <div className="bg-card rounded-2xl border p-12 text-center">
+            <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+              <Calendar className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-medium mb-2">لا توجد صفوف</h3>
+            <p className="text-muted-foreground">
+              قم بإضافة صفوف وتحديد جدول الحصص لعرضها هنا
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Print Container */}
+      <PrintContainer 
+        currentSchedule={currentSchedule}
+        filteredClassrooms={filteredClassrooms}
+        classPeriods={classPeriods}
+        getHexColor={getHexColor}
+        hexToRgba={hexToRgba}
+      />
+    </TeacherLayout>
+  );
+}
+
+// Print Container Component
+function PrintContainer({
+  currentSchedule,
+  filteredClassrooms,
+  classPeriods,
+  getHexColor,
+  hexToRgba,
+}: {
+  currentSchedule: EducationSchedule;
+  filteredClassrooms: Classroom[];
+  classPeriods: EducationSchedule['periods'];
+  getHexColor: (color: string | null | undefined) => string;
+  hexToRgba: (hex: string, alpha: number) => string;
+}) {
+  return (
+    <div className="hidden print:block print-container print-arabic-font">
+      <div className="print-header">
+        <h1>جدول الحصص الأسبوعي</h1>
+        <p style={{ fontSize: '14px', fontWeight: 'bold' }}>{currentSchedule.levelNameAr}</p>
+      </div>
+      
+      <div style={{ marginBottom: '20px', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+        <h3 style={{ marginBottom: '10px', fontSize: '14px' }}>أوقات الحصص</h3>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          {currentSchedule.periods.map((period, index) => (
+            <div
+              key={index}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: period.isBreak ? '#e9ecef' : '#e3f2fd',
+                borderRadius: '4px',
+                fontSize: '12px',
+              }}
+            >
+              <strong>{period.nameAr}</strong>: {period.startTime} - {period.endTime}
+            </div>
+          ))}
         </div>
       </div>
-    </TeacherLayout>
+
+      <table className="print-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead>
+          <tr>
+            <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f8f9fa' }}>الحصة</th>
+            {weekDays.map(day => (
+              <th key={day.key} style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f8f9fa' }}>
+                {day.name}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {classPeriods.map((period, periodIndex) => (
+            <tr key={periodIndex}>
+              <td style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#fafafa' }}>
+                <strong>{period.nameAr}</strong>
+                <br />
+                <small>{period.startTime} - {period.endTime}</small>
+              </td>
+              {weekDays.map(day => {
+                const cellClassrooms = filteredClassrooms.filter(classroom => {
+                  if (!classroom.class_schedule) return false;
+                  const daySchedule = classroom.class_schedule[day.key];
+                  return Array.isArray(daySchedule) && daySchedule.includes(period.period);
+                });
+                
+                return (
+                  <td key={day.key} style={{ border: '1px solid #ddd', padding: '6px' }}>
+                    {cellClassrooms.map(classroom => (
+                      <div
+                        key={classroom.id}
+                        style={{
+                          padding: '4px 8px',
+                          marginBottom: '4px',
+                          backgroundColor: hexToRgba(classroom.color, 0.2),
+                          borderRight: `3px solid ${getHexColor(classroom.color)}`,
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                        }}
+                      >
+                        <strong>{classroom.name}</strong>
+                        <br />
+                        <small>{classroom.subject}</small>
+                      </div>
+                    ))}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div style={{ marginTop: '20px' }}>
+        <h3 style={{ marginBottom: '10px', fontSize: '14px' }}>دليل الألوان</h3>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          {filteredClassrooms.map(classroom => (
+            <div
+              key={classroom.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '4px 10px',
+                backgroundColor: hexToRgba(classroom.color, 0.15),
+                border: `1px solid ${hexToRgba(classroom.color, 0.3)}`,
+                borderRadius: '4px',
+                fontSize: '11px',
+              }}
+            >
+              <div
+                style={{
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '50%',
+                  backgroundColor: getHexColor(classroom.color),
+                }}
+              />
+              <span>{classroom.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
