@@ -11,6 +11,7 @@ export interface Student {
   avatar_url: string | null;
   notes: string | null;
   special_needs: boolean;
+  is_watched: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -99,6 +100,7 @@ export function useCreateStudent() {
           classroom_id: student.classroom_id,
           notes: student.notes || null,
           special_needs: student.special_needs || false,
+          is_watched: false,
           avatar_url: student.avatar_url || null,
         })
         .select()
