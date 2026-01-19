@@ -16,7 +16,6 @@ import { useSubscriptionSettings } from '@/hooks/useSubscription';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import defaultLogo from '@/assets/logo.png';
-import { IOSSplashScreen } from '@/components/onboarding/IOSSplashScreen';
 import {
   Accordion,
   AccordionContent,
@@ -176,19 +175,6 @@ export default function Landing() {
   const [scrollY, setScrollY] = useState(0);
   const visibleSections = useScrollAnimation();
   
-  // Check if splash screen was already shown
-  const [showSplash, setShowSplash] = useState(() => {
-    // Only show splash on mobile devices
-    const isMobile = window.innerWidth < 768;
-    const hasSeenSplash = localStorage.getItem('teacherhub_splash_seen');
-    return isMobile && !hasSeenSplash;
-  });
-  
-  const handleSplashComplete = () => {
-    localStorage.setItem('teacherhub_splash_seen', 'true');
-    setShowSplash(false);
-  };
-  
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll);
@@ -212,11 +198,6 @@ export default function Landing() {
   const displayLogo = isCustomLogo ? logoUrl : defaultLogo;
   
   const isVisible = (id: string) => visibleSections.has(id);
-  
-  // Show splash screen on mobile first visit
-  if (showSplash) {
-    return <IOSSplashScreen onComplete={handleSplashComplete} />;
-  }
   
   return (
     <div className="min-h-screen bg-background overflow-x-hidden" dir="rtl">

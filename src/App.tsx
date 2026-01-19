@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 
 // Landing & Auth
 import Landing from "./pages/Landing";
+import Welcome from "./pages/Welcome";
 import TeacherAuth from "./pages/auth/TeacherAuth";
 import AdminAuth from "./pages/auth/AdminAuth";
 import DepartmentHeadAuth from "./pages/auth/DepartmentHeadAuth";
@@ -72,6 +73,7 @@ const App = () => (
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Landing />} />
+            <Route path="/welcome" element={<Welcome />} />
             <Route path="/auth/teacher" element={<TeacherAuth />} />
             <Route path="/auth/admin" element={<AdminAuth />} />
             <Route path="/auth/department-head" element={<DepartmentHeadAuth />} />
