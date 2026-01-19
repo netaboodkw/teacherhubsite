@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { forwardRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -20,14 +19,14 @@ interface WelcomeBackDialogProps {
   onClearAndExit: () => void;
 }
 
-export const WelcomeBackDialog = ({
+export const WelcomeBackDialog = forwardRef<HTMLDivElement, WelcomeBackDialogProps>(({
   open,
   onOpenChange,
   teacherName,
   avatarUrl,
   onReLogin,
   onClearAndExit,
-}: WelcomeBackDialogProps) => {
+}, ref) => {
   const getInitials = (name: string | null) => {
     if (!name) return '؟';
     return name.split(' ').map(n => n[0]).join('').slice(0, 2);
@@ -35,7 +34,7 @@ export const WelcomeBackDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md text-center" dir="rtl">
+      <DialogContent ref={ref} className="sm:max-w-md text-center" dir="rtl">
         <DialogHeader className="space-y-4">
           <div className="flex justify-center">
             <Avatar className="w-24 h-24 border-4 border-primary/20">
@@ -75,4 +74,6 @@ export const WelcomeBackDialog = ({
       </DialogContent>
     </Dialog>
   );
-};
+});
+
+WelcomeBackDialog.displayName = 'WelcomeBackDialog';

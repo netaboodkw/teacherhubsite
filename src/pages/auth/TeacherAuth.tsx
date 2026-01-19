@@ -461,15 +461,26 @@ export default function TeacherAuth() {
                   <div className="space-y-2">
                     <Label htmlFor="educationLevel" className="text-sm font-medium">المرحلة الدراسية *</Label>
                     <Select value={educationLevelId} onValueChange={setEducationLevelId}>
-                      <SelectTrigger id="educationLevel" className="h-14 rounded-2xl bg-muted/30 border-0 text-base">
+                      <SelectTrigger 
+                        id="educationLevel" 
+                        className="h-14 rounded-2xl bg-muted/30 border-0 text-base"
+                      >
                         <div className="flex items-center gap-2">
                           <GraduationCap className="h-5 w-5 text-muted-foreground" />
                           <SelectValue placeholder="اختر المرحلة" />
                         </div>
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent 
+                        className="z-[200] bg-background border border-border shadow-xl"
+                        position="popper"
+                        sideOffset={4}
+                      >
                         {educationLevels.map(level => (
-                          <SelectItem key={level.id} value={level.id}>
+                          <SelectItem 
+                            key={level.id} 
+                            value={level.id}
+                            className="py-3 text-base cursor-pointer"
+                          >
                             {level.name_ar}
                           </SelectItem>
                         ))}
