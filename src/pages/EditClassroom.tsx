@@ -391,7 +391,7 @@ export default function EditClassroom() {
             <div className="flex gap-3 pt-4">
               <Button 
                 type="submit" 
-                className="flex-1 gradient-hero"
+                className="flex-1"
                 disabled={updateClassroom.isPending}
               >
                 {updateClassroom.isPending ? (

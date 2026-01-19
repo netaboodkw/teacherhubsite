@@ -227,7 +227,7 @@ export default function Reports() {
           actions={
             <>
               <Button variant="outline"><FileText className="w-4 h-4 ml-2" />تصدير CSV</Button>
-              <Button className="gradient-hero"><FileDown className="w-4 h-4 ml-2" />تصدير PDF</Button>
+              <Button><FileDown className="w-4 h-4 ml-2" />تصدير PDF</Button>
             </>
           }
         />

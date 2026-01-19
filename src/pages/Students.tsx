@@ -75,7 +75,7 @@ export default function Students() {
                 استيراد
               </ActionButton>
               <Link to="/teacher/students/new">
-                <ActionButton className={isLiquidGlass ? "" : "gradient-hero shadow-md hover:shadow-lg transition-shadow"}>
+                <ActionButton>
                   <Plus className="w-4 h-4 ml-2" />
                   طالب جديد
                 </ActionButton>

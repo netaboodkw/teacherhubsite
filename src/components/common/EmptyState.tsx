@@ -19,7 +19,7 @@ export function EmptyState({ icon: Icon, title, description, actionLabel, onActi
       <h3 className="text-xl font-semibold text-foreground mb-2">{title}</h3>
       <p className="text-muted-foreground max-w-sm mb-6">{description}</p>
       {actionLabel && onAction && (
-        <Button onClick={onAction} className="gradient-hero">
+        <Button onClick={onAction}>
           <Plus className="w-4 h-4 ml-2" />
           {actionLabel}
         </Button>

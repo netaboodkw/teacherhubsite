@@ -150,7 +150,6 @@ export default function NewClassroom() {
                   </p>
                   <Button 
                     onClick={() => navigate('/teacher/settings')}
-                    className="gradient-hero"
                   >
                     <GraduationCap className="w-4 h-4 ml-2" />
                     الذهاب للإعدادات
@@ -180,7 +179,7 @@ export default function NewClassroom() {
         {/* Form Card */}
         <div className="bg-card rounded-2xl border border-border p-6 lg:p-8 shadow-sm">
           <div className="flex items-center gap-4 mb-8">
-            <div className="p-3 rounded-xl gradient-hero">
+            <div className="p-3 rounded-xl bg-primary">
               <GraduationCap className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
@@ -402,7 +401,7 @@ export default function NewClassroom() {
             <div className="flex gap-3 pt-4">
               <Button 
                 type="submit" 
-                className="flex-1 gradient-hero"
+                className="flex-1"
                 disabled={createClassroom.isPending || !teacherEducationLevelId || !formData.grade_level_id}
               >
                 {createClassroom.isPending ? (

@@ -47,7 +47,7 @@ export default function Classrooms() {
           iconVariant="purple"
           actions={
             <Link to="/teacher/classrooms/new">
-              <ActionButton className={isLiquidGlass ? "" : "gradient-hero shadow-md hover:shadow-lg transition-shadow"}>
+              <ActionButton>
                 <Plus className="w-4 h-4 ml-2" />
                 صف جديد
               </ActionButton>

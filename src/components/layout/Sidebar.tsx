@@ -110,7 +110,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     "flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200",
                     collapsed && "justify-center px-2",
                     isActive 
-                      ? "gradient-hero text-primary-foreground shadow-md" 
+                      ? "bg-primary text-primary-foreground shadow-md" 
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   )}
                 >

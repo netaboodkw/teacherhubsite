@@ -233,7 +233,7 @@ export default function DepartmentHeadAuth() {
                 
                 <Button 
                   type="submit" 
-                  className="w-full gradient-hero h-11"
+                  className="w-full h-11"
                   disabled={loginLoading}
                 >
                   {loginLoading ? (
