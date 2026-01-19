@@ -112,8 +112,8 @@ serve(async (req) => {
         throw new Error(result.Message || "فشل في جلب طرق الدفع");
       }
 
-      // Filter active payment methods
-      const paymentMethods = result.Data.PaymentMethods.filter((method: any) => method.IsDirectPayment);
+      // Return all payment methods (not filtering by IsDirectPayment as most methods have it as false)
+      const paymentMethods = result.Data.PaymentMethods || [];
 
       return new Response(
         JSON.stringify({
