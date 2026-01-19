@@ -453,6 +453,7 @@ export default function SubscribersPage() {
                         <TableHead>الباقة</TableHead>
                         <TableHead>المبلغ</TableHead>
                         <TableHead>الخصم</TableHead>
+                        <TableHead>طريقة الدفع</TableHead>
                         <TableHead>الحالة</TableHead>
                         <TableHead>التاريخ</TableHead>
                       </TableRow>
@@ -473,6 +474,14 @@ export default function SubscribersPage() {
                               <span className="text-emerald-600">-{payment.discount_amount.toFixed(2)} د.ك</span>
                             ) : '-'}
                           </TableCell>
+                          <TableCell>
+                            {payment.payment_method ? (
+                              <Badge variant="outline" className="gap-1">
+                                <CreditCard className="h-3 w-3" />
+                                {payment.payment_method}
+                              </Badge>
+                            ) : '-'}
+                          </TableCell>
                           <TableCell>{getPaymentStatusBadge(payment.status)}</TableCell>
                           <TableCell>
                             {format(new Date(payment.created_at), 'dd/MM/yyyy HH:mm')}
@@ -481,7 +490,7 @@ export default function SubscribersPage() {
                       ))}
                       {(!filteredPayments || filteredPayments.length === 0) && (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                          <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                             لا توجد مدفوعات
                           </TableCell>
                         </TableRow>

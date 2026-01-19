@@ -159,6 +159,18 @@ export default function TeacherSubscription() {
 
   const subscriptionStatus = getSubscriptionStatus(subscription, settings);
   const activePackages = packages?.filter(p => p.is_active) || [];
+  
+  // Check if user can subscribe (not allowed if active with more than 30 days remaining)
+  const canSubscribe = () => {
+    if (subscriptionStatus.status === 'active' && subscriptionStatus.daysRemaining && subscriptionStatus.daysRemaining > 30) {
+      return false;
+    }
+    return true;
+  };
+  
+  const subscriptionNotAllowedMessage = subscriptionStatus.status === 'active' && subscriptionStatus.daysRemaining && subscriptionStatus.daysRemaining > 30
+    ? `لديك اشتراك فعال ينتهي بعد ${subscriptionStatus.daysRemaining} يوم. يمكنك التجديد عندما يتبقى 30 يوم أو أقل.`
+    : null;
 
   const handleApplyDiscount = async () => {
     if (!discountCode.trim()) {
@@ -219,6 +231,10 @@ export default function TeacherSubscription() {
 
   // Handle package selection
   const handlePackageSelect = (pkg: SubscriptionPackage) => {
+    if (!canSubscribe()) {
+      toast.error(subscriptionNotAllowedMessage || 'لا يمكنك الاشتراك حالياً');
+      return;
+    }
     setSelectedPackage(pkg);
     const finalPrice = calculateFinalPrice(pkg);
     fetchPaymentMethods(finalPrice);
@@ -421,6 +437,21 @@ export default function TeacherSubscription() {
                 <h3 className="font-semibold text-destructive">حسابك في وضع القراءة فقط</h3>
                 <p className="text-sm text-muted-foreground">
                   يمكنك عرض بياناتك فقط. اشترك الآن للاستمرار في استخدام جميع المميزات.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Active subscription - can't subscribe yet */}
+        {!canSubscribe() && (
+          <Card className="border-emerald-500 bg-emerald-50">
+            <CardContent className="flex items-center gap-4 p-4">
+              <Crown className="h-8 w-8 text-emerald-600 shrink-0" />
+              <div>
+                <h3 className="font-semibold text-emerald-700">لديك اشتراك فعال</h3>
+                <p className="text-sm text-emerald-600">
+                  {subscriptionNotAllowedMessage}
                 </p>
               </div>
             </CardContent>
