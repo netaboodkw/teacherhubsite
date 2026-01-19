@@ -64,13 +64,16 @@ export function TeacherSidebar({ isOpen, onClose }: TeacherSidebarProps) {
 
   const handleLogout = async () => {
     try {
-      // Save user info for welcome back experience on native
-      const userInfo = isNative ? {
-        name: profile?.full_name || null,
-        avatarUrl: profile?.avatar_url || null,
-      } : undefined;
+      // Save user info for welcome back experience BEFORE signout
+      if (isNative && profile?.full_name) {
+        localStorage.setItem('teacherhub_last_user', JSON.stringify({
+          name: profile.full_name,
+          avatarUrl: profile.avatar_url || null,
+          timestamp: Date.now(),
+        }));
+      }
       
-      const { error } = await signOut(userInfo);
+      const { error } = await signOut();
       if (error) {
         toast.error('حدث خطأ أثناء تسجيل الخروج');
         return;
@@ -78,7 +81,7 @@ export function TeacherSidebar({ isOpen, onClose }: TeacherSidebarProps) {
       
       toast.success('تم تسجيل الخروج بنجاح');
       
-      // Force page reload to clear all state on iOS
+      // Force page reload to clear all state and go to welcome
       if (isNative) {
         window.location.href = '/welcome';
       } else {
