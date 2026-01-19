@@ -291,7 +291,7 @@ export default function TeacherSchedule() {
                       "p-4",
                       !classroom && "bg-muted/30 border border-border/50 rounded-2xl"
                     )}
-                    onClick={() => classroom && navigate(`/classroom/${classroom.id}`)}
+                    onClick={() => classroom && navigate(`/teacher/classrooms/${classroom.id}`)}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -507,7 +507,7 @@ export default function TeacherSchedule() {
                                 return (
                                   <div
                                     key={classroom.id}
-                                    onClick={() => navigate(`/classroom/${classroom.id}`)}
+                                  onClick={() => navigate(`/teacher/classrooms/${classroom.id}`)}
                                     className="rounded-lg p-2 cursor-pointer transition-all hover:shadow-md"
                                     style={{ 
                                       backgroundColor: bgColor,
@@ -552,7 +552,7 @@ export default function TeacherSchedule() {
                       backgroundColor: hexToRgba(classroom.color, 0.15),
                       border: `1px solid ${hexToRgba(classroom.color, 0.3)}`
                     }}
-                    onClick={() => navigate(`/classroom/${classroom.id}`)}
+                    onClick={() => navigate(`/teacher/classrooms/${classroom.id}`)}
                   >
                     <div
                       className="w-3 h-3 rounded-full"

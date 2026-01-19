@@ -18,7 +18,7 @@ import { ClassroomCard } from '@/components/dashboard/ClassroomCard';
 import { PageHeader } from '@/components/common/PageHeader';
 import { OnboardingTour } from '@/components/onboarding/OnboardingTour';
 import { NotificationPermissionPrompt } from '@/components/notifications/NotificationPermissionPrompt';
-import { AttendanceTimeDialog, getAttendanceDialogPref } from '@/components/fingerprint/AttendanceTimeDialog';
+import { AttendanceNotificationBanner, getAttendancePref, wasShownToday, markShownToday } from '@/components/notifications/AttendanceNotificationBanner';
 import { useFingerprintScheduler } from '@/hooks/useFingerprintScheduler';
 import { toast } from 'sonner';
 
@@ -28,35 +28,34 @@ export default function TeacherDashboard() {
   const themeStyle = useThemeStyle();
   const isGlass = themeStyle === 'liquid-glass';
   
-  // Attendance time dialog state
-  const [showAttendanceDialog, setShowAttendanceDialog] = useState(false);
+  // Attendance banner state
+  const [showAttendanceBanner, setShowAttendanceBanner] = useState(false);
   const { 
     scheduleFingerprintNotifications, 
-    checkAttendanceTimeSetToday, 
     markAttendanceTimeSet,
-    getKuwaitTime,
   } = useFingerprintScheduler();
   
-  // Check if we need to show attendance time dialog on first load
+  // Check if we need to show attendance banner on first load
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       // Check user preference first
-      const pref = getAttendanceDialogPref();
+      const pref = getAttendancePref();
       if (pref === 'never') {
         return;
       }
       
-      if (!checkAttendanceTimeSetToday()) {
-        setShowAttendanceDialog(true);
+      if (!wasShownToday()) {
+        setShowAttendanceBanner(true);
       }
     }, 1000); // Small delay to let the page load
     
     return () => clearTimeout(timeoutId);
-  }, [checkAttendanceTimeSetToday]);
+  }, []);
   
-  // Handle dismiss - mark as dismissed for today
-  const handleAttendanceDialogDismiss = () => {
-    markAttendanceTimeSet();
+  // Handle dismiss
+  const handleAttendanceDismiss = () => {
+    markShownToday();
+    setShowAttendanceBanner(false);
   };
   
   // Handle attendance time set
@@ -74,6 +73,8 @@ export default function TeacherDashboard() {
     
     // Mark attendance time as set for today
     markAttendanceTimeSet();
+    markShownToday();
+    setShowAttendanceBanner(false);
     
     // Schedule notifications
     await scheduleFingerprintNotifications(updatedSettings);
@@ -310,12 +311,10 @@ export default function TeacherDashboard() {
           </Alert>
         )}
 
-        <PageHeader
-          icon={LayoutDashboard}
-          title={`مرحباً ${profile?.full_name?.split(' ')[0] || 'بك'} 👋`}
-          subtitle="إدارة صفوفك وطلابك"
-          iconVariant="cyan"
-        />
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold">مرحباً {profile?.full_name?.split(' ')[0] || 'بك'} 👋</h1>
+          <p className="text-muted-foreground">إدارة صفوفك وطلابك</p>
+        </div>
 
         {/* Stats Grid - 2x2 on mobile */}
         <div className="grid grid-cols-2 gap-3 md:gap-4 md:grid-cols-4">
@@ -400,14 +399,15 @@ export default function TeacherDashboard() {
       {/* Notification Permission Prompt - shows once on first login */}
       <NotificationPermissionPrompt />
       
-      {/* Daily Attendance Time Dialog */}
-      <AttendanceTimeDialog
-        open={showAttendanceDialog}
-        onOpenChange={setShowAttendanceDialog}
-        onTimeSet={handleAttendanceTimeSet}
-        onDismiss={handleAttendanceDialogDismiss}
-        currentTime={getKuwaitTime()}
-      />
+      {/* Daily Attendance Banner */}
+      {showAttendanceBanner && (
+        <div className="fixed top-0 left-0 right-0 z-50 safe-area-inset-top pt-12">
+          <AttendanceNotificationBanner
+            onTimeSet={handleAttendanceTimeSet}
+            onDismiss={handleAttendanceDismiss}
+          />
+        </div>
+      )}
     </TeacherLayout>
   );
 }
