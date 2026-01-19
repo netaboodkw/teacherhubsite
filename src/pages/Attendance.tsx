@@ -241,7 +241,7 @@ export default function Attendance() {
                           <Calendar className="w-5 h-5 text-primary" />
                           <span>{format(selectedDate, 'EEEE، dd MMMM', { locale: ar })}</span>
                           {isToday(selectedDate) && (
-                            <Badge className="gradient-hero text-primary-foreground border-0">اليوم</Badge>
+                            <Badge variant="default">اليوم</Badge>
                           )}
                         </Button>
                       </PopoverTrigger>
@@ -349,7 +349,6 @@ export default function Attendance() {
                         الكل حاضر
                       </Button>
                       <Button 
-                        className="gradient-hero gap-2" 
                         onClick={handleSaveAll} 
                         disabled={bulkMark.isPending || Object.keys(localAttendance).length === 0}
                       >

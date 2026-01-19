@@ -204,11 +204,23 @@ export default function Settings() {
                     </div>
                   )}
 
-                  {subscription?.subscription_ends_at && subscriptionStatus.status === 'active' && (
+                  {subscription?.subscription_ends_at && (subscriptionStatus.status === 'active' || subscriptionStatus.status === 'expired') && (
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">ينتهي الاشتراك</span>
-                      <span className="font-medium">
+                      <span className="text-muted-foreground">
+                        {subscriptionStatus.status === 'expired' ? 'انتهى الاشتراك في' : 'ينتهي الاشتراك'}
+                      </span>
+                      <span className={cn("font-medium", subscriptionStatus.status === 'expired' && "text-destructive")}>
                         {format(new Date(subscription.subscription_ends_at), 'dd MMMM yyyy', { locale: ar })}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Show trial end date for expired trial */}
+                  {subscription?.trial_ends_at && subscriptionStatus.status === 'trial_expired' && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">انتهت الفترة التجريبية في</span>
+                      <span className="font-medium text-destructive">
+                        {format(new Date(subscription.trial_ends_at), 'dd MMMM yyyy', { locale: ar })}
                       </span>
                     </div>
                   )}
