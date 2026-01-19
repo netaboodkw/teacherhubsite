@@ -150,61 +150,56 @@ export default function Students() {
   // Mobile layout - matching Grades page design
   if (isMobile) {
     return (
-      <TeacherLayout hideHeader hidePadding>
-        <div className="min-h-screen bg-background">
-          {/* Mobile Header */}
-          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/40">
-            <div className="px-4 py-3 space-y-3">
-              {/* Title & Actions */}
-              <div className="flex items-center justify-between">
-                <h1 className="text-xl font-bold">الطلاب</h1>
-                <div className="flex items-center gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="icon"
-                    className="rounded-full h-10 w-10"
-                    onClick={() => setImportDialogOpen(true)}
-                  >
-                    <FileSpreadsheet className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    size="icon"
-                    className="rounded-full h-10 w-10"
-                    onClick={() => navigate('/teacher/students/new')}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              
-              {/* Classroom Selector - Dropdown */}
-              <Select value={selectedClassroom} onValueChange={setSelectedClassroom}>
-                <SelectTrigger className="w-full bg-muted/50 border-border/50 rounded-xl">
-                  <SelectValue placeholder="جميع الصفوف" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border-border z-50">
-                  <SelectItem value="all">جميع الصفوف</SelectItem>
-                  {classrooms.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="بحث عن طالب..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pr-10 h-10 rounded-xl bg-muted/50 border-border/50"
-                />
-              </div>
+      <TeacherLayout>
+        <div className="space-y-4">
+          {/* Title & Actions */}
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-bold">الطلاب</h1>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="icon"
+                className="rounded-full h-10 w-10"
+                onClick={() => setImportDialogOpen(true)}
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+              </Button>
+              <Button 
+                size="icon"
+                className="rounded-full h-10 w-10"
+                onClick={() => navigate('/teacher/students/new')}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
             </div>
+          </div>
+          
+          {/* Classroom Selector - Dropdown */}
+          <Select value={selectedClassroom} onValueChange={setSelectedClassroom}>
+            <SelectTrigger className="w-full bg-muted/50 border-border/50 rounded-xl">
+              <SelectValue placeholder="جميع الصفوف" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover border-border z-50">
+              <SelectItem value="all">جميع الصفوف</SelectItem>
+              {classrooms.map((c) => (
+                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="بحث عن طالب..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pr-10 h-10 rounded-xl bg-muted/50 border-border/50"
+            />
           </div>
 
           {/* Content */}
-          <div className="p-4 pb-24">
+          <div className="pb-20">
             {filteredStudents.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                 <Users className="h-12 w-12 mb-4 opacity-30" />
