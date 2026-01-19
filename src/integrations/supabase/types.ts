@@ -921,6 +921,8 @@ export type Database = {
           full_name: string
           id: string
           is_profile_complete: boolean | null
+          onboarding_completed: boolean | null
+          onboarding_completed_at: string | null
           phone: string | null
           principal_name: string | null
           school_name: string | null
@@ -937,6 +939,8 @@ export type Database = {
           full_name: string
           id?: string
           is_profile_complete?: boolean | null
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
           phone?: string | null
           principal_name?: string | null
           school_name?: string | null
@@ -953,6 +957,8 @@ export type Database = {
           full_name?: string
           id?: string
           is_profile_complete?: boolean | null
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
           phone?: string | null
           principal_name?: string | null
           school_name?: string | null
