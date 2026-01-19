@@ -252,11 +252,16 @@ export default function TeacherSubscription() {
       if (!data.success) throw new Error(data.error || 'فشل في بدء عملية الدفع');
 
       if (data.paymentUrl) {
-        // Small delay to ensure state is saved before redirect
         toast.success('جاري التحويل لصفحة الدفع...');
+        // Open in new window to avoid iframe restrictions from payment gateways
+        // Use window.top to break out of iframe if embedded
         setTimeout(() => {
-          window.location.href = data.paymentUrl;
-        }, 500);
+          if (window.top) {
+            window.top.location.href = data.paymentUrl;
+          } else {
+            window.open(data.paymentUrl, '_blank');
+          }
+        }, 300);
       } else {
         throw new Error('لم يتم استلام رابط الدفع');
       }
