@@ -17,9 +17,10 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { User, School, Mail, Users, Loader2, Save, GraduationCap, Phone, BookOpen, CreditCard, Clock, AlertTriangle, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Settings as SettingsIcon, Bell } from 'lucide-react';
+import { User, School, Mail, Users, Loader2, Save, GraduationCap, Phone, BookOpen, CreditCard, Clock, AlertTriangle, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Settings as SettingsIcon, Bell, Fingerprint } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { InviteDepartmentHead } from '@/components/teacher/InviteDepartmentHead';
+import { getAttendanceDialogPref, setAttendanceDialogPref } from '@/components/fingerprint/AttendanceTimeDialog';
 
 import { useMySubscription, useSubscriptionSettings, getSubscriptionStatus } from '@/hooks/useSubscription';
 import { format } from 'date-fns';
@@ -54,6 +55,17 @@ export default function Settings() {
   const handleWelcomeBackPrefChange = (pref: 'always' | 'daily' | 'never') => {
     setWelcomeBackPref(pref);
     localStorage.setItem('teacherhub_welcome_back_pref', pref);
+    toast.success('تم حفظ الإعداد');
+  };
+
+  // Attendance dialog preference (صباح الخير - متى حضرت)
+  const [attendanceDialogPref, setAttendanceDialogPrefState] = useState<'daily' | 'never'>(() => {
+    return getAttendanceDialogPref();
+  });
+  
+  const handleAttendanceDialogPrefChange = (pref: 'daily' | 'never') => {
+    setAttendanceDialogPrefState(pref);
+    setAttendanceDialogPref(pref);
     toast.success('تم حفظ الإعداد');
   };
 
@@ -604,6 +616,71 @@ export default function Settings() {
               </div>
               <p className="text-xs text-muted-foreground text-center">
                 تظهر النافذة عند فتح التطبيق لتسهيل الدخول السريع
+              </p>
+            </ContentCardContent>
+          </ContentCard>
+
+          {/* Attendance Time Dialog Settings (صباح الخير - متى حضرت) */}
+          <ContentCard>
+            <ContentCardHeader>
+              <ContentCardTitle className="flex items-center gap-2">
+                <Fingerprint className="h-5 w-5" />
+                نافذة وقت الحضور اليومية
+              </ContentCardTitle>
+              <ContentCardDescription>
+                تحكم في ظهور نافذة "صباح الخير - متى حضرت" عند فتح التطبيق
+              </ContentCardDescription>
+            </ContentCardHeader>
+            <ContentCardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                {/* Daily */}
+                <button
+                  type="button"
+                  onClick={() => handleAttendanceDialogPrefChange('daily')}
+                  className={cn(
+                    "flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all",
+                    attendanceDialogPref === 'daily'
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/50 hover:bg-muted/50"
+                  )}
+                >
+                  <div className={cn(
+                    "p-3 rounded-full",
+                    attendanceDialogPref === 'daily' ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                  )}>
+                    <Clock className="h-6 w-6" />
+                  </div>
+                  <span className={cn(
+                    "text-sm font-medium",
+                    attendanceDialogPref === 'daily' ? "text-primary" : "text-muted-foreground"
+                  )}>تظهر يومياً</span>
+                </button>
+
+                {/* Never */}
+                <button
+                  type="button"
+                  onClick={() => handleAttendanceDialogPrefChange('never')}
+                  className={cn(
+                    "flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all",
+                    attendanceDialogPref === 'never'
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/50 hover:bg-muted/50"
+                  )}
+                >
+                  <div className={cn(
+                    "p-3 rounded-full",
+                    attendanceDialogPref === 'never' ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                  )}>
+                    <XCircle className="h-6 w-6" />
+                  </div>
+                  <span className={cn(
+                    "text-sm font-medium",
+                    attendanceDialogPref === 'never' ? "text-primary" : "text-muted-foreground"
+                  )}>لا تظهر</span>
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground text-center">
+                تساعدك هذه النافذة على تعيين وقت الحضور لتفعيل تذكير بصمة التواجد
               </p>
             </ContentCardContent>
           </ContentCard>

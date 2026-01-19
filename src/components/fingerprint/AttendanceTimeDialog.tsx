@@ -9,23 +9,37 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Clock, Fingerprint } from 'lucide-react';
+import { Clock, Fingerprint, X } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface AttendanceTimeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onTimeSet: (time: string) => void;
+  onDismiss?: () => void;
   currentTime: Date;
 }
 
 // أوقات الحضور الشائعة
 const commonTimes = ['06:30', '07:00', '07:30', '08:00'];
 
+// Key for storing attendance dialog preference
+const ATTENDANCE_DIALOG_PREF_KEY = 'teacherhub_attendance_dialog_pref';
+
+export const getAttendanceDialogPref = (): 'daily' | 'never' => {
+  const saved = localStorage.getItem(ATTENDANCE_DIALOG_PREF_KEY);
+  return (saved as 'daily' | 'never') || 'daily';
+};
+
+export const setAttendanceDialogPref = (pref: 'daily' | 'never') => {
+  localStorage.setItem(ATTENDANCE_DIALOG_PREF_KEY, pref);
+};
+
 export const AttendanceTimeDialog = ({
   open,
   onOpenChange,
   onTimeSet,
+  onDismiss,
   currentTime,
 }: AttendanceTimeDialogProps) => {
   // الوقت الافتراضي دائماً 7:00
@@ -41,6 +55,11 @@ export const AttendanceTimeDialog = ({
   const handleConfirm = () => {
     onTimeSet(selectedTime);
     onOpenChange(false);
+  };
+
+  const handleDismiss = () => {
+    onOpenChange(false);
+    onDismiss?.();
   };
 
   return (
@@ -111,12 +130,22 @@ export const AttendanceTimeDialog = ({
           )}
         </div>
 
-        <div className="flex gap-3">
-          <Button onClick={handleConfirm} className="flex-1">
-            تأكيد الوقت
-          </Button>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            لاحقاً
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-3">
+            <Button onClick={handleConfirm} className="flex-1">
+              تأكيد الوقت
+            </Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              لاحقاً
+            </Button>
+          </div>
+          <Button 
+            variant="ghost" 
+            onClick={handleDismiss}
+            className="w-full text-muted-foreground"
+          >
+            <X className="w-4 h-4 ml-2" />
+            تجاهل
           </Button>
         </div>
       </DialogContent>

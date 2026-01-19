@@ -18,7 +18,7 @@ import { ClassroomCard } from '@/components/dashboard/ClassroomCard';
 import { PageHeader } from '@/components/common/PageHeader';
 import { OnboardingTour } from '@/components/onboarding/OnboardingTour';
 import { NotificationPermissionPrompt } from '@/components/notifications/NotificationPermissionPrompt';
-import { AttendanceTimeDialog } from '@/components/fingerprint/AttendanceTimeDialog';
+import { AttendanceTimeDialog, getAttendanceDialogPref } from '@/components/fingerprint/AttendanceTimeDialog';
 import { useFingerprintScheduler } from '@/hooks/useFingerprintScheduler';
 import { toast } from 'sonner';
 
@@ -40,6 +40,12 @@ export default function TeacherDashboard() {
   // Check if we need to show attendance time dialog on first load
   useEffect(() => {
     const timeoutId = setTimeout(() => {
+      // Check user preference first
+      const pref = getAttendanceDialogPref();
+      if (pref === 'never') {
+        return;
+      }
+      
       if (!checkAttendanceTimeSetToday()) {
         setShowAttendanceDialog(true);
       }
@@ -47,6 +53,11 @@ export default function TeacherDashboard() {
     
     return () => clearTimeout(timeoutId);
   }, [checkAttendanceTimeSetToday]);
+  
+  // Handle dismiss - mark as dismissed for today
+  const handleAttendanceDialogDismiss = () => {
+    markAttendanceTimeSet();
+  };
   
   // Handle attendance time set
   const handleAttendanceTimeSet = async (time: string) => {
@@ -390,6 +401,7 @@ export default function TeacherDashboard() {
         open={showAttendanceDialog}
         onOpenChange={setShowAttendanceDialog}
         onTimeSet={handleAttendanceTimeSet}
+        onDismiss={handleAttendanceDialogDismiss}
         currentTime={getKuwaitTime()}
       />
     </TeacherLayout>
