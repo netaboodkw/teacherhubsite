@@ -634,30 +634,50 @@ export default function TeacherSubscription() {
                 </CardContent>
                 <CardFooter className="bg-muted/30 pt-6 flex-col gap-4">
                   {/* Payment Methods Logos */}
-                  <div className="flex items-center justify-center gap-3 w-full">
-                    <div className="flex items-center gap-2 px-3 py-2 bg-background rounded-lg border">
+                  <div className="flex items-center justify-center gap-2 sm:gap-3 w-full flex-wrap">
+                    <div className="flex items-center gap-2 px-2 sm:px-3 py-2 bg-background rounded-lg border">
                       <img 
-                        src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/200px-Visa_Inc._logo.svg.png" 
+                        src="https://cdn.jsdelivr.net/gh/nicepay-dev/nicepay-images@main/visa.png" 
                         alt="Visa" 
-                        className="h-5 object-contain"
+                        className="h-4 sm:h-5 object-contain"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.parentElement!.innerHTML = '<span class="text-xs font-bold text-blue-700">VISA</span>';
+                        }}
                       />
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-2 bg-background rounded-lg border">
+                    <div className="flex items-center gap-2 px-2 sm:px-3 py-2 bg-background rounded-lg border">
                       <img 
-                        src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/200px-Mastercard-logo.svg.png" 
+                        src="https://cdn.jsdelivr.net/gh/nicepay-dev/nicepay-images@main/mastercard.png" 
                         alt="Mastercard" 
-                        className="h-5 object-contain"
+                        className="h-4 sm:h-5 object-contain"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.parentElement!.innerHTML = '<span class="text-xs font-bold text-orange-600">Mastercard</span>';
+                        }}
                       />
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-2 bg-background rounded-lg border">
+                    <div className="flex items-center gap-2 px-2 sm:px-3 py-2 bg-background rounded-lg border">
                       <img 
-                        src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Apple_Pay_logo.svg/200px-Apple_Pay_logo.svg.png" 
+                        src="https://cdn.jsdelivr.net/gh/nicepay-dev/nicepay-images@main/applepay.png" 
                         alt="Apple Pay" 
-                        className="h-5 object-contain"
+                        className="h-4 sm:h-5 object-contain"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.parentElement!.innerHTML = '<span class="text-xs font-bold">Apple Pay</span>';
+                        }}
                       />
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-2 bg-background rounded-lg border">
-                      <span className="text-xs font-bold text-blue-600">KNET</span>
+                    <div className="flex items-center gap-2 px-2 sm:px-3 py-2 bg-background rounded-lg border">
+                      <img 
+                        src="https://www.knet.com.kw/images/logo.svg" 
+                        alt="KNET" 
+                        className="h-4 sm:h-5 object-contain"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.parentElement!.innerHTML = '<span class="text-xs font-bold" style="background: linear-gradient(90deg, #1a4d8c 0%, #2eb369 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">KNET</span>';
+                        }}
+                      />
                     </div>
                   </div>
 
