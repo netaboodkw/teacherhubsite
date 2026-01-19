@@ -487,23 +487,24 @@ serve(async (req) => {
 
       const invoiceStatus = result.Data.InvoiceStatus;
       const isPaid = invoiceStatus === "Paid";
+      const paymentGateway = result.Data.InvoiceTransactions?.[0]?.PaymentGateway || null;
 
       if (isPaid) {
-        // Update payment status
+        // Update payment status with payment method
         await supabaseClient
           .from("subscription_payments")
           .update({
             status: "completed",
             paid_at: new Date().toISOString(),
             payment_reference: result.Data.InvoiceTransactions?.[0]?.PaymentId,
-            payment_method: result.Data.InvoiceTransactions?.[0]?.PaymentGateway,
+            payment_method: paymentGateway,
           })
-          .eq("id", paymentId);
+          .eq("id", payment.id);
 
         // Get package details
         const { data: pkg } = await supabaseClient
           .from("subscription_packages")
-          .select("courses_count")
+          .select("courses_count, name_ar")
           .eq("id", payment.package_id)
           .single();
 
@@ -562,13 +563,52 @@ serve(async (req) => {
           });
         }
 
+        // Get user profile for email
+        const { data: profile } = await supabaseClient
+          .from("profiles")
+          .select("full_name")
+          .eq("user_id", payment.user_id)
+          .single();
+
+        // Get user email
+        const { data: userData } = await supabaseClient.auth.admin.getUserById(payment.user_id);
+
+        // Send confirmation email (fire and forget)
+        if (userData?.user?.email) {
+          try {
+            await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-payment-confirmation`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+              },
+              body: JSON.stringify({
+                email: userData.user.email,
+                name: profile?.full_name || "المعلم",
+                packageName: pkg?.name_ar || payment.package?.name_ar || "الباقة",
+                amount: payment.amount,
+                currency: payment.currency,
+                invoiceId: payment.invoice_id,
+                subscriptionEndsAt: subscriptionEndsAt,
+                paymentMethod: paymentGateway,
+              }),
+            });
+            console.log("Confirmation email sent");
+          } catch (emailError) {
+            console.error("Failed to send confirmation email:", emailError);
+            // Don't fail the payment verification if email fails
+          }
+        }
+
         return new Response(
           JSON.stringify({ 
             success: true, 
             status: "completed",
             invoiceId: payment.invoice_id,
             amount: payment.amount,
-            packageName: payment.package?.name_ar,
+            packageName: pkg?.name_ar || payment.package?.name_ar,
+            subscriptionEndsAt: subscriptionEndsAt,
+            paymentMethod: paymentGateway,
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
