@@ -62,7 +62,8 @@ export default function Welcome() {
     if (navigator.vibrate) {
       navigator.vibrate(15);
     }
-    navigate('/', { replace: true });
+    // Navigate to registration page
+    navigate('/auth/teacher', { replace: true });
   };
 
   const goToSlide = (index: number) => {
@@ -82,8 +83,17 @@ export default function Welcome() {
   };
 
   const handleNext = () => {
+    // Haptic feedback
+    if (navigator.vibrate) {
+      navigator.vibrate(10);
+    }
+    
     if (currentSlide < slides.length - 1) {
-      goToSlide(currentSlide + 1);
+      setIsAnimating(true);
+      setTimeout(() => {
+        setCurrentSlide(currentSlide + 1);
+        setIsAnimating(false);
+      }, 150);
     } else {
       handleComplete();
     }
@@ -147,10 +157,6 @@ export default function Welcome() {
         />
       </div>
       
-      {/* Slide Counter */}
-      <div className="absolute top-14 right-6 text-muted-foreground text-sm font-medium z-10">
-        {currentSlide + 1} / {slides.length}
-      </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-8 py-12">
