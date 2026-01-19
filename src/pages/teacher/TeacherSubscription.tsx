@@ -50,7 +50,9 @@ import {
   FileText,
   Zap,
   ExternalLink,
-  ShieldCheck
+  ShieldCheck,
+  Copy,
+  Link
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 
@@ -97,6 +99,7 @@ export default function TeacherSubscription() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null);
   const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
   const [showPaymentConfirmDialog, setShowPaymentConfirmDialog] = useState(false);
+  const [pendingPaymentUrl, setPendingPaymentUrl] = useState<string | null>(null);
 
   // Fetch payments
   const { data: payments, isLoading: paymentsLoading } = useQuery({
@@ -276,9 +279,9 @@ export default function TeacherSubscription() {
                 window.location.href = data.paymentUrl;
               }
             } catch (e) {
-              // Last resort - show the URL to user
-              toast.error('لم نتمكن من فتح صفحة الدفع. الرجاء تعطيل مانع النوافذ المنبثقة أو نسخ الرابط يدوياً.');
-              console.log('Payment URL:', data.paymentUrl);
+              // Last resort - save the URL and show it to the user
+              setPendingPaymentUrl(data.paymentUrl);
+              toast.info('تم إنشاء رابط الدفع - انسخ الرابط وافتحه في متصفح جديد');
             }
           }
         }
@@ -452,8 +455,62 @@ export default function TeacherSubscription() {
           </Card>
         )}
 
+        {/* Pending Payment URL - Show when popup was blocked */}
+        {pendingPaymentUrl && (
+          <Card className="border-primary bg-primary/5">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Link className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-primary">رابط الدفع جاهز</h3>
+                  <p className="text-sm text-muted-foreground">
+                    انسخ الرابط وافتحه في تبويب جديد لإتمام عملية الدفع
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <Input 
+                  value={pendingPaymentUrl} 
+                  readOnly 
+                  className="flex-1 text-sm bg-background" 
+                  dir="ltr"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    navigator.clipboard.writeText(pendingPaymentUrl);
+                    toast.success('تم نسخ الرابط');
+                  }}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+                <Button
+                  onClick={() => {
+                    window.open(pendingPaymentUrl, '_blank');
+                  }}
+                >
+                  <ExternalLink className="h-4 w-4 ml-2" />
+                  فتح
+                </Button>
+              </div>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground"
+                onClick={() => setPendingPaymentUrl(null)}
+              >
+                إغلاق
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
-        {/* Tabs */}
+
         <Tabs defaultValue="packages" className="w-full">
           <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
             <TabsTrigger value="packages" className="gap-2">
