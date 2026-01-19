@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { SwipeBackOverlay } from "@/components/navigation/SwipeBackOverlay";
 
 // Landing & Auth
 import Landing from "./pages/Landing";
@@ -70,6 +71,7 @@ const App = () => (
         <Sonner />
         
         <BrowserRouter>
+          <SwipeBackOverlay />
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Landing />} />
