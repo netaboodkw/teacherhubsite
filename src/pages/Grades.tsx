@@ -1078,23 +1078,19 @@ export default function Grades() {
                 </div>
               </div>
               
-              {/* Classroom Selector - Horizontal Scroll */}
-              <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide">
-                {classrooms.map((c) => (
-                  <button
-                    key={c.id}
-                    onClick={() => setSelectedClassroom(c.id)}
-                    className={cn(
-                      "shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all",
-                      selectedClassroom === c.id
-                        ? "bg-primary text-primary-foreground shadow-md"
-                        : "bg-muted/50 text-muted-foreground hover:bg-muted"
-                    )}
-                  >
-                    {c.name}
-                  </button>
-                ))}
-              </div>
+              {/* Classroom Selector - Dropdown */}
+              <Select value={selectedClassroom || ''} onValueChange={setSelectedClassroom}>
+                <SelectTrigger className="w-full bg-muted/50 border-border/50 rounded-xl">
+                  <SelectValue placeholder="اختر الصف" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border z-50">
+                  {classrooms.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               
               {/* Haptic Settings (when open) */}
               {showGradeSettings && (
