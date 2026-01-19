@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.3ad4a6f4c67b4b818b6b7aa91d42cda7',
+  appId: 'com.teacherhub.app',
   appName: 'Teacher Hub',
   webDir: 'dist',
   server: {
