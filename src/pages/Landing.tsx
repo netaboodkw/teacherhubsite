@@ -24,135 +24,43 @@ import {
 } from "@/components/ui/accordion";
 
 // Logo colors: sky blue, violet/purple, pink, emerald/green, teal/turquoise, yellow
-const features = [
-  // المميزات الذكية
+// المميزات الرئيسية - مجموعات حسب الأقسام
+const featureGroups = [
   {
-    icon: Brain,
-    title: 'قوالب درجات ذكية',
-    description: 'صوّر كشف الدرجات وسيتم التعرف على نظام درجاتك تلقائياً',
-    highlight: true,
-    badge: 'ذكاء اصطناعي',
-    color: 'from-sky-400 to-violet-400',
-  },
-  {
-    icon: Camera,
-    title: 'استيراد ذكي بالكاميرا',
-    description: 'صوّر كشف الأسماء والذكاء الاصطناعي يضيف الطلاب تلقائياً',
-    highlight: true,
-    badge: 'جديد',
-    color: 'from-violet-400 to-pink-400',
-  },
-  // إدارة الصفوف والطلاب
-  {
+    title: 'إدارة الصفوف والطلاب',
     icon: GraduationCap,
-    title: 'إدارة الصفوف',
-    description: 'أنشئ صفوفك وحدد المادة والمرحلة والجدول الأسبوعي',
-    highlight: false,
-    color: 'from-emerald-400 to-teal-400',
+    color: 'from-sky-400 to-violet-400',
+    description: 'أنشئ صفوفك، أضف طلابك، وتابع كل شيء من مكان واحد',
+    features: ['إنشاء صفوف متعددة', 'استيراد الطلاب من Excel أو بالكاميرا', 'بيانات أولياء الأمور'],
   },
   {
-    icon: Users,
-    title: 'إدارة الطلاب',
-    description: 'أضف الطلاب وبيانات أولياء الأمور والملاحظات',
-    highlight: false,
-    color: 'from-teal-400 to-sky-400',
-  },
-  {
-    icon: FileSpreadsheet,
-    title: 'استيراد من Excel',
-    description: 'أضف عشرات الطلاب دفعة واحدة من ملفات Excel',
-    highlight: false,
-    color: 'from-pink-400 to-yellow-400',
-  },
-  // الحضور والتذكيرات
-  {
+    title: 'الحضور والتذكيرات',
     icon: ClipboardCheck,
-    title: 'تسجيل الحضور',
-    description: 'سجل حضور طلابك بضغطة واحدة مع تتبع الحصص',
-    highlight: false,
-    color: 'from-sky-400 to-emerald-400',
+    color: 'from-emerald-400 to-teal-400',
+    description: 'سجل الحضور بسرعة واستلم تنبيهات ذكية',
+    features: ['تسجيل حضور بضغطة واحدة', 'تذكير بصمة التواجد', 'تذكير وقت الحصة'],
   },
   {
-    icon: Fingerprint,
-    title: 'تذكير بصمة التواجد',
-    description: 'تنبيهات يومية لتسجيل بصمة الحضور والانصراف',
-    highlight: true,
-    badge: 'مميز',
-    color: 'from-violet-400 to-teal-400',
-  },
-  {
-    icon: Clock,
-    title: 'تذكير وقت الحصة',
-    description: 'تنبيه قبل بداية كل حصة حتى تكون مستعداً',
-    highlight: true,
-    badge: 'مميز',
-    color: 'from-yellow-400 to-pink-400',
-  },
-  // الدرجات والتقييم
-  {
-    icon: BookOpen,
-    title: 'تسجيل الدرجات',
-    description: 'سجل درجات الاختبارات والواجبات والمشاركة',
-    highlight: false,
-    color: 'from-emerald-400 to-sky-400',
-  },
-  {
+    title: 'الدرجات والتقييم',
     icon: BarChart3,
-    title: 'حساب المعدلات',
-    description: 'حساب تلقائي للمعدلات والنسب المئوية',
-    highlight: false,
-    color: 'from-teal-400 to-violet-400',
-  },
-  // أدوات الفصل
-  {
-    icon: Timer,
-    title: 'مؤقت الأنشطة',
-    description: 'مؤقت للاختبارات والأنشطة الصفية',
-    highlight: false,
-    color: 'from-pink-400 to-sky-400',
+    color: 'from-violet-400 to-pink-400',
+    description: 'سجل الدرجات وتابع أداء طلابك بسهولة',
+    features: ['قوالب درجات ذكية بالذكاء الاصطناعي', 'حساب المعدلات تلقائياً', 'طباعة وتصدير الكشوفات'],
   },
   {
-    icon: Shuffle,
-    title: 'اختيار طالب عشوائي',
-    description: 'اختر طالباً عشوائياً للمشاركة والإجابة',
-    highlight: false,
-    color: 'from-yellow-400 to-emerald-400',
-  },
-  {
+    title: 'أدوات الفصل التفاعلية',
     icon: Trophy,
-    title: 'نظام النقاط والشارات',
-    description: 'كافئ الطلاب بنقاط وشارات تحفيزية',
-    highlight: false,
-    color: 'from-violet-400 to-yellow-400',
-  },
-  // التقارير والتصدير
-  {
-    icon: TrendingUp,
-    title: 'التقارير والإحصائيات',
-    description: 'تقارير شاملة للحضور والدرجات والأداء',
-    highlight: false,
-    color: 'from-sky-400 to-pink-400',
-  },
-  {
-    icon: Printer,
-    title: 'طباعة الكشوفات',
-    description: 'اطبع كشوف الحضور والدرجات بسهولة',
-    highlight: false,
-    color: 'from-emerald-400 to-violet-400',
-  },
-  {
-    icon: Download,
-    title: 'تصدير Excel/PDF',
-    description: 'صدّر بياناتك لملفات Excel و PDF',
-    highlight: false,
-    color: 'from-teal-400 to-yellow-400',
+    color: 'from-pink-400 to-yellow-400',
+    description: 'أدوات تفاعلية لإدارة الفصل بفعالية',
+    features: ['اختيار طالب عشوائي', 'مؤقت الأنشطة', 'نظام النقاط والشارات'],
   },
 ];
 
 const stats = [
-  { number: '500+', label: 'معلم نشط', color: 'text-sky-500' },
-  { number: '10K+', label: 'طالب مسجل', color: 'text-emerald-500' },
-  { number: '99%', label: 'رضا المستخدمين', color: 'text-violet-500' },
+  { number: '500+', label: 'معلم نشط', icon: Users, color: 'from-sky-400 to-violet-400' },
+  { number: '10K+', label: 'طالب مسجل', icon: GraduationCap, color: 'from-emerald-400 to-teal-400' },
+  { number: '50K+', label: 'حصة مسجلة', icon: ClipboardCheck, color: 'from-violet-400 to-pink-400' },
+  { number: '99%', label: 'رضا المستخدمين', icon: Star, color: 'from-pink-400 to-yellow-400' },
 ];
 
 const highlights = [
@@ -419,20 +327,23 @@ export default function Landing() {
       <section 
         id="stats-section"
         data-animate
-        className={`py-16 px-4 bg-muted/20 border-y border-border/30 transition-all duration-700 ${
+        className={`py-12 md:py-16 px-4 bg-muted/20 border-y border-border/30 transition-all duration-700 ${
           isVisible('stats-section') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
         }`}
       >
         <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
             {stats.map((stat, i) => (
               <div 
                 key={i} 
-                className="text-center transition-all duration-500"
+                className="text-center p-4 md:p-6 rounded-2xl bg-card/50 backdrop-blur-sm border border-border/30 hover:border-primary/30 transition-all duration-500 hover:scale-105"
                 style={{ transitionDelay: `${i * 100}ms` }}
               >
-                <div className={`text-3xl md:text-5xl font-bold mb-2 ${stat.color}`}>{stat.number}</div>
-                <div className="text-sm md:text-base text-muted-foreground">{stat.label}</div>
+                <div className={`w-10 h-10 md:w-12 md:h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg`}>
+                  <stat.icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                </div>
+                <div className="text-2xl md:text-4xl font-bold text-foreground mb-1">{stat.number}</div>
+                <div className="text-xs md:text-sm text-muted-foreground">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -443,52 +354,57 @@ export default function Landing() {
       <section 
         id="features-section"
         data-animate
-        className={`py-20 px-4 bg-muted/30 relative overflow-hidden transition-all duration-700 ${
+        className={`py-16 md:py-20 px-4 bg-muted/30 relative overflow-hidden transition-all duration-700 ${
           isVisible('features-section') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
         }`}
       >
-        {/* Background Decoration - Using logo colors */}
+        {/* Background Decoration */}
         <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
           <div className="absolute top-20 right-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
           <div className="absolute bottom-20 left-20 w-80 h-80 bg-secondary/5 rounded-full blur-3xl" />
         </div>
         
-        <div className="max-w-6xl mx-auto relative z-10">
-          <div className="text-center mb-16">
+        <div className="max-w-5xl mx-auto relative z-10">
+          <div className="text-center mb-10 md:mb-16">
             <Badge className="mb-4 bg-secondary/10 text-secondary border-secondary/20">
               <Star className="w-4 h-4 ml-2" />
               المميزات
             </Badge>
-            <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
+            <h2 className="text-2xl md:text-4xl font-bold text-foreground mb-3">
               كل ما تحتاجه في <span className="text-primary">مكان واحد</span>
             </h2>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+            <p className="text-muted-foreground text-sm md:text-lg max-w-xl mx-auto">
               أدوات متكاملة تساعدك على إدارة صفوفك بكفاءة عالية
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, i) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {featureGroups.map((group, i) => (
               <div 
                 key={i}
-                className={`group p-6 rounded-2xl backdrop-blur-sm border transition-all duration-500 hover:scale-105 ${
-                  feature.highlight 
-                    ? 'bg-gradient-to-br from-card/90 to-card/70 border-primary/30 hover:border-primary/50 shadow-lg' 
-                    : 'bg-card/80 border-border/50 hover:border-primary/50 hover:shadow-lg'
-                }`}
+                className="group p-5 md:p-6 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 hover:border-primary/30 hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
                 style={{ transitionDelay: `${i * 100}ms` }}
               >
-                {feature.badge && (
-                  <Badge className={`mb-4 bg-gradient-to-r ${feature.color} text-white border-0`}>
-                    <Sparkles className="w-3 h-3 ml-1" />
-                    {feature.badge}
-                  </Badge>
-                )}
-                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110 shadow-lg`}>
-                  <feature.icon className="w-8 h-8 text-white" />
+                <div className="flex items-start gap-4">
+                  <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br ${group.color} flex items-center justify-center shadow-lg flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}>
+                    <group.icon className="w-6 h-6 md:w-7 md:h-7 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg md:text-xl font-bold text-foreground mb-1">{group.title}</h3>
+                    <p className="text-sm text-muted-foreground mb-3">{group.description}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {group.features.map((feature, j) => (
+                        <div 
+                          key={j}
+                          className="flex items-center gap-1.5 text-xs md:text-sm text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-full"
+                        >
+                          <CheckCircle2 className="w-3 h-3 text-primary flex-shrink-0" />
+                          <span>{feature}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold text-foreground mb-3">{feature.title}</h3>
-                <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
               </div>
             ))}
           </div>
