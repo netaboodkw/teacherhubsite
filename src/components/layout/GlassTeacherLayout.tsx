@@ -30,15 +30,16 @@ import { toast } from 'sonner';
 
 import { GlassIcon } from '@/components/ui/glass-icon';
 
-// Nav icon wrapper - uses GlassIcon for active state
+// Nav icon wrapper - uses GlassIcon for active state with color
 interface NavIconProps {
   icon: LucideIcon;
   active?: boolean;
+  colorVariant?: "default" | "blue" | "purple" | "green" | "orange" | "pink" | "cyan" | "indigo" | "amber" | "rose" | "teal" | "success";
 }
 
-const NavIcon = ({ icon: Icon, active }: NavIconProps) => {
+const NavIcon = ({ icon: Icon, active, colorVariant = "default" }: NavIconProps) => {
   if (active) {
-    return <GlassIcon icon={Icon} variant="default" size="sm" />;
+    return <GlassIcon icon={Icon} variant={colorVariant} size="sm" />;
   }
   return (
     <div className="flex items-center justify-center w-10 h-10 text-muted-foreground group-hover:text-foreground transition-colors">
@@ -48,16 +49,16 @@ const NavIcon = ({ icon: Icon, active }: NavIconProps) => {
 };
 
 const navItems = [
-  { href: '/teacher', icon: LayoutDashboard, label: 'لوحة التحكم' },
-  { href: '/teacher/classrooms', icon: School, label: 'الصفوف' },
-  { href: '/teacher/schedule', icon: CalendarDays, label: 'جدول الحصص' },
-  { href: '/teacher/fingerprint', icon: Fingerprint, label: 'البصمة' },
-  { href: '/teacher/students', icon: Users, label: 'الطلاب' },
-  { href: '/teacher/attendance', icon: ClipboardCheck, label: 'الحضور' },
-  { href: '/teacher/grades', icon: BookOpen, label: 'الدرجات' },
-  { href: '/teacher/templates', icon: LayoutGrid, label: 'قوالب الدرجات' },
-  { href: '/teacher/reports', icon: BarChart3, label: 'التقارير' },
-  { href: '/teacher/subscription', icon: CreditCard, label: 'الاشتراك والمدفوعات' },
+  { href: '/teacher', icon: LayoutDashboard, label: 'لوحة التحكم', color: 'cyan' as const },
+  { href: '/teacher/classrooms', icon: School, label: 'الصفوف', color: 'purple' as const },
+  { href: '/teacher/schedule', icon: CalendarDays, label: 'جدول الحصص', color: 'pink' as const },
+  { href: '/teacher/fingerprint', icon: Fingerprint, label: 'البصمة', color: 'rose' as const },
+  { href: '/teacher/students', icon: Users, label: 'الطلاب', color: 'blue' as const },
+  { href: '/teacher/attendance', icon: ClipboardCheck, label: 'الحضور', color: 'green' as const },
+  { href: '/teacher/grades', icon: BookOpen, label: 'الدرجات', color: 'indigo' as const },
+  { href: '/teacher/templates', icon: LayoutGrid, label: 'قوالب الدرجات', color: 'purple' as const },
+  { href: '/teacher/reports', icon: BarChart3, label: 'التقارير', color: 'orange' as const },
+  { href: '/teacher/subscription', icon: CreditCard, label: 'الاشتراك والمدفوعات', color: 'success' as const },
 ];
 
 interface GlassTeacherLayoutProps {
@@ -185,7 +186,7 @@ export function GlassTeacherLayout({ children }: GlassTeacherLayoutProps) {
                       : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                   )}
                 >
-                  <NavIcon icon={item.icon} active={active} />
+                  <NavIcon icon={item.icon} active={active} colorVariant={item.color} />
                   {!collapsed && <span className={cn("truncate", active && "text-foreground font-semibold")}>{item.label}</span>}
                 </Link>
               );
