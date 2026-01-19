@@ -529,61 +529,85 @@ export default function Settings() {
             </ContentCardContent>
           </ContentCard>
 
-          {/* Biometric Login Settings - Only show on native platforms */}
-          {isNative && biometricAvailable && (
-            <ContentCard>
-              <ContentCardHeader>
-                <ContentCardTitle className="flex items-center gap-2">
-                  <Fingerprint className="h-5 w-5" />
-                  تسجيل الدخول بـ {getBiometryDisplayName()}
-                </ContentCardTitle>
-                <ContentCardDescription>
-                  استخدم {getBiometryDisplayName()} لتسجيل الدخول السريع
-                </ContentCardDescription>
-              </ContentCardHeader>
-              <ContentCardContent className="space-y-4">
-                {biometricEnabled ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
-                      <CheckCircle2 className="h-6 w-6 text-green-500" />
+          {/* Biometric Login Settings - Show debug info or actual settings */}
+          {isNative ? (
+            biometricAvailable ? (
+              <ContentCard>
+                <ContentCardHeader>
+                  <ContentCardTitle className="flex items-center gap-2">
+                    <Fingerprint className="h-5 w-5" />
+                    تسجيل الدخول بـ {getBiometryDisplayName()}
+                  </ContentCardTitle>
+                  <ContentCardDescription>
+                    استخدم {getBiometryDisplayName()} لتسجيل الدخول السريع
+                  </ContentCardDescription>
+                </ContentCardHeader>
+                <ContentCardContent className="space-y-4">
+                  {biometricEnabled ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
+                        <CheckCircle2 className="h-6 w-6 text-green-500" />
+                        <div className="flex-1">
+                          <p className="font-medium text-green-700 dark:text-green-400">
+                            {getBiometryDisplayName()} مُفعّل
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            يمكنك تسجيل الدخول باستخدام {getBiometryDisplayName()}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        className="w-full"
+                        onClick={async () => {
+                          const deleted = await deleteCredentials();
+                          if (deleted) {
+                            toast.success(`تم إلغاء تفعيل ${getBiometryDisplayName()}`);
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 ml-2" />
+                        إلغاء تفعيل {getBiometryDisplayName()}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3 p-4 bg-muted/50 border border-border rounded-xl">
+                      <Fingerprint className="h-6 w-6 text-muted-foreground" />
                       <div className="flex-1">
-                        <p className="font-medium text-green-700 dark:text-green-400">
-                          {getBiometryDisplayName()} مُفعّل
-                        </p>
+                        <p className="font-medium">غير مُفعّل</p>
                         <p className="text-sm text-muted-foreground">
-                          يمكنك تسجيل الدخول باستخدام {getBiometryDisplayName()}
+                          سجّل دخولك مرة أخرى لتفعيل {getBiometryDisplayName()}
                         </p>
                       </div>
                     </div>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      className="w-full"
-                      onClick={async () => {
-                        const deleted = await deleteCredentials();
-                        if (deleted) {
-                          toast.success(`تم إلغاء تفعيل ${getBiometryDisplayName()}`);
-                        }
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 ml-2" />
-                      إلغاء تفعيل {getBiometryDisplayName()}
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3 p-4 bg-muted/50 border border-border rounded-xl">
-                    <Fingerprint className="h-6 w-6 text-muted-foreground" />
+                  )}
+                </ContentCardContent>
+              </ContentCard>
+            ) : (
+              <ContentCard>
+                <ContentCardHeader>
+                  <ContentCardTitle className="flex items-center gap-2">
+                    <Fingerprint className="h-5 w-5" />
+                    تسجيل الدخول بالبصمة
+                  </ContentCardTitle>
+                </ContentCardHeader>
+                <ContentCardContent>
+                  <div className="flex items-center gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                    <AlertTriangle className="h-6 w-6 text-amber-500" />
                     <div className="flex-1">
-                      <p className="font-medium">غير مُفعّل</p>
+                      <p className="font-medium text-amber-700 dark:text-amber-400">
+                        البصمة غير متاحة
+                      </p>
                       <p className="text-sm text-muted-foreground">
-                        سجّل دخولك مرة أخرى لتفعيل {getBiometryDisplayName()}
+                        تأكد من تفعيل Face ID في إعدادات جهازك
                       </p>
                     </div>
                   </div>
-                )}
-              </ContentCardContent>
-            </ContentCard>
-          )}
+                </ContentCardContent>
+              </ContentCard>
+            )
+          ) : null}
 
 
           {/* Attendance Time Dialog Settings (صباح الخير - متى حضرت) */}
