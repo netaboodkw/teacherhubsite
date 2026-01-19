@@ -42,7 +42,7 @@ import {
   Zap,
   ShieldCheck
 } from 'lucide-react';
-import { PageHeader } from '@/components/common/PageHeader';
+
 
 interface Payment {
   id: string;
@@ -98,15 +98,18 @@ export default function TeacherSubscription() {
   const subscriptionStatus = getSubscriptionStatus(subscription, settings);
   const activePackages = packages?.filter(p => p.is_active) || [];
   
-  // Check if user can subscribe (not allowed if active with more than 30 days remaining)
+  // Check if user has active subscription
+  const hasActiveSubscription = subscriptionStatus.status === 'active';
+  
+  // Check if user can subscribe (allowed if not active, or if active with 30 days or less remaining)
   const canSubscribe = () => {
-    if (subscriptionStatus.status === 'active' && subscriptionStatus.daysRemaining && subscriptionStatus.daysRemaining > 30) {
+    if (hasActiveSubscription && subscriptionStatus.daysRemaining && subscriptionStatus.daysRemaining > 30) {
       return false;
     }
-    return true;
+    return !hasActiveSubscription || (subscriptionStatus.daysRemaining && subscriptionStatus.daysRemaining <= 30);
   };
   
-  const subscriptionNotAllowedMessage = subscriptionStatus.status === 'active' && subscriptionStatus.daysRemaining && subscriptionStatus.daysRemaining > 30
+  const subscriptionNotAllowedMessage = hasActiveSubscription && subscriptionStatus.daysRemaining && subscriptionStatus.daysRemaining > 30
     ? `لديك اشتراك فعال ينتهي بعد ${subscriptionStatus.daysRemaining} يوم. يمكنك التجديد عندما يتبقى 30 يوم أو أقل.`
     : null;
 
@@ -371,33 +374,84 @@ export default function TeacherSubscription() {
           </Card>
         )}
 
-        {/* Active subscription - can't subscribe yet */}
-        {!canSubscribe() && (
-          <Card className="border-emerald-500 bg-emerald-50">
-            <CardContent className="flex items-center gap-4 p-4">
-              <Crown className="h-8 w-8 text-emerald-600 shrink-0" />
-              <div>
-                <h3 className="font-semibold text-emerald-700">لديك اشتراك فعال</h3>
-                <p className="text-sm text-emerald-600">
-                  {subscriptionNotAllowedMessage}
-                </p>
+        {/* Active subscription banner */}
+        {hasActiveSubscription && (
+          <Card className="border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/30 dark:to-emerald-900/20">
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row md:items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-emerald-500 flex items-center justify-center shrink-0">
+                  <Crown className="h-8 w-8 text-white" />
+                </div>
+                <div className="flex-1 space-y-2">
+                  <h3 className="text-xl font-bold text-emerald-700 dark:text-emerald-400">أنت مشترك حالياً</h3>
+                  <p className="text-emerald-600 dark:text-emerald-300">
+                    لديك صلاحية كاملة للوصول لجميع مميزات النظام
+                  </p>
+                  {subscription?.subscription_ends_at && (
+                    <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+                      <Calendar className="h-4 w-4" />
+                      <span>
+                        ينتهي الاشتراك في: {format(new Date(subscription.subscription_ends_at), 'dd MMMM yyyy', { locale: ar })}
+                      </span>
+                      <Badge variant="secondary" className="bg-emerald-200 text-emerald-700 border-0">
+                        {subscriptionStatus.daysRemaining} يوم متبقي
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col items-center gap-2 p-4 bg-white/50 dark:bg-white/10 rounded-xl">
+                  <CheckCircle className="h-10 w-10 text-emerald-500" />
+                  <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">صلاحية كاملة</span>
+                </div>
               </div>
+              
+              {/* Features list */}
+              <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+                  <Check className="h-4 w-4" />
+                  <span>صفوف غير محدودة</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+                  <Check className="h-4 w-4" />
+                  <span>طلاب غير محدودين</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+                  <Check className="h-4 w-4" />
+                  <span>تقارير شاملة</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+                  <Check className="h-4 w-4" />
+                  <span>دعم فني</span>
+                </div>
+              </div>
+
+              {/* Renewal message if less than 30 days */}
+              {subscriptionStatus.daysRemaining && subscriptionStatus.daysRemaining <= 30 && (
+                <div className="mt-4 p-3 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center gap-2 text-amber-700 dark:text-amber-300 text-sm">
+                  <Clock className="h-4 w-4 shrink-0" />
+                  <span>اشتراكك على وشك الانتهاء! يمكنك التجديد من الباقات أدناه.</span>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
-        <Tabs defaultValue="packages" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
-            <TabsTrigger value="packages" className="gap-2">
-              <CreditCard className="h-4 w-4" />
-              الباقات
-            </TabsTrigger>
+        <Tabs defaultValue={hasActiveSubscription && !canSubscribe() ? "payments" : "packages"} className="w-full">
+          <TabsList className={`grid w-full max-w-md mx-auto ${hasActiveSubscription && !canSubscribe() ? 'grid-cols-1' : 'grid-cols-2'}`}>
+            {/* Only show packages tab if user can subscribe */}
+            {(!hasActiveSubscription || canSubscribe()) && (
+              <TabsTrigger value="packages" className="gap-2">
+                <CreditCard className="h-4 w-4" />
+                الباقات
+              </TabsTrigger>
+            )}
             <TabsTrigger value="payments" className="gap-2">
               <Receipt className="h-4 w-4" />
               سجل المدفوعات
             </TabsTrigger>
           </TabsList>
 
-          {/* Packages Tab */}
+          {/* Packages Tab - Only show if user can subscribe */}
+          {(!hasActiveSubscription || canSubscribe()) && (
           <TabsContent value="packages" className="space-y-8 mt-8">
             {/* Packages Grid */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -687,6 +741,7 @@ export default function TeacherSubscription() {
               </Card>
             )}
           </TabsContent>
+          )}
 
           {/* Payments Tab */}
           <TabsContent value="payments" className="mt-8">
