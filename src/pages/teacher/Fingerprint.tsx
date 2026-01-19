@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { PageHeader } from '@/components/common/PageHeader';
 import { useNativeNotifications } from '@/hooks/useNativeNotifications';
+import { useFingerprintScheduler } from '@/hooks/useFingerprintScheduler';
 
 interface FingerprintSettings {
   attendanceTime: string; // وقت الحضور الفعلي
@@ -236,19 +237,50 @@ const FingerprintPage = () => {
   }, [status, minutesRemaining, settings, fingerprintWindow, fingerprintDone, lastReminderTime, playReminder, currentTime]);
 
 
+  // تكامل مع جدولة التنبيهات المسبقة
+  const { scheduleFingerprintNotifications, cancelFingerprintNotifications, markAttendanceTimeSet } = useFingerprintScheduler();
+  
+  // جدولة التنبيهات عند تغيير الإعدادات
+  useEffect(() => {
+    if (settings.reminderEnabled && !fingerprintDone) {
+      scheduleFingerprintNotifications(settings);
+    }
+  }, [settings.attendanceTime, settings.reminderEnabled, settings.reminderMinutesBefore, fingerprintDone, scheduleFingerprintNotifications, settings]);
+
   // تسجيل إتمام البصمة
-  const markFingerprintDone = () => {
+  const markFingerprintDone = async () => {
     setFingerprintDone(true);
     localStorage.setItem('fingerprint-done-date', format(currentTime, 'yyyy-MM-dd'));
+    
+    // إلغاء التنبيهات المجدولة
+    await cancelFingerprintNotifications();
+    
     toast.success('تم تسجيل البصمة بنجاح! ✅');
   };
 
   // إعادة تعيين
-  const resetFingerprint = () => {
+  const resetFingerprint = async () => {
     setFingerprintDone(false);
     setLastReminderTime(null);
     localStorage.removeItem('fingerprint-done-date');
+    
+    // إعادة جدولة التنبيهات
+    await scheduleFingerprintNotifications(settings);
+    
     toast.info('تم إعادة تعيين حالة البصمة');
+  };
+  
+  // تحديث وقت الحضور
+  const handleAttendanceTimeChange = async (time: string) => {
+    const newSettings = { ...settings, attendanceTime: time };
+    setSettings(newSettings);
+    markAttendanceTimeSet();
+    
+    // إعادة جدولة التنبيهات مع الوقت الجديد
+    if (newSettings.reminderEnabled && !fingerprintDone) {
+      await scheduleFingerprintNotifications(newSettings);
+      toast.success('تم تحديث وقت الحضور وجدولة التنبيهات');
+    }
   };
 
   // معاينة الصوت
@@ -377,11 +409,13 @@ const FingerprintPage = () => {
                 id="attendanceTime"
                 type="time"
                 value={settings.attendanceTime}
-                onChange={(e) => setSettings({ ...settings, attendanceTime: e.target.value })}
+                onChange={(e) => handleAttendanceTimeChange(e.target.value)}
                 className="max-w-[200px]"
               />
               <p className="text-sm text-muted-foreground">
                 أدخل وقت حضورك الفعلي لحساب فترة بصمة التواجد
+                <br />
+                <strong className="text-primary">التنبيهات ستعمل حتى عند إغلاق التطبيق! 🔔</strong>
               </p>
             </div>
 
