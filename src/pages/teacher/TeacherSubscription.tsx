@@ -20,6 +20,8 @@ import {
   type DiscountCode
 } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
+import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
 import { 
   CreditCard, 
   Check, 
@@ -200,10 +202,8 @@ export default function TeacherSubscription() {
 
     setIsProcessing(true);
     try {
-      // Use production domain for payment callbacks
-      const baseUrl = window.location.hostname === 'teacherhub.site' || window.location.hostname === 'www.teacherhub.site'
-        ? window.location.origin
-        : 'https://teacherhub.site';
+      // Use production domain for payment callbacks - this domain has Universal Links configured
+      const baseUrl = 'https://teacherhub.site';
       
       const { data, error } = await supabase.functions.invoke('myfatoorah-payment', {
         body: {
@@ -220,24 +220,35 @@ export default function TeacherSubscription() {
       if (!data.success) throw new Error(data.error || 'فشل في بدء عملية الدفع');
 
       if (data.paymentUrl) {
-        toast.success('جاري التحويل لصفحة الدفع...');
+        toast.success('جاري فتح صفحة الدفع...');
         
-        // Try multiple methods to redirect
-        try {
-          // First try to open in parent window (breaks out of iframe)
-          if (window.top && window.top !== window) {
-            window.top.location.href = data.paymentUrl;
-          } else {
-            window.location.href = data.paymentUrl;
+        // Check if running on native platform (iOS/Android)
+        if (Capacitor.isNativePlatform()) {
+          try {
+            // Use In-App Browser (Safari View Controller on iOS, Chrome Custom Tab on Android)
+            // This keeps the user within the app context and allows Universal Links to work
+            await Browser.open({ 
+              url: data.paymentUrl,
+              presentationStyle: 'fullscreen',
+              toolbarColor: '#0f172a',
+            });
+            
+            // Note: The browser will automatically close and redirect back to app
+            // when the callback URL (teacherhub.site) triggers the Universal Link
+          } catch (browserError) {
+            console.error('In-app browser error:', browserError);
+            // Fallback to external browser
+            window.open(data.paymentUrl, '_blank');
           }
-        } catch (e) {
-          // If cross-origin restriction, open in new tab
-          const newWindow = window.open(data.paymentUrl, '_blank');
-          if (!newWindow) {
-            // If popup blocked, show link to user
-            toast.error('تم حظر النافذة المنبثقة. سيتم نسخ رابط الدفع.', { duration: 5000 });
-            navigator.clipboard.writeText(data.paymentUrl);
-            // Fallback: direct location change
+        } else {
+          // Web browser - redirect normally
+          try {
+            if (window.top && window.top !== window) {
+              window.top.location.href = data.paymentUrl;
+            } else {
+              window.location.href = data.paymentUrl;
+            }
+          } catch (e) {
             window.location.href = data.paymentUrl;
           }
         }

@@ -37,6 +37,11 @@ const config: CapacitorConfig = {
       splashFullScreen: true,
       splashImmersive: true
     }
+  },
+  // Server configuration for deep linking
+  server: {
+    // Allow navigation to teacherhub.site for payment callbacks
+    allowNavigation: ['teacherhub.site', '*.teacherhub.site', '*.myfatoorah.com', 'myfatoorah.com']
   }
 };
 
