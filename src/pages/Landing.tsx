@@ -321,11 +321,11 @@ export default function Landing() {
           </div>
         </div>
 
-        {/* Header */}
-        <header className="relative z-20 flex items-center justify-between p-4 md:p-6">
-          <div className="flex items-center gap-3">
-            {/* iOS App Icon Style Logo */}
-            <div className="w-12 h-12 md:w-14 md:h-14 rounded-[22%] bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 p-1.5 shadow-[0_4px_12px_rgba(0,0,0,0.15),0_1px_3px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.6)] border border-white/20 overflow-hidden">
+        {/* Header - Logo appears only when scrolled */}
+        <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-4 md:p-6 transition-all duration-300" style={{ background: scrollY > 300 ? 'hsl(var(--background)/0.95)' : 'transparent', backdropFilter: scrollY > 300 ? 'blur(10px)' : 'none', borderBottom: scrollY > 300 ? '1px solid hsl(var(--border)/0.5)' : 'none' }}>
+          <div className={`flex items-center gap-3 transition-all duration-500 ${scrollY > 300 ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none'}`}>
+            {/* iOS App Icon Style Logo - Only visible when scrolled */}
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-[22%] bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 p-1 shadow-[0_4px_12px_rgba(0,0,0,0.15),0_1px_3px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.6)] border border-white/20 overflow-hidden">
               <div className="w-full h-full rounded-[18%] overflow-hidden bg-white dark:bg-gray-800">
                 <img 
                   src={displayLogo} 
@@ -347,11 +347,11 @@ export default function Landing() {
         </header>
 
         {/* Main Content */}
-        <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
+        <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8 pt-20">
           <div className="text-center max-w-3xl mx-auto">
-            {/* Logo - iOS App Icon Style */}
+            {/* Logo - iOS App Icon Style - Centered */}
             <div className="relative inline-block mb-8 animate-logo-float">
-              <div className="w-32 h-32 md:w-44 md:h-44 rounded-[22%] bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 p-2 md:p-3 shadow-[0_8px_30px_rgba(0,0,0,0.2),0_4px_10px_rgba(0,0,0,0.1),inset_0_2px_0_rgba(255,255,255,0.7)] border border-white/30 overflow-hidden hover:scale-105 transition-transform duration-300">
+              <div className="w-36 h-36 md:w-48 md:h-48 rounded-[22%] bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 p-2.5 md:p-3.5 shadow-[0_8px_30px_rgba(0,0,0,0.2),0_4px_10px_rgba(0,0,0,0.1),inset_0_2px_0_rgba(255,255,255,0.7)] border border-white/30 overflow-hidden hover:scale-105 transition-transform duration-300">
                 <div className="w-full h-full rounded-[18%] overflow-hidden bg-white dark:bg-gray-800 flex items-center justify-center">
                   <img 
                     src={displayLogo} 
@@ -365,19 +365,7 @@ export default function Landing() {
               <div className="absolute inset-0 rounded-[22%] bg-gradient-to-b from-white/30 to-transparent pointer-events-none" style={{ height: '50%' }} />
             </div>
             
-            {/* AI Badge */}
-            <div className="inline-flex items-center gap-2 bg-secondary/10 backdrop-blur-sm px-4 py-2 rounded-full border border-secondary/20 mb-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-              <Sparkles className="w-4 h-4 text-secondary animate-pulse" />
-              <span className="text-sm font-medium text-foreground">مدعوم بالذكاء الاصطناعي</span>
-            </div>
-            
-            {/* Title */}
-            <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6 leading-tight animate-fade-in" style={{ animationDelay: '0.2s' }}>
-              <span className="block">منصة المعلم</span>
-              <span className="bg-gradient-to-l from-primary to-secondary bg-clip-text text-transparent">الذكي</span>
-            </h1>
-            
-            <p className="text-lg md:text-2xl text-muted-foreground mb-8 leading-relaxed max-w-xl mx-auto animate-fade-in" style={{ animationDelay: '0.3s' }}>
+            <p className="text-lg md:text-2xl text-muted-foreground mb-8 leading-relaxed max-w-xl mx-auto animate-fade-in" style={{ animationDelay: '0.1s' }}>
               إدارة الصفوف، الحضور، والدرجات بسهولة وذكاء
             </p>
 
