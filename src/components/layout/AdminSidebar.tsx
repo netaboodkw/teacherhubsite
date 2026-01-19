@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import {
@@ -63,12 +63,22 @@ const navItems = [
   { href: '/admin/ai-content', icon: Wand2, label: 'إنشاء محتوى AI' },
 ];
 
+const SIDEBAR_COLLAPSED_KEY = 'admin-sidebar-collapsed';
+
 export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+    return saved === 'true';
+  });
   const { signOut } = useAuth();
   const { logoUrl } = useSiteLogo();
+
+  // Persist collapsed state
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed.toString());
+  }, [collapsed]);
 
   const handleLogout = async () => {
     const { error } = await signOut();

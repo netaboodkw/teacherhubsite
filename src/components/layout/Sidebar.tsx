@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import {
@@ -34,11 +34,21 @@ const baseNavItems = [
 
 const adminNavItem = { href: '/admin', icon: Shield, label: 'لوحة الإدارة' };
 
+const SIDEBAR_COLLAPSED_KEY = 'main-sidebar-collapsed';
+
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+    return saved === 'true';
+  });
   const { isAdmin } = useIsAdmin();
   const { logoUrl } = useSiteLogo();
+
+  // Persist collapsed state
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed.toString());
+  }, [collapsed]);
 
   const navItems = isAdmin ? [...baseNavItems, adminNavItem] : baseNavItems;
 
