@@ -240,13 +240,15 @@ export default function Landing() {
         <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-4 md:p-6 transition-all duration-300" style={{ background: scrollY > 300 ? 'hsl(var(--background)/0.95)' : 'transparent', backdropFilter: scrollY > 300 ? 'blur(10px)' : 'none', borderBottom: scrollY > 300 ? '1px solid hsl(var(--border)/0.5)' : 'none' }}>
           <div className={`flex items-center gap-3 transition-all duration-500 ${scrollY > 300 ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none'}`}>
             {/* iOS App Icon Style Logo - Only visible when scrolled */}
-            <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center">
-              <img 
-                src={displayLogo} 
-                alt="Teacher Hub" 
-                className="w-full h-full object-contain"
-                onError={(e) => { e.currentTarget.src = defaultLogo; }}
-              />
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-[22%] bg-gradient-to-br from-sky-50 to-violet-50 dark:from-sky-900/30 dark:to-violet-900/30 p-0.5 shadow-[0_2px_8px_rgba(0,0,0,0.1)] border border-white/30 dark:border-white/10 overflow-hidden">
+              <div className="w-full h-full rounded-[18%] overflow-hidden">
+                <img 
+                  src={displayLogo} 
+                  alt="Teacher Hub" 
+                  className="w-full h-full object-contain"
+                  onError={(e) => { e.currentTarget.src = defaultLogo; }}
+                />
+              </div>
             </div>
             <span className="text-lg md:text-xl font-bold text-foreground hidden sm:block">Teacher Hub</span>
           </div>
@@ -264,14 +266,18 @@ export default function Landing() {
           <div className="text-center max-w-3xl mx-auto">
             {/* Logo - iOS App Icon Style - Centered */}
             <div className="relative inline-block mb-8 animate-logo-float">
-              <div className="w-36 h-36 md:w-48 md:h-48 flex items-center justify-center hover:scale-105 transition-transform duration-300">
-                <img 
-                  src={displayLogo} 
-                  alt="Teacher Hub" 
-                  className="w-full h-full object-contain drop-shadow-2xl"
-                  onError={(e) => { e.currentTarget.src = defaultLogo; }}
-                />
+              <div className="w-36 h-36 md:w-48 md:h-48 rounded-[22%] bg-gradient-to-br from-sky-50 to-violet-50 dark:from-sky-900/30 dark:to-violet-900/30 p-0.5 shadow-[0_8px_30px_rgba(0,0,0,0.15),0_4px_10px_rgba(0,0,0,0.08)] border border-white/40 dark:border-white/10 overflow-hidden hover:scale-105 transition-transform duration-300">
+                <div className="w-full h-full rounded-[20%] overflow-hidden flex items-center justify-center">
+                  <img 
+                    src={displayLogo} 
+                    alt="Teacher Hub" 
+                    className="w-full h-full object-contain"
+                    onError={(e) => { e.currentTarget.src = defaultLogo; }}
+                  />
+                </div>
               </div>
+              {/* iOS-style reflection/shine */}
+              <div className="absolute top-0 left-0 right-0 h-1/2 rounded-t-[22%] bg-gradient-to-b from-white/25 to-transparent pointer-events-none" />
             </div>
             
             <p className="text-lg md:text-2xl text-muted-foreground mb-8 leading-relaxed max-w-xl mx-auto animate-fade-in" style={{ animationDelay: '0.1s' }}>
