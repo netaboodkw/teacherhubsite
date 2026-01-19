@@ -68,23 +68,28 @@ export default function Welcome() {
 
   // Check if there's a recently logged-out user
   useEffect(() => {
-    const storedUser = localStorage.getItem(LAST_USER_KEY);
-    if (storedUser) {
-      try {
-        const userData = JSON.parse(storedUser) as LastUserInfo;
-        // Check if the logout was within the last 24 hours
-        const oneDayMs = 24 * 60 * 60 * 1000;
-        if (Date.now() - userData.timestamp < oneDayMs) {
-          setLastUser(userData);
-          setShowWelcomeBack(true);
-        } else {
-          // Clear old data
+    // Small delay to ensure localStorage is updated after logout
+    const timeoutId = setTimeout(() => {
+      const storedUser = localStorage.getItem(LAST_USER_KEY);
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser) as LastUserInfo;
+          // Check if the logout was within the last 24 hours
+          const oneDayMs = 24 * 60 * 60 * 1000;
+          if (Date.now() - userData.timestamp < oneDayMs && userData.name) {
+            setLastUser(userData);
+            setShowWelcomeBack(true);
+          } else {
+            // Clear old data
+            localStorage.removeItem(LAST_USER_KEY);
+          }
+        } catch {
           localStorage.removeItem(LAST_USER_KEY);
         }
-      } catch {
-        localStorage.removeItem(LAST_USER_KEY);
       }
-    }
+    }, 100);
+    
+    return () => clearTimeout(timeoutId);
   }, []);
 
   const handleReLogin = () => {
