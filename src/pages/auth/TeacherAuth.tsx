@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useEducationLevels } from '@/hooks/useEducationLevels';
@@ -6,6 +6,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
 import { useSiteLogo } from '@/hooks/useSiteLogo';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useBiometricAuth } from '@/hooks/useBiometricAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +19,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import { Loader2, ArrowLeft, ChevronRight, Mail, Lock, User, Building2, BookOpen, GraduationCap, Eye, EyeOff, Phone, LogOut, AlertTriangle, FileText, Sparkles, Users } from 'lucide-react';
+import { Loader2, ArrowLeft, ChevronRight, Mail, Lock, User, Building2, BookOpen, GraduationCap, Eye, EyeOff, Phone, LogOut, AlertTriangle, FileText, Sparkles, Users, Fingerprint } from 'lucide-react';
 import heroBg from '@/assets/hero-bg.jpg';
 import defaultLogo from '@/assets/logo.png';
 
@@ -32,6 +33,17 @@ export default function TeacherAuth() {
   const { logoUrl, isCustomLogo } = useSiteLogo();
   const displayLogo = isCustomLogo ? logoUrl : defaultLogo;
   const isMobile = useIsMobile();
+  const { 
+    isAvailable: biometricAvailable, 
+    isEnabled: biometricEnabled, 
+    biometricLogin, 
+    saveCredentials,
+    getBiometryDisplayName,
+    isNative 
+  } = useBiometricAuth();
+  
+  const [biometricLoading, setBiometricLoading] = useState(false);
+  const [showBiometricSetup, setShowBiometricSetup] = useState(false);
   
   // Get initial tab from URL params (default to register)
   const initialTab = searchParams.get('tab') === 'login' ? 'login' : 'register';
@@ -106,6 +118,11 @@ export default function TeacherAuth() {
       }
       
       if (data?.session) {
+        // Check if biometric is available and ask to save credentials
+        if (biometricAvailable && !biometricEnabled && isNative) {
+          setShowBiometricSetup(true);
+        }
+        
         toast.success('تم تسجيل الدخول بنجاح');
         if (navigator.vibrate) navigator.vibrate(15);
         setTimeout(() => {
@@ -118,6 +135,55 @@ export default function TeacherAuth() {
       setLoginLoading(false);
     }
   };
+
+  // Handle biometric login
+  const handleBiometricLogin = async () => {
+    setBiometricLoading(true);
+    
+    try {
+      const credentials = await biometricLogin();
+      
+      if (!credentials) {
+        toast.error('فشل التحقق من الهوية');
+        setBiometricLoading(false);
+        return;
+      }
+      
+      const { error, data } = await signIn(credentials.username, credentials.password);
+      
+      if (error) {
+        toast.error('فشل تسجيل الدخول، يرجى تسجيل الدخول يدوياً');
+        setBiometricLoading(false);
+        return;
+      }
+      
+      if (data?.session) {
+        toast.success('تم تسجيل الدخول بنجاح');
+        if (navigator.vibrate) navigator.vibrate(15);
+        navigate('/teacher', { replace: true });
+      }
+    } catch (error) {
+      toast.error('حدث خطأ أثناء تسجيل الدخول');
+    } finally {
+      setBiometricLoading(false);
+    }
+  };
+
+  // Save credentials for biometric login
+  const handleSaveBiometric = async () => {
+    const saved = await saveCredentials(loginEmail.trim(), loginPassword);
+    if (saved) {
+      toast.success(`تم تفعيل ${getBiometryDisplayName()} بنجاح`);
+    }
+    setShowBiometricSetup(false);
+  };
+
+  // Auto-trigger biometric login on mount if enabled
+  useEffect(() => {
+    if (biometricEnabled && biometricAvailable && isNative && !user) {
+      handleBiometricLogin();
+    }
+  }, [biometricEnabled, biometricAvailable, isNative]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -384,6 +450,54 @@ export default function TeacherAuth() {
                       </>
                     )}
                   </button>
+                  
+                  {/* Biometric Login Button */}
+                  {biometricEnabled && biometricAvailable && isNative && (
+                    <button
+                      type="button"
+                      onClick={handleBiometricLogin}
+                      disabled={biometricLoading}
+                      className="w-full h-[52px] text-base font-bold rounded-xl border-2 border-primary/30 bg-primary/10 text-primary active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-3 touch-manipulation disabled:opacity-50"
+                    >
+                      {biometricLoading ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <>
+                          <Fingerprint className="h-6 w-6" />
+                          الدخول بـ {getBiometryDisplayName()}
+                        </>
+                      )}
+                    </button>
+                  )}
+                  
+                  {/* Biometric Setup Dialog */}
+                  {showBiometricSetup && (
+                    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+                      <div className="bg-background rounded-2xl p-6 max-w-sm w-full space-y-4">
+                        <div className="text-center">
+                          <Fingerprint className="h-16 w-16 mx-auto text-primary mb-4" />
+                          <h3 className="text-lg font-bold mb-2">تفعيل {getBiometryDisplayName()}</h3>
+                          <p className="text-muted-foreground text-sm">
+                            هل تريد استخدام {getBiometryDisplayName()} لتسجيل الدخول السريع في المرات القادمة؟
+                          </p>
+                        </div>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => setShowBiometricSetup(false)}
+                            className="flex-1 py-3 rounded-xl border border-border text-muted-foreground font-medium"
+                          >
+                            ليس الآن
+                          </button>
+                          <button
+                            onClick={handleSaveBiometric}
+                            className={`flex-1 py-3 rounded-xl bg-gradient-to-r ${gradientColor} text-white font-bold`}
+                          >
+                            تفعيل
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </form>
               ) : (
                 /* Register Form */
