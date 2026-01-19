@@ -961,11 +961,14 @@ export default function UsersManagementPage() {
                   </Label>
                   <Input
                     value={editForm.email}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="example@email.com"
+                    disabled
+                    className="bg-muted"
                     type="email"
                     dir="ltr"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    لا يمكن تغيير البريد الإلكتروني (مرتبط بحساب المستخدم)
+                  </p>
                 </div>
 
                 <div className="space-y-2">
