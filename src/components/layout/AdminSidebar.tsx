@@ -7,8 +7,8 @@ import {
   BookOpen,
   Users,
   Settings,
-  ChevronLeft,
-  ChevronRight,
+  PanelRightClose,
+  PanelRightOpen,
   Layers,
   FileText,
   LayoutDashboard,
@@ -126,24 +126,26 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
             )}
           </div>
 
-          {/* Collapse Button */}
-          <div className="hidden lg:flex justify-center py-2 border-b border-border">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setCollapsed(!collapsed)}
-              className="w-full mx-2"
-            >
-              {collapsed ? (
-                <ChevronLeft className="h-4 w-4" />
-              ) : (
-                <>
-                  <ChevronRight className="h-4 w-4 ml-2" />
-                  <span>تصغير</span>
-                </>
-              )}
-            </Button>
-          </div>
+          {/* Collapse Toggle Button */}
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setCollapsed(!collapsed)}
+                className="hidden lg:flex absolute -left-3 top-20 h-6 w-6 rounded-full border bg-background shadow-md hover:bg-muted"
+              >
+                {collapsed ? (
+                  <PanelRightOpen className="h-3.5 w-3.5" />
+                ) : (
+                  <PanelRightClose className="h-3.5 w-3.5" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">
+              <p>{collapsed ? 'توسيع القائمة' : 'تصغير القائمة'}</p>
+            </TooltipContent>
+          </Tooltip>
 
           {/* Navigation */}
           <nav className="flex-1 p-2 space-y-1">
