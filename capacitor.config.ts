@@ -7,8 +7,6 @@ const config: CapacitorConfig = {
   ios: {
     // Apple Developer Team ID
     teamId: 'Z27XGT5N8K',
-  },
-  ios: {
     contentInset: 'automatic',
     backgroundColor: '#0f172a',
     allowsLinkPreview: false,
@@ -40,11 +38,14 @@ const config: CapacitorConfig = {
       showSpinner: false,
       splashFullScreen: true,
       splashImmersive: true
+    },
+    Browser: {
+      // Enable in-app browser for payment
     }
   },
   // Server configuration for deep linking
   server: {
-    allowNavigation: ['teacherhub.site', '*.teacherhub.site', '*.myfatoorah.com', 'myfatoorah.com']
+    allowNavigation: ['teacherhub.site', '*.teacherhub.site', '*.myfatoorah.com', 'myfatoorah.com', 'demo.myfatoorah.com']
   }
 };
 
