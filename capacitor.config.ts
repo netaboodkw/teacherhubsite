@@ -5,6 +5,10 @@ const config: CapacitorConfig = {
   appName: 'Teacher Hub',
   webDir: 'dist',
   ios: {
+    // Apple Developer Team ID
+    teamId: 'Z27XGT5N8K',
+  },
+  ios: {
     contentInset: 'automatic',
     backgroundColor: '#0f172a',
     allowsLinkPreview: false,
