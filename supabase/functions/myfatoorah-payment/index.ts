@@ -17,22 +17,34 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("Missing authorization header");
+    // Parse request body first to check action
+    const body = await req.json();
+    const { action, ...params } = body;
+
+    // Actions that don't require authentication
+    const publicActions = ["verify-payment", "process-callback"];
+    
+    let user = null;
+    
+    // Only require auth for non-public actions
+    if (!publicActions.includes(action)) {
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader) {
+        throw new Error("Missing authorization header");
+      }
+
+      const { data: { user: authUser }, error: userError } = await createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+        { global: { headers: { Authorization: authHeader } } }
+      ).auth.getUser();
+
+      if (userError || !authUser) {
+        throw new Error("Unauthorized");
+      }
+      
+      user = authUser;
     }
-
-    const { data: { user }, error: userError } = await createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } }
-    ).auth.getUser();
-
-    if (userError || !user) {
-      throw new Error("Unauthorized");
-    }
-
-    const { action, ...params } = await req.json();
 
     // Try to get API key from system_settings first, then fall back to environment variable
     let myfatoorahApiKey = Deno.env.get("MYFATOORAH_API_KEY") || "";
@@ -76,7 +88,8 @@ serve(async (req) => {
       hasApiKey: !!myfatoorahApiKey,
       apiKeyLength: myfatoorahApiKey?.length || 0,
       testMode: myfatoorahTestMode,
-      baseUrl: MYFATOORAH_BASE_URL
+      baseUrl: MYFATOORAH_BASE_URL,
+      action: action
     });
 
     if (!myfatoorahApiKey || myfatoorahApiKey.length < 10) {
@@ -137,6 +150,8 @@ serve(async (req) => {
 
     // Execute direct payment
     if (action === "execute-payment") {
+      if (!user) throw new Error("Unauthorized");
+      
       const { packageId, discountCode, paymentMethodId, callbackUrl, errorUrl } = params;
 
       // Get package details
@@ -277,6 +292,8 @@ serve(async (req) => {
     }
 
     if (action === "initiate-payment") {
+      if (!user) throw new Error("Unauthorized");
+      
       const { packageId, discountCode, callbackUrl, errorUrl } = params;
 
       // Get package details
@@ -413,10 +430,11 @@ serve(async (req) => {
       );
     }
 
+    // VERIFY PAYMENT - Does NOT require authentication
     if (action === "verify-payment") {
       const { paymentId } = params;
 
-      console.log("Verifying payment:", paymentId);
+      console.log("Verifying payment (public):", paymentId);
 
       // Try to find payment by ID, invoice_id, or query MyFatoorah
       let payment = null;
