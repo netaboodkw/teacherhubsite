@@ -25,7 +25,8 @@ import {
   CreditCard,
   Fingerprint,
   Settings,
-  Bell
+  Bell,
+  Headphones
 } from 'lucide-react';
 
 import { GlassIcon } from '@/components/ui/glass-icon';
@@ -65,6 +66,7 @@ const moreItems = [
   { href: '/teacher/templates', icon: LayoutGrid, label: 'قوالب الدرجات', color: 'purple' as const },
   { href: '/teacher/reports', icon: BarChart3, label: 'التقارير', color: 'orange' as const },
   { href: '/teacher/subscription', icon: CreditCard, label: 'الاشتراك', color: 'success' as const },
+  { href: '/teacher/support', icon: Headphones, label: 'الدعم الفني', color: 'indigo' as const },
   { href: '/teacher/settings', icon: Settings, label: 'الإعدادات', color: 'teal' as const },
 ];
 

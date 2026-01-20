@@ -21,6 +21,7 @@ import {
   Wand2,
   Mail,
   Bell,
+  Headphones,
   LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -62,6 +63,7 @@ const navItems = [
   { href: '/admin/subscriptions', icon: CreditCard, label: 'الاشتراكات والمدفوعات' },
   { href: '/admin/emails', icon: Mail, label: 'إدارة الإيميلات' },
   { href: '/admin/notifications', icon: Bell, label: 'قوالب الإشعارات' },
+  { href: '/admin/support', icon: Headphones, label: 'الدعم الفني' },
   { href: '/admin/ai-content', icon: Wand2, label: 'إنشاء محتوى AI' },
 ];
 

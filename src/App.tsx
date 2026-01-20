@@ -38,6 +38,7 @@ import SubscribersPage from "./pages/admin/SubscribersPage";
 import AIContentCreatorPage from "./pages/admin/AIContentCreatorPage";
 import EmailManagementPage from "./pages/admin/EmailManagementPage";
 import NotificationTemplatesPage from "./pages/admin/NotificationTemplatesPage";
+import SupportManagementPage from "./pages/admin/SupportManagementPage";
 
 // Teacher Pages
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
@@ -48,7 +49,7 @@ import TeacherFingerprint from "./pages/teacher/Fingerprint";
 // NotificationSettings removed - settings moved to individual pages
 import SubscriptionSuccess from "./pages/teacher/SubscriptionSuccess";
 import SubscriptionError from "./pages/teacher/SubscriptionError";
-
+import Support from "./pages/teacher/Support";
 import Classrooms from "./pages/Classrooms";
 import NewClassroom from "./pages/NewClassroom";
 import EditClassroom from "./pages/EditClassroom";
@@ -192,6 +193,7 @@ const App = () => (
               <Route path="/admin/ai-content" element={<ProtectedRoute><AIContentCreatorPage /></ProtectedRoute>} />
               <Route path="/admin/emails" element={<ProtectedRoute><EmailManagementPage /></ProtectedRoute>} />
               <Route path="/admin/notifications" element={<ProtectedRoute><NotificationTemplatesPage /></ProtectedRoute>} />
+              <Route path="/admin/support" element={<ProtectedRoute><SupportManagementPage /></ProtectedRoute>} />
 
               {/* Teacher Routes */}
               <Route path="/teacher" element={<ProtectedRoute><TeacherDashboard /></ProtectedRoute>} />
@@ -213,6 +215,7 @@ const App = () => (
               <Route path="/teacher/payments" element={<Navigate to="/teacher/subscription" replace />} />
               <Route path="/teacher/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
               <Route path="/teacher/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/teacher/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
               <Route path="/teacher/notifications" element={<Navigate to="/teacher/settings" replace />} />
 
               {/* Department Head Routes */}
