@@ -210,8 +210,9 @@ const App = () => (
               <Route path="/teacher/grades" element={<ProtectedRoute><Grades /></ProtectedRoute>} />
               <Route path="/teacher/templates" element={<ProtectedRoute><TeacherTemplates /></ProtectedRoute>} />
               <Route path="/teacher/subscription" element={<ProtectedRoute><TeacherSubscription /></ProtectedRoute>} />
-              <Route path="/teacher/subscription/success" element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>} />
-              <Route path="/teacher/subscription/error" element={<ProtectedRoute><SubscriptionError /></ProtectedRoute>} />
+              {/* Payment success/error pages - accessible without login for redirect from payment gateway */}
+              <Route path="/teacher/subscription/success" element={<SubscriptionSuccess />} />
+              <Route path="/teacher/subscription/error" element={<SubscriptionError />} />
               <Route path="/teacher/payments" element={<Navigate to="/teacher/subscription" replace />} />
               <Route path="/teacher/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
               <Route path="/teacher/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
