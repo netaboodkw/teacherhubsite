@@ -4,7 +4,7 @@ import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { CheckCircle, Loader2, Home, AlertCircle, Receipt, Calendar, CreditCard, RefreshCw } from 'lucide-react';
+import { CheckCircle, Loader2, Home, AlertCircle, Receipt, Calendar, CreditCard, RefreshCw, Smartphone } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useWaitForPaymentCompletion } from '@/hooks/useSubscriptionRealtime';
@@ -16,6 +16,7 @@ export default function SubscriptionSuccess() {
   const [isVerifying, setIsVerifying] = useState(true);
   const [verified, setVerified] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [showAppLink, setShowAppLink] = useState(false);
   const [paymentDetails, setPaymentDetails] = useState<{
     invoiceId?: string;
     amount?: number;
@@ -26,6 +27,52 @@ export default function SubscriptionSuccess() {
 
   // MyFatoorah sends paymentId or Id parameter
   const paymentId = searchParams.get('paymentId') || searchParams.get('Id');
+
+  // Check if user came from native app (iOS/Android)
+  useEffect(() => {
+    // Detect if on mobile browser (came from app's in-app browser)
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const isInAppBrowser = /CriOS|FxiOS|EdgiOS|SamsungBrowser/i.test(navigator.userAgent) || 
+                           (navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome'));
+    
+    // Show app link if on mobile (user likely came from the app)
+    if (isMobile && !isStandalone) {
+      setShowAppLink(true);
+      
+      // Try to auto-redirect to app after a short delay
+      const redirectTimer = setTimeout(() => {
+        tryOpenApp();
+      }, 2000);
+      
+      return () => clearTimeout(redirectTimer);
+    }
+  }, [paymentId]);
+
+  // Try to open the native app using URL scheme
+  const tryOpenApp = () => {
+    const appUrl = paymentId 
+      ? `teacherhub://teacher/subscription/success?paymentId=${paymentId}`
+      : 'teacherhub://teacher/subscription/success';
+    
+    console.log('Attempting to open app with URL:', appUrl);
+    
+    // Create a hidden iframe to try opening the app
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = appUrl;
+    document.body.appendChild(iframe);
+    
+    // Also try direct location change
+    setTimeout(() => {
+      window.location.href = appUrl;
+    }, 100);
+    
+    // Clean up iframe after attempt
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+    }, 2000);
+  };
 
   // Listen for realtime subscription updates
   useWaitForPaymentCompletion(paymentId, {
@@ -145,9 +192,33 @@ export default function SubscriptionSuccess() {
     return methods[method.toUpperCase()] || method;
   };
 
+  // App redirect banner component
+  const AppRedirectBanner = () => (
+    <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-6">
+      <div className="flex items-center justify-center gap-2 text-primary mb-3">
+        <Smartphone className="h-5 w-5" />
+        <span className="font-semibold">العودة للتطبيق</span>
+      </div>
+      <p className="text-sm text-muted-foreground text-center mb-3">
+        اضغط على الزر أدناه للعودة إلى تطبيق Teacher Hub
+      </p>
+      <Button 
+        onClick={tryOpenApp} 
+        className="w-full gap-2"
+        size="lg"
+      >
+        <Smartphone className="h-4 w-4" />
+        فتح التطبيق
+      </Button>
+    </div>
+  );
+
   return (
     <TeacherLayout>
       <div className="max-w-md mx-auto mt-10 sm:mt-20 px-4">
+        {/* Show app redirect banner if on mobile */}
+        {showAppLink && <AppRedirectBanner />}
+        
         <Card className="text-center overflow-hidden">
           <CardContent className="py-10 sm:py-12 space-y-6">
             {isVerifying ? (
@@ -221,10 +292,17 @@ export default function SubscriptionSuccess() {
                   </div>
                 )}
                 
-                <Button onClick={() => navigate('/teacher')} className="gap-2 w-full sm:w-auto" size="lg">
-                  <Home className="h-4 w-4" />
-                  العودة للرئيسية
-                </Button>
+                {showAppLink ? (
+                  <Button onClick={tryOpenApp} className="gap-2 w-full" size="lg">
+                    <Smartphone className="h-4 w-4" />
+                    العودة للتطبيق
+                  </Button>
+                ) : (
+                  <Button onClick={() => navigate('/teacher')} className="gap-2 w-full sm:w-auto" size="lg">
+                    <Home className="h-4 w-4" />
+                    العودة للرئيسية
+                  </Button>
+                )}
               </>
             ) : paymentId ? (
               <>
@@ -262,10 +340,17 @@ export default function SubscriptionSuccess() {
                     <RefreshCw className={`h-4 w-4 ${isVerifying ? 'animate-spin' : ''}`} />
                     إعادة التحقق
                   </Button>
-                  <Button onClick={() => navigate('/teacher')} className="gap-2">
-                    <Home className="h-4 w-4" />
-                    العودة للرئيسية
-                  </Button>
+                  {showAppLink ? (
+                    <Button onClick={tryOpenApp} className="gap-2">
+                      <Smartphone className="h-4 w-4" />
+                      العودة للتطبيق
+                    </Button>
+                  ) : (
+                    <Button onClick={() => navigate('/teacher')} className="gap-2">
+                      <Home className="h-4 w-4" />
+                      العودة للرئيسية
+                    </Button>
+                  )}
                 </div>
               </>
             ) : (
@@ -279,10 +364,17 @@ export default function SubscriptionSuccess() {
                     يرجى التواصل مع الدعم الفني إذا تم خصم المبلغ من حسابك.
                   </p>
                 </div>
-                <Button onClick={() => navigate('/teacher')} className="gap-2 w-full sm:w-auto" size="lg">
-                  <Home className="h-4 w-4" />
-                  العودة للرئيسية
-                </Button>
+                {showAppLink ? (
+                  <Button onClick={tryOpenApp} className="gap-2 w-full" size="lg">
+                    <Smartphone className="h-4 w-4" />
+                    العودة للتطبيق
+                  </Button>
+                ) : (
+                  <Button onClick={() => navigate('/teacher')} className="gap-2 w-full sm:w-auto" size="lg">
+                    <Home className="h-4 w-4" />
+                    العودة للرئيسية
+                  </Button>
+                )}
               </>
             )}
           </CardContent>
