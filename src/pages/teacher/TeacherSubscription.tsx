@@ -752,7 +752,11 @@ export default function TeacherSubscription() {
                       />
                     </div>
                     <div className="flex items-center px-3 py-2 bg-background rounded-lg border">
-                      <span className="text-sm font-bold" style={{ background: 'linear-gradient(90deg, #1a4d8c 0%, #2eb369 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>KNET</span>
+                      <img 
+                        src="/assets/knet-logo.png" 
+                        alt="K-Net" 
+                        className="h-6 object-contain"
+                      />
                     </div>
                   </div>
 
