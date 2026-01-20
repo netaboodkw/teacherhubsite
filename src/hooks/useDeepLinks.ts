@@ -5,7 +5,8 @@ import { App } from '@capacitor/app';
 
 /**
  * Hook to handle deep links for iOS/Android native apps
- * Listens for appUrlOpen events and navigates to the appropriate route
+ * Supports both Universal Links (https://teacherhub.site/...) 
+ * and Custom URL Schemes (teacherhub://...)
  */
 export function useDeepLinks() {
   const navigate = useNavigate();
@@ -19,23 +20,43 @@ export function useDeepLinks() {
       console.log('Deep link received:', event.url);
       
       try {
-        const url = new URL(event.url);
-        const path = url.pathname;
-        const searchParams = url.search;
+        let path = '';
+        let searchParams = '';
+        
+        // Handle custom URL scheme (teacherhub://path)
+        if (event.url.startsWith('teacherhub://')) {
+          const urlWithoutScheme = event.url.replace('teacherhub://', '');
+          const [pathPart, queryPart] = urlWithoutScheme.split('?');
+          path = '/' + pathPart;
+          searchParams = queryPart ? '?' + queryPart : '';
+          console.log('Custom URL scheme detected:', path, searchParams);
+        } 
+        // Handle Universal Links (https://teacherhub.site/path)
+        else {
+          const url = new URL(event.url);
+          path = url.pathname;
+          searchParams = url.search;
+          console.log('Universal Link detected:', path, searchParams);
+        }
         
         // Handle payment callbacks
         if (path.includes('/teacher/subscription/success') || 
-            path.includes('/subscription/success')) {
-          const paymentId = url.searchParams.get('paymentId') || url.searchParams.get('Id');
+            path.includes('/subscription/success') ||
+            path.includes('subscription/success')) {
+          const params = new URLSearchParams(searchParams.replace('?', ''));
+          const paymentId = params.get('paymentId') || params.get('Id');
+          console.log('Payment success callback, paymentId:', paymentId);
           navigate(`/teacher/subscription/success${paymentId ? `?paymentId=${paymentId}` : searchParams}`);
         } else if (path.includes('/teacher/subscription/error') ||
-                   path.includes('/subscription/error')) {
+                   path.includes('/subscription/error') ||
+                   path.includes('subscription/error')) {
+          console.log('Payment error callback');
           navigate(`/teacher/subscription/error${searchParams}`);
-        } else if (path.includes('/teacher')) {
+        } else if (path.includes('/teacher') || path.startsWith('/teacher')) {
           navigate(path + searchParams);
-        } else if (path.includes('/auth')) {
+        } else if (path.includes('/auth') || path.startsWith('/auth')) {
           navigate(path + searchParams);
-        } else {
+        } else if (path && path !== '/') {
           // Default: navigate to the path
           navigate(path + searchParams);
         }
@@ -43,9 +64,16 @@ export function useDeepLinks() {
         console.error('Error parsing deep link:', error);
         
         // Fallback: try to extract path from URL string
-        const match = event.url.match(/teacherhub\.site(.+)/);
-        if (match) {
-          navigate(match[1]);
+        const universalMatch = event.url.match(/teacherhub\.site(.+)/);
+        if (universalMatch) {
+          navigate(universalMatch[1]);
+          return;
+        }
+        
+        // Fallback for custom scheme
+        const schemeMatch = event.url.match(/teacherhub:\/\/(.+)/);
+        if (schemeMatch) {
+          navigate('/' + schemeMatch[1]);
         }
       }
     };
@@ -56,6 +84,7 @@ export function useDeepLinks() {
     // Also check if app was opened with a URL (cold start)
     App.getLaunchUrl().then((result) => {
       if (result?.url) {
+        console.log('App launched with URL:', result.url);
         handleAppUrlOpen({ url: result.url });
       }
     });

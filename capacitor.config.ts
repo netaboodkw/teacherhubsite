@@ -11,7 +11,9 @@ const config: CapacitorConfig = {
     backgroundColor: '#0f172a',
     allowsLinkPreview: false,
     scrollEnabled: true,
-    preferredContentMode: 'mobile'
+    preferredContentMode: 'mobile',
+    // URL Scheme for deep linking
+    scheme: 'teacherhub'
   },
   android: {
     backgroundColor: '#0f172a'
