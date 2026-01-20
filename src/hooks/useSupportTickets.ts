@@ -26,6 +26,7 @@ export interface SupportMessage {
   message: string;
   is_read: boolean;
   created_at: string;
+  attachment_url?: string | null;
 }
 
 // Hook for fetching user's support tickets
@@ -272,11 +273,13 @@ export function useSendMessage() {
     mutationFn: async ({ 
       ticketId, 
       message, 
-      senderType 
+      senderType,
+      attachmentUrl 
     }: { 
       ticketId: string; 
       message: string; 
       senderType: 'user' | 'admin';
+      attachmentUrl?: string;
     }) => {
       if (!user?.id) throw new Error('Not authenticated');
 
@@ -287,6 +290,7 @@ export function useSendMessage() {
           sender_id: user.id,
           sender_type: senderType,
           message,
+          attachment_url: attachmentUrl || null,
         })
         .select()
         .single();
@@ -305,6 +309,35 @@ export function useSendMessage() {
       queryClient.invalidateQueries({ queryKey: ['ticket-messages', variables.ticketId] });
       queryClient.invalidateQueries({ queryKey: ['my-support-tickets'] });
       queryClient.invalidateQueries({ queryKey: ['all-support-tickets'] });
+    },
+  });
+}
+
+// Hook for uploading attachment
+export function useUploadAttachment() {
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (file: File) => {
+      if (!user?.id) throw new Error('Not authenticated');
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+      const { data, error } = await supabase.storage
+        .from('support-attachments')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from('support-attachments')
+        .getPublicUrl(data.path);
+
+      return urlData.publicUrl;
     },
   });
 }
