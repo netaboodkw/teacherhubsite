@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -63,6 +64,7 @@ interface Payment {
 }
 
 export default function TeacherSubscription() {
+  const navigate = useNavigate();
   const { data: packages, isLoading: packagesLoading } = useSubscriptionPackages();
   const { data: subscription, isLoading: subscriptionLoading } = useMySubscription();
   const { data: settings } = useSubscriptionSettings();
@@ -169,7 +171,7 @@ export default function TeacherSubscription() {
     setIsProcessing(true);
     
     try {
-      // Use production domain for payment callbacks - this domain has Universal Links configured
+      // Use production domain for payment callbacks
       const baseUrl = 'https://teacherhub.site';
       
       toast.info('جاري تحويلك لصفحة الدفع الآمنة...', {
@@ -192,9 +194,55 @@ export default function TeacherSubscription() {
       if (!data.success) throw new Error(data.error || 'فشل في بدء عملية الدفع');
 
       if (data.paymentUrl) {
+        // Store the payment ID for later verification
+        const paymentId = data.paymentId;
+        
         // Check if running on native platform (iOS/Android)
         if (Capacitor.isNativePlatform()) {
           try {
+            // Listen for browser close event to check payment status
+            const browserCloseHandler = await Browser.addListener('browserFinished', async () => {
+              console.log('Browser closed, checking payment status...');
+              
+              // Wait a moment for any pending transactions
+              await new Promise(resolve => setTimeout(resolve, 1500));
+              
+              // Verify payment status
+              if (paymentId) {
+                try {
+                  const { data: verifyData } = await supabase.functions.invoke('myfatoorah-payment', {
+                    body: {
+                      action: 'verify-payment',
+                      paymentId,
+                    },
+                  });
+                  
+                  if (verifyData?.success && verifyData?.payment?.status === 'paid') {
+                    // Payment successful - navigate to success page
+                    navigate(`/teacher/subscription/success?paymentId=${paymentId}`);
+                  } else if (verifyData?.payment?.status === 'pending') {
+                    // Still pending - let user know
+                    toast.info('جاري التحقق من حالة الدفع...', {
+                      description: 'يرجى الانتظار قليلاً',
+                    });
+                    // Check again after delay
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                    const { data: recheck } = await supabase.functions.invoke('myfatoorah-payment', {
+                      body: { action: 'verify-payment', paymentId },
+                    });
+                    if (recheck?.success && recheck?.payment?.status === 'paid') {
+                      navigate(`/teacher/subscription/success?paymentId=${paymentId}`);
+                    }
+                  }
+                } catch (verifyError) {
+                  console.error('Payment verification error:', verifyError);
+                }
+              }
+              
+              setIsProcessing(false);
+              browserCloseHandler.remove();
+            });
+            
             // Use In-App Browser (Safari View Controller on iOS, Chrome Custom Tab on Android)
             await Browser.open({ 
               url: data.paymentUrl,
@@ -204,6 +252,7 @@ export default function TeacherSubscription() {
           } catch (browserError) {
             console.error('In-app browser error:', browserError);
             window.open(data.paymentUrl, '_blank');
+            setIsProcessing(false);
           }
         } else {
           // Web browser - redirect to payment page
