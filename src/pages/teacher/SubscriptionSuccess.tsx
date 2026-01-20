@@ -1,18 +1,19 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { TeacherLayout } from '@/components/layout/TeacherLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { CheckCircle, Loader2, Home, AlertCircle, Receipt, Calendar, CreditCard, RefreshCw, Smartphone } from 'lucide-react';
+import { CheckCircle, Loader2, Home, AlertCircle, Receipt, Calendar, CreditCard, RefreshCw, Smartphone, LogIn } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useWaitForPaymentCompletion } from '@/hooks/useSubscriptionRealtime';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function SubscriptionSuccess() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [isVerifying, setIsVerifying] = useState(true);
   const [verified, setVerified] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
@@ -33,8 +34,6 @@ export default function SubscriptionSuccess() {
     // Detect if on mobile browser (came from app's in-app browser)
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    const isInAppBrowser = /CriOS|FxiOS|EdgiOS|SamsungBrowser/i.test(navigator.userAgent) || 
-                           (navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome'));
     
     // Show app link if on mobile (user likely came from the app)
     if (isMobile && !isStandalone) {
@@ -213,13 +212,34 @@ export default function SubscriptionSuccess() {
     </div>
   );
 
+  // Determine if user is logged in
+  const isLoggedIn = !!user;
+
+  // Handle navigation based on login status
+  const handleNavigate = () => {
+    if (isLoggedIn) {
+      navigate('/teacher');
+    } else {
+      navigate('/auth/teacher?tab=login');
+    }
+  };
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
-    <TeacherLayout>
-      <div className="max-w-md mx-auto mt-10 sm:mt-20 px-4">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30" dir="rtl">
+      <div className="max-w-md mx-auto pt-10 sm:pt-20 px-4 pb-10">
         {/* Show app redirect banner if on mobile */}
         {showAppLink && <AppRedirectBanner />}
         
-        <Card className="text-center overflow-hidden">
+        <Card className="text-center overflow-hidden shadow-lg">
           <CardContent className="py-10 sm:py-12 space-y-6">
             {isVerifying ? (
               <>
@@ -233,7 +253,7 @@ export default function SubscriptionSuccess() {
                   <CheckCircle className="h-14 w-14 text-emerald-600" />
                 </div>
                 <div className="space-y-2">
-                  <h2 className="text-2xl font-bold text-emerald-600">تم الاشتراك بنجاح! 🎉</h2>
+                  <h2 className="text-2xl font-bold text-emerald-600">تم الدفع بنجاح! 🎉</h2>
                   <p className="text-muted-foreground">
                     شكراً لك! تم تفعيل اشتراكك بنجاح ويمكنك الآن الاستمتاع بجميع مميزات النظام.
                   </p>
@@ -291,17 +311,28 @@ export default function SubscriptionSuccess() {
                     </p>
                   </div>
                 )}
-                
+
+                {/* Action buttons based on context */}
                 {showAppLink ? (
                   <Button onClick={tryOpenApp} className="gap-2 w-full" size="lg">
                     <Smartphone className="h-4 w-4" />
                     العودة للتطبيق
                   </Button>
-                ) : (
+                ) : isLoggedIn ? (
                   <Button onClick={() => navigate('/teacher')} className="gap-2 w-full sm:w-auto" size="lg">
                     <Home className="h-4 w-4" />
                     العودة للرئيسية
                   </Button>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      يمكنك الآن تسجيل الدخول للوصول إلى حسابك
+                    </p>
+                    <Button onClick={() => navigate('/auth/teacher?tab=login')} className="gap-2 w-full" size="lg">
+                      <LogIn className="h-4 w-4" />
+                      تسجيل الدخول
+                    </Button>
+                  </div>
                 )}
               </>
             ) : paymentId ? (
@@ -346,9 +377,9 @@ export default function SubscriptionSuccess() {
                       العودة للتطبيق
                     </Button>
                   ) : (
-                    <Button onClick={() => navigate('/teacher')} className="gap-2">
-                      <Home className="h-4 w-4" />
-                      العودة للرئيسية
+                    <Button onClick={handleNavigate} className="gap-2">
+                      {isLoggedIn ? <Home className="h-4 w-4" /> : <LogIn className="h-4 w-4" />}
+                      {isLoggedIn ? 'العودة للرئيسية' : 'تسجيل الدخول'}
                     </Button>
                   )}
                 </div>
@@ -370,16 +401,21 @@ export default function SubscriptionSuccess() {
                     العودة للتطبيق
                   </Button>
                 ) : (
-                  <Button onClick={() => navigate('/teacher')} className="gap-2 w-full sm:w-auto" size="lg">
-                    <Home className="h-4 w-4" />
-                    العودة للرئيسية
+                  <Button onClick={handleNavigate} className="gap-2 w-full sm:w-auto" size="lg">
+                    {isLoggedIn ? <Home className="h-4 w-4" /> : <LogIn className="h-4 w-4" />}
+                    {isLoggedIn ? 'العودة للرئيسية' : 'تسجيل الدخول'}
                   </Button>
                 )}
               </>
             )}
           </CardContent>
         </Card>
+
+        {/* Branding */}
+        <div className="mt-8 text-center">
+          <p className="text-sm text-muted-foreground">Teacher Hub</p>
+        </div>
       </div>
-    </TeacherLayout>
+    </div>
   );
 }
