@@ -20,10 +20,12 @@ import {
   AlertCircle,
   Loader2,
   ArrowRight,
-  Headphones
+  Headphones,
+  Image,
+  X
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useMyTickets, useTicketMessages, useCreateTicket, useSendMessage, useMarkMessagesAsRead, SupportTicket } from '@/hooks/useSupportTickets';
+import { useMyTickets, useTicketMessages, useCreateTicket, useSendMessage, useMarkMessagesAsRead, useUploadAttachment, SupportTicket } from '@/hooks/useSupportTickets';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -36,13 +38,18 @@ export default function Support() {
   const [newSubject, setNewSubject] = useState('');
   const [newMessage, setNewMessage] = useState('');
   const [replyMessage, setReplyMessage] = useState('');
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: tickets, isLoading: ticketsLoading } = useMyTickets();
   const { data: messages, isLoading: messagesLoading } = useTicketMessages(selectedTicket?.id || null);
   const createTicket = useCreateTicket();
   const sendMessage = useSendMessage();
   const markAsRead = useMarkMessagesAsRead();
+  const uploadAttachment = useUploadAttachment();
 
   // Component aliases based on theme
   const ContentCard = isLiquidGlass ? GlassCard : Card;
@@ -85,18 +92,53 @@ export default function Support() {
     }
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast.error('يرجى اختيار صورة فقط');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('حجم الصورة يجب أن يكون أقل من 5 ميجابايت');
+        return;
+      }
+      setSelectedImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const clearSelectedImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSendReply = async () => {
-    if (!replyMessage.trim() || !selectedTicket) return;
+    if ((!replyMessage.trim() && !selectedImage) || !selectedTicket) return;
 
     try {
+      setIsUploading(true);
+      let attachmentUrl: string | undefined;
+
+      if (selectedImage) {
+        attachmentUrl = await uploadAttachment.mutateAsync(selectedImage);
+      }
+
       await sendMessage.mutateAsync({
         ticketId: selectedTicket.id,
-        message: replyMessage,
+        message: replyMessage || (selectedImage ? '📷 صورة مرفقة' : ''),
         senderType: 'user',
+        attachmentUrl,
       });
       setReplyMessage('');
+      clearSelectedImage();
     } catch (error) {
       toast.error('فشل في إرسال الرسالة');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -232,7 +274,23 @@ export default function Support() {
                             : 'bg-muted rounded-bl-md'
                         )}
                       >
-                        <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                        {msg.attachment_url && (
+                          <a
+                            href={msg.attachment_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block mb-2"
+                          >
+                            <img
+                              src={msg.attachment_url}
+                              alt="مرفق"
+                              className="max-w-full rounded-lg max-h-48 object-cover"
+                            />
+                          </a>
+                        )}
+                        {msg.message && msg.message !== '📷 صورة مرفقة' && (
+                          <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                        )}
                         <p className={cn(
                           "text-[10px] mt-1",
                           msg.sender_type === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
@@ -249,8 +307,44 @@ export default function Support() {
 
             {/* Reply Input */}
             {selectedTicket.status !== 'closed' && (
-              <div className="p-4 border-t border-border/50">
+              <div className="p-4 border-t border-border/50 space-y-3">
+                {/* Image Preview */}
+                {imagePreview && (
+                  <div className="relative inline-block">
+                    <img
+                      src={imagePreview}
+                      alt="معاينة"
+                      className="h-20 w-20 object-cover rounded-lg"
+                    />
+                    <button
+                      onClick={clearSelectedImage}
+                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+                
                 <div className="flex gap-2">
+                  {/* Hidden file input */}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleImageSelect}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  
+                  {/* Image button */}
+                  <ActionButton
+                    size="icon"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                  >
+                    <Image className="h-4 w-4" />
+                  </ActionButton>
+                  
                   <TextInput
                     placeholder="اكتب رسالتك..."
                     value={replyMessage}
@@ -266,9 +360,9 @@ export default function Support() {
                   <ActionButton
                     size="icon"
                     onClick={handleSendReply}
-                    disabled={!replyMessage.trim() || sendMessage.isPending}
+                    disabled={(!replyMessage.trim() && !selectedImage) || isUploading}
                   >
-                    {sendMessage.isPending ? (
+                    {isUploading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <Send className="h-4 w-4" />
