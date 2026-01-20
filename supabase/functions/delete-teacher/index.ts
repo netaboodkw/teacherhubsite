@@ -224,7 +224,21 @@ Deno.serve(async (req) => {
       .eq('user_id', teacherUserId);
     if (rolesError) console.log('Error deleting user_roles:', rolesError.message);
 
-    // 21. Finally, delete the auth user
+    // 21. Invalidate ALL user sessions immediately
+    console.log('Invalidating all sessions for user:', teacherUserId);
+    try {
+      // Sign out user from all sessions globally
+      const { error: signOutError } = await supabaseAdmin.auth.admin.signOut(teacherUserId, 'global');
+      if (signOutError) {
+        console.log('Error signing out user (continuing with deletion):', signOutError.message);
+      } else {
+        console.log('Successfully invalidated all sessions for user:', teacherUserId);
+      }
+    } catch (signOutErr) {
+      console.log('SignOut error (continuing with deletion):', signOutErr);
+    }
+
+    // 22. Finally, delete the auth user
     console.log('Deleting auth user:', teacherUserId);
     const { error: deleteUserError } = await supabaseAdmin.auth.admin.deleteUser(teacherUserId);
     if (deleteUserError) {
