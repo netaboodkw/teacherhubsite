@@ -1,0 +1,20 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "Z27XGT5N8K.com.abdullah.teacherhub",
+        "paths": [
+          "/teacher/subscription/success*",
+          "/teacher/subscription/error*",
+          "/payment-callback*"
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "Z27XGT5N8K.com.abdullah.teacherhub"
+    ]
+  }
+}
