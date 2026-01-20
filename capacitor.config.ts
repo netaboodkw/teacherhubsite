@@ -38,11 +38,9 @@ const config: CapacitorConfig = {
       splashImmersive: true
     }
   },
-  // Server configuration for development (live reload)
+  // Server configuration for deep linking
   server: {
-    url: 'https://3ad4a6f4-c67b-4b81-8b6b-7aa91d42cda7.lovableproject.com?forceHideBadge=true',
-    cleartext: true,
-    allowNavigation: ['teacherhub.site', '*.teacherhub.site', '*.myfatoorah.com', 'myfatoorah.com', '*.lovableproject.com']
+    allowNavigation: ['teacherhub.site', '*.teacherhub.site', '*.myfatoorah.com', 'myfatoorah.com']
   }
 };
 
