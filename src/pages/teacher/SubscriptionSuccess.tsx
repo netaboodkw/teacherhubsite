@@ -48,29 +48,29 @@ export default function SubscriptionSuccess() {
     }
   }, [paymentId]);
 
-  // Try to open the native app using URL scheme
+  // Try to open the native app using Universal Links first, then Custom URL Scheme
   const tryOpenApp = () => {
-    const appUrl = paymentId 
+    // First try Universal Link (works better on iOS)
+    const universalLink = paymentId 
+      ? `https://teacherhub.site/teacher/subscription/success?paymentId=${paymentId}`
+      : 'https://teacherhub.site/teacher/subscription/success';
+    
+    // Custom URL Scheme as fallback
+    const customSchemeUrl = paymentId 
       ? `teacherhub://teacher/subscription/success?paymentId=${paymentId}`
       : 'teacherhub://teacher/subscription/success';
     
-    console.log('Attempting to open app with URL:', appUrl);
+    console.log('Attempting to open app with Universal Link:', universalLink);
+    console.log('Fallback Custom URL Scheme:', customSchemeUrl);
     
-    // Create a hidden iframe to try opening the app
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = appUrl;
-    document.body.appendChild(iframe);
+    // Try Universal Link first (direct navigation)
+    window.location.href = universalLink;
     
-    // Also try direct location change
+    // If Universal Link doesn't work, try Custom URL Scheme after a delay
     setTimeout(() => {
-      window.location.href = appUrl;
-    }, 100);
-    
-    // Clean up iframe after attempt
-    setTimeout(() => {
-      document.body.removeChild(iframe);
-    }, 2000);
+      console.log('Trying Custom URL Scheme...');
+      window.location.href = customSchemeUrl;
+    }, 500);
   };
 
   // Listen for realtime subscription updates
