@@ -248,10 +248,7 @@ export default function TeacherAuth() {
       return;
     }
     
-    if (!phone.trim()) {
-      toast.error('يرجى إدخال رقم الهاتف');
-      return;
-    }
+    // Phone is optional - removed validation per App Store guideline 5.1.1
     
     if (!educationLevelId) {
       toast.error('يرجى اختيار المرحلة الدراسية');
@@ -628,7 +625,7 @@ export default function TeacherAuth() {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="phone" className="text-sm font-medium">رقم الهاتف *</Label>
+                    <Label htmlFor="phone" className="text-sm font-medium">رقم الهاتف (اختياري)</Label>
                     <div className="relative">
                       <Phone className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                       <Input
@@ -997,7 +994,7 @@ export default function TeacherAuth() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="phone-web">رقم الهاتف *</Label>
+                      <Label htmlFor="phone-web">رقم الهاتف (اختياري)</Label>
                       <div className="relative">
                         <Phone className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input

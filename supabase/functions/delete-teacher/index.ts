@@ -42,20 +42,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check if user is admin
-    const { data: isAdmin } = await supabaseAdmin.rpc('has_role', {
-      _user_id: user.id,
-      _role: 'admin',
-    });
-
-    if (!isAdmin) {
-      console.log('User is not admin:', user.id);
-      return new Response(JSON.stringify({ error: 'Admin access required' }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
     // Get the teacher's user_id to delete
     const { teacherUserId } = await req.json();
     if (!teacherUserId) {
@@ -67,13 +53,26 @@ Deno.serve(async (req) => {
 
     console.log('Starting deletion for teacher:', teacherUserId);
 
-    // Prevent deleting self
-    if (teacherUserId === user.id) {
-      return new Response(JSON.stringify({ error: 'Cannot delete your own account' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    // Check if user is deleting their own account OR is an admin
+    const isSelfDelete = teacherUserId === user.id;
+    
+    if (!isSelfDelete) {
+      // Check if user is admin (only admins can delete other users)
+      const { data: isAdmin } = await supabaseAdmin.rpc('has_role', {
+        _user_id: user.id,
+        _role: 'admin',
       });
+
+      if (!isAdmin) {
+        console.log('User is not admin and trying to delete another user:', user.id);
+        return new Response(JSON.stringify({ error: 'Admin access required to delete other users' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
+
+    console.log(isSelfDelete ? 'User is deleting their own account' : 'Admin is deleting another user');
 
     // Delete all related data in order (to respect foreign keys)
     // Using Promise.allSettled to continue even if some tables don't have data

@@ -18,7 +18,18 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { User, School, Mail, Users, Loader2, Save, GraduationCap, Phone, BookOpen, CreditCard, Clock, AlertTriangle, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Settings as SettingsIcon, Bell, Fingerprint, Trash2, RotateCcw } from 'lucide-react';
+import { User, School, Mail, Users, Loader2, Save, GraduationCap, Phone, BookOpen, CreditCard, Clock, AlertTriangle, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Settings as SettingsIcon, Bell, Fingerprint, Trash2, RotateCcw, UserX } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { PageHeader } from '@/components/common/PageHeader';
 import { InviteDepartmentHead } from '@/components/teacher/InviteDepartmentHead';
 import { useOnboarding } from '@/contexts/OnboardingContext';
@@ -47,6 +58,8 @@ export default function Settings() {
     getBiometryDisplayName,
     isNative 
   } = useBiometricAuth();
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const { signOut } = useAuth();
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
@@ -651,6 +664,106 @@ export default function Settings() {
 
         {/* Department Head Invitation Section */}
         <InviteDepartmentHead />
+
+        {/* Delete Account Section - Required by App Store Guideline 5.1.1(v) */}
+        <Card className="border-destructive/30">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <UserX className="h-5 w-5" />
+              حذف الحساب
+            </CardTitle>
+            <CardDescription>
+              حذف حسابك نهائياً من التطبيق وجميع البيانات المرتبطة به
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl">
+              <p className="text-sm text-destructive">
+                <strong>تحذير:</strong> هذا الإجراء لا يمكن التراجع عنه. سيتم حذف:
+              </p>
+              <ul className="text-sm text-muted-foreground mt-2 list-disc list-inside space-y-1">
+                <li>جميع الصفوف والطلاب</li>
+                <li>جميع الدرجات وسجلات الحضور</li>
+                <li>جميع الملاحظات والقوالب</li>
+                <li>بيانات الاشتراك</li>
+              </ul>
+            </div>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="w-full">
+                  <Trash2 className="h-4 w-4 ml-2" />
+                  حذف حسابي نهائياً
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent dir="rtl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-destructive">
+                    هل أنت متأكد من حذف حسابك؟
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    سيتم حذف حسابك وجميع بياناتك نهائياً. هذا الإجراء لا يمكن التراجع عنه.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="flex-row-reverse gap-2">
+                  <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    disabled={deletingAccount}
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      setDeletingAccount(true);
+                      try {
+                        // Call the delete-teacher edge function
+                        const { data: { session } } = await supabase.auth.getSession();
+                        if (!session) {
+                          toast.error('يرجى تسجيل الدخول مرة أخرى');
+                          return;
+                        }
+
+                        const response = await fetch(
+                          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-teacher`,
+                          {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              'Authorization': `Bearer ${session.access_token}`,
+                            },
+                            body: JSON.stringify({ teacherUserId: user?.id }),
+                          }
+                        );
+
+                        const result = await response.json();
+
+                        if (!response.ok) {
+                          throw new Error(result.error || 'فشل في حذف الحساب');
+                        }
+
+                        toast.success('تم حذف حسابك بنجاح');
+                        await signOut();
+                        window.location.href = '/';
+                      } catch (error: any) {
+                        console.error('Delete account error:', error);
+                        toast.error(error.message || 'فشل في حذف الحساب');
+                      } finally {
+                        setDeletingAccount(false);
+                      }
+                    }}
+                  >
+                    {deletingAccount ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Trash2 className="h-4 w-4 ml-2" />
+                        نعم، احذف حسابي
+                      </>
+                    )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </CardContent>
+        </Card>
       </div>
     </TeacherLayout>
   );
