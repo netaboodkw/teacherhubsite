@@ -38,6 +38,7 @@ export default function AdminSettingsPage() {
     myfatoorah_api_key: '',
     myfatoorah_test_mode: true,
     payment_enabled: false,
+    ios_payment_enabled: false,
   });
   const [showApiKey, setShowApiKey] = useState(false);
 
@@ -68,11 +69,13 @@ export default function AdminSettingsPage() {
       const myfatoorahKey = systemSettings.find(s => s.key === 'myfatoorah_api_key');
       const myfatoorahTestMode = systemSettings.find(s => s.key === 'myfatoorah_test_mode');
       const paymentEnabled = systemSettings.find(s => s.key === 'payment_enabled');
+      const iosPaymentEnabled = systemSettings.find(s => s.key === 'ios_payment_enabled');
 
       setPaymentSettings({
         myfatoorah_api_key: myfatoorahKey?.value as string || '',
         myfatoorah_test_mode: myfatoorahTestMode?.value === true || myfatoorahTestMode?.value === 'true' || myfatoorahTestMode?.value === undefined,
         payment_enabled: paymentEnabled?.value === true || paymentEnabled?.value === 'true',
+        ios_payment_enabled: iosPaymentEnabled?.value === true || iosPaymentEnabled?.value === 'true',
       });
 
       // Load logo setting
@@ -174,6 +177,10 @@ export default function AdminSettingsPage() {
       await updateSystemSetting.mutateAsync({
         key: 'payment_enabled',
         value: paymentSettings.payment_enabled
+      });
+      await updateSystemSetting.mutateAsync({
+        key: 'ios_payment_enabled',
+        value: paymentSettings.ios_payment_enabled
       });
 
       // Save terms settings
@@ -511,6 +518,29 @@ export default function AdminSettingsPage() {
                   </p>
                 )}
               </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>تفعيل الدفع في تطبيق iOS</Label>
+                  <p className="text-sm text-muted-foreground">
+                    تفعيل الدفع الأونلاين في تطبيق iOS (بدلاً من نموذج Reader App)
+                  </p>
+                </div>
+                <Switch
+                  checked={paymentSettings.ios_payment_enabled}
+                  onCheckedChange={(checked) => setPaymentSettings(prev => ({ ...prev, ios_payment_enabled: checked }))}
+                />
+              </div>
+
+              {!paymentSettings.ios_payment_enabled && (
+                <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                  <p className="text-sm text-blue-600">
+                    📱 تطبيق iOS يعمل بنموذج Reader App - المستخدمون يشتركون عبر الموقع أو الدعم الفني
+                  </p>
+                </div>
+              )}
+
+              <Separator />
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
