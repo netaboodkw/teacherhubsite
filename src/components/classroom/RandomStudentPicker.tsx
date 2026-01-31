@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { User, Shuffle, Check, X, RotateCcw, Loader2 } from 'lucide-react';
+import { User, Shuffle, Check, X, RotateCcw, Loader2, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -25,9 +25,21 @@ export function RandomStudentPicker({ students, classroomId, open, onOpenChange 
   const [showResult, setShowResult] = useState(false);
   const [answerResult, setAnswerResult] = useState<'correct' | 'wrong' | null>(null);
   const [savingAnswer, setSavingAnswer] = useState(false);
+  
+  // Track shown students to avoid repetition
+  const [shownStudentIds, setShownStudentIds] = useState<Set<string>>(new Set());
+  const availableStudents = students.filter(s => !shownStudentIds.has(s.id));
 
   const pickRandomStudent = () => {
     if (students.length === 0) return;
+    
+    // Reset if all students have been shown
+    let currentAvailable = availableStudents;
+    if (currentAvailable.length === 0) {
+      setShownStudentIds(new Set());
+      currentAvailable = students;
+      toast.success('تم عرض جميع الطلاب، بدء جولة جديدة');
+    }
     
     setShowResult(false);
     setAnswerResult(null);
@@ -45,9 +57,11 @@ export function RandomStudentPicker({ students, classroomId, open, onOpenChange 
         clearInterval(interval);
         setIsSpinning(false);
         setShowResult(true);
-        // Final random selection
-        const finalIndex = Math.floor(Math.random() * students.length);
-        setSelectedStudent(students[finalIndex]);
+        // Final random selection from available students only
+        const finalIndex = Math.floor(Math.random() * currentAvailable.length);
+        const finalStudent = currentAvailable[finalIndex];
+        setSelectedStudent(finalStudent);
+        setShownStudentIds(prev => new Set([...prev, finalStudent.id]));
       }
     }, 100);
   };
@@ -88,6 +102,12 @@ export function RandomStudentPicker({ students, classroomId, open, onOpenChange 
     setAnswerResult(null);
   };
 
+  const resetAll = () => {
+    reset();
+    setShownStudentIds(new Set());
+  };
+
+  // Only reset selection when dialog closes, keep shown students for the session
   useEffect(() => {
     if (!open) {
       reset();
@@ -104,11 +124,28 @@ export function RandomStudentPicker({ students, classroomId, open, onOpenChange 
           </DialogTitle>
         </DialogHeader>
 
+        {/* Remaining Students Counter */}
+        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-lg py-2 px-4">
+          <Users className="h-4 w-4" />
+          <span>المتبقي: {availableStudents.length} من {students.length}</span>
+          {shownStudentIds.size > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={resetAll}
+              className="h-6 px-2 text-xs"
+            >
+              <RotateCcw className="h-3 w-3 ml-1" />
+              بدء جديد
+            </Button>
+          )}
+        </div>
+
         <div className="flex flex-col items-center py-6 space-y-6">
           {/* Student Display */}
           <div 
             className={cn(
-              "relative w-32 h-32 rounded-full flex items-center justify-center overflow-hidden transition-all duration-300",
+              "relative w-32 h-32 md:w-40 md:h-40 rounded-full flex items-center justify-center overflow-hidden transition-all duration-300",
               isSpinning && "animate-pulse scale-110",
               showResult && answerResult === 'correct' && "ring-4 ring-green-500 ring-offset-4",
               showResult && answerResult === 'wrong' && "ring-4 ring-red-500 ring-offset-4",
@@ -124,7 +161,7 @@ export function RandomStudentPicker({ students, classroomId, open, onOpenChange 
                 />
               ) : (
                 <div className="w-full h-full bg-primary/10 flex items-center justify-center">
-                  <User className="h-16 w-16 text-primary" />
+                  <User className="h-16 w-16 md:h-20 md:w-20 text-primary" />
                 </div>
               )
             ) : (
