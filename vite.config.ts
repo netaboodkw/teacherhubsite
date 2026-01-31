@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       includeAssets: ["logo.png", "favicon.ico"],
       manifest: {
         name: "Teacher Hub - منصة المعلم الذكي",
