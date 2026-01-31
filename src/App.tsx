@@ -10,6 +10,7 @@ import { OnboardingProvider } from "@/contexts/OnboardingContext";
 import { SwipeBackOverlay } from "@/components/navigation/SwipeBackOverlay";
 import { FloatingThemeToggle } from "@/components/theme/FloatingThemeToggle";
 import { InteractiveOnboardingBanner } from "@/components/onboarding/InteractiveOnboardingBanner";
+import { UpdatePrompt } from "@/components/pwa/UpdatePrompt";
 import { Capacitor } from "@capacitor/core";
 import { App as CapacitorApp } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
@@ -159,6 +160,7 @@ const App = () => (
             <FloatingThemeToggle />
             <SwipeBackOverlay />
             <InteractiveOnboardingBanner />
+            <UpdatePrompt />
             <Routes>
               {/* Main entry - Platform detection: Native→Welcome, Web→Landing */}
               <Route path="/" element={<PlatformRouter />} />
