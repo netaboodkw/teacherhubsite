@@ -174,15 +174,20 @@ export function GlassWeeklyLeaderboard({ students, behaviorNotes, classroomId }:
             </div>
             <div className="space-y-2">
               {weeklyRanking.map((student, index) => (
-                <div 
+                <button 
                   key={student.id}
-                  className={`flex items-center gap-2 p-2 rounded-lg backdrop-blur-sm cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] ${
+                  type="button"
+                  className={`flex items-center gap-2 p-2 rounded-lg backdrop-blur-sm cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] w-full text-right ${
                     index === 0 ? 'bg-yellow-500/20 hover:bg-yellow-500/30' :
                     index === 1 ? 'bg-gray-500/20 hover:bg-gray-500/30' :
                     index === 2 ? 'bg-amber-500/20 hover:bg-amber-500/30' :
                     'bg-muted/30 hover:bg-muted/50'
                   }`}
-                  onClick={() => handleHeroClick(student, 'weekly')}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleHeroClick(student, 'weekly');
+                  }}
                 >
                   <span className="font-bold text-sm w-6 text-center">{index + 1}</span>
                   {getMedalIcon(index + 1)}
@@ -202,7 +207,7 @@ export function GlassWeeklyLeaderboard({ students, behaviorNotes, classroomId }:
                     <p className="font-medium text-sm truncate">{getShortName(student.name)}</p>
                   </div>
                   <span className="font-bold text-sm text-green-600">+{student.points}</span>
-                </div>
+                </button>
               ))}
             </div>
           </>

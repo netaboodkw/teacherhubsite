@@ -45,20 +45,26 @@ export function MobileRandomPicker({ students, classroomId, open, onOpenChange }
     setAnswerResult(null);
     setIsSpinning(true);
     
+    // Select final student before animation starts
+    const finalIndex = Math.floor(Math.random() * currentAvailable.length);
+    const finalStudent = currentAvailable[finalIndex];
+    
     let count = 0;
     const maxCount = 15 + Math.floor(Math.random() * 10);
     const interval = setInterval(() => {
-      const randomIndex = Math.floor(Math.random() * students.length);
-      setSelectedStudent(students[randomIndex]);
+      // During animation, only show from available students (not yet shown)
+      const animationPool = currentAvailable.filter(s => s.id !== finalStudent.id);
+      if (animationPool.length > 0) {
+        const randomIndex = Math.floor(Math.random() * animationPool.length);
+        setSelectedStudent(animationPool[randomIndex]);
+      }
       count++;
       
       if (count >= maxCount) {
         clearInterval(interval);
         setIsSpinning(false);
         setShowResult(true);
-        // Final random selection from available students only
-        const finalIndex = Math.floor(Math.random() * currentAvailable.length);
-        const finalStudent = currentAvailable[finalIndex];
+        // Show the pre-selected final student
         setSelectedStudent(finalStudent);
         setShownStudentIds(prev => new Set([...prev, finalStudent.id]));
       }
