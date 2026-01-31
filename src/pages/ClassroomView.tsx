@@ -29,8 +29,10 @@ import { toast } from 'sonner';
 import { 
   ArrowRight, User, Plus, Minus, MessageSquare, Save, Loader2, 
   Move, Check, X, Clock, FileText, ClipboardCheck,
-  MoreVertical, Archive, Settings, UserPlus, GripVertical, HeartPulse, StickyNote, Shuffle, Timer, Home, Sparkles, Eye
+  MoreVertical, Archive, Settings, UserPlus, GripVertical, HeartPulse, StickyNote, Shuffle, Timer, Home, Sparkles, Eye,
+  ZoomIn, ZoomOut, Maximize2
 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { MobileRandomPicker } from '@/components/classroom/MobileRandomPicker';
 import { MobileTimer } from '@/components/classroom/MobileTimer';
 import { MobileStudentNoteSheet } from '@/components/classroom/MobileStudentNoteSheet';
@@ -84,6 +86,47 @@ export default function ClassroomView() {
   const [randomPickerOpen, setRandomPickerOpen] = useState(false);
   const [timerOpen, setTimerOpen] = useState(false);
   const [noteSheetOpen, setNoteSheetOpen] = useState(false);
+  
+  // Avatar size state - persisted in localStorage per classroom
+  const [avatarSize, setAvatarSize] = useState<'small' | 'medium' | 'large'>(() => {
+    if (classroomId) {
+      const saved = localStorage.getItem(`classroom-avatar-size-${classroomId}`);
+      if (saved === 'small' || saved === 'medium' || saved === 'large') return saved;
+    }
+    return 'medium';
+  });
+  
+  // Save avatar size to localStorage when it changes
+  useEffect(() => {
+    if (classroomId && avatarSize) {
+      localStorage.setItem(`classroom-avatar-size-${classroomId}`, avatarSize);
+    }
+  }, [avatarSize, classroomId]);
+  
+  // Avatar size classes based on selection
+  const getAvatarSizeClasses = () => {
+    switch (avatarSize) {
+      case 'small':
+        return 'w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16';
+      case 'large':
+        return 'w-20 h-20 md:w-28 md:h-28 lg:w-36 lg:h-36';
+      case 'medium':
+      default:
+        return 'w-14 h-14 md:w-20 md:h-20 lg:w-24 lg:h-24';
+    }
+  };
+  
+  const getIconSizeClasses = () => {
+    switch (avatarSize) {
+      case 'small':
+        return 'h-6 w-6 md:h-7 md:w-7 lg:h-8 lg:w-8';
+      case 'large':
+        return 'h-10 w-10 md:h-14 md:h-14 lg:h-18 lg:w-18';
+      case 'medium':
+      default:
+        return 'h-7 w-7 md:h-10 md:w-10 lg:h-12 lg:w-12';
+    }
+  };
 
   // Auto-detect current period based on classroom schedule and Kuwait time
   const currentPeriodInfo = useMemo(() => {
@@ -546,6 +589,51 @@ export default function ClassroomView() {
               <Shuffle className="h-4 w-4" />
               اختيار عشوائي
             </Button>
+            
+            {/* Avatar Size Selector */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline"
+                  className="h-11 w-11 rounded-xl p-0"
+                  size="sm"
+                >
+                  <Maximize2 className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-auto p-2" dir="rtl">
+                <div className="flex flex-col gap-1">
+                  <p className="text-xs text-muted-foreground px-2 pb-1">حجم الصور</p>
+                  <Button
+                    variant={avatarSize === 'small' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="justify-start gap-2 h-9"
+                    onClick={() => setAvatarSize('small')}
+                  >
+                    <ZoomOut className="h-4 w-4" />
+                    صغير
+                  </Button>
+                  <Button
+                    variant={avatarSize === 'medium' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="justify-start gap-2 h-9"
+                    onClick={() => setAvatarSize('medium')}
+                  >
+                    <Maximize2 className="h-4 w-4" />
+                    متوسط
+                  </Button>
+                  <Button
+                    variant={avatarSize === 'large' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="justify-start gap-2 h-9"
+                    onClick={() => setAvatarSize('large')}
+                  >
+                    <ZoomIn className="h-4 w-4" />
+                    كبير
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         )}
 
@@ -826,8 +914,8 @@ export default function ClassroomView() {
                         )}
                       </div>
 
-                      {/* Avatar - Larger on iPad/Desktop */}
-                      <div className="relative w-14 h-14 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-2">
+                      {/* Avatar - Size based on user preference */}
+                      <div className={cn("relative rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-2", getAvatarSizeClasses())}>
                         {student.avatar_url ? (
                           <img
                             src={student.avatar_url}
@@ -835,7 +923,7 @@ export default function ClassroomView() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <User className="h-7 w-7 md:h-10 md:w-10 lg:h-12 lg:w-12 text-primary" />
+                          <User className={cn("text-primary", getIconSizeClasses())} />
                         )}
                         
                         {/* Attendance Icon Overlay */}
