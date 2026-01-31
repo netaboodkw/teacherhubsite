@@ -236,7 +236,7 @@ export function GlassStudentIcon({
   return (
     <div
       className={cn(
-        "relative flex flex-col items-center p-3 rounded-2xl cursor-pointer transition-all",
+        "relative flex flex-col items-center p-3 md:p-4 rounded-2xl cursor-pointer transition-all",
         "glass-card-interactive active:scale-95"
       )}
       onClick={() => onTap(student)}
@@ -268,7 +268,8 @@ export function GlassStudentIcon({
         )}
       </div>
 
-      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-2 mt-1 backdrop-blur-sm">
+      {/* Avatar - Larger on iPad/Desktop */}
+      <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-2 mt-1 backdrop-blur-sm">
         {student.avatar_url ? (
           <img
             src={student.avatar_url}
@@ -276,10 +277,10 @@ export function GlassStudentIcon({
             className="w-full h-full object-cover"
           />
         ) : (
-          <User className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
+          <User className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 lg:h-14 lg:w-14 text-primary" />
         )}
       </div>
-      <p className="text-sm text-center font-medium truncate w-full leading-tight max-w-[90px]">
+      <p className="text-sm md:text-base text-center font-medium truncate w-full leading-tight max-w-[90px] md:max-w-[120px]">
         {getShortName(student.name)}
       </p>
       {showBadges && badges && (

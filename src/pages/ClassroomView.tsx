@@ -786,7 +786,7 @@ export default function ClassroomView() {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
                 {sortedStudents.map((student) => {
                   const hasNotes = studentsWithNotes.has(student.id);
                   const notesCount = studentsWithNotes.get(student.id) || 0;
@@ -796,7 +796,7 @@ export default function ClassroomView() {
                     <div
                       key={student.id}
                       className={cn(
-                        "relative flex flex-col items-center p-3 rounded-2xl cursor-pointer transition-all active:scale-95",
+                        "relative flex flex-col items-center p-3 md:p-4 rounded-2xl cursor-pointer transition-all active:scale-95",
                         activeTab === 'attendance' 
                           ? `border-2 ${getAttendanceBorder(attendanceStatus)}`
                           : "bg-card border border-border/50 hover:border-primary/50"
@@ -811,23 +811,23 @@ export default function ClassroomView() {
                       <div className="absolute top-1 right-1 flex gap-0.5">
                         {student.special_needs && (
                           <div className="p-1 bg-amber-100 dark:bg-amber-900/50 rounded-full" title="احتياجات خاصة">
-                            <HeartPulse className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                            <HeartPulse className="h-3 w-3 md:h-4 md:w-4 text-amber-600 dark:text-amber-400" />
                           </div>
                         )}
                         {(student as any).is_watched && (
                           <div className="p-1 bg-purple-100 dark:bg-purple-900/50 rounded-full" title="تحت المتابعة">
-                            <Eye className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                            <Eye className="h-3 w-3 md:h-4 md:w-4 text-purple-600 dark:text-purple-400" />
                           </div>
                         )}
                         {student.notes && (
                           <div className="p-1 bg-blue-100 dark:bg-blue-900/50 rounded-full" title="ملاحظات">
-                            <StickyNote className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                            <StickyNote className="h-3 w-3 md:h-4 md:w-4 text-blue-600 dark:text-blue-400" />
                           </div>
                         )}
                       </div>
 
-                      {/* Avatar */}
-                      <div className="relative w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-2">
+                      {/* Avatar - Larger on iPad/Desktop */}
+                      <div className="relative w-14 h-14 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mb-2">
                         {student.avatar_url ? (
                           <img
                             src={student.avatar_url}
@@ -835,7 +835,7 @@ export default function ClassroomView() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <User className="h-7 w-7 text-primary" />
+                          <User className="h-7 w-7 md:h-10 md:w-10 lg:h-12 lg:w-12 text-primary" />
                         )}
                         
                         {/* Attendance Icon Overlay */}
@@ -847,7 +847,7 @@ export default function ClassroomView() {
                       </div>
                       
                       {/* Name */}
-                      <p className="text-xs text-center font-medium leading-tight line-clamp-2 w-full">
+                      <p className="text-xs md:text-sm text-center font-medium leading-tight line-clamp-2 w-full">
                         {getShortName(student.name)}
                       </p>
                       
