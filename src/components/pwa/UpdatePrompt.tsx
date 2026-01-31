@@ -31,12 +31,12 @@ export function UpdatePrompt() {
         });
       });
 
-      // Check for updates periodically (every 60 seconds)
+      // Check for updates periodically (every hour)
       const checkInterval = setInterval(() => {
         navigator.serviceWorker.ready.then((registration) => {
           registration.update().catch(console.error);
         });
-      }, 60 * 1000);
+      }, 60 * 60 * 1000);
 
       // Listen for controller change (when skipWaiting is called)
       let refreshing = false;
